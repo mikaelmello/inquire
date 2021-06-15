@@ -1,5 +1,9 @@
+#[macro_use]
+extern crate simple_error;
+
 mod config;
 mod multiselect;
+mod question;
 mod survey;
 mod terminal;
 

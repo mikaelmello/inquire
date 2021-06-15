@@ -9,3 +9,4 @@ edition = "2018"
 [dependencies]
 termion = "1"
 unicode-segmentation = "1"
+simple-error = "0.2.3"
