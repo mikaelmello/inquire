@@ -2,8 +2,8 @@
 extern crate simple_error;
 
 mod config;
-mod multiselect;
-mod question;
+pub mod multiselect;
+pub mod question;
 mod survey;
 mod terminal;
 
