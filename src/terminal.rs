@@ -22,6 +22,15 @@ pub struct Size {
 pub struct Terminal {
     size: Size,
     _stdout: RawTerminal<std::io::Stdout>,
+    applied_fgs: Vec<String>,
+    applied_bgs: Vec<String>,
+    applied_styles: Vec<Style>,
+}
+
+#[derive(Copy, Clone)]
+pub enum Style {
+    Bold,
+    Italic,
 }
 
 impl Terminal {
@@ -36,6 +45,9 @@ impl Terminal {
                 height: size.1.saturating_sub(2),
             },
             _stdout: stdout().into_raw_mode()?,
+            applied_bgs: vec![],
+            applied_fgs: vec![],
+            applied_styles: vec![],
         })
     }
 
@@ -89,27 +101,67 @@ impl Terminal {
         print!("{}", termion::clear::CurrentLine);
     }
 
-    pub fn set_bold_style(&self) {
-        print!("{}", termion::style::Bold);
+    pub fn set_style(&mut self, style: Style) {
+        self.applied_styles.push(style);
+        let style: Box<dyn Display> = match style {
+            Style::Bold => Box::new(termion::style::Bold),
+            Style::Italic => Box::new(termion::style::Italic),
+        };
+
+        print!("{}", style);
     }
 
-    pub fn reset_style(&self) {
+    pub fn undo_style(&mut self) {
+        if let Some(st) = self.applied_styles.pop() {
+            match st {
+                Style::Bold => print!("{}", termion::style::NoBold),
+                Style::Italic => print!("{}", termion::style::NoItalic),
+            }
+        }
+    }
+
+    pub fn reset_style(&mut self) {
+        self.applied_styles.clear();
         print!("{}", termion::style::Reset);
     }
 
-    pub fn set_bg_color<C: Color>(&self, color: C) {
-        print!("{}", color::Bg(color));
+    pub fn set_bg_color<C: Color>(&mut self, color: C) {
+        let fmt = format!("{}", color::Bg(color));
+        print!("{}", fmt);
+        self.applied_bgs.push(fmt);
     }
 
-    pub fn reset_bg_color(&self) {
+    pub fn undo_bg_color(&mut self) {
+        self.applied_bgs.pop();
+
+        match self.applied_bgs.last() {
+            Some(bg) => print!("{}", bg),
+            None => print!("{}", color::Bg(color::Reset)),
+        }
+    }
+
+    pub fn reset_bg_color(&mut self) {
+        self.applied_bgs.clear();
         print!("{}", color::Bg(color::Reset));
     }
 
-    pub fn set_fg_color<C: Color>(&self, color: C) {
-        print!("{}", color::Fg(color));
+    pub fn set_fg_color<C: Color>(&mut self, color: C) {
+        let fmt = format!("{}", color::Fg(color));
+        print!("{}", fmt);
+        self.applied_fgs.push(fmt);
     }
 
-    pub fn reset_fg_color(&self) {
+    pub fn undo_fg_color(&mut self) {
+        self.applied_fgs.pop();
+
+        match self.applied_fgs.last() {
+            Some(fg) => print!("{}", fg),
+            None => print!("{}", color::Fg(color::Reset)),
+        }
+    }
+
+    pub fn reset_fg_color(&mut self) {
+        self.applied_fgs.clear();
         print!("{}", color::Fg(color::Reset));
     }
 }

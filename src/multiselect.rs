@@ -1,15 +1,12 @@
 use std::{collections::HashSet, error::Error, iter::FromIterator};
 use unicode_segmentation::UnicodeSegmentation;
 
-use termion::{
-    color::{self, Color, Rgb},
-    event::Key,
-};
+use termion::event::Key;
 
 use crate::{
     config::PromptConfig,
     question::{Answer, Question},
-    renderer::{Renderer, Value},
+    renderer::Renderer,
     survey::{paginate, OptionAnswer},
     terminal::Terminal,
 };
@@ -25,7 +22,6 @@ pub struct MultiSelect<'a> {
     filtered_options: Vec<usize>,
     selected_index: usize,
     checked: HashSet<usize>,
-    showing_help: bool,
     initialized: bool,
     final_answer: Option<String>,
     renderer: Renderer,
@@ -48,7 +44,6 @@ impl<'a> MultiSelect<'a> {
             filtered_options: Vec::from_iter(0..options.len()),
             selected_index: 0,
             checked: HashSet::new(),
-            showing_help: false,
             initialized: false,
             final_answer: None,
             renderer: Renderer::default(),
@@ -182,24 +177,22 @@ impl<'a> MultiSelect<'a> {
 }
 
 impl<'a> Question for MultiSelect<'a> {
-    fn render(&mut self, terminal: &Terminal) {
+    fn render(&mut self, terminal: &mut Terminal) {
+        let prompt = &self.message;
+
         self.renderer.reset_prompt(terminal);
 
         if let Some(final_answer) = &self.final_answer {
             self.renderer
-                .print_header(terminal, &self.message, None, Value::Answer(final_answer));
+                .print_prompt_answer(terminal, &prompt, &final_answer);
             return;
         }
 
-        self.renderer.print_header(
-            terminal,
-            &self.message,
-            None,
-            match &self.filter_value {
-                Some(value) => Value::Filter(value),
-                None => Value::None,
-            },
-        );
+        if let Some(filter) = &self.filter_value {
+            self.renderer.print_prompt_filter(terminal, &prompt, filter);
+        } else {
+            self.renderer.print_prompt(terminal, &prompt);
+        }
 
         let choices = self
             .filtered_options
@@ -219,6 +212,11 @@ impl<'a> Question for MultiSelect<'a> {
                 &opt.value,
             );
         }
+
+        self.renderer.print_help(
+            terminal,
+            "↑↓ to move, space to select one, → to all, ← to none, type to filter",
+        );
     }
 
     fn cleanup(&mut self, answer: &Answer) -> Result<(), Box<dyn Error>> {
@@ -232,10 +230,10 @@ impl<'a> Question for MultiSelect<'a> {
                         .join(", "),
                 );
 
-                let terminal = Terminal::new()?;
+                let mut terminal = Terminal::new()?;
                 terminal.cursor_hide();
 
-                self.render(&terminal);
+                self.render(&mut terminal);
 
                 terminal.cursor_show();
                 Ok(())
@@ -251,11 +249,11 @@ impl<'a> Question for MultiSelect<'a> {
         }
         self.initialized = true;
 
-        let terminal = Terminal::new()?;
+        let mut terminal = Terminal::new()?;
         terminal.cursor_hide();
 
         loop {
-            self.render(&terminal);
+            self.render(&mut terminal);
 
             let key = terminal.read_key()?;
 
