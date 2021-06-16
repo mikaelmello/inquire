@@ -10,7 +10,7 @@ pub enum Answer {
 }
 
 pub trait Question {
-    fn render(&self, terminal: &Terminal);
+    fn render(&mut self, terminal: &Terminal);
     fn cleanup(&mut self, answer: &Answer) -> Result<(), Box<dyn Error>>;
     fn prompt(&mut self) -> Result<Answer, Box<dyn Error>>;
 }

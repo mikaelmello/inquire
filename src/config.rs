@@ -16,7 +16,7 @@ impl Default for PromptConfig {
 
                 value.to_lowercase().contains(&filter)
             },
-            keep_filter: false,
+            keep_filter: true,
             show_cursor: false,
         }
     }

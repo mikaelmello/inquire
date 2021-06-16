@@ -4,6 +4,7 @@ extern crate simple_error;
 mod config;
 pub mod multiselect;
 pub mod question;
+mod renderer;
 mod survey;
 mod terminal;
 

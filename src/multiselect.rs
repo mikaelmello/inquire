@@ -9,6 +9,7 @@ use termion::{
 use crate::{
     config::PromptConfig,
     question::{Answer, Question},
+    renderer::{Renderer, Value},
     survey::{paginate, OptionAnswer},
     terminal::Terminal,
 };
@@ -27,6 +28,7 @@ pub struct MultiSelect<'a> {
     showing_help: bool,
     initialized: bool,
     final_answer: Option<String>,
+    renderer: Renderer,
 }
 
 impl<'a> MultiSelect<'a> {
@@ -49,6 +51,7 @@ impl<'a> MultiSelect<'a> {
             showing_help: false,
             initialized: false,
             final_answer: None,
+            renderer: Renderer::default(),
         })
     }
 
@@ -179,11 +182,24 @@ impl<'a> MultiSelect<'a> {
 }
 
 impl<'a> Question for MultiSelect<'a> {
-    fn render(&self, terminal: &Terminal) {
-        terminal.set_fg_color(Rgb(255, 0, 0));
-        print!("? ");
-        terminal.set_fg_color(Rgb(255, 255, 255));
-        println!("{}\r", self.message);
+    fn render(&mut self, terminal: &Terminal) {
+        self.renderer.reset_prompt(terminal);
+
+        if let Some(final_answer) = &self.final_answer {
+            self.renderer
+                .print_header(terminal, &self.message, None, Value::Answer(final_answer));
+            return;
+        }
+
+        self.renderer.print_header(
+            terminal,
+            &self.message,
+            None,
+            match &self.filter_value {
+                Some(value) => Value::Filter(value),
+                None => Value::None,
+            },
+        );
 
         let choices = self
             .filtered_options
@@ -196,16 +212,12 @@ impl<'a> Question for MultiSelect<'a> {
             paginate(self.config.page_size, &choices, self.selected_index);
 
         for (idx, opt) in paginated_opts.iter().enumerate() {
-            print!(" ");
-            match rel_sel == idx {
-                true => print!(">"),
-                false => print!(" "),
-            }
-            match self.checked.contains(&opt.index) {
-                true => print!("[x]"),
-                false => print!("[ ]"),
-            }
-            println!(" {}\r", opt.value);
+            self.renderer.print_multi_option(
+                terminal,
+                rel_sel == idx,
+                self.checked.contains(&opt.index),
+                &opt.value,
+            );
         }
     }
 

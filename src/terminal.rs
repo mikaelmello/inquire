@@ -1,11 +1,17 @@
-use std::io::{self, stdout, Write};
+use std::{
+    fmt::Display,
+    io::{self, stdout, Write},
+};
 
 use termion::{
-    color,
+    color::{self, Color},
+    cursor,
     event::Key,
     input::TermRead,
     raw::{IntoRawMode, RawTerminal},
 };
+
+use crate::terminal;
 
 #[derive(Default, Clone, Copy, PartialEq)]
 pub struct Size {
@@ -45,6 +51,14 @@ impl Terminal {
         print!("{}", termion::cursor::Goto(x, y));
     }
 
+    pub fn cursor_up(&self) {
+        print!("{}", cursor::Up(1));
+    }
+
+    pub fn cursor_horizontal_reset(&self) {
+        print!("\r");
+    }
+
     /// # Errors
     ///
     /// Will return error when call to stdout().flush() fails
@@ -75,7 +89,15 @@ impl Terminal {
         print!("{}", termion::clear::CurrentLine);
     }
 
-    pub fn set_bg_color(&self, color: color::Rgb) {
+    pub fn set_bold_style(&self) {
+        print!("{}", termion::style::Bold);
+    }
+
+    pub fn reset_style(&self) {
+        print!("{}", termion::style::Reset);
+    }
+
+    pub fn set_bg_color<C: Color>(&self, color: C) {
         print!("{}", color::Bg(color));
     }
 
@@ -83,7 +105,7 @@ impl Terminal {
         print!("{}", color::Bg(color::Reset));
     }
 
-    pub fn set_fg_color(&self, color: color::Rgb) {
+    pub fn set_fg_color<C: Color>(&self, color: C) {
         print!("{}", color::Fg(color));
     }
 
