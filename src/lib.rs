@@ -5,6 +5,7 @@ mod config;
 pub mod multiselect;
 pub mod question;
 mod renderer;
+pub mod select;
 mod survey;
 mod terminal;
 

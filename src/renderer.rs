@@ -126,6 +126,17 @@ impl Renderer {
         self.new_line();
     }
 
+    pub fn print_option(&mut self, terminal: &mut Terminal, cursor: bool, content: &str) {
+        match cursor {
+            true => Token::new(&format!("> {}", content))
+                .with_fg(color::Cyan)
+                .print(terminal),
+            false => Token::new(&format!("  {}", content)).print(terminal),
+        };
+
+        self.new_line();
+    }
+
     pub fn print_multi_option(
         &mut self,
         terminal: &mut Terminal,

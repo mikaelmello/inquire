@@ -1,4 +1,5 @@
-use std::{collections::HashSet, error::Error, iter::FromIterator};
+use simple_error::SimpleError;
+use std::{error::Error, iter::FromIterator};
 use unicode_segmentation::UnicodeSegmentation;
 
 use termion::event::Key;
@@ -11,23 +12,21 @@ use crate::{
     terminal::Terminal,
 };
 
-pub struct MultiSelect<'a> {
+pub struct Select<'a> {
     message: String,
     options: Vec<&'a str>,
-    default: Option<Vec<usize>>,
     help: Option<&'a str>,
     config: Box<PromptConfig>,
     vim_mode: bool,
     filter_value: Option<String>,
     filtered_options: Vec<usize>,
     selected_index: usize,
-    checked: HashSet<usize>,
     initialized: bool,
     final_answer: Option<String>,
     renderer: Renderer,
 }
 
-impl<'a> MultiSelect<'a> {
+impl<'a> Select<'a> {
     pub fn new(message: &str, options: &'a [&str]) -> Result<Self, Box<dyn Error>> {
         if options.is_empty() {
             bail!("Please provide options to select from");
@@ -36,29 +35,24 @@ impl<'a> MultiSelect<'a> {
         Ok(Self {
             message: message.to_string(),
             options: Vec::from(options),
-            default: None,
             help: None,
             config: Box::new(PromptConfig::default()),
             vim_mode: false,
             filter_value: None,
             filtered_options: Vec::from_iter(0..options.len()),
             selected_index: 0,
-            checked: HashSet::new(),
             initialized: false,
             final_answer: None,
             renderer: Renderer::default(),
         })
     }
 
-    pub fn with_default(mut self, indexes: &[usize]) -> Result<Self, Box<dyn Error>> {
-        for i in indexes {
-            if i >= &self.options.len() {
-                bail!("Invalid index, larger than options available");
-            }
-            self.checked.insert(*i);
+    pub fn with_default(mut self, index: usize) -> Result<Self, Box<dyn Error>> {
+        if index >= self.options.len() {
+            bail!("Invalid index, larger than options available");
         }
 
-        self.default = Some(indexes.iter().cloned().collect());
+        self.selected_index = index;
 
         Ok(self)
     }
@@ -106,23 +100,6 @@ impl<'a> MultiSelect<'a> {
         }
     }
 
-    fn toggle_cursor_selection(&mut self) {
-        let idx = match self.filtered_options.get(self.selected_index) {
-            Some(val) => val,
-            None => return,
-        };
-
-        if self.checked.contains(idx) {
-            self.checked.remove(idx);
-        } else {
-            self.checked.insert(*idx);
-        }
-
-        if !self.config.keep_filter {
-            self.filter_value = None;
-        }
-    }
-
     fn on_change(&mut self, key: Key) {
         let old_filter = self.filter_value.clone();
 
@@ -131,7 +108,6 @@ impl<'a> MultiSelect<'a> {
             Key::Char('k') if self.vim_mode => self.move_cursor_up(),
             Key::Char('\t') | Key::Down => self.move_cursor_down(),
             Key::Char('j') if self.vim_mode => self.move_cursor_down(),
-            Key::Char(' ') => self.toggle_cursor_selection(),
             Key::Char('\x17') | Key::Char('\x18') => {
                 self.filter_value = None;
             }
@@ -140,23 +116,6 @@ impl<'a> MultiSelect<'a> {
                     let len = filter[..].graphemes(true).count();
                     let new_len = len.saturating_sub(1);
                     self.filter_value = Some(filter[..].graphemes(true).take(new_len).collect());
-                }
-            }
-            Key::Right => {
-                self.checked.clear();
-                for idx in &self.filtered_options {
-                    self.checked.insert(*idx);
-                }
-
-                if !self.config.keep_filter {
-                    self.filter_value = None;
-                }
-            }
-            Key::Left => {
-                self.checked.clear();
-
-                if !self.config.keep_filter {
-                    self.filter_value = None;
                 }
             }
             Key::Char(c) => match &mut self.filter_value {
@@ -176,20 +135,15 @@ impl<'a> MultiSelect<'a> {
     }
 
     fn get_final_answer(&self) -> Result<Answer, Box<dyn Error>> {
-        Ok(Answer::MultipleOptions(
-            self.options
-                .iter()
-                .enumerate()
-                .filter_map(|(idx, opt)| match &self.checked.contains(&idx) {
-                    true => Some(OptionAnswer::new(idx, opt)),
-                    false => None,
-                })
-                .collect::<Vec<OptionAnswer>>(),
-        ))
+        self.filtered_options
+            .get(self.selected_index)
+            .and_then(|i| self.options.get(*i).map(|opt| OptionAnswer::new(*i, opt)))
+            .map(|o| Answer::Option(o))
+            .ok_or(Box::new(SimpleError::new("Invalid selected index")))
     }
 }
 
-impl<'a> Question for MultiSelect<'a> {
+impl<'a> Question for Select<'a> {
     fn render(&mut self, terminal: &mut Terminal) {
         let prompt = &self.message;
 
@@ -218,31 +172,20 @@ impl<'a> Question for MultiSelect<'a> {
             paginate(self.config.page_size, &choices, self.selected_index);
 
         for (idx, opt) in paginated_opts.iter().enumerate() {
-            self.renderer.print_multi_option(
-                terminal,
-                rel_sel == idx,
-                self.checked.contains(&opt.index),
-                &opt.value,
-            );
+            self.renderer
+                .print_option(terminal, rel_sel == idx, &opt.value);
         }
 
         self.renderer.print_help(
             terminal,
-            self.help
-                .unwrap_or("↑↓ to move, space to select one, → to all, ← to none, type to filter"),
+            "↑↓ to move, space or enter to select, type to filter",
         );
     }
 
     fn cleanup(&mut self, answer: &Answer) -> Result<(), Box<dyn Error>> {
         match answer {
-            Answer::MultipleOptions(options) => {
-                self.final_answer = Some(
-                    options
-                        .iter()
-                        .map(|opt| opt.value.as_str())
-                        .collect::<Vec<&str>>()
-                        .join(", "),
-                );
+            Answer::Option(option) => {
+                self.final_answer = Some(option.value.clone());
 
                 let mut terminal = Terminal::new()?;
                 terminal.cursor_hide();
@@ -273,7 +216,7 @@ impl<'a> Question for MultiSelect<'a> {
 
             match key {
                 Key::Ctrl('c') => bail!("Multi-selection interrupted by ctrl-c"),
-                Key::Char('\n') | Key::Char('\r') => break,
+                Key::Char('\n') | Key::Char('\r') | Key::Char(' ') => break,
                 key => self.on_change(key),
             }
         }
