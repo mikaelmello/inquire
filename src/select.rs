@@ -183,20 +183,15 @@ impl<'a> Question for Select<'a> {
     }
 
     fn cleanup(&mut self, answer: &Answer) -> Result<(), Box<dyn Error>> {
-        match answer {
-            Answer::Option(option) => {
-                self.final_answer = Some(option.value.clone());
+        self.final_answer = Some(answer.to_string());
 
-                let mut terminal = Terminal::new()?;
-                terminal.cursor_hide();
+        let mut terminal = Terminal::new()?;
+        terminal.cursor_hide();
 
-                self.render(&mut terminal);
+        self.render(&mut terminal);
 
-                terminal.cursor_show();
-                Ok(())
-            }
-            _ => bail!("Unsupported Answer enum variant"),
-        }
+        terminal.cursor_show();
+        Ok(())
     }
 
     fn prompt(&mut self) -> Result<Answer, Box<dyn Error>> {

@@ -1,4 +1,5 @@
 use std::error::Error;
+use std::fmt;
 
 use crate::{survey::OptionAnswer, terminal::Terminal};
 
@@ -13,4 +14,22 @@ pub trait Question {
     fn render(&mut self, terminal: &mut Terminal);
     fn cleanup(&mut self, answer: &Answer) -> Result<(), Box<dyn Error>>;
     fn prompt(&mut self) -> Result<Answer, Box<dyn Error>>;
+}
+
+impl fmt::Display for Answer {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Self::Simple(val) => write!(f, "{}", val),
+            Self::Option(option) => write!(f, "{}", option.value),
+            Self::MultipleOptions(options) => write!(
+                f,
+                "{}",
+                options
+                    .iter()
+                    .map(|opt| opt.value.as_str())
+                    .collect::<Vec<&str>>()
+                    .join(", ")
+            ),
+        }
+    }
 }
