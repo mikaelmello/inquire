@@ -4,67 +4,61 @@ use unicode_segmentation::UnicodeSegmentation;
 use termion::event::Key;
 
 use crate::{
-    config::PromptConfig,
+    config::{
+        Filter, PromptConfig, Transformer, DEFAULT_FILTER, DEFAULT_KEEP_FILTER, DEFAULT_PAGE_SIZE,
+        DEFAULT_TRANSFORMER, DEFAULT_VIM_MODE,
+    },
     question::{Answer, Question},
     renderer::Renderer,
     survey::{paginate, OptionAnswer},
     terminal::Terminal,
 };
 
-pub struct MultiSelect<'a> {
-    message: String,
-    options: Vec<&'a str>,
-    default: Option<Vec<usize>>,
-    help: Option<&'a str>,
-    config: Box<PromptConfig>,
+const DEFAULT_STARTING_SELECTION: usize = 0;
+const DEFAULT_HELP_MESSAGE: &str =
+    "↑↓ to move, space to select one, → to all, ← to none, type to filter";
+
+#[derive(Copy, Clone)]
+pub struct MultiSelectOptions<'a> {
+    message: &'a str,
+    options: &'a [&'a str],
+    default: Option<&'a [usize]>,
+    help_message: &'a str,
+    page_size: usize,
     vim_mode: bool,
-    filter_value: Option<String>,
-    filtered_options: Vec<usize>,
-    selected_index: usize,
-    checked: HashSet<usize>,
-    initialized: bool,
-    final_answer: Option<String>,
-    renderer: Renderer,
+    starting_selection: usize,
+    filter: &'a Filter,
+    keep_filter: bool,
+    transformer: &'a Transformer,
 }
 
-impl<'a> MultiSelect<'a> {
-    pub fn new(message: &str, options: &'a [&str]) -> Result<Self, Box<dyn Error>> {
+impl<'a> MultiSelectOptions<'a> {
+    pub fn new(message: &'a str, options: &'a [&str]) -> Result<Self, Box<dyn Error>> {
         if options.is_empty() {
             bail!("Please provide options to select from");
         }
 
         Ok(Self {
-            message: message.to_string(),
-            options: Vec::from(options),
+            message,
+            options,
             default: None,
-            help: None,
-            config: Box::new(PromptConfig::default()),
-            vim_mode: false,
-            filter_value: None,
-            filtered_options: Vec::from_iter(0..options.len()),
-            selected_index: 0,
-            checked: HashSet::new(),
-            initialized: false,
-            final_answer: None,
-            renderer: Renderer::default(),
+            help_message: DEFAULT_HELP_MESSAGE,
+            page_size: DEFAULT_PAGE_SIZE,
+            vim_mode: DEFAULT_VIM_MODE,
+            starting_selection: DEFAULT_STARTING_SELECTION,
+            keep_filter: DEFAULT_KEEP_FILTER,
+            filter: &DEFAULT_FILTER,
+            transformer: &DEFAULT_TRANSFORMER,
         })
     }
 
-    pub fn with_default(mut self, indexes: &[usize]) -> Result<Self, Box<dyn Error>> {
-        for i in indexes {
-            if i >= &self.options.len() {
-                bail!("Invalid index, larger than options available");
-            }
-            self.checked.insert(*i);
-        }
-
-        self.default = Some(indexes.iter().cloned().collect());
-
-        Ok(self)
+    pub fn with_help_message(mut self, message: &'a str) -> Self {
+        self.help_message = message;
+        self
     }
 
-    pub fn with_help(mut self, help: &'a str) -> Self {
-        self.help = Some(help);
+    pub fn with_page_size(mut self, page_size: usize) -> Self {
+        self.page_size = page_size;
         self
     }
 
@@ -73,19 +67,107 @@ impl<'a> MultiSelect<'a> {
         self
     }
 
-    pub fn with_config(mut self, c: Box<PromptConfig>) -> Self {
-        self.config = c;
+    pub fn with_keep_filter(mut self, keep_filter: bool) -> Self {
+        self.keep_filter = keep_filter;
         self
     }
 
-    fn filter_options(&self) -> Vec<usize> {
-        let filter = &self.config.filter;
+    pub fn with_filter(mut self, filter: &'a Filter) -> Self {
+        self.filter = filter;
+        self
+    }
 
+    pub fn with_transformer(mut self, transformer: &'a Transformer) -> Self {
+        self.transformer = transformer;
+        self
+    }
+
+    pub fn with_default(mut self, default: &'a [usize]) -> Result<Self, Box<dyn Error>> {
+        for i in default {
+            if i >= &self.options.len() {
+                bail!("Invalid index, larger than options available");
+            }
+        }
+
+        self.default = Some(default);
+        Ok(self)
+    }
+
+    pub fn with_starting_cursor(mut self, starting_cursor: usize) -> Result<Self, Box<dyn Error>> {
+        if starting_cursor >= self.options.len() {
+            bail!("Starting selection should not be larger than length of options");
+        }
+
+        self.starting_selection = starting_cursor;
+        Ok(self)
+    }
+
+    pub fn with_config(mut self, global_config: &'a PromptConfig) -> Self {
+        if let Some(page_size) = global_config.page_size {
+            self.page_size = page_size;
+        }
+        if let Some(vim_mode) = global_config.vim_mode {
+            self.vim_mode = vim_mode;
+        }
+        if let Some(keep_filter) = global_config.keep_filter {
+            self.keep_filter = keep_filter;
+        }
+        if let Some(filter) = global_config.filter {
+            self.filter = filter;
+        }
+        if let Some(transformer) = global_config.transformer {
+            self.transformer = transformer;
+        }
+
+        self
+    }
+}
+
+pub struct MultiSelect<'a> {
+    message: &'a str,
+    options: &'a [&'a str],
+    help_message: &'a str,
+    vim_mode: bool,
+    cursor_index: usize,
+    checked: HashSet<usize>,
+    page_size: usize,
+    renderer: Renderer,
+    keep_filter: bool,
+    filter_value: Option<String>,
+    filtered_options: Vec<usize>,
+    filter: &'a Filter,
+    transformer: &'a Transformer,
+}
+
+impl<'a> From<MultiSelectOptions<'a>> for MultiSelect<'a> {
+    fn from(mso: MultiSelectOptions<'a>) -> Self {
+        Self {
+            message: mso.message,
+            options: mso.options,
+            help_message: mso.help_message,
+            vim_mode: mso.vim_mode,
+            cursor_index: mso.starting_selection,
+            renderer: Renderer::default(),
+            page_size: mso.page_size,
+            keep_filter: mso.keep_filter,
+            filter_value: None,
+            filtered_options: Vec::from_iter(0..mso.options.len()),
+            filter: mso.filter,
+            transformer: mso.transformer,
+            checked: mso
+                .default
+                .map_or_else(|| HashSet::new(), |d| d.iter().cloned().collect()),
+        }
+    }
+}
+
+impl<'a> MultiSelect<'a> {
+    fn filter_options(&self) -> Vec<usize> {
         self.options
             .iter()
             .enumerate()
             .filter_map(|(i, opt)| match &self.filter_value {
-                Some(val) if filter(&val, opt, i) => Some(i),
+                Some(val) if (self.filter)(&val, opt, i) => Some(i),
                 Some(_) => None,
                 None => Some(i),
             })
@@ -93,21 +175,21 @@ impl<'a> MultiSelect<'a> {
     }
 
     fn move_cursor_up(&mut self) {
-        self.selected_index = self
-            .selected_index
+        self.cursor_index = self
+            .cursor_index
             .checked_sub(1)
             .unwrap_or_else(|| self.filtered_options.len() - 1);
     }
 
     fn move_cursor_down(&mut self) {
-        self.selected_index = self.selected_index.saturating_add(1);
-        if self.selected_index == self.filtered_options.len() {
-            self.selected_index = 0;
+        self.cursor_index = self.cursor_index.saturating_add(1);
+        if self.cursor_index == self.filtered_options.len() {
+            self.cursor_index = 0;
         }
     }
 
     fn toggle_cursor_selection(&mut self) {
-        let idx = match self.filtered_options.get(self.selected_index) {
+        let idx = match self.filtered_options.get(self.cursor_index) {
             Some(val) => val,
             None => return,
         };
@@ -118,7 +200,7 @@ impl<'a> MultiSelect<'a> {
             self.checked.insert(*idx);
         }
 
-        if !self.config.keep_filter {
+        if !self.keep_filter {
             self.filter_value = None;
         }
     }
@@ -148,14 +230,14 @@ impl<'a> MultiSelect<'a> {
                     self.checked.insert(*idx);
                 }
 
-                if !self.config.keep_filter {
+                if !self.keep_filter {
                     self.filter_value = None;
                 }
             }
             Key::Left => {
                 self.checked.clear();
 
-                if !self.config.keep_filter {
+                if !self.keep_filter {
                     self.filter_value = None;
                 }
             }
@@ -168,8 +250,8 @@ impl<'a> MultiSelect<'a> {
 
         if self.filter_value != old_filter {
             let options = self.filter_options();
-            if options.len() > 0 && options.len() <= self.selected_index {
-                self.selected_index = options.len().saturating_sub(1);
+            if options.len() > 0 && options.len() <= self.cursor_index {
+                self.cursor_index = options.len().saturating_sub(1);
             }
             self.filtered_options = options;
         }
@@ -187,6 +269,14 @@ impl<'a> MultiSelect<'a> {
                 .collect::<Vec<OptionAnswer>>(),
         ))
     }
+
+    fn cleanup(&mut self, terminal: &mut Terminal, answer: &str) -> Result<(), Box<dyn Error>> {
+        self.renderer.reset_prompt(terminal)?;
+        self.renderer
+            .print_prompt_answer(terminal, &self.message, answer)?;
+
+        Ok(())
+    }
 }
 
 impl<'a> Question for MultiSelect<'a> {
@@ -194,12 +284,6 @@ impl<'a> Question for MultiSelect<'a> {
         let prompt = &self.message;
 
         self.renderer.reset_prompt(terminal)?;
-
-        if let Some(final_answer) = &self.final_answer {
-            self.renderer
-                .print_prompt_answer(terminal, &prompt, &final_answer)?;
-            return Ok(());
-        }
 
         if let Some(filter) = &self.filter_value {
             self.renderer
@@ -215,8 +299,7 @@ impl<'a> Question for MultiSelect<'a> {
             .map(|i| OptionAnswer::new(i, self.options.get(i).unwrap()))
             .collect::<Vec<OptionAnswer>>();
 
-        let (paginated_opts, rel_sel) =
-            paginate(self.config.page_size, &choices, self.selected_index);
+        let (paginated_opts, rel_sel) = paginate(self.page_size, &choices, self.cursor_index);
 
         for (idx, opt) in paginated_opts.iter().enumerate() {
             self.renderer.print_multi_option(
@@ -227,34 +310,12 @@ impl<'a> Question for MultiSelect<'a> {
             )?;
         }
 
-        self.renderer.print_help(
-            terminal,
-            self.help
-                .unwrap_or("↑↓ to move, space to select one, → to all, ← to none, type to filter"),
-        )?;
+        self.renderer.print_help(terminal, self.help_message)?;
 
         Ok(())
     }
 
-    fn cleanup(&mut self, answer: &Answer) -> Result<(), Box<dyn Error>> {
-        self.final_answer = Some(answer.to_string());
-
-        let mut terminal = Terminal::new()?;
-        terminal.cursor_hide()?;
-
-        self.render(&mut terminal)?;
-
-        terminal.cursor_show()?;
-        Ok(())
-    }
-
-    fn prompt(&mut self) -> Result<Answer, Box<dyn Error>> {
-        // TODO: improve state machine
-        if self.initialized {
-            bail!("Question was already prompted");
-        }
-        self.initialized = true;
-
+    fn prompt(mut self) -> Result<Answer, Box<dyn Error>> {
         let mut terminal = Terminal::new()?;
         terminal.cursor_hide()?;
 
@@ -270,8 +331,13 @@ impl<'a> Question for MultiSelect<'a> {
             }
         }
 
+        let answer = self.get_final_answer()?;
+        let transformed = (self.transformer)(&answer);
+
+        self.cleanup(&mut terminal, &transformed)?;
+
         terminal.cursor_show()?;
 
-        self.get_final_answer()
+        Ok(answer)
     }
 }

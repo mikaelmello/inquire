@@ -1,23 +1,23 @@
-pub struct PromptConfig {
-    pub page_size: usize,
-    pub help_input: String,
-    pub filter: fn(filter: &str, value: &str, index: usize) -> bool,
-    pub keep_filter: bool,
-    pub show_cursor: bool,
-}
+use crate::question::Answer;
 
-impl Default for PromptConfig {
-    fn default() -> Self {
-        Self {
-            page_size: 7,
-            help_input: String::from("?"),
-            filter: |filter: &str, value: &str, _| -> bool {
-                let filter = filter.to_lowercase();
+pub type Filter = fn(filter: &str, value: &str, index: usize) -> bool;
+pub type Transformer = fn(answer: &Answer) -> String;
 
-                value.to_lowercase().contains(&filter)
-            },
-            keep_filter: true,
-            show_cursor: false,
-        }
-    }
+pub const DEFAULT_PAGE_SIZE: usize = 7;
+pub const DEFAULT_VIM_MODE: bool = false;
+pub const DEFAULT_KEEP_FILTER: bool = true;
+pub const DEFAULT_FILTER: Filter = |filter: &str, value: &str, _| -> bool {
+    let filter = filter.to_lowercase();
+
+    value.to_lowercase().contains(&filter)
+};
+pub const DEFAULT_TRANSFORMER: Transformer = |answer: &Answer| -> String { answer.to_string() };
+
+#[derive(Copy, Clone, Default)]
+pub struct PromptConfig<'a> {
+    pub page_size: Option<usize>,
+    pub filter: Option<&'a Filter>,
+    pub transformer: Option<&'a Transformer>,
+    pub keep_filter: Option<bool>,
+    pub vim_mode: Option<bool>,
 }

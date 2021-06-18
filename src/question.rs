@@ -14,8 +14,7 @@ pub enum Answer {
 
 pub trait Question {
     fn render(&mut self, terminal: &mut Terminal) -> Result<(), std::io::Error>;
-    fn cleanup(&mut self, answer: &Answer) -> Result<(), Box<dyn Error>>;
-    fn prompt(&mut self) -> Result<Answer, Box<dyn Error>>;
+    fn prompt(self) -> Result<Answer, Box<dyn Error>>;
 }
 
 impl fmt::Display for Answer {
