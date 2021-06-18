@@ -8,20 +8,20 @@ extern crate survey_rs;
 fn main() {
     let options = vec![
         "Banana",
-        "Maçã",
-        "Morango",
-        "Uva",
-        "Limão",
-        "Mexerica",
-        "Melancia",
-        "Laranja",
-        "Pêra",
-        "Jabuticaba",
-        "Jaca",
+        "Apple",
+        "Strawberry",
+        "Grapes",
+        "Lemon",
+        "Tangerine",
+        "Watermelon",
+        "Orange",
+        "Pear",
+        "Avocado",
+        "Pineapple",
     ];
 
-    let default = vec![0, 1];
-    let ans = MultiSelectOptions::new("Quais frutas você vai comprar?", &options)
+    let default = vec![4, 5, 6];
+    let ans = MultiSelectOptions::new("Select the fruits for your shopping list:", &options)
         .map(|mso| mso.with_help_message("This is a custom help"))
         .map(|mso| mso.with_page_size(10))
         .and_then(|mso| mso.with_default(&default))

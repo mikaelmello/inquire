@@ -1,24 +1,31 @@
-use survey_rs::{question::Question, select::Select};
+use survey_rs::{
+    question::Question,
+    select::{Select, SelectOptions},
+};
 
 extern crate survey_rs;
 
 fn main() {
     let options = vec![
         "Banana",
-        "Maçã",
-        "Morango",
-        "Uva",
-        "Limão",
-        "Mexerica",
-        "Melancia",
-        "Laranja",
-        "Pêra",
-        "Jabuticaba",
-        "Jaca",
+        "Apple",
+        "Strawberry",
+        "Grapes",
+        "Lemon",
+        "Tangerine",
+        "Watermelon",
+        "Orange",
+        "Pear",
+        "Avocado",
+        "Pineapple",
     ];
-    let mut question = Select::new("Qual sua fruta preferida?", &options).unwrap();
 
-    let ans = question.prompt().unwrap();
+    let ans = SelectOptions::new("What's your favorite fruit?", &options)
+        .map(|so| so.with_page_size(10))
+        .and_then(|so| so.with_starting_cursor(1))
+        .map(Select::from)
+        .and_then(Select::prompt)
+        .expect("Failed when creating so");
 
-    question.cleanup(&ans).unwrap();
+    println!("Final answer was {}", ans);
 }

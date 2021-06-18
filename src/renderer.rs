@@ -24,6 +24,7 @@ impl<'a> Token<'a> {
         }
     }
 
+    #[allow(unused)]
     pub fn empty() -> Self {
         Self::new("")
     }
@@ -33,6 +34,7 @@ impl<'a> Token<'a> {
         self
     }
 
+    #[allow(unused)]
     pub fn with_bg<C: 'static + Color + Clone>(mut self, fg: C) -> Self {
         self.bg = Some(Box::new(fg.clone()));
         self
