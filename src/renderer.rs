@@ -43,51 +43,66 @@ impl<'a> Token<'a> {
         self
     }
 
-    pub fn print(&self, terminal: &mut Terminal) {
+    pub fn print(&self, terminal: &mut Terminal) -> Result<(), std::io::Error> {
         if self.content.is_empty() {
-            return;
+            return Ok(());
         }
 
         if let Some(color) = self.fg.as_ref() {
-            terminal.set_fg_color(color.as_ref());
+            terminal.set_fg_color(color.as_ref())?;
         }
         if let Some(color) = self.bg.as_ref() {
-            terminal.set_bg_color(color.as_ref());
+            terminal.set_bg_color(color.as_ref())?;
         }
         if let Some(style) = &self.style {
-            terminal.set_style(style.clone());
+            terminal.set_style(style.clone())?;
         }
 
-        print!("{}", self.content);
+        terminal.write(self.content)?;
 
         if let Some(_) = self.fg.as_ref() {
-            terminal.undo_fg_color();
+            terminal.undo_fg_color()?;
         }
         if let Some(_) = self.bg.as_ref() {
-            terminal.undo_bg_color();
+            terminal.undo_bg_color()?;
         }
         if let Some(_) = &self.style {
-            terminal.undo_style();
+            terminal.undo_style()?;
         }
+
+        Ok(())
     }
 }
 
 impl Renderer {
-    pub fn reset_prompt(&mut self, terminal: &Terminal) {
+    pub fn reset_prompt(&mut self, terminal: &mut Terminal) -> Result<(), std::io::Error> {
         for _ in 0..self.cur_line {
-            terminal.cursor_up();
-            terminal.cursor_horizontal_reset();
-            terminal.clear_current_line();
+            terminal.cursor_up()?;
+            terminal.cursor_horizontal_reset()?;
+            terminal.clear_current_line()?;
         }
 
         self.cur_line = 0;
+        Ok(())
     }
 
-    pub fn print_tokens(&mut self, terminal: &mut Terminal, tokens: &[Token]) {
-        tokens.iter().for_each(|t| t.print(terminal));
+    pub fn print_tokens(
+        &mut self,
+        terminal: &mut Terminal,
+        tokens: &[Token],
+    ) -> Result<(), std::io::Error> {
+        for t in tokens {
+            t.print(terminal)?;
+        }
+        Ok(())
     }
 
-    pub fn print_prompt_answer(&mut self, terminal: &mut Terminal, prompt: &str, answer: &str) {
+    pub fn print_prompt_answer(
+        &mut self,
+        terminal: &mut Terminal,
+        prompt: &str,
+        answer: &str,
+    ) -> Result<(), std::io::Error> {
         self.print_tokens(
             terminal,
             &vec![
@@ -95,11 +110,18 @@ impl Renderer {
                 Token::new(prompt),
                 Token::new(&format!(" {}", answer)).with_fg(color::Cyan),
             ],
-        );
-        self.new_line();
+        )?;
+        self.new_line(terminal)?;
+
+        Ok(())
     }
 
-    pub fn print_prompt_filter(&mut self, terminal: &mut Terminal, prompt: &str, filter: &str) {
+    pub fn print_prompt_filter(
+        &mut self,
+        terminal: &mut Terminal,
+        prompt: &str,
+        filter: &str,
+    ) -> Result<(), std::io::Error> {
         self.print_tokens(
             terminal,
             &vec![
@@ -107,34 +129,55 @@ impl Renderer {
                 Token::new(prompt),
                 Token::new(&format!(" {}", filter)).with_style(Style::Bold),
             ],
-        );
-        self.new_line();
+        )?;
+        self.new_line(terminal)?;
+
+        Ok(())
     }
 
-    pub fn print_prompt(&mut self, terminal: &mut Terminal, prompt: &str) {
+    pub fn print_prompt(
+        &mut self,
+        terminal: &mut Terminal,
+        prompt: &str,
+    ) -> Result<(), std::io::Error> {
         self.print_tokens(
             terminal,
             &vec![Token::new("? ").with_fg(color::Green), Token::new(prompt)],
-        );
-        self.new_line();
+        )?;
+        self.new_line(terminal)?;
+
+        Ok(())
     }
 
-    pub fn print_help(&mut self, terminal: &mut Terminal, message: &str) {
+    pub fn print_help(
+        &mut self,
+        terminal: &mut Terminal,
+        message: &str,
+    ) -> Result<(), std::io::Error> {
         Token::new(&format!("[{}]", message))
             .with_fg(color::Cyan)
-            .print(terminal);
-        self.new_line();
+            .print(terminal)?;
+        self.new_line(terminal)?;
+
+        Ok(())
     }
 
-    pub fn print_option(&mut self, terminal: &mut Terminal, cursor: bool, content: &str) {
+    pub fn print_option(
+        &mut self,
+        terminal: &mut Terminal,
+        cursor: bool,
+        content: &str,
+    ) -> Result<(), std::io::Error> {
         match cursor {
             true => Token::new(&format!("> {}", content))
                 .with_fg(color::Cyan)
                 .print(terminal),
             false => Token::new(&format!("  {}", content)).print(terminal),
-        };
+        }?;
 
-        self.new_line();
+        self.new_line(terminal)?;
+
+        Ok(())
     }
 
     pub fn print_multi_option(
@@ -143,7 +186,7 @@ impl Renderer {
         cursor: bool,
         checked: bool,
         content: &str,
-    ) {
+    ) -> Result<(), std::io::Error> {
         self.print_tokens(
             terminal,
             &vec![
@@ -157,13 +200,17 @@ impl Renderer {
                 },
                 Token::new(content),
             ],
-        );
+        )?;
 
-        self.new_line();
+        self.new_line(terminal)?;
+
+        Ok(())
     }
 
-    fn new_line(&mut self) {
-        print!("\n\r");
+    fn new_line(&mut self, terminal: &mut Terminal) -> Result<(), std::io::Error> {
+        terminal.write("\n\r")?;
         self.cur_line = self.cur_line.saturating_add(1);
+
+        Ok(())
     }
 }

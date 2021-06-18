@@ -1,6 +1,6 @@
 use std::{
     fmt::Display,
-    io::{self, stdout, Write},
+    io::{stdin, stdout, BufRead, Error, Read, Write},
 };
 
 use termion::{
@@ -8,10 +8,8 @@ use termion::{
     cursor,
     event::Key,
     input::TermRead,
-    raw::{IntoRawMode, RawTerminal},
+    raw::IntoRawMode,
 };
-
-use crate::terminal;
 
 #[derive(Default, Clone, Copy, PartialEq)]
 pub struct Size {
@@ -21,7 +19,8 @@ pub struct Size {
 
 pub struct Terminal {
     size: Size,
-    _stdout: RawTerminal<std::io::Stdout>,
+    reader: Box<dyn Read>,
+    writer: Box<dyn Write>,
     applied_fgs: Vec<String>,
     applied_bgs: Vec<String>,
     applied_styles: Vec<Style>,
@@ -44,11 +43,22 @@ impl Terminal {
                 width: size.0,
                 height: size.1.saturating_sub(2),
             },
-            _stdout: stdout().into_raw_mode()?,
+            reader: Box::new(stdin()),
+            writer: Box::new(stdout().into_raw_mode()?),
             applied_bgs: vec![],
             applied_fgs: vec![],
             applied_styles: vec![],
         })
+    }
+
+    pub fn with_writer<W: 'static + Write>(mut self, writer: W) -> Self {
+        self.writer = Box::new(writer);
+        self
+    }
+
+    pub fn with_reader<W: 'static + BufRead>(mut self, reader: W) -> Self {
+        self.reader = Box::new(reader);
+        self
     }
 
     #[must_use]
@@ -56,118 +66,120 @@ impl Terminal {
         self.size
     }
 
-    #[allow(clippy::cast_possible_truncation)]
-    pub fn cursor_position(&self, x: u16, y: u16) {
-        let x = x.saturating_add(1) as u16;
-        let y = y.saturating_add(1) as u16;
-        print!("{}", termion::cursor::Goto(x, y));
+    pub fn cursor_up(&mut self) -> Result<(), Error> {
+        write!(self.writer, "{}", cursor::Up(1))
     }
 
-    pub fn cursor_up(&self) {
-        print!("{}", cursor::Up(1));
-    }
-
-    pub fn cursor_horizontal_reset(&self) {
-        print!("\r");
+    pub fn cursor_horizontal_reset(&mut self) -> Result<(), Error> {
+        write!(self.writer, "\r")
     }
 
     /// # Errors
     ///
     /// Will return error when call to stdout().flush() fails
-    pub fn flush(&self) -> Result<(), std::io::Error> {
-        io::stdout().flush()
+    pub fn flush(&mut self) -> Result<(), std::io::Error> {
+        self.writer.flush()
     }
 
     /// # Errors
     ///
     /// Will never return Error for now
-    pub fn read_key(&self) -> Result<Key, std::io::Error> {
+    pub fn read_key(&mut self) -> Result<Key, std::io::Error> {
         loop {
-            if let Some(key) = io::stdin().lock().keys().next() {
+            if let Some(key) = (*self.reader).keys().next() {
                 return key;
             }
         }
     }
 
-    pub fn cursor_hide(&self) {
-        print!("{}", termion::cursor::Hide);
+    pub fn write(&mut self, val: &str) -> Result<(), std::io::Error> {
+        write!(self.writer, "{}", val)
     }
 
-    pub fn cursor_show(&self) {
-        print!("{}", termion::cursor::Show);
+    pub fn cursor_hide(&mut self) -> Result<(), std::io::Error> {
+        write!(self.writer, "{}", termion::cursor::Hide)
     }
 
-    pub fn clear_current_line(&self) {
-        print!("{}", termion::clear::CurrentLine);
+    pub fn cursor_show(&mut self) -> Result<(), std::io::Error> {
+        write!(self.writer, "{}", termion::cursor::Show)
     }
 
-    pub fn set_style(&mut self, style: Style) {
+    pub fn clear_current_line(&mut self) -> Result<(), std::io::Error> {
+        write!(self.writer, "{}", termion::clear::CurrentLine)
+    }
+
+    pub fn set_style(&mut self, style: Style) -> Result<(), std::io::Error> {
         self.applied_styles.push(style);
         let style: Box<dyn Display> = match style {
             Style::Bold => Box::new(termion::style::Bold),
             Style::Italic => Box::new(termion::style::Italic),
         };
 
-        print!("{}", style);
+        write!(self.writer, "{}", style)
     }
 
-    pub fn undo_style(&mut self) {
-        if let Some(st) = self.applied_styles.pop() {
-            match st {
-                Style::Bold => print!("{}", termion::style::NoBold),
-                Style::Italic => print!("{}", termion::style::NoItalic),
-            }
+    pub fn undo_style(&mut self) -> Result<(), std::io::Error> {
+        match self.applied_styles.pop() {
+            Some(st) => match st {
+                Style::Bold => write!(self.writer, "{}", termion::style::NoBold),
+                Style::Italic => write!(self.writer, "{}", termion::style::NoItalic),
+            },
+            None => Ok(()),
         }
     }
 
-    pub fn reset_style(&mut self) {
+    pub fn reset_style(&mut self) -> Result<(), std::io::Error> {
         self.applied_styles.clear();
-        print!("{}", termion::style::Reset);
+        write!(self.writer, "{}", termion::style::Reset)
     }
 
-    pub fn set_bg_color<C: Color>(&mut self, color: C) {
+    pub fn set_bg_color<C: Color>(&mut self, color: C) -> Result<(), std::io::Error> {
         let fmt = format!("{}", color::Bg(color));
-        print!("{}", fmt);
+        let res = write!(self.writer, "{}", fmt);
         self.applied_bgs.push(fmt);
+
+        res
     }
 
-    pub fn undo_bg_color(&mut self) {
+    pub fn undo_bg_color(&mut self) -> Result<(), std::io::Error> {
         self.applied_bgs.pop();
 
         match self.applied_bgs.last() {
-            Some(bg) => print!("{}", bg),
-            None => print!("{}", color::Bg(color::Reset)),
+            Some(bg) => write!(self.writer, "{}", bg),
+            None => write!(self.writer, "{}", color::Bg(color::Reset)),
         }
     }
 
-    pub fn reset_bg_color(&mut self) {
+    pub fn reset_bg_color(&mut self) -> Result<(), std::io::Error> {
         self.applied_bgs.clear();
-        print!("{}", color::Bg(color::Reset));
+        write!(self.writer, "{}", color::Bg(color::Reset))
     }
 
-    pub fn set_fg_color<C: Color>(&mut self, color: C) {
+    pub fn set_fg_color<C: Color>(&mut self, color: C) -> Result<(), std::io::Error> {
         let fmt = format!("{}", color::Fg(color));
-        print!("{}", fmt);
+        let res = write!(self.writer, "{}", fmt);
         self.applied_fgs.push(fmt);
+
+        res
     }
 
-    pub fn undo_fg_color(&mut self) {
+    pub fn undo_fg_color(&mut self) -> Result<(), std::io::Error> {
         self.applied_fgs.pop();
 
         match self.applied_fgs.last() {
-            Some(fg) => print!("{}", fg),
-            None => print!("{}", color::Fg(color::Reset)),
+            Some(fg) => write!(self.writer, "{}", fg),
+            None => write!(self.writer, "{}", color::Fg(color::Reset)),
         }
     }
 
-    pub fn reset_fg_color(&mut self) {
+    pub fn reset_fg_color(&mut self) -> Result<(), std::io::Error> {
         self.applied_fgs.clear();
-        print!("{}", color::Fg(color::Reset));
+        write!(self.writer, "{}", color::Fg(color::Reset))
     }
 }
 
 impl Drop for Terminal {
     fn drop(&mut self) {
-        self.cursor_show()
+        let _ = self.cursor_show();
     }
 }

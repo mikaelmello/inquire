@@ -190,21 +190,22 @@ impl<'a> MultiSelect<'a> {
 }
 
 impl<'a> Question for MultiSelect<'a> {
-    fn render(&mut self, terminal: &mut Terminal) {
+    fn render(&mut self, terminal: &mut Terminal) -> Result<(), std::io::Error> {
         let prompt = &self.message;
 
-        self.renderer.reset_prompt(terminal);
+        self.renderer.reset_prompt(terminal)?;
 
         if let Some(final_answer) = &self.final_answer {
             self.renderer
-                .print_prompt_answer(terminal, &prompt, &final_answer);
-            return;
+                .print_prompt_answer(terminal, &prompt, &final_answer)?;
+            return Ok(());
         }
 
         if let Some(filter) = &self.filter_value {
-            self.renderer.print_prompt_filter(terminal, &prompt, filter);
+            self.renderer
+                .print_prompt_filter(terminal, &prompt, filter)?;
         } else {
-            self.renderer.print_prompt(terminal, &prompt);
+            self.renderer.print_prompt(terminal, &prompt)?;
         }
 
         let choices = self
@@ -223,25 +224,27 @@ impl<'a> Question for MultiSelect<'a> {
                 rel_sel == idx,
                 self.checked.contains(&opt.index),
                 &opt.value,
-            );
+            )?;
         }
 
         self.renderer.print_help(
             terminal,
             self.help
                 .unwrap_or("↑↓ to move, space to select one, → to all, ← to none, type to filter"),
-        );
+        )?;
+
+        Ok(())
     }
 
     fn cleanup(&mut self, answer: &Answer) -> Result<(), Box<dyn Error>> {
         self.final_answer = Some(answer.to_string());
 
         let mut terminal = Terminal::new()?;
-        terminal.cursor_hide();
+        terminal.cursor_hide()?;
 
-        self.render(&mut terminal);
+        self.render(&mut terminal)?;
 
-        terminal.cursor_show();
+        terminal.cursor_show()?;
         Ok(())
     }
 
@@ -253,10 +256,10 @@ impl<'a> Question for MultiSelect<'a> {
         self.initialized = true;
 
         let mut terminal = Terminal::new()?;
-        terminal.cursor_hide();
+        terminal.cursor_hide()?;
 
         loop {
-            self.render(&mut terminal);
+            self.render(&mut terminal)?;
 
             let key = terminal.read_key()?;
 
@@ -267,7 +270,7 @@ impl<'a> Question for MultiSelect<'a> {
             }
         }
 
-        terminal.cursor_show();
+        terminal.cursor_show()?;
 
         self.get_final_answer()
     }
