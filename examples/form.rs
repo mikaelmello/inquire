@@ -1,4 +1,6 @@
-use survey_rs::{ask::AskMany, multiselect::MultiSelectOptions, select::SelectOptions};
+use survey_rs::{
+    ask::AskMany, input::InputOptions, multiselect::MultiSelectOptions, select::SelectOptions,
+};
 
 extern crate survey_rs;
 
@@ -29,6 +31,9 @@ fn main() {
     ];
 
     let questions = vec![
+        InputOptions::new("What's your name?")
+            .with_help_message("Don't worry, this will not be sold to third-party advertisers.")
+            .into(),
         SelectOptions::new("What's your favorite fruit?", &fruits)
             .unwrap()
             .into(),

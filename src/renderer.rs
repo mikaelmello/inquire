@@ -118,7 +118,7 @@ impl Renderer {
         Ok(())
     }
 
-    pub fn print_prompt_filter(
+    pub fn print_prompt_with_content(
         &mut self,
         terminal: &mut Terminal,
         prompt: &str,

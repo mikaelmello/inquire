@@ -98,6 +98,9 @@ impl<'a> QuestionOptions<'a> for SelectOptions<'a> {
         if let Some(transformer) = global_config.transformer {
             self.transformer = transformer;
         }
+        if let Some(help_message) = global_config.help_message {
+            self.help_message = help_message;
+        }
 
         self
     }
@@ -221,7 +224,7 @@ impl<'a> Prompt for Select<'a> {
 
         if let Some(filter) = &self.filter_value {
             self.renderer
-                .print_prompt_filter(terminal, &prompt, filter)?;
+                .print_prompt_with_content(terminal, &prompt, filter)?;
         } else {
             self.renderer.print_prompt(terminal, &prompt)?;
         }

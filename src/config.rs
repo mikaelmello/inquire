@@ -19,6 +19,7 @@ pub struct PromptConfig<'a> {
     pub page_size: Option<usize>,
     pub filter: Option<&'a Filter>,
     pub transformer: Option<&'a Transformer>,
+    pub help_message: Option<&'a str>,
     pub keep_filter: Option<bool>,
     pub vim_mode: Option<bool>,
 }

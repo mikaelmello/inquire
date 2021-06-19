@@ -3,6 +3,7 @@ extern crate simple_error;
 
 pub mod ask;
 pub mod config;
+pub mod input;
 pub mod multiselect;
 pub mod question;
 mod renderer;
