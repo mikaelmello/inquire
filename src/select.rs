@@ -11,8 +11,9 @@ use crate::{
     },
     question::{Answer, Question},
     renderer::Renderer,
-    survey::{paginate, OptionAnswer},
+    survey::OptionAnswer,
     terminal::Terminal,
+    utils::paginate,
 };
 const DEFAULT_STARTING_SELECTION: usize = 0;
 const DEFAULT_HELP_MESSAGE: &str = "↑↓ to move, space or enter to select, type to filter";

@@ -8,6 +8,7 @@ mod renderer;
 pub mod select;
 mod survey;
 mod terminal;
+mod utils;
 
 #[cfg(test)]
 mod tests {

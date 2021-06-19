@@ -10,8 +10,9 @@ use crate::{
     },
     question::{Answer, Question},
     renderer::Renderer,
-    survey::{paginate, OptionAnswer},
+    survey::OptionAnswer,
     terminal::Terminal,
+    utils::paginate,
 };
 
 const DEFAULT_STARTING_SELECTION: usize = 0;
