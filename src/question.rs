@@ -3,8 +3,6 @@ use std::fmt;
 
 use crate::{survey::OptionAnswer, terminal::Terminal};
 
-pub enum AskOptions {}
-
 #[derive(Debug)]
 pub enum Answer {
     Simple(String),
@@ -12,7 +10,7 @@ pub enum Answer {
     MultipleOptions(Vec<OptionAnswer>),
 }
 
-pub trait Question {
+pub(in crate) trait Prompt {
     fn render(&mut self, terminal: &mut Terminal) -> Result<(), std::io::Error>;
     fn prompt(self) -> Result<Answer, Box<dyn Error>>;
 }

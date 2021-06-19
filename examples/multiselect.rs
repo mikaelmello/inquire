@@ -1,7 +1,4 @@
-use survey_rs::{
-    multiselect::{MultiSelect, MultiSelectOptions},
-    question::Question,
-};
+use survey_rs::{ask::Question, multiselect::MultiSelectOptions};
 
 extern crate survey_rs;
 
@@ -26,8 +23,8 @@ fn main() {
         .map(|mso| mso.with_page_size(10))
         .and_then(|mso| mso.with_default(&default))
         .and_then(|mso| mso.with_starting_cursor(1))
-        .map(MultiSelect::from)
-        .and_then(MultiSelect::prompt)
+        .map(Question::MultiSelect)
+        .and_then(Question::ask)
         .expect("Failed when creating mso");
 
     println!("Final answer was {}", ans);

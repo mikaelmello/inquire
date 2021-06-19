@@ -4,11 +4,12 @@ use unicode_segmentation::UnicodeSegmentation;
 use termion::event::Key;
 
 use crate::{
+    ask::QuestionOptions,
     config::{
         Filter, PromptConfig, Transformer, DEFAULT_FILTER, DEFAULT_KEEP_FILTER, DEFAULT_PAGE_SIZE,
         DEFAULT_TRANSFORMER, DEFAULT_VIM_MODE,
     },
-    question::{Answer, Question},
+    question::{Answer, Prompt},
     renderer::Renderer,
     survey::OptionAnswer,
     terminal::Terminal,
@@ -102,8 +103,10 @@ impl<'a> MultiSelectOptions<'a> {
         self.starting_selection = starting_cursor;
         Ok(self)
     }
+}
 
-    pub fn with_config(mut self, global_config: &'a PromptConfig) -> Self {
+impl<'a> QuestionOptions<'a> for MultiSelectOptions<'a> {
+    fn with_config(mut self, global_config: &'a PromptConfig) -> Self {
         if let Some(page_size) = global_config.page_size {
             self.page_size = page_size;
         }
@@ -124,7 +127,7 @@ impl<'a> MultiSelectOptions<'a> {
     }
 }
 
-pub struct MultiSelect<'a> {
+pub(in crate) struct MultiSelect<'a> {
     message: &'a str,
     options: &'a [&'a str],
     help_message: &'a str,
@@ -280,7 +283,7 @@ impl<'a> MultiSelect<'a> {
     }
 }
 
-impl<'a> Question for MultiSelect<'a> {
+impl<'a> Prompt for MultiSelect<'a> {
     fn render(&mut self, terminal: &mut Terminal) -> Result<(), std::io::Error> {
         let prompt = &self.message;
 

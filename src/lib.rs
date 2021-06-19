@@ -1,12 +1,13 @@
 #[macro_use]
 extern crate simple_error;
 
-mod config;
+pub mod ask;
+pub mod config;
 pub mod multiselect;
 pub mod question;
 mod renderer;
 pub mod select;
-mod survey;
+pub mod survey;
 mod terminal;
 mod utils;
 

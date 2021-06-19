@@ -1,6 +1,6 @@
-use crate::survey::OptionAnswer;
-
 // sorry for this file
+
+use crate::survey::OptionAnswer;
 
 pub fn paginate(
     page_size: usize,

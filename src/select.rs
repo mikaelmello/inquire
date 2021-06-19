@@ -5,11 +5,12 @@ use unicode_segmentation::UnicodeSegmentation;
 use termion::event::Key;
 
 use crate::{
+    ask::QuestionOptions,
     config::{
         Filter, PromptConfig, Transformer, DEFAULT_FILTER, DEFAULT_PAGE_SIZE, DEFAULT_TRANSFORMER,
         DEFAULT_VIM_MODE,
     },
-    question::{Answer, Question},
+    question::{Answer, Prompt},
     renderer::Renderer,
     survey::OptionAnswer,
     terminal::Terminal,
@@ -81,8 +82,10 @@ impl<'a> SelectOptions<'a> {
         self.starting_selection = starting_cursor;
         Ok(self)
     }
+}
 
-    pub fn with_config(mut self, global_config: &'a PromptConfig) -> Self {
+impl<'a> QuestionOptions<'a> for SelectOptions<'a> {
+    fn with_config(mut self, global_config: &'a PromptConfig) -> Self {
         if let Some(page_size) = global_config.page_size {
             self.page_size = page_size;
         }
@@ -100,7 +103,7 @@ impl<'a> SelectOptions<'a> {
     }
 }
 
-pub struct Select<'a> {
+pub(in crate) struct Select<'a> {
     message: &'a str,
     options: &'a [&'a str],
     help_message: &'a str,
@@ -210,7 +213,7 @@ impl<'a> Select<'a> {
     }
 }
 
-impl<'a> Question for Select<'a> {
+impl<'a> Prompt for Select<'a> {
     fn render(&mut self, terminal: &mut Terminal) -> Result<(), std::io::Error> {
         let prompt = &self.message;
 
