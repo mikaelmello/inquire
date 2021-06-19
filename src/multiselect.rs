@@ -316,6 +316,8 @@ impl<'a> Prompt for MultiSelect<'a> {
 
         self.renderer.print_help(terminal, self.help_message)?;
 
+        terminal.flush()?;
+
         Ok(())
     }
 

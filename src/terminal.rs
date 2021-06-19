@@ -71,7 +71,7 @@ impl Terminal {
     }
 
     pub fn cursor_horizontal_reset(&mut self) -> Result<(), Error> {
-        write!(self.writer, "\r")
+        write!(self.writer, "\x1b[0G")
     }
 
     /// # Errors

@@ -210,7 +210,8 @@ impl Renderer {
     }
 
     fn new_line(&mut self, terminal: &mut Terminal) -> Result<(), std::io::Error> {
-        terminal.write("\n\r")?;
+        terminal.cursor_horizontal_reset()?;
+        terminal.write("\n")?;
         self.cur_line = self.cur_line.saturating_add(1);
 
         Ok(())

@@ -242,6 +242,8 @@ impl<'a> Prompt for Select<'a> {
 
         self.renderer.print_help(terminal, self.help_message)?;
 
+        terminal.flush()?;
+
         Ok(())
     }
 
