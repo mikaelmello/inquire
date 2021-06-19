@@ -16,6 +16,36 @@ pub(in crate) trait Prompt {
     fn prompt(self) -> Result<Answer, Box<dyn Error>>;
 }
 
+impl Answer {
+    pub fn get_confirm(&self) -> Option<bool> {
+        match self {
+            Self::Confirm(val) => Some(*val),
+            _ => None,
+        }
+    }
+
+    pub fn get_content(&self) -> Option<&str> {
+        match self {
+            Self::Content(val) => Some(val),
+            _ => None,
+        }
+    }
+
+    pub fn get_option(&self) -> Option<&OptionAnswer> {
+        match self {
+            Self::Option(val) => Some(val),
+            _ => None,
+        }
+    }
+
+    pub fn get_multiple_options(&self) -> Option<&[OptionAnswer]> {
+        match self {
+            Self::MultipleOptions(val) => Some(val),
+            _ => None,
+        }
+    }
+}
+
 impl fmt::Display for Answer {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
