@@ -292,12 +292,8 @@ impl<'a> Prompt for MultiSelect<'a> {
 
         self.renderer.reset_prompt(terminal)?;
 
-        if let Some(filter) = &self.filter_value {
-            self.renderer
-                .print_prompt_with_content(terminal, &prompt, filter)?;
-        } else {
-            self.renderer.print_prompt(terminal, &prompt)?;
-        }
+        self.renderer
+            .print_prompt(terminal, &prompt, None, self.filter_value.as_deref())?;
 
         let choices = self
             .filtered_options

@@ -5,7 +5,8 @@ use crate::{survey::OptionAnswer, terminal::Terminal};
 
 #[derive(Debug)]
 pub enum Answer {
-    Simple(String),
+    Confirm(bool),
+    Content(String),
     Option(OptionAnswer),
     MultipleOptions(Vec<OptionAnswer>),
 }
@@ -18,7 +19,15 @@ pub(in crate) trait Prompt {
 impl fmt::Display for Answer {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Self::Simple(val) => write!(f, "{}", val),
+            Self::Confirm(val) => write!(
+                f,
+                "{}",
+                match val {
+                    true => "Yes",
+                    false => "No",
+                }
+            ),
+            Self::Content(val) => write!(f, "{}", val),
             Self::Option(option) => write!(f, "{}", option.value),
             Self::MultipleOptions(options) => write!(
                 f,

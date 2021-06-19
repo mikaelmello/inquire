@@ -99,6 +99,20 @@ impl Renderer {
         Ok(())
     }
 
+    pub fn print_error_message(
+        &mut self,
+        terminal: &mut Terminal,
+        message: &str,
+    ) -> Result<(), std::io::Error> {
+        Token::new(&format!("✖ {}", message))
+            .with_fg(color::Red)
+            .print(terminal)?;
+
+        self.new_line(terminal)?;
+
+        Ok(())
+    }
+
     pub fn print_prompt_answer(
         &mut self,
         terminal: &mut Terminal,
@@ -118,34 +132,26 @@ impl Renderer {
         Ok(())
     }
 
-    pub fn print_prompt_with_content(
-        &mut self,
-        terminal: &mut Terminal,
-        prompt: &str,
-        filter: &str,
-    ) -> Result<(), std::io::Error> {
-        self.print_tokens(
-            terminal,
-            &vec![
-                Token::new("? ").with_fg(color::Green),
-                Token::new(prompt),
-                Token::new(&format!(" {}", filter)).with_style(Style::Bold),
-            ],
-        )?;
-        self.new_line(terminal)?;
-
-        Ok(())
-    }
-
     pub fn print_prompt(
         &mut self,
         terminal: &mut Terminal,
         prompt: &str,
+        default: Option<&str>,
+        content: Option<&str>,
     ) -> Result<(), std::io::Error> {
-        self.print_tokens(
-            terminal,
-            &vec![Token::new("? ").with_fg(color::Green), Token::new(prompt)],
-        )?;
+        Token::new("? ").with_fg(color::Green).print(terminal)?;
+        Token::new(prompt).print(terminal)?;
+
+        if let Some(default) = default {
+            Token::new(&format!(" ({})", default)).print(terminal)?;
+        }
+
+        if let Some(content) = content {
+            Token::new(&format!(" {}", content))
+                .with_style(Style::Bold)
+                .print(terminal)?;
+        }
+
         self.new_line(terminal)?;
 
         Ok(())

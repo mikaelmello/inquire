@@ -1,8 +1,11 @@
 #[macro_use]
 extern crate simple_error;
 
+extern crate regex;
+
 pub mod ask;
 pub mod config;
+pub mod confirm;
 pub mod input;
 pub mod multiselect;
 pub mod question;

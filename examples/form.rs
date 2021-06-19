@@ -1,5 +1,6 @@
 use survey_rs::{
-    ask::AskMany, input::InputOptions, multiselect::MultiSelectOptions, select::SelectOptions,
+    ask::AskMany, confirm::ConfirmOptions, input::InputOptions, multiselect::MultiSelectOptions,
+    select::SelectOptions,
 };
 
 extern crate survey_rs;
@@ -31,11 +32,14 @@ fn main() {
     ];
 
     let questions = vec![
-        InputOptions::new("What's your name?")
+        InputOptions::new("Where do you work?")
             .with_help_message("Don't worry, this will not be sold to third-party advertisers.")
             .into(),
         SelectOptions::new("What's your favorite fruit?", &fruits)
             .unwrap()
+            .into(),
+        ConfirmOptions::new("Do you eat pizza?")
+            .with_default(true)
             .into(),
         MultiSelectOptions::new("Which languages do you use at work?", &languages)
             .unwrap()

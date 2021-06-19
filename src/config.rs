@@ -18,6 +18,7 @@ pub(in crate) const DEFAULT_TRANSFORMER: Transformer =
 pub struct PromptConfig<'a> {
     pub page_size: Option<usize>,
     pub filter: Option<&'a Filter>,
+    pub confirm_default: Option<bool>,
     pub transformer: Option<&'a Transformer>,
     pub help_message: Option<&'a str>,
     pub keep_filter: Option<bool>,

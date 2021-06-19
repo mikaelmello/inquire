@@ -1,6 +1,8 @@
 use std::error::Error;
 
 use crate::config::PromptConfig;
+use crate::confirm::Confirm;
+use crate::confirm::ConfirmOptions;
 use crate::input::Input;
 use crate::input::InputOptions;
 use crate::multiselect::MultiSelect;
@@ -14,6 +16,7 @@ pub enum Question<'a> {
     MultiSelect(MultiSelectOptions<'a>),
     Select(SelectOptions<'a>),
     Input(InputOptions<'a>),
+    Confirm(ConfirmOptions<'a>),
 }
 
 pub trait QuestionOptions<'a> {
@@ -30,6 +33,7 @@ impl<'a> Question<'a> {
             Question::MultiSelect(options) => MultiSelect::from(options).prompt(),
             Question::Select(options) => Select::from(options).prompt(),
             Question::Input(options) => Input::from(options).prompt(),
+            Question::Confirm(options) => Confirm::from(options).prompt(),
         }
     }
 
@@ -41,6 +45,7 @@ impl<'a> Question<'a> {
             Self::MultiSelect(opt) => Self::MultiSelect(opt.with_config(global_config)),
             Self::Select(opt) => Self::Select(opt.with_config(global_config)),
             Self::Input(opt) => Self::Input(opt.with_config(global_config)),
+            Self::Confirm(opt) => Self::Confirm(opt.with_config(global_config)),
         };
 
         questions.into_iter().map(with_global).collect()
@@ -71,5 +76,11 @@ impl<'a> From<SelectOptions<'a>> for Question<'a> {
 impl<'a> From<InputOptions<'a>> for Question<'a> {
     fn from(opt: InputOptions<'a>) -> Self {
         Self::Input(opt)
+    }
+}
+
+impl<'a> From<ConfirmOptions<'a>> for Question<'a> {
+    fn from(opt: ConfirmOptions<'a>) -> Self {
+        Self::Confirm(opt)
     }
 }
