@@ -18,6 +18,7 @@ pub struct Size {
 }
 
 pub struct Terminal {
+    #[allow(unused)]
     size: Size,
     reader: Box<dyn Read>,
     writer: Box<dyn Write>,
@@ -29,6 +30,7 @@ pub struct Terminal {
 #[derive(Copy, Clone)]
 pub enum Style {
     Bold,
+    #[allow(unused)]
     Italic,
 }
 
@@ -51,17 +53,20 @@ impl Terminal {
         })
     }
 
+    #[allow(unused)]
     pub fn with_writer<W: 'static + Write>(mut self, writer: W) -> Self {
         self.writer = Box::new(writer);
         self
     }
 
+    #[allow(unused)]
     pub fn with_reader<W: 'static + BufRead>(mut self, reader: W) -> Self {
         self.reader = Box::new(reader);
         self
     }
 
     #[must_use]
+    #[allow(unused)]
     pub fn size(&self) -> Size {
         self.size
     }
@@ -128,6 +133,7 @@ impl Terminal {
         }
     }
 
+    #[allow(unused)]
     pub fn reset_style(&mut self) -> Result<(), std::io::Error> {
         self.applied_styles.clear();
         write!(self.writer, "{}", termion::style::Reset)
@@ -150,6 +156,7 @@ impl Terminal {
         }
     }
 
+    #[allow(unused)]
     pub fn reset_bg_color(&mut self) -> Result<(), std::io::Error> {
         self.applied_bgs.clear();
         write!(self.writer, "{}", color::Bg(color::Reset))
@@ -172,6 +179,7 @@ impl Terminal {
         }
     }
 
+    #[allow(unused)]
     pub fn reset_fg_color(&mut self) -> Result<(), std::io::Error> {
         self.applied_fgs.clear();
         write!(self.writer, "{}", color::Fg(color::Reset))

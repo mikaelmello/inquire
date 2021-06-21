@@ -1,7 +1,6 @@
 use survey_rs::{
-    ask::{AskMany, Question, QuestionOptions},
+    ask::{AskMany, QuestionOptions},
     input::InputOptions,
-    question::Answer,
 };
 
 extern crate survey_rs;
