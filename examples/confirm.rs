@@ -11,5 +11,11 @@ fn main() {
     .ask()
     .unwrap();
 
-    println!("Final answer was {}", ans);
+    println!("Your answer: {}", ans);
+
+    let ans = Question::Confirm("Do you want to move to another country?".into())
+        .ask()
+        .unwrap();
+
+    println!("Your answer: {}", ans);
 }

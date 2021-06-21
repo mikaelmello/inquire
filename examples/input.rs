@@ -1,14 +1,27 @@
-use survey_rs::{ask::Question, input::InputOptions};
+use survey_rs::{
+    ask::{AskMany, Question, QuestionOptions},
+    input::InputOptions,
+    question::Answer,
+};
 
 extern crate survey_rs;
 
 fn main() {
-    let ans = Question::Input(
+    let answers = vec![
         InputOptions::new("What's your name?")
-            .with_help_message("This data is stored for good reasons"),
-    )
+            .with_help_message("This data is stored for good reasons")
+            .into_question(),
+        InputOptions::new("What's your location?")
+            .with_help_message("This data is stored for good reasons")
+            .into_question(),
+    ]
+    .into_iter()
     .ask()
-    .expect("Could not ask your name");
+    .unwrap();
 
-    println!("Final answer was {}", ans);
+    println!(
+        "Hello {} from {}",
+        answers[0].get_content(),
+        answers[1].get_content(),
+    );
 }
