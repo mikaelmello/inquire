@@ -3,7 +3,7 @@ use std::fmt;
 
 use crate::{survey::OptionAnswer, terminal::Terminal};
 
-#[derive(Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Answer {
     Confirm(bool),
     Content(String),
@@ -17,31 +17,59 @@ pub(in crate) trait Prompt {
 }
 
 impl Answer {
-    pub fn get_confirm(&self) -> Option<bool> {
+    pub fn get_confirm(&self) -> bool {
         match self {
-            Self::Confirm(val) => Some(*val),
-            _ => None,
+            Self::Confirm(val) => *val,
+            _ => panic!("Invalid answer variant"),
         }
     }
 
-    pub fn get_content(&self) -> Option<&str> {
+    pub fn into_confirm(self) -> bool {
         match self {
-            Self::Content(val) => Some(val),
-            _ => None,
+            Self::Confirm(val) => val,
+            _ => panic!("Invalid answer variant"),
         }
     }
 
-    pub fn get_option(&self) -> Option<&OptionAnswer> {
+    pub fn get_content(&self) -> &str {
         match self {
-            Self::Option(val) => Some(val),
-            _ => None,
+            Self::Content(val) => val,
+            _ => panic!("Invalid answer variant"),
         }
     }
 
-    pub fn get_multiple_options(&self) -> Option<&[OptionAnswer]> {
+    pub fn into_content(self) -> String {
         match self {
-            Self::MultipleOptions(val) => Some(val),
-            _ => None,
+            Self::Content(val) => val,
+            _ => panic!("Invalid answer variant"),
+        }
+    }
+
+    pub fn get_option(&self) -> &OptionAnswer {
+        match self {
+            Self::Option(val) => val,
+            _ => panic!("Invalid answer variant"),
+        }
+    }
+
+    pub fn into_option(self) -> OptionAnswer {
+        match self {
+            Self::Option(val) => val,
+            _ => panic!("Invalid answer variant"),
+        }
+    }
+
+    pub fn get_multiple_options(&self) -> &[OptionAnswer] {
+        match self {
+            Self::MultipleOptions(val) => val,
+            _ => panic!("Invalid answer variant"),
+        }
+    }
+
+    pub fn into_multiple_options(self) -> Vec<OptionAnswer> {
+        match self {
+            Self::MultipleOptions(val) => val,
+            _ => panic!("Invalid answer variant"),
         }
     }
 }
