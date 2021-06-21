@@ -4,7 +4,7 @@ use unicode_segmentation::UnicodeSegmentation;
 use termion::event::Key;
 
 use crate::{
-    ask::QuestionOptions,
+    ask::{Question, QuestionOptions},
     config::{
         Filter, PromptConfig, Transformer, DEFAULT_FILTER, DEFAULT_KEEP_FILTER, DEFAULT_PAGE_SIZE,
         DEFAULT_TRANSFORMER, DEFAULT_VIM_MODE,
@@ -127,6 +127,10 @@ impl<'a> QuestionOptions<'a> for MultiSelectOptions<'a> {
         }
 
         self
+    }
+
+    fn into_question(self) -> Question<'a> {
+        Question::MultiSelect(self)
     }
 }
 

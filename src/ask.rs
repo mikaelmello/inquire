@@ -21,6 +21,7 @@ pub enum Question<'a> {
 
 pub trait QuestionOptions<'a> {
     fn with_config(self, global_config: &'a PromptConfig) -> Self;
+    fn into_question(self) -> Question<'a>;
 }
 
 pub trait AskMany {
@@ -58,29 +59,5 @@ where
 {
     fn ask(self) -> Result<Vec<Answer>, Box<dyn Error>> {
         self.map(Question::ask).collect()
-    }
-}
-
-impl<'a> From<MultiSelectOptions<'a>> for Question<'a> {
-    fn from(opt: MultiSelectOptions<'a>) -> Self {
-        Self::MultiSelect(opt)
-    }
-}
-
-impl<'a> From<SelectOptions<'a>> for Question<'a> {
-    fn from(opt: SelectOptions<'a>) -> Self {
-        Self::Select(opt)
-    }
-}
-
-impl<'a> From<InputOptions<'a>> for Question<'a> {
-    fn from(opt: InputOptions<'a>) -> Self {
-        Self::Input(opt)
-    }
-}
-
-impl<'a> From<ConfirmOptions<'a>> for Question<'a> {
-    fn from(opt: ConfirmOptions<'a>) -> Self {
-        Self::Confirm(opt)
     }
 }

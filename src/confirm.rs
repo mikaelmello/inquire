@@ -6,7 +6,7 @@ use unicode_segmentation::UnicodeSegmentation;
 use termion::event::Key;
 
 use crate::{
-    ask::QuestionOptions,
+    ask::{Question, QuestionOptions},
     config::{PromptConfig, Transformer, DEFAULT_TRANSFORMER},
     question::{Answer, Prompt},
     renderer::Renderer,
@@ -62,6 +62,16 @@ impl<'a> QuestionOptions<'a> for ConfirmOptions<'a> {
         }
 
         self
+    }
+
+    fn into_question(self) -> Question<'a> {
+        Question::Confirm(self)
+    }
+}
+
+impl<'a> From<&'a str> for ConfirmOptions<'a> {
+    fn from(val: &'a str) -> Self {
+        ConfirmOptions::new(val)
     }
 }
 

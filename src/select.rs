@@ -5,7 +5,7 @@ use unicode_segmentation::UnicodeSegmentation;
 use termion::event::Key;
 
 use crate::{
-    ask::QuestionOptions,
+    ask::{Question, QuestionOptions},
     config::{
         Filter, PromptConfig, Transformer, DEFAULT_FILTER, DEFAULT_PAGE_SIZE, DEFAULT_TRANSFORMER,
         DEFAULT_VIM_MODE,
@@ -16,6 +16,7 @@ use crate::{
     terminal::Terminal,
     utils::paginate,
 };
+
 const DEFAULT_STARTING_SELECTION: usize = 0;
 const DEFAULT_HELP_MESSAGE: &str = "↑↓ to move, space or enter to select, type to filter";
 
@@ -103,6 +104,10 @@ impl<'a> QuestionOptions<'a> for SelectOptions<'a> {
         }
 
         self
+    }
+
+    fn into_question(self) -> Question<'a> {
+        Question::Select(self)
     }
 }
 
