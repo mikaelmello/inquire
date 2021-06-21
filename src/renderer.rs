@@ -104,7 +104,7 @@ impl Renderer {
         terminal: &mut Terminal,
         message: &str,
     ) -> Result<(), std::io::Error> {
-        Token::new(&format!("✖ {}", message))
+        Token::new(&format!("# {}", message))
             .with_fg(color::Red)
             .print(terminal)?;
 
