@@ -2,15 +2,15 @@ use std::error::Error;
 
 use crate::config::PromptConfig;
 use crate::confirm::Confirm;
-use crate::confirm::ConfirmOptions;
 use crate::input::Input;
-use crate::input::InputOptions;
 use crate::multiselect::MultiSelect;
-use crate::multiselect::MultiSelectOptions;
 use crate::question::Answer;
 use crate::question::Prompt;
 use crate::select::Select;
-use crate::select::SelectOptions;
+use crate::ConfirmOptions;
+use crate::InputOptions;
+use crate::MultiSelectOptions;
+use crate::SelectOptions;
 
 pub enum Question<'a> {
     MultiSelect(MultiSelectOptions<'a>),

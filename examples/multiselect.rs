@@ -1,4 +1,4 @@
-use survey_rs::{ask::Question, multiselect::MultiSelectOptions};
+use survey_rs::{ask::Question, MultiSelectOptions};
 
 extern crate survey_rs;
 

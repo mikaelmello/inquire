@@ -5,15 +5,14 @@ extern crate regex;
 
 pub mod ask;
 pub mod config;
-pub mod confirm;
-pub mod input;
-pub mod multiselect;
+pub mod prompts;
 pub mod question;
 mod renderer;
-pub mod select;
 pub mod survey;
 mod terminal;
 mod utils;
+
+pub use crate::prompts::*;
 
 #[cfg(test)]
 mod tests {

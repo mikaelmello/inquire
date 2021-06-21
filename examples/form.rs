@@ -1,10 +1,6 @@
 use survey_rs::{
-    ask::{AskMany, QuestionOptions},
-    confirm::ConfirmOptions,
-    input::InputOptions,
-    multiselect::MultiSelectOptions,
-    question::Answer,
-    select::SelectOptions,
+    ask::AskMany, ask::QuestionOptions, question::Answer, ConfirmOptions, InputOptions,
+    MultiSelectOptions, SelectOptions,
 };
 
 extern crate survey_rs;
