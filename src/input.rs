@@ -75,6 +75,12 @@ impl<'a> From<InputOptions<'a>> for Input<'a> {
     }
 }
 
+impl<'a> From<&'a str> for InputOptions<'a> {
+    fn from(val: &'a str) -> Self {
+        InputOptions::new(val)
+    }
+}
+
 impl<'a> Input<'a> {
     fn on_change(&mut self, key: Key) {
         match key {
