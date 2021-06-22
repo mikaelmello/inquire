@@ -4,12 +4,12 @@ use unicode_segmentation::UnicodeSegmentation;
 use termion::event::Key;
 
 use crate::{
+    answer::{Answer, Prompt},
     ask::{Question, QuestionOptions},
     config::{
         Filter, PromptConfig, Transformer, DEFAULT_FILTER, DEFAULT_KEEP_FILTER, DEFAULT_PAGE_SIZE,
         DEFAULT_TRANSFORMER, DEFAULT_VIM_MODE,
     },
-    question::{Answer, Prompt},
     renderer::Renderer,
     survey::OptionAnswer,
     terminal::Terminal,

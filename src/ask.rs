@@ -1,11 +1,11 @@
 use std::error::Error;
 
+use crate::answer::Answer;
+use crate::answer::Prompt;
 use crate::config::PromptConfig;
 use crate::confirm::Confirm;
 use crate::input::Input;
 use crate::multiselect::MultiSelect;
-use crate::question::Answer;
-use crate::question::Prompt;
 use crate::select::Select;
 use crate::ConfirmOptions;
 use crate::InputOptions;

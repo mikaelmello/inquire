@@ -1,7 +1,4 @@
-use survey_rs::{
-    ask::{AskMany, QuestionOptions},
-    InputOptions,
-};
+use survey_rs::{AskMany, InputOptions, QuestionOptions};
 
 extern crate survey_rs;
 

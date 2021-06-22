@@ -1,4 +1,4 @@
-use survey_rs::{ask::Question, ConfirmOptions};
+use survey_rs::{ConfirmOptions, Question};
 
 extern crate survey_rs;
 

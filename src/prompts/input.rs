@@ -4,9 +4,9 @@ use unicode_segmentation::UnicodeSegmentation;
 use termion::event::Key;
 
 use crate::{
+    answer::{Answer, Prompt},
     ask::{Question, QuestionOptions},
     config::{PromptConfig, Transformer, DEFAULT_TRANSFORMER},
-    question::{Answer, Prompt},
     renderer::Renderer,
     terminal::Terminal,
 };

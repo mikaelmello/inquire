@@ -3,16 +3,18 @@ extern crate simple_error;
 
 extern crate regex;
 
-pub mod ask;
+pub mod answer;
+mod ask;
 pub mod config;
-pub mod prompts;
-pub mod question;
+mod prompts;
 mod renderer;
 pub mod survey;
 mod terminal;
 mod utils;
 
 pub use crate::prompts::*;
+pub use answer::*;
+pub use ask::*;
 
 #[cfg(test)]
 mod tests {
