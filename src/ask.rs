@@ -6,10 +6,12 @@ use crate::config::PromptConfig;
 use crate::confirm::Confirm;
 use crate::input::Input;
 use crate::multiselect::MultiSelect;
+use crate::password::Password;
 use crate::select::Select;
 use crate::ConfirmOptions;
 use crate::InputOptions;
 use crate::MultiSelectOptions;
+use crate::PasswordOptions;
 use crate::SelectOptions;
 
 pub enum Question<'a> {
@@ -17,6 +19,7 @@ pub enum Question<'a> {
     Select(SelectOptions<'a>),
     Input(InputOptions<'a>),
     Confirm(ConfirmOptions<'a>),
+    Password(PasswordOptions<'a>),
 }
 
 pub trait QuestionOptions<'a> {
@@ -35,6 +38,7 @@ impl<'a> Question<'a> {
             Question::Select(options) => Select::from(options).prompt(),
             Question::Input(options) => Input::from(options).prompt(),
             Question::Confirm(options) => Confirm::from(options).prompt(),
+            Question::Password(options) => Password::from(options).prompt(),
         }
     }
 
@@ -47,6 +51,7 @@ impl<'a> Question<'a> {
             Self::Select(opt) => Self::Select(opt.with_config(global_config)),
             Self::Input(opt) => Self::Input(opt.with_config(global_config)),
             Self::Confirm(opt) => Self::Confirm(opt.with_config(global_config)),
+            Self::Password(opt) => Self::Password(opt.with_config(global_config)),
         };
 
         questions.into_iter().map(with_global).collect()

@@ -7,6 +7,7 @@ use crate::terminal::Terminal;
 pub enum Answer {
     Confirm(bool),
     Content(String),
+    Password(String),
     Option(OptionAnswer),
     MultipleOptions(Vec<OptionAnswer>),
 }
@@ -41,6 +42,20 @@ impl Answer {
     pub fn into_content(self) -> String {
         match self {
             Self::Content(val) => val,
+            _ => panic!("Invalid answer variant"),
+        }
+    }
+
+    pub fn get_password(&self) -> &str {
+        match self {
+            Self::Password(val) => val,
+            _ => panic!("Invalid answer variant"),
+        }
+    }
+
+    pub fn into_password(self) -> String {
+        match self {
+            Self::Password(val) => val,
             _ => panic!("Invalid answer variant"),
         }
     }
@@ -86,6 +101,7 @@ impl fmt::Display for Answer {
                 }
             ),
             Self::Content(val) => write!(f, "{}", val),
+            Self::Password(_) => write!(f, "********"),
             Self::Option(option) => write!(f, "{}", option.value),
             Self::MultipleOptions(options) => write!(
                 f,

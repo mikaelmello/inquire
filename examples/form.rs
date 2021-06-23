@@ -1,6 +1,6 @@
 use survey_rs::{
-    Answer, AskMany, ConfirmOptions, InputOptions, MultiSelectOptions, QuestionOptions,
-    SelectOptions,
+    Answer, AskMany, ConfirmOptions, InputOptions, MultiSelectOptions, PasswordOptions,
+    QuestionOptions, SelectOptions,
 };
 
 extern crate survey_rs;
@@ -44,6 +44,7 @@ fn main() {
         SelectOptions::new("What is the primary language you use at work?", &languages)
             .unwrap()
             .into_question(),
+        PasswordOptions::new("Password:").into_question(),
     ]
     .into_iter()
     .ask()
