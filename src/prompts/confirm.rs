@@ -186,7 +186,10 @@ impl<'a> Prompt for Confirm<'a> {
                         final_answer = Answer::Confirm(answer);
                         break;
                     }
-                    Err(_) => self.error_state = true,
+                    Err(_) => {
+                        self.error_state = true;
+                        self.content.clear();
+                    }
                 },
                 key => self.on_change(key),
             }
