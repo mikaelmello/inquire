@@ -20,7 +20,7 @@ pub struct ConfirmOptions<'a> {
     message: &'a str,
     default: Option<bool>,
     help_message: Option<&'a str>,
-    transformer: &'a Transformer,
+    transformer: Transformer,
 }
 
 impl<'a> ConfirmOptions<'a> {
@@ -29,7 +29,7 @@ impl<'a> ConfirmOptions<'a> {
             message,
             default: None,
             help_message: None,
-            transformer: &DEFAULT_TRANSFORMER,
+            transformer: DEFAULT_TRANSFORMER,
         }
     }
 
@@ -43,7 +43,7 @@ impl<'a> ConfirmOptions<'a> {
         self
     }
 
-    pub fn with_transformer(mut self, transformer: &'a Transformer) -> Self {
+    pub fn with_transformer(mut self, transformer: Transformer) -> Self {
         self.transformer = transformer;
         self
     }
@@ -82,7 +82,7 @@ pub(in crate) struct Confirm<'a> {
     default: Option<bool>,
     renderer: Renderer,
     content: String,
-    transformer: &'a Transformer,
+    transformer: Transformer,
 }
 
 impl<'a> From<ConfirmOptions<'a>> for Confirm<'a> {

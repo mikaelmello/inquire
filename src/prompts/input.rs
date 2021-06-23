@@ -16,7 +16,7 @@ use crate::{
 pub struct InputOptions<'a> {
     message: &'a str,
     help_message: Option<&'a str>,
-    transformer: &'a Transformer,
+    transformer: Transformer,
     validator: Validator,
 }
 
@@ -25,7 +25,7 @@ impl<'a> InputOptions<'a> {
         Self {
             message,
             help_message: None,
-            transformer: &DEFAULT_TRANSFORMER,
+            transformer: DEFAULT_TRANSFORMER,
             validator: DEFAULT_VALIDATOR,
         }
     }
@@ -35,7 +35,7 @@ impl<'a> InputOptions<'a> {
         self
     }
 
-    pub fn with_transformer(mut self, transformer: &'a Transformer) -> Self {
+    pub fn with_transformer(mut self, transformer: Transformer) -> Self {
         self.transformer = transformer;
         self
     }
@@ -71,7 +71,7 @@ pub(in crate) struct Input<'a> {
     help_message: Option<&'a str>,
     renderer: Renderer,
     content: String,
-    transformer: &'a Transformer,
+    transformer: Transformer,
     validator: Validator,
     error: Option<Box<dyn Error>>,
 }

@@ -9,9 +9,9 @@ pub type Validator = fn(answer: &Answer) -> Result<(), Box<dyn Error>>;
 #[derive(Copy, Clone, Default)]
 pub struct PromptConfig<'a> {
     pub page_size: Option<usize>,
-    pub filter: Option<&'a Filter>,
+    pub filter: Option<Filter>,
     pub confirm_default: Option<bool>,
-    pub transformer: Option<&'a Transformer>,
+    pub transformer: Option<Transformer>,
     pub validator: Option<Validator>,
     pub help_message: Option<&'a str>,
     pub keep_filter: Option<bool>,

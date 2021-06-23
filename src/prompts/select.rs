@@ -28,8 +28,8 @@ pub struct SelectOptions<'a> {
     page_size: usize,
     vim_mode: bool,
     starting_selection: usize,
-    filter: &'a Filter,
-    transformer: &'a Transformer,
+    filter: Filter,
+    transformer: Transformer,
 }
 
 impl<'a> SelectOptions<'a> {
@@ -45,8 +45,8 @@ impl<'a> SelectOptions<'a> {
             page_size: DEFAULT_PAGE_SIZE,
             vim_mode: DEFAULT_VIM_MODE,
             starting_selection: DEFAULT_STARTING_SELECTION,
-            filter: &DEFAULT_FILTER,
-            transformer: &DEFAULT_TRANSFORMER,
+            filter: DEFAULT_FILTER,
+            transformer: DEFAULT_TRANSFORMER,
         })
     }
 
@@ -65,12 +65,12 @@ impl<'a> SelectOptions<'a> {
         self
     }
 
-    pub fn with_filter(mut self, filter: &'a Filter) -> Self {
+    pub fn with_filter(mut self, filter: Filter) -> Self {
         self.filter = filter;
         self
     }
 
-    pub fn with_transformer(mut self, transformer: &'a Transformer) -> Self {
+    pub fn with_transformer(mut self, transformer: Transformer) -> Self {
         self.transformer = transformer;
         self
     }
@@ -121,8 +121,8 @@ pub(in crate) struct Select<'a> {
     renderer: Renderer,
     filter_value: Option<String>,
     filtered_options: Vec<usize>,
-    filter: &'a Filter,
-    transformer: &'a Transformer,
+    filter: Filter,
+    transformer: Transformer,
 }
 
 impl<'a> From<SelectOptions<'a>> for Select<'a> {

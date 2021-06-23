@@ -1,7 +1,7 @@
 use simple_error::bail;
 use survey_rs::{
-    Answer, AskMany, ConfirmOptions, InputOptions, MultiSelectOptions, PasswordOptions,
-    QuestionOptions, SelectOptions,
+    config::Validator, Answer, AskMany, ConfirmOptions, InputOptions, MultiSelectOptions,
+    PasswordOptions, QuestionOptions, SelectOptions,
 };
 
 extern crate survey_rs;
@@ -32,14 +32,22 @@ fn main() {
         "Go",
     ];
 
+    let input_validator: Validator = |ans| match ans {
+        Answer::Content(val) if val.len() < 5 => bail!("Minimum of 5 characters"),
+        Answer::Content(_) => Ok(()),
+        _ => panic!("Should not happen"),
+    };
+
+    let pw_validator: Validator = |ans| match ans {
+        Answer::Password(val) if val.len() < 8 => bail!("Minimum of 8 characters"),
+        Answer::Password(_) => Ok(()),
+        _ => panic!("Should not happen"),
+    };
+
     let answers = vec![
         InputOptions::new("Where do you work?")
             .with_help_message("Don't worry, this will not be sold to third-party advertisers.")
-            .with_validator(|ans| match ans {
-                Answer::Content(val) if val.len() < 5 => bail!("Minimum of 5 characters"),
-                Answer::Content(_) => Ok(()),
-                _ => panic!("Should not happen"),
-            })
+            .with_validator(input_validator)
             .into_question(),
         MultiSelectOptions::new("What are your favorite fruits?", &fruits)
             .unwrap()
@@ -51,11 +59,7 @@ fn main() {
             .unwrap()
             .into_question(),
         PasswordOptions::new("Password:")
-            .with_validator(|ans| match ans {
-                Answer::Password(val) if val.len() < 8 => bail!("Minimum of 8 characters"),
-                Answer::Password(_) => Ok(()),
-                _ => panic!("Should not happen"),
-            })
+            .with_validator(pw_validator)
             .into_question(),
     ]
     .into_iter()

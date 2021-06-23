@@ -29,9 +29,9 @@ pub struct MultiSelectOptions<'a> {
     page_size: usize,
     vim_mode: bool,
     starting_selection: usize,
-    filter: &'a Filter,
+    filter: Filter,
     keep_filter: bool,
-    transformer: &'a Transformer,
+    transformer: Transformer,
 }
 
 impl<'a> MultiSelectOptions<'a> {
@@ -49,8 +49,8 @@ impl<'a> MultiSelectOptions<'a> {
             vim_mode: DEFAULT_VIM_MODE,
             starting_selection: DEFAULT_STARTING_SELECTION,
             keep_filter: DEFAULT_KEEP_FILTER,
-            filter: &DEFAULT_FILTER,
-            transformer: &DEFAULT_TRANSFORMER,
+            filter: DEFAULT_FILTER,
+            transformer: DEFAULT_TRANSFORMER,
         })
     }
 
@@ -74,12 +74,12 @@ impl<'a> MultiSelectOptions<'a> {
         self
     }
 
-    pub fn with_filter(mut self, filter: &'a Filter) -> Self {
+    pub fn with_filter(mut self, filter: Filter) -> Self {
         self.filter = filter;
         self
     }
 
-    pub fn with_transformer(mut self, transformer: &'a Transformer) -> Self {
+    pub fn with_transformer(mut self, transformer: Transformer) -> Self {
         self.transformer = transformer;
         self
     }
@@ -146,8 +146,8 @@ pub(in crate) struct MultiSelect<'a> {
     keep_filter: bool,
     filter_value: Option<String>,
     filtered_options: Vec<usize>,
-    filter: &'a Filter,
-    transformer: &'a Transformer,
+    filter: Filter,
+    transformer: Transformer,
 }
 
 impl<'a> From<MultiSelectOptions<'a>> for MultiSelect<'a> {
