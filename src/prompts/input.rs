@@ -7,10 +7,17 @@ use termion::event::Key;
 use crate::{
     answer::{Answer, Prompt},
     ask::{Question, QuestionOptions},
-    config::{PromptConfig, Transformer, Validator, DEFAULT_TRANSFORMER, DEFAULT_VALIDATOR},
+    config::{
+        PromptConfig, Suggestor, Transformer, Validator, DEFAULT_PAGE_SIZE, DEFAULT_TRANSFORMER,
+        DEFAULT_VALIDATOR,
+    },
     renderer::Renderer,
     terminal::Terminal,
+    utils::paginate,
+    OptionAnswer,
 };
+
+const DEFAULT_HELP_MESSAGE: &str = "↑↓ to move, tab to auto-complete, enter to submit";
 
 #[derive(Copy, Clone)]
 pub struct InputOptions<'a> {
@@ -19,6 +26,8 @@ pub struct InputOptions<'a> {
     help_message: Option<&'a str>,
     transformer: Transformer,
     validator: Validator,
+    page_size: usize,
+    suggestor: Option<Suggestor>,
 }
 
 impl<'a> InputOptions<'a> {
@@ -29,6 +38,8 @@ impl<'a> InputOptions<'a> {
             help_message: None,
             transformer: DEFAULT_TRANSFORMER,
             validator: DEFAULT_VALIDATOR,
+            page_size: DEFAULT_PAGE_SIZE,
+            suggestor: None,
         }
     }
 
@@ -39,6 +50,11 @@ impl<'a> InputOptions<'a> {
 
     pub fn with_default(mut self, message: &'a str) -> Self {
         self.default = Some(message);
+        self
+    }
+
+    pub fn with_suggestor(mut self, suggestor: Suggestor) -> Self {
+        self.suggestor = Some(suggestor);
         self
     }
 
@@ -82,6 +98,10 @@ pub(in crate) struct Input<'a> {
     transformer: Transformer,
     validator: Validator,
     error: Option<Box<dyn Error>>,
+    suggestor: Option<Suggestor>,
+    suggested_options: Vec<String>,
+    cursor_index: usize,
+    page_size: usize,
 }
 
 impl<'a> From<InputOptions<'a>> for Input<'a> {
@@ -93,8 +113,15 @@ impl<'a> From<InputOptions<'a>> for Input<'a> {
             renderer: Renderer::default(),
             transformer: so.transformer,
             validator: so.validator,
+            suggestor: so.suggestor,
             content: String::new(),
             error: None,
+            cursor_index: 0,
+            page_size: so.page_size,
+            suggested_options: match so.suggestor {
+                Some(s) => s(""),
+                None => vec![],
+            },
         }
     }
 }
@@ -106,15 +133,69 @@ impl<'a> From<&'a str> for InputOptions<'a> {
 }
 
 impl<'a> Input<'a> {
+    fn update_suggestions(&mut self) {
+        match self.suggestor {
+            Some(suggestor) => {
+                self.suggested_options = suggestor(&self.content);
+                if self.suggested_options.len() > 0
+                    && self.suggested_options.len() <= self.cursor_index
+                {
+                    self.cursor_index = self.suggested_options.len().saturating_sub(1);
+                }
+            }
+            _ => {}
+        }
+    }
+
+    fn move_cursor_up(&mut self) {
+        self.cursor_index = self
+            .cursor_index
+            .checked_sub(1)
+            .or(self.suggested_options.len().checked_sub(1))
+            .unwrap_or_else(|| 0);
+    }
+
+    fn move_cursor_down(&mut self) {
+        self.cursor_index = self.cursor_index.saturating_add(1);
+        if self.cursor_index >= self.suggested_options.len() {
+            self.cursor_index = 0;
+        }
+    }
+
     fn on_change(&mut self, key: Key) {
+        let mut dirty = false;
+
         match key {
             Key::Backspace => {
                 let len = self.content[..].graphemes(true).count();
                 let new_len = len.saturating_sub(1);
                 self.content = self.content[..].graphemes(true).take(new_len).collect();
+                dirty = true;
             }
-            Key::Char(c) => self.content.push(c),
+            Key::Up => self.move_cursor_up(),
+            Key::Down => self.move_cursor_down(),
+            Key::Char('\x17') | Key::Char('\x18') => {
+                self.content.clear();
+                dirty = true;
+            }
+            Key::Char(c) => {
+                self.content.push(c);
+                dirty = true;
+            }
             _ => {}
+        }
+
+        if dirty {
+            self.update_suggestions();
+        }
+    }
+
+    fn use_select_option(&mut self) {
+        let selected_suggestion = self.suggested_options.get(self.cursor_index);
+
+        if let Some(ans) = selected_suggestion {
+            self.content = ans.clone();
+            self.update_suggestions();
         }
     }
 
@@ -154,8 +235,23 @@ impl<'a> Prompt for Input<'a> {
         self.renderer
             .print_prompt(terminal, &prompt, self.default, Some(&self.content))?;
 
+        let choices = self
+            .suggested_options
+            .iter()
+            .enumerate()
+            .map(|(i, val)| OptionAnswer::new(i, val))
+            .collect::<Vec<OptionAnswer>>();
+
+        let (paginated_opts, rel_sel) = paginate(self.page_size, &choices, self.cursor_index);
+        for (idx, opt) in paginated_opts.iter().enumerate() {
+            self.renderer
+                .print_option(terminal, rel_sel == idx, &opt.value)?;
+        }
+
         if let Some(message) = self.help_message {
             self.renderer.print_help(terminal, message)?;
+        } else if !choices.is_empty() {
+            self.renderer.print_help(terminal, DEFAULT_HELP_MESSAGE)?;
         }
 
         terminal.flush()?;
@@ -176,6 +272,7 @@ impl<'a> Prompt for Input<'a> {
 
             match key {
                 Key::Ctrl('c') => bail!("Input interrupted by ctrl-c"),
+                Key::Char('\t') => self.use_select_option(),
                 Key::Char('\n') | Key::Char('\r') => match self.get_final_answer() {
                     Ok(answer) => {
                         final_answer = answer;

@@ -5,6 +5,7 @@ use crate::answer::Answer;
 pub type Filter = fn(filter: &str, value: &str, index: usize) -> bool;
 pub type Transformer = fn(answer: &Answer) -> String;
 pub type Validator = fn(answer: &Answer) -> Result<(), Box<dyn Error>>;
+pub type Suggestor = fn(value: &str) -> Vec<String>;
 
 #[derive(Copy, Clone, Default)]
 pub struct PromptConfig<'a> {
