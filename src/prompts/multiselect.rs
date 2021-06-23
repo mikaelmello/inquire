@@ -11,9 +11,9 @@ use crate::{
         DEFAULT_TRANSFORMER, DEFAULT_VIM_MODE,
     },
     renderer::Renderer,
-    survey::OptionAnswer,
     terminal::Terminal,
     utils::paginate,
+    OptionAnswer,
 };
 
 const DEFAULT_STARTING_SELECTION: usize = 0;

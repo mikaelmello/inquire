@@ -8,7 +8,6 @@ mod ask;
 pub mod config;
 mod prompts;
 mod renderer;
-pub mod survey;
 mod terminal;
 mod utils;
 
