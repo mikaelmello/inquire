@@ -63,13 +63,13 @@ impl<'a> Token<'a> {
         terminal.write(self.content)?;
 
         if let Some(_) = self.fg.as_ref() {
-            terminal.undo_fg_color()?;
+            terminal.reset_fg_color()?;
         }
         if let Some(_) = self.bg.as_ref() {
-            terminal.undo_bg_color()?;
+            terminal.reset_bg_color()?;
         }
         if let Some(_) = &self.style {
-            terminal.undo_style()?;
+            terminal.reset_style()?;
         }
 
         Ok(())
@@ -146,10 +146,11 @@ impl Renderer {
             Token::new(&format!(" ({})", default)).print(terminal)?;
         }
 
-        if let Some(content) = content {
-            Token::new(&format!(" {}", content))
+        match content {
+            Some(content) if !content.is_empty() => Token::new(&format!(" {}", content))
                 .with_style(Style::Bold)
-                .print(terminal)?;
+                .print(terminal)?,
+            _ => {}
         }
 
         self.new_line(terminal)?;

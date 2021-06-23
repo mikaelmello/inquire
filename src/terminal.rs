@@ -1,6 +1,6 @@
 use std::{
     fmt::Display,
-    io::{stdin, stdout, BufRead, Error, Read, Write},
+    io::{stdin, stdout, Error, Read, Write},
 };
 
 use termion::{
@@ -17,11 +17,11 @@ pub struct Size {
     pub height: u16,
 }
 
-pub struct Terminal {
+pub struct Terminal<'a> {
     #[allow(unused)]
     size: Size,
-    reader: Box<dyn Read>,
-    writer: Box<dyn Write>,
+    reader: Box<dyn 'a + Read>,
+    writer: Box<dyn 'a + Write>,
     applied_fgs: Vec<String>,
     applied_bgs: Vec<String>,
     applied_styles: Vec<Style>,
@@ -34,7 +34,7 @@ pub enum Style {
     Italic,
 }
 
-impl Terminal {
+impl<'a> Terminal<'a> {
     /// # Errors
     ///
     /// Will return `std::io::Error` if it fails to get terminal size
@@ -53,16 +53,26 @@ impl Terminal {
         })
     }
 
-    #[allow(unused)]
-    pub fn with_writer<W: 'static + Write>(mut self, writer: W) -> Self {
-        self.writer = Box::new(writer);
-        self
-    }
-
-    #[allow(unused)]
-    pub fn with_reader<W: 'static + BufRead>(mut self, reader: W) -> Self {
-        self.reader = Box::new(reader);
-        self
+    /// # Errors
+    ///
+    /// Will return `std::io::Error` if it fails to get terminal size
+    #[cfg(test)]
+    pub fn new_with_io<W: 'a + Write, R: 'a + Read>(
+        writer: &'a mut W,
+        reader: &'a mut R,
+    ) -> Result<Self, std::io::Error> {
+        let size = termion::terminal_size()?;
+        Ok(Self {
+            size: Size {
+                width: size.0,
+                height: size.1.saturating_sub(2),
+            },
+            reader: Box::new(reader),
+            writer: Box::new(writer),
+            applied_bgs: vec![],
+            applied_fgs: vec![],
+            applied_styles: vec![],
+        })
     }
 
     #[must_use]
@@ -123,16 +133,6 @@ impl Terminal {
         write!(self.writer, "{}", style)
     }
 
-    pub fn undo_style(&mut self) -> Result<(), std::io::Error> {
-        match self.applied_styles.pop() {
-            Some(st) => match st {
-                Style::Bold => write!(self.writer, "{}", termion::style::NoBold),
-                Style::Italic => write!(self.writer, "{}", termion::style::NoItalic),
-            },
-            None => Ok(()),
-        }
-    }
-
     #[allow(unused)]
     pub fn reset_style(&mut self) -> Result<(), std::io::Error> {
         self.applied_styles.clear();
@@ -145,15 +145,6 @@ impl Terminal {
         self.applied_bgs.push(fmt);
 
         res
-    }
-
-    pub fn undo_bg_color(&mut self) -> Result<(), std::io::Error> {
-        self.applied_bgs.pop();
-
-        match self.applied_bgs.last() {
-            Some(bg) => write!(self.writer, "{}", bg),
-            None => write!(self.writer, "{}", color::Bg(color::Reset)),
-        }
     }
 
     #[allow(unused)]
@@ -170,15 +161,6 @@ impl Terminal {
         res
     }
 
-    pub fn undo_fg_color(&mut self) -> Result<(), std::io::Error> {
-        self.applied_fgs.pop();
-
-        match self.applied_fgs.last() {
-            Some(fg) => write!(self.writer, "{}", fg),
-            None => write!(self.writer, "{}", color::Fg(color::Reset)),
-        }
-    }
-
     #[allow(unused)]
     pub fn reset_fg_color(&mut self) -> Result<(), std::io::Error> {
         self.applied_fgs.clear();
@@ -186,8 +168,97 @@ impl Terminal {
     }
 }
 
-impl Drop for Terminal {
+impl<'a> Drop for Terminal<'a> {
     fn drop(&mut self) {
-        let _ = self.cursor_show();
+        let _ = self.flush();
+    }
+}
+
+#[cfg(test)]
+mod test {
+
+    use crate::terminal::Style;
+
+    use super::Terminal;
+
+    #[test]
+    fn style_management() {
+        let mut write: Vec<u8> = Vec::new();
+        let read: Vec<u8> = Vec::new();
+        let mut read = read.as_slice();
+
+        {
+            let mut terminal = Terminal::new_with_io(&mut write, &mut read).unwrap();
+
+            terminal.set_style(Style::Bold).unwrap();
+            terminal.set_style(Style::Italic).unwrap();
+            terminal.set_style(Style::Bold).unwrap();
+            terminal.reset_style().unwrap();
+        }
+
+        assert_eq!(
+            format!(
+                "{}{}{}{}",
+                termion::style::Bold,
+                termion::style::Italic,
+                termion::style::Bold,
+                termion::style::Reset,
+            ),
+            std::str::from_utf8(&write).unwrap()
+        );
+    }
+
+    #[test]
+    fn fg_color_management() {
+        let mut write: Vec<u8> = Vec::new();
+        let read: Vec<u8> = Vec::new();
+        let mut read = read.as_slice();
+
+        {
+            let mut terminal = Terminal::new_with_io(&mut write, &mut read).unwrap();
+
+            terminal.set_fg_color(termion::color::Red).unwrap();
+            terminal.reset_fg_color().unwrap();
+            terminal.set_fg_color(termion::color::Black).unwrap();
+            terminal.set_fg_color(termion::color::Green).unwrap();
+        }
+
+        assert_eq!(
+            format!(
+                "{}{}{}{}",
+                termion::color::Fg(termion::color::Red),
+                termion::color::Fg(termion::color::Reset),
+                termion::color::Fg(termion::color::Black),
+                termion::color::Fg(termion::color::Green),
+            ),
+            std::str::from_utf8(&write).unwrap()
+        );
+    }
+
+    #[test]
+    fn bg_color_management() {
+        let mut write: Vec<u8> = Vec::new();
+        let read: Vec<u8> = Vec::new();
+        let mut read = read.as_slice();
+
+        {
+            let mut terminal = Terminal::new_with_io(&mut write, &mut read).unwrap();
+
+            terminal.set_bg_color(termion::color::Red).unwrap();
+            terminal.reset_bg_color().unwrap();
+            terminal.set_bg_color(termion::color::Black).unwrap();
+            terminal.set_bg_color(termion::color::Green).unwrap();
+        }
+
+        assert_eq!(
+            format!(
+                "{}{}{}{}",
+                termion::color::Bg(termion::color::Red),
+                termion::color::Bg(termion::color::Reset),
+                termion::color::Bg(termion::color::Black),
+                termion::color::Bg(termion::color::Green),
+            ),
+            std::str::from_utf8(&write).unwrap()
+        );
     }
 }
