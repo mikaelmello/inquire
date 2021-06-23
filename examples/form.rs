@@ -50,7 +50,13 @@ fn main() {
         SelectOptions::new("What is the primary language you use at work?", &languages)
             .unwrap()
             .into_question(),
-        PasswordOptions::new("Password:").into_question(),
+        PasswordOptions::new("Password:")
+            .with_validator(|ans| match ans {
+                Answer::Password(val) if val.len() < 8 => bail!("Minimum of 8 characters"),
+                Answer::Password(_) => Ok(()),
+                _ => panic!("Should not happen"),
+            })
+            .into_question(),
     ]
     .into_iter()
     .ask()

@@ -1,5 +1,5 @@
 use lazy_static::__Deref;
-use std::{error::Error, fmt::Display};
+use std::error::Error;
 use unicode_segmentation::UnicodeSegmentation;
 
 use termion::event::Key;
