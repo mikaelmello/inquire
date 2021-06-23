@@ -44,6 +44,24 @@
     {
       "type": "lldb",
       "request": "launch",
+      "name": "Debug example 'input'",
+      "cargo": {
+        "args": [
+          "build",
+          "--example=input",
+          "--package=survey-rs"
+        ],
+        "filter": {
+          "name": "input",
+          "kind": "example"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
       "name": "Debug unit tests in example 'multiselect'",
       "cargo": {
         "args": [
