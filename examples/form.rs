@@ -48,6 +48,7 @@ fn main() {
         InputOptions::new("Where do you work?")
             .with_help_message("Don't worry, this will not be sold to third-party advertisers.")
             .with_validator(input_validator)
+            .with_default("Unemployed")
             .into_question(),
         MultiSelectOptions::new("What are your favorite fruits?", &fruits)
             .unwrap()

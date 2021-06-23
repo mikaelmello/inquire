@@ -15,6 +15,7 @@ use crate::{
 #[derive(Copy, Clone)]
 pub struct InputOptions<'a> {
     message: &'a str,
+    default: Option<&'a str>,
     help_message: Option<&'a str>,
     transformer: Transformer,
     validator: Validator,
@@ -24,6 +25,7 @@ impl<'a> InputOptions<'a> {
     pub fn new(message: &'a str) -> Self {
         Self {
             message,
+            default: None,
             help_message: None,
             transformer: DEFAULT_TRANSFORMER,
             validator: DEFAULT_VALIDATOR,
@@ -32,6 +34,11 @@ impl<'a> InputOptions<'a> {
 
     pub fn with_help_message(mut self, message: &'a str) -> Self {
         self.help_message = Some(message);
+        self
+    }
+
+    pub fn with_default(mut self, message: &'a str) -> Self {
+        self.default = Some(message);
         self
     }
 
@@ -68,6 +75,7 @@ impl<'a> QuestionOptions<'a> for InputOptions<'a> {
 
 pub(in crate) struct Input<'a> {
     message: &'a str,
+    default: Option<&'a str>,
     help_message: Option<&'a str>,
     renderer: Renderer,
     content: String,
@@ -80,6 +88,7 @@ impl<'a> From<InputOptions<'a>> for Input<'a> {
     fn from(so: InputOptions<'a>) -> Self {
         Self {
             message: so.message,
+            default: so.default,
             help_message: so.help_message,
             renderer: Renderer::default(),
             transformer: so.transformer,
@@ -110,6 +119,11 @@ impl<'a> Input<'a> {
     }
 
     fn get_final_answer(&self) -> Result<Answer, Box<dyn Error>> {
+        match self.default {
+            Some(val) if self.content.is_empty() => return Ok(Answer::Content(val.to_string())),
+            _ => {}
+        }
+
         let answer = Answer::Content(self.content.clone());
 
         match (self.validator)(&answer) {
@@ -138,7 +152,7 @@ impl<'a> Prompt for Input<'a> {
         }
 
         self.renderer
-            .print_prompt(terminal, &prompt, None, Some(&self.content))?;
+            .print_prompt(terminal, &prompt, self.default, Some(&self.content))?;
 
         if let Some(message) = self.help_message {
             self.renderer.print_help(terminal, message)?;
