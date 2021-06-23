@@ -170,6 +170,7 @@ impl<'a> Terminal<'a> {
 
 impl<'a> Drop for Terminal<'a> {
     fn drop(&mut self) {
+        let _ = self.cursor_show();
         let _ = self.flush();
     }
 }
