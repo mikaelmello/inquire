@@ -1,3 +1,4 @@
+use simple_error::bail;
 use survey_rs::{
     Answer, AskMany, ConfirmOptions, InputOptions, MultiSelectOptions, PasswordOptions,
     QuestionOptions, SelectOptions,
@@ -34,6 +35,11 @@ fn main() {
     let answers = vec![
         InputOptions::new("Where do you work?")
             .with_help_message("Don't worry, this will not be sold to third-party advertisers.")
+            .with_validator(|ans| match ans {
+                Answer::Content(val) if val.len() < 5 => bail!("Minimum of 5 characters"),
+                Answer::Content(_) => Ok(()),
+                _ => panic!("Should not happen"),
+            })
             .into_question(),
         MultiSelectOptions::new("What are your favorite fruits?", &fruits)
             .unwrap()

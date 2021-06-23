@@ -1,3 +1,5 @@
+use std::error::Error;
+
 use termion::color::{self, Color};
 
 use crate::terminal::{Style, Terminal};
@@ -105,6 +107,20 @@ impl Renderer {
         message: &str,
     ) -> Result<(), std::io::Error> {
         Token::new(&format!("# {}", message))
+            .with_fg(color::Red)
+            .print(terminal)?;
+
+        self.new_line(terminal)?;
+
+        Ok(())
+    }
+
+    pub fn print_error(
+        &mut self,
+        terminal: &mut Terminal,
+        error: &(dyn Error),
+    ) -> Result<(), std::io::Error> {
+        Token::new(&format!("# {}", error))
             .with_fg(color::Red)
             .print(terminal)?;
 

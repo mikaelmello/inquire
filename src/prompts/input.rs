@@ -1,4 +1,5 @@
-use std::error::Error;
+use lazy_static::__Deref;
+use std::{error::Error, fmt::Display};
 use unicode_segmentation::UnicodeSegmentation;
 
 use termion::event::Key;
@@ -6,7 +7,7 @@ use termion::event::Key;
 use crate::{
     answer::{Answer, Prompt},
     ask::{Question, QuestionOptions},
-    config::{PromptConfig, Transformer, DEFAULT_TRANSFORMER},
+    config::{PromptConfig, Transformer, Validator, DEFAULT_TRANSFORMER, DEFAULT_VALIDATOR},
     renderer::Renderer,
     terminal::Terminal,
 };
@@ -16,6 +17,7 @@ pub struct InputOptions<'a> {
     message: &'a str,
     help_message: Option<&'a str>,
     transformer: &'a Transformer,
+    validator: Validator,
 }
 
 impl<'a> InputOptions<'a> {
@@ -24,6 +26,7 @@ impl<'a> InputOptions<'a> {
             message,
             help_message: None,
             transformer: &DEFAULT_TRANSFORMER,
+            validator: DEFAULT_VALIDATOR,
         }
     }
 
@@ -36,12 +39,20 @@ impl<'a> InputOptions<'a> {
         self.transformer = transformer;
         self
     }
+
+    pub fn with_validator(mut self, validator: Validator) -> Self {
+        self.validator = validator;
+        self
+    }
 }
 
 impl<'a> QuestionOptions<'a> for InputOptions<'a> {
     fn with_config(mut self, global_config: &'a PromptConfig) -> Self {
         if let Some(transformer) = global_config.transformer {
             self.transformer = transformer;
+        }
+        if let Some(validator) = global_config.validator {
+            self.validator = validator;
         }
         if let Some(help_message) = global_config.help_message {
             self.help_message = Some(help_message);
@@ -61,6 +72,8 @@ pub(in crate) struct Input<'a> {
     renderer: Renderer,
     content: String,
     transformer: &'a Transformer,
+    validator: Validator,
+    error: Option<Box<dyn Error>>,
 }
 
 impl<'a> From<InputOptions<'a>> for Input<'a> {
@@ -70,7 +83,9 @@ impl<'a> From<InputOptions<'a>> for Input<'a> {
             help_message: so.help_message,
             renderer: Renderer::default(),
             transformer: so.transformer,
+            validator: so.validator,
             content: String::new(),
+            error: None,
         }
     }
 }
@@ -95,7 +110,12 @@ impl<'a> Input<'a> {
     }
 
     fn get_final_answer(&self) -> Result<Answer, Box<dyn Error>> {
-        Ok(Answer::Content(self.content.clone()))
+        let answer = Answer::Content(self.content.clone());
+
+        match (self.validator)(&answer) {
+            Ok(_) => Ok(answer),
+            Err(err) => Err(err),
+        }
     }
 
     fn cleanup(&mut self, terminal: &mut Terminal, answer: &str) -> Result<(), Box<dyn Error>> {
@@ -113,6 +133,10 @@ impl<'a> Prompt for Input<'a> {
 
         self.renderer.reset_prompt(terminal)?;
 
+        if let Some(err) = &self.error {
+            self.renderer.print_error(terminal, err.deref())?;
+        }
+
         self.renderer
             .print_prompt(terminal, &prompt, None, Some(&self.content))?;
 
@@ -129,6 +153,8 @@ impl<'a> Prompt for Input<'a> {
         let mut terminal = Terminal::new()?;
         terminal.cursor_hide()?;
 
+        let final_answer: Answer;
+
         loop {
             self.render(&mut terminal)?;
 
@@ -136,18 +162,23 @@ impl<'a> Prompt for Input<'a> {
 
             match key {
                 Key::Ctrl('c') => bail!("Input interrupted by ctrl-c"),
-                Key::Char('\n') | Key::Char('\r') => break,
+                Key::Char('\n') | Key::Char('\r') => match self.get_final_answer() {
+                    Ok(answer) => {
+                        final_answer = answer;
+                        break;
+                    }
+                    Err(err) => self.error = Some(err),
+                },
                 key => self.on_change(key),
             }
         }
 
-        let answer = self.get_final_answer()?;
-        let transformed = (self.transformer)(&answer);
+        let transformed = (self.transformer)(&final_answer);
 
         self.cleanup(&mut terminal, &transformed)?;
 
         terminal.cursor_show()?;
 
-        Ok(answer)
+        Ok(final_answer)
     }
 }
