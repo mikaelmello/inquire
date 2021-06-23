@@ -189,12 +189,13 @@ impl<'a> MultiSelect<'a> {
         self.cursor_index = self
             .cursor_index
             .checked_sub(1)
-            .unwrap_or_else(|| self.filtered_options.len() - 1);
+            .or(self.filtered_options.len().checked_sub(1))
+            .unwrap_or_else(|| 0);
     }
 
     fn move_cursor_down(&mut self) {
         self.cursor_index = self.cursor_index.saturating_add(1);
-        if self.cursor_index == self.filtered_options.len() {
+        if self.cursor_index >= self.filtered_options.len() {
             self.cursor_index = 0;
         }
     }
