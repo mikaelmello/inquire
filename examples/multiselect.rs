@@ -1,7 +1,7 @@
 use simple_error::SimpleError;
-use survey_rs::{config::Validator, Answer, MultiSelectOptions, Question};
+use survey::{config::Validator, Answer, MultiSelectOptions, Question};
 
-extern crate survey_rs;
+extern crate survey;
 
 fn main() {
     let options = vec![

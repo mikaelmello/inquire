@@ -1,6 +1,6 @@
-use survey_rs::{ConfirmOptions, Question};
+use survey::{ConfirmOptions, Question};
 
-extern crate survey_rs;
+extern crate survey;
 
 fn main() {
     let ans = Question::Confirm(

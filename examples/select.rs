@@ -1,6 +1,6 @@
-use survey_rs::{Question, SelectOptions};
+use survey::{Question, SelectOptions};
 
-extern crate survey_rs;
+extern crate survey;
 
 fn main() {
     let options = vec![

@@ -1,6 +1,6 @@
-use survey_rs::{AskMany, InputOptions, QuestionOptions};
+use survey::{AskMany, InputOptions, QuestionOptions};
 
-extern crate survey_rs;
+extern crate survey;
 
 fn main() {
     let answers = vec![
