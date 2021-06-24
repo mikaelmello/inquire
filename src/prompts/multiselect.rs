@@ -1,3 +1,4 @@
+use lazy_static::__Deref;
 use std::{collections::HashSet, error::Error, iter::FromIterator};
 use unicode_segmentation::UnicodeSegmentation;
 
@@ -7,8 +8,8 @@ use crate::{
     answer::{Answer, Prompt},
     ask::{Question, QuestionOptions},
     config::{
-        Filter, PromptConfig, Transformer, DEFAULT_FILTER, DEFAULT_KEEP_FILTER, DEFAULT_PAGE_SIZE,
-        DEFAULT_TRANSFORMER, DEFAULT_VIM_MODE,
+        Filter, PromptConfig, Transformer, Validator, DEFAULT_FILTER, DEFAULT_KEEP_FILTER,
+        DEFAULT_PAGE_SIZE, DEFAULT_TRANSFORMER, DEFAULT_VALIDATOR, DEFAULT_VIM_MODE,
     },
     renderer::Renderer,
     terminal::Terminal,
@@ -32,6 +33,7 @@ pub struct MultiSelectOptions<'a> {
     filter: Filter,
     keep_filter: bool,
     transformer: Transformer,
+    validator: Validator,
 }
 
 impl<'a> MultiSelectOptions<'a> {
@@ -51,6 +53,7 @@ impl<'a> MultiSelectOptions<'a> {
             keep_filter: DEFAULT_KEEP_FILTER,
             filter: DEFAULT_FILTER,
             transformer: DEFAULT_TRANSFORMER,
+            validator: DEFAULT_VALIDATOR,
         })
     }
 
@@ -81,6 +84,11 @@ impl<'a> MultiSelectOptions<'a> {
 
     pub fn with_transformer(mut self, transformer: Transformer) -> Self {
         self.transformer = transformer;
+        self
+    }
+
+    pub fn with_validator(mut self, validator: Validator) -> Self {
+        self.validator = validator;
         self
     }
 
@@ -122,6 +130,9 @@ impl<'a> QuestionOptions<'a> for MultiSelectOptions<'a> {
         if let Some(transformer) = global_config.transformer {
             self.transformer = transformer;
         }
+        if let Some(validator) = global_config.validator {
+            self.validator = validator;
+        }
         if let Some(help_message) = global_config.help_message {
             self.help_message = help_message;
         }
@@ -148,6 +159,8 @@ pub(in crate) struct MultiSelect<'a> {
     filtered_options: Vec<usize>,
     filter: Filter,
     transformer: Transformer,
+    validator: Validator,
+    error: Option<Box<dyn Error>>,
 }
 
 impl<'a> From<MultiSelectOptions<'a>> for MultiSelect<'a> {
@@ -165,6 +178,8 @@ impl<'a> From<MultiSelectOptions<'a>> for MultiSelect<'a> {
             filtered_options: Vec::from_iter(0..mso.options.len()),
             filter: mso.filter,
             transformer: mso.transformer,
+            validator: mso.validator,
+            error: None,
             checked: mso
                 .default
                 .map_or_else(|| HashSet::new(), |d| d.iter().cloned().collect()),
@@ -270,16 +285,22 @@ impl<'a> MultiSelect<'a> {
     }
 
     fn get_final_answer(&self) -> Result<Answer, Box<dyn Error>> {
-        Ok(Answer::MultipleOptions(
-            self.options
-                .iter()
-                .enumerate()
-                .filter_map(|(idx, opt)| match &self.checked.contains(&idx) {
-                    true => Some(OptionAnswer::new(idx, opt)),
-                    false => None,
-                })
-                .collect::<Vec<OptionAnswer>>(),
-        ))
+        let selected_options = self
+            .options
+            .iter()
+            .enumerate()
+            .filter_map(|(idx, opt)| match &self.checked.contains(&idx) {
+                true => Some(OptionAnswer::new(idx, opt)),
+                false => None,
+            })
+            .collect::<Vec<OptionAnswer>>();
+
+        let answer = Answer::MultipleOptions(selected_options);
+
+        match (self.validator)(&answer) {
+            Ok(_) => Ok(answer),
+            Err(err) => Err(err),
+        }
     }
 
     fn cleanup(&mut self, terminal: &mut Terminal, answer: &str) -> Result<(), Box<dyn Error>> {
@@ -296,6 +317,10 @@ impl<'a> Prompt for MultiSelect<'a> {
         let prompt = &self.message;
 
         self.renderer.reset_prompt(terminal)?;
+
+        if let Some(err) = &self.error {
+            self.renderer.print_error(terminal, err.deref())?;
+        }
 
         self.renderer
             .print_prompt(terminal, &prompt, None, self.filter_value.as_deref())?;
@@ -329,6 +354,8 @@ impl<'a> Prompt for MultiSelect<'a> {
         let mut terminal = Terminal::new()?;
         terminal.cursor_hide()?;
 
+        let final_answer: Answer;
+
         loop {
             self.render(&mut terminal)?;
 
@@ -336,18 +363,23 @@ impl<'a> Prompt for MultiSelect<'a> {
 
             match key {
                 Key::Ctrl('c') => bail!("Multi-selection interrupted by ctrl-c"),
-                Key::Char('\n') | Key::Char('\r') => break,
+                Key::Char('\n') | Key::Char('\r') => match self.get_final_answer() {
+                    Ok(answer) => {
+                        final_answer = answer;
+                        break;
+                    }
+                    Err(err) => self.error = Some(err),
+                },
                 key => self.on_change(key),
             }
         }
 
-        let answer = self.get_final_answer()?;
-        let transformed = (self.transformer)(&answer);
+        let transformed = (self.transformer)(&final_answer);
 
         self.cleanup(&mut terminal, &transformed)?;
 
         terminal.cursor_show()?;
 
-        Ok(answer)
+        Ok(final_answer)
     }
 }
