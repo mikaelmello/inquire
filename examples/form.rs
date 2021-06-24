@@ -1,10 +1,10 @@
-use simple_error::bail;
-use survey::{
+use inquire::{
     config::Validator, Answer, AskMany, ConfirmOptions, InputOptions, MultiSelectOptions,
     PasswordOptions, QuestionOptions, SelectOptions,
 };
+use simple_error::bail;
 
-extern crate survey;
+extern crate inquire;
 
 fn main() {
     let fruits = vec![

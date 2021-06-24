@@ -1,6 +1,6 @@
-use survey::{AskMany, InputOptions, QuestionOptions};
+use inquire::{AskMany, InputOptions, QuestionOptions};
 
-extern crate survey;
+extern crate inquire;
 
 fn main() {
     let answers = vec![

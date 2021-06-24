@@ -7,16 +7,16 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug unit tests in library 'survey-rs'",
+      "name": "Debug unit tests in library 'inquire'",
       "cargo": {
         "args": [
           "test",
           "--no-run",
           "--lib",
-          "--package=survey-rs"
+          "--package=inquire"
         ],
         "filter": {
-          "name": "survey-rs",
+          "name": "inquire",
           "kind": "lib"
         }
       },
@@ -31,7 +31,7 @@
         "args": [
           "build",
           "--example=multiselect",
-          "--package=survey-rs"
+          "--package=inquire"
         ],
         "filter": {
           "name": "multiselect",
@@ -49,7 +49,7 @@
         "args": [
           "build",
           "--example=input",
-          "--package=survey-rs"
+          "--package=inquire"
         ],
         "filter": {
           "name": "input",
@@ -68,7 +68,7 @@
           "test",
           "--no-run",
           "--example=multiselect",
-          "--package=survey-rs"
+          "--package=inquire"
         ],
         "filter": {
           "name": "multiselect",

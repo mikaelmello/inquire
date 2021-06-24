@@ -1,12 +1,12 @@
 [package]
-name = "survey"
+name = "inquire"
 version = "0.1.0"
 license = "MIT"
 edition = "2018"
 
-description = "survey is a library for building interactive prompts on terminals"
-repository = "https://github.com/mikaelmello/survey"
-homepage = "https://github.com/mikaelmello/survey"
+description = "inquire is a library for building interactive prompts on terminals"
+repository = "https://github.com/mikaelmello/inquire"
+homepage = "https://github.com/mikaelmello/inquire"
 authors = ["Mikael Mello <git@mikaelmello.com>"]
 keywords = ["cli", "ask", "prompt", "question", "interactive"]
 categories = ["command-line-interface", "value-formatting"]
