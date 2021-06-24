@@ -1,17 +1,19 @@
 use std::error::Error;
 
 use crate::answer::Answer;
-use crate::answer::Prompt;
 use crate::config::PromptConfig;
 use crate::confirm::Confirm;
 use crate::input::Input;
 use crate::multiselect::MultiSelect;
 use crate::password::Password;
+use crate::renderer::Renderer;
 use crate::select::Select;
+use crate::terminal::Terminal;
 use crate::ConfirmOptions;
 use crate::InputOptions;
 use crate::MultiSelectOptions;
 use crate::PasswordOptions;
+use crate::Prompt;
 use crate::SelectOptions;
 
 pub enum Question<'a> {
@@ -33,13 +35,18 @@ pub trait AskMany {
 
 impl<'a> Question<'a> {
     pub fn ask(self) -> Result<Answer, Box<dyn Error>> {
-        match self {
-            Question::MultiSelect(options) => MultiSelect::from(options).prompt(),
-            Question::Select(options) => Select::from(options).prompt(),
-            Question::Input(options) => Input::from(options).prompt(),
-            Question::Confirm(options) => Confirm::from(options).prompt(),
-            Question::Password(options) => Password::from(options).prompt(),
-        }
+        let terminal = Terminal::new()?;
+        let mut renderer = Renderer::new(terminal)?;
+
+        let answer = match self {
+            Question::MultiSelect(options) => MultiSelect::from(options).prompt(&mut renderer),
+            Question::Select(options) => Select::from(options).prompt(&mut renderer),
+            Question::Input(options) => Input::from(options).prompt(&mut renderer),
+            Question::Confirm(options) => Confirm::from(options).prompt(&mut renderer),
+            Question::Password(options) => Password::from(options).prompt(&mut renderer),
+        }?;
+
+        Ok(answer)
     }
 
     pub fn apply_global_config(

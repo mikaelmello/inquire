@@ -5,16 +5,15 @@ use unicode_segmentation::UnicodeSegmentation;
 use termion::event::Key;
 
 use crate::{
-    answer::{Answer, Prompt},
+    answer::Answer,
     ask::{Question, QuestionOptions},
     config::{
         Filter, PromptConfig, Transformer, Validator, DEFAULT_FILTER, DEFAULT_KEEP_FILTER,
         DEFAULT_PAGE_SIZE, DEFAULT_TRANSFORMER, DEFAULT_VALIDATOR, DEFAULT_VIM_MODE,
     },
     renderer::Renderer,
-    terminal::Terminal,
     utils::paginate,
-    OptionAnswer,
+    OptionAnswer, Prompt,
 };
 
 const DEFAULT_STARTING_SELECTION: usize = 0;
@@ -153,7 +152,6 @@ pub(in crate) struct MultiSelect<'a> {
     cursor_index: usize,
     checked: HashSet<usize>,
     page_size: usize,
-    renderer: Renderer,
     keep_filter: bool,
     filter_value: Option<String>,
     filtered_options: Vec<usize>,
@@ -171,7 +169,6 @@ impl<'a> From<MultiSelectOptions<'a>> for MultiSelect<'a> {
             help_message: mso.help_message,
             vim_mode: mso.vim_mode,
             cursor_index: mso.starting_selection,
-            renderer: Renderer::default(),
             page_size: mso.page_size,
             keep_filter: mso.keep_filter,
             filter_value: None,
@@ -303,27 +300,16 @@ impl<'a> MultiSelect<'a> {
         }
     }
 
-    fn cleanup(&mut self, terminal: &mut Terminal, answer: &str) -> Result<(), Box<dyn Error>> {
-        self.renderer.reset_prompt(terminal)?;
-        self.renderer
-            .print_prompt_answer(terminal, &self.message, answer)?;
-
-        Ok(())
-    }
-}
-
-impl<'a> Prompt for MultiSelect<'a> {
-    fn render(&mut self, terminal: &mut Terminal) -> Result<(), std::io::Error> {
+    fn render(&mut self, renderer: &mut Renderer) -> Result<(), std::io::Error> {
         let prompt = &self.message;
 
-        self.renderer.reset_prompt(terminal)?;
+        renderer.reset_prompt()?;
 
         if let Some(err) = &self.error {
-            self.renderer.print_error(terminal, err.deref())?;
+            renderer.print_error(err.deref())?;
         }
 
-        self.renderer
-            .print_prompt(terminal, &prompt, None, self.filter_value.as_deref())?;
+        renderer.print_prompt(&prompt, None, self.filter_value.as_deref())?;
 
         let choices = self
             .filtered_options
@@ -335,31 +321,29 @@ impl<'a> Prompt for MultiSelect<'a> {
         let (paginated_opts, rel_sel) = paginate(self.page_size, &choices, self.cursor_index);
 
         for (idx, opt) in paginated_opts.iter().enumerate() {
-            self.renderer.print_multi_option(
-                terminal,
+            renderer.print_multi_option(
                 rel_sel == idx,
                 self.checked.contains(&opt.index),
                 &opt.value,
             )?;
         }
 
-        self.renderer.print_help(terminal, self.help_message)?;
+        renderer.print_help(self.help_message)?;
 
-        terminal.flush()?;
+        renderer.flush()?;
 
         Ok(())
     }
+}
 
-    fn prompt(mut self) -> Result<Answer, Box<dyn Error>> {
-        let mut terminal = Terminal::new()?;
-        terminal.cursor_hide()?;
-
+impl<'a> Prompt for MultiSelect<'a> {
+    fn prompt(mut self, renderer: &mut Renderer) -> Result<Answer, Box<dyn Error>> {
         let final_answer: Answer;
 
         loop {
-            self.render(&mut terminal)?;
+            self.render(renderer)?;
 
-            let key = terminal.read_key()?;
+            let key = renderer.read_key()?;
 
             match key {
                 Key::Ctrl('c') => bail!("Multi-selection interrupted by ctrl-c"),
@@ -376,9 +360,7 @@ impl<'a> Prompt for MultiSelect<'a> {
 
         let transformed = (self.transformer)(&final_answer);
 
-        self.cleanup(&mut terminal, &transformed)?;
-
-        terminal.cursor_show()?;
+        renderer.cleanup(&self.message, &transformed)?;
 
         Ok(final_answer)
     }

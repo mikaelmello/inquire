@@ -6,11 +6,11 @@ use unicode_segmentation::UnicodeSegmentation;
 use termion::event::Key;
 
 use crate::{
-    answer::{Answer, Prompt},
+    answer::Answer,
     ask::{Question, QuestionOptions},
     config::{PromptConfig, Transformer, DEFAULT_TRANSFORMER},
     renderer::Renderer,
-    terminal::Terminal,
+    Prompt,
 };
 
 const ERROR_MESSAGE: &str = "Invalid answer, try typing 'y' for yes or 'n' for no";
@@ -80,7 +80,6 @@ pub(in crate) struct Confirm<'a> {
     error_state: bool,
     help_message: Option<&'a str>,
     default: Option<bool>,
-    renderer: Renderer,
     content: String,
     transformer: Transformer,
 }
@@ -92,7 +91,6 @@ impl<'a> From<ConfirmOptions<'a>> for Confirm<'a> {
             error_state: false,
             default: co.default,
             help_message: co.help_message,
-            renderer: Renderer::default(),
             transformer: co.transformer,
             content: String::new(),
         }
@@ -132,23 +130,13 @@ impl<'a> Confirm<'a> {
         }
     }
 
-    fn cleanup(&mut self, terminal: &mut Terminal, answer: &str) -> Result<(), Box<dyn Error>> {
-        self.renderer.reset_prompt(terminal)?;
-        self.renderer
-            .print_prompt_answer(terminal, &self.message, answer)?;
-
-        Ok(())
-    }
-}
-
-impl<'a> Prompt for Confirm<'a> {
-    fn render(&mut self, terminal: &mut Terminal) -> Result<(), std::io::Error> {
+    fn render(&mut self, renderer: &mut Renderer) -> Result<(), std::io::Error> {
         let prompt = &self.message;
 
-        self.renderer.reset_prompt(terminal)?;
+        renderer.reset_prompt()?;
 
         if self.error_state {
-            self.renderer.print_error_message(terminal, ERROR_MESSAGE)?;
+            renderer.print_error_message(ERROR_MESSAGE)?;
         }
 
         let default_message = self.default.map(|v| match v {
@@ -156,28 +144,26 @@ impl<'a> Prompt for Confirm<'a> {
             false => "y/N",
         });
 
-        self.renderer
-            .print_prompt(terminal, &prompt, default_message, Some(&self.content))?;
+        renderer.print_prompt(&prompt, default_message, Some(&self.content))?;
 
         if let Some(message) = self.help_message {
-            self.renderer.print_help(terminal, message)?;
+            renderer.print_help(message)?;
         }
 
-        terminal.flush()?;
+        renderer.flush()?;
 
         Ok(())
     }
+}
 
-    fn prompt(mut self) -> Result<Answer, Box<dyn Error>> {
-        let mut terminal = Terminal::new()?;
-        terminal.cursor_hide()?;
-
+impl<'a> Prompt for Confirm<'a> {
+    fn prompt(mut self, renderer: &mut Renderer) -> Result<Answer, Box<dyn Error>> {
         let final_answer: Answer;
 
         loop {
-            self.render(&mut terminal)?;
+            self.render(renderer)?;
 
-            let key = terminal.read_key()?;
+            let key = renderer.read_key()?;
 
             match key {
                 Key::Ctrl('c') => bail!("Confirm interrupted by ctrl-c"),
@@ -197,9 +183,7 @@ impl<'a> Prompt for Confirm<'a> {
 
         let transformed = (self.transformer)(&final_answer);
 
-        self.cleanup(&mut terminal, &transformed)?;
-
-        terminal.cursor_show()?;
+        renderer.cleanup(&self.message, &transformed)?;
 
         Ok(final_answer)
     }

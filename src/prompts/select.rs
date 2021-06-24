@@ -1,3 +1,4 @@
+use lazy_static::__Deref;
 use simple_error::SimpleError;
 use std::{error::Error, iter::FromIterator};
 use unicode_segmentation::UnicodeSegmentation;
@@ -5,16 +6,15 @@ use unicode_segmentation::UnicodeSegmentation;
 use termion::event::Key;
 
 use crate::{
-    answer::{Answer, Prompt},
+    answer::Answer,
     ask::{Question, QuestionOptions},
     config::{
         Filter, PromptConfig, Transformer, DEFAULT_FILTER, DEFAULT_PAGE_SIZE, DEFAULT_TRANSFORMER,
         DEFAULT_VIM_MODE,
     },
     renderer::Renderer,
-    terminal::Terminal,
     utils::paginate,
-    OptionAnswer,
+    OptionAnswer, Prompt,
 };
 
 const DEFAULT_STARTING_SELECTION: usize = 0;
@@ -118,11 +118,11 @@ pub(in crate) struct Select<'a> {
     vim_mode: bool,
     cursor_index: usize,
     page_size: usize,
-    renderer: Renderer,
     filter_value: Option<String>,
     filtered_options: Vec<usize>,
     filter: Filter,
     transformer: Transformer,
+    error: Option<Box<dyn Error>>,
 }
 
 impl<'a> From<SelectOptions<'a>> for Select<'a> {
@@ -133,12 +133,12 @@ impl<'a> From<SelectOptions<'a>> for Select<'a> {
             help_message: so.help_message,
             vim_mode: so.vim_mode,
             cursor_index: so.starting_selection,
-            renderer: Renderer::default(),
             page_size: so.page_size,
             filter_value: None,
             filtered_options: Vec::from_iter(0..so.options.len()),
             filter: so.filter,
             transformer: so.transformer,
+            error: None,
         }
     }
 }
@@ -213,23 +213,16 @@ impl<'a> Select<'a> {
             .ok_or(Box::new(SimpleError::new("Invalid selected index")))
     }
 
-    fn cleanup(&mut self, terminal: &mut Terminal, answer: &str) -> Result<(), Box<dyn Error>> {
-        self.renderer.reset_prompt(terminal)?;
-        self.renderer
-            .print_prompt_answer(terminal, &self.message, answer)?;
-
-        Ok(())
-    }
-}
-
-impl<'a> Prompt for Select<'a> {
-    fn render(&mut self, terminal: &mut Terminal) -> Result<(), std::io::Error> {
+    fn render(&mut self, renderer: &mut Renderer) -> Result<(), std::io::Error> {
         let prompt = &self.message;
 
-        self.renderer.reset_prompt(terminal)?;
+        renderer.reset_prompt()?;
 
-        self.renderer
-            .print_prompt(terminal, &prompt, None, self.filter_value.as_deref())?;
+        if let Some(err) = &self.error {
+            renderer.print_error(err.deref())?;
+        }
+
+        renderer.print_prompt(&prompt, None, self.filter_value.as_deref())?;
 
         let choices = self
             .filtered_options
@@ -241,40 +234,44 @@ impl<'a> Prompt for Select<'a> {
         let (paginated_opts, rel_sel) = paginate(self.page_size, &choices, self.cursor_index);
 
         for (idx, opt) in paginated_opts.iter().enumerate() {
-            self.renderer
-                .print_option(terminal, rel_sel == idx, &opt.value)?;
+            renderer.print_option(rel_sel == idx, &opt.value)?;
         }
 
-        self.renderer.print_help(terminal, self.help_message)?;
+        renderer.print_help(self.help_message)?;
 
-        terminal.flush()?;
+        renderer.flush()?;
 
         Ok(())
     }
+}
 
-    fn prompt(mut self) -> Result<Answer, Box<dyn Error>> {
-        let mut terminal = Terminal::new()?;
-        terminal.cursor_hide()?;
+impl<'a> Prompt for Select<'a> {
+    fn prompt(mut self, renderer: &mut Renderer) -> Result<Answer, Box<dyn Error>> {
+        let final_answer: Answer;
 
         loop {
-            self.render(&mut terminal)?;
+            self.render(renderer)?;
 
-            let key = terminal.read_key()?;
+            let key = renderer.read_key()?;
 
             match key {
                 Key::Ctrl('c') => bail!("Multi-selection interrupted by ctrl-c"),
-                Key::Char('\n') | Key::Char('\r') | Key::Char(' ') => break,
+                Key::Char('\n') | Key::Char('\r') | Key::Char(' ') => match self.get_final_answer()
+                {
+                    Ok(answer) => {
+                        final_answer = answer;
+                        break;
+                    }
+                    Err(err) => self.error = Some(err),
+                },
                 key => self.on_change(key),
             }
         }
 
-        let answer = self.get_final_answer()?;
-        let transformed = (self.transformer)(&answer);
+        let transformed = (self.transformer)(&final_answer);
 
-        self.cleanup(&mut terminal, &transformed)?;
+        renderer.cleanup(&self.message, &transformed)?;
 
-        terminal.cursor_show()?;
-
-        Ok(answer)
+        Ok(final_answer)
     }
 }

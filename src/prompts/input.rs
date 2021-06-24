@@ -5,16 +5,15 @@ use unicode_segmentation::UnicodeSegmentation;
 use termion::event::Key;
 
 use crate::{
-    answer::{Answer, Prompt},
+    answer::Answer,
     ask::{Question, QuestionOptions},
     config::{
         PromptConfig, Suggestor, Transformer, Validator, DEFAULT_PAGE_SIZE, DEFAULT_TRANSFORMER,
         DEFAULT_VALIDATOR,
     },
     renderer::Renderer,
-    terminal::Terminal,
     utils::paginate,
-    OptionAnswer,
+    OptionAnswer, Prompt,
 };
 
 const DEFAULT_HELP_MESSAGE: &str = "↑↓ to move, tab to auto-complete, enter to submit";
@@ -93,7 +92,6 @@ pub(in crate) struct Input<'a> {
     message: &'a str,
     default: Option<&'a str>,
     help_message: Option<&'a str>,
-    renderer: Renderer,
     content: String,
     transformer: Transformer,
     validator: Validator,
@@ -110,7 +108,6 @@ impl<'a> From<InputOptions<'a>> for Input<'a> {
             message: so.message,
             default: so.default,
             help_message: so.help_message,
-            renderer: Renderer::default(),
             transformer: so.transformer,
             validator: so.validator,
             suggestor: so.suggestor,
@@ -213,27 +210,16 @@ impl<'a> Input<'a> {
         }
     }
 
-    fn cleanup(&mut self, terminal: &mut Terminal, answer: &str) -> Result<(), Box<dyn Error>> {
-        self.renderer.reset_prompt(terminal)?;
-        self.renderer
-            .print_prompt_answer(terminal, &self.message, answer)?;
-
-        Ok(())
-    }
-}
-
-impl<'a> Prompt for Input<'a> {
-    fn render(&mut self, terminal: &mut Terminal) -> Result<(), std::io::Error> {
+    fn render(&mut self, renderer: &mut Renderer) -> Result<(), std::io::Error> {
         let prompt = &self.message;
 
-        self.renderer.reset_prompt(terminal)?;
+        renderer.reset_prompt()?;
 
         if let Some(err) = &self.error {
-            self.renderer.print_error(terminal, err.deref())?;
+            renderer.print_error(err.deref())?;
         }
 
-        self.renderer
-            .print_prompt(terminal, &prompt, self.default, Some(&self.content))?;
+        renderer.print_prompt(&prompt, self.default, Some(&self.content))?;
 
         let choices = self
             .suggested_options
@@ -244,31 +230,29 @@ impl<'a> Prompt for Input<'a> {
 
         let (paginated_opts, rel_sel) = paginate(self.page_size, &choices, self.cursor_index);
         for (idx, opt) in paginated_opts.iter().enumerate() {
-            self.renderer
-                .print_option(terminal, rel_sel == idx, &opt.value)?;
+            renderer.print_option(rel_sel == idx, &opt.value)?;
         }
 
         if let Some(message) = self.help_message {
-            self.renderer.print_help(terminal, message)?;
+            renderer.print_help(message)?;
         } else if !choices.is_empty() {
-            self.renderer.print_help(terminal, DEFAULT_HELP_MESSAGE)?;
+            renderer.print_help(DEFAULT_HELP_MESSAGE)?;
         }
 
-        terminal.flush()?;
+        renderer.flush()?;
 
         Ok(())
     }
+}
 
-    fn prompt(mut self) -> Result<Answer, Box<dyn Error>> {
-        let mut terminal = Terminal::new()?;
-        terminal.cursor_hide()?;
-
+impl<'a> Prompt for Input<'a> {
+    fn prompt(mut self, renderer: &mut Renderer) -> Result<Answer, Box<dyn Error>> {
         let final_answer: Answer;
 
         loop {
-            self.render(&mut terminal)?;
+            self.render(renderer)?;
 
-            let key = terminal.read_key()?;
+            let key = renderer.read_key()?;
 
             match key {
                 Key::Ctrl('c') => bail!("Input interrupted by ctrl-c"),
@@ -286,9 +270,7 @@ impl<'a> Prompt for Input<'a> {
 
         let transformed = (self.transformer)(&final_answer);
 
-        self.cleanup(&mut terminal, &transformed)?;
-
-        terminal.cursor_show()?;
+        renderer.cleanup(&self.message, &transformed)?;
 
         Ok(final_answer)
     }

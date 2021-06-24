@@ -1,7 +1,4 @@
-use std::error::Error;
 use std::fmt;
-
-use crate::terminal::Terminal;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Answer {
@@ -10,11 +7,6 @@ pub enum Answer {
     Password(String),
     Option(OptionAnswer),
     MultipleOptions(Vec<OptionAnswer>),
-}
-
-pub(in crate) trait Prompt {
-    fn render(&mut self, terminal: &mut Terminal) -> Result<(), std::io::Error>;
-    fn prompt(self) -> Result<Answer, Box<dyn Error>>;
 }
 
 impl Answer {
