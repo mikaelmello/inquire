@@ -19,7 +19,7 @@ use crate::{
 
 const DEFAULT_HELP_MESSAGE: &str = "↑↓ to move, tab to auto-complete, enter to submit";
 
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 pub struct InputOptions<'a> {
     message: &'a str,
     default: Option<&'a str>,

@@ -15,7 +15,7 @@ use crate::{
 
 const ERROR_MESSAGE: &str = "Invalid answer, try typing 'y' for yes or 'n' for no";
 
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 pub struct ConfirmOptions<'a> {
     message: &'a str,
     default: Option<bool>,

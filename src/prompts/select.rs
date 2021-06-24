@@ -20,7 +20,7 @@ use crate::{
 const DEFAULT_STARTING_SELECTION: usize = 0;
 const DEFAULT_HELP_MESSAGE: &str = "↑↓ to move, space or enter to select, type to filter";
 
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 pub struct SelectOptions<'a> {
     message: &'a str,
     options: &'a [&'a str],

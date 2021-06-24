@@ -21,7 +21,7 @@ const DEFAULT_STARTING_SELECTION: usize = 0;
 const DEFAULT_HELP_MESSAGE: &str =
     "↑↓ to move, space to select one, → to all, ← to none, type to filter";
 
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 pub struct MultiSelectOptions<'a> {
     message: &'a str,
     options: &'a [&'a str],

@@ -12,7 +12,7 @@ use crate::{
     terminal::Terminal,
 };
 
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 pub struct PasswordOptions<'a> {
     message: &'a str,
     help_message: Option<&'a str>,
