@@ -56,7 +56,7 @@ fn main() {
         ConfirmOptions::new("Do you eat pizza?")
             .with_default(true)
             .into_question(),
-        SelectOptions::new("What is the primary language you use at work?", &languages)
+        SelectOptions::new("What is your favorite programming language?", &languages)
             .unwrap()
             .into_question(),
         PasswordOptions::new("Password:")
@@ -79,8 +79,8 @@ fn main() {
     let language = &answers.get(3).map(Answer::get_option).unwrap().value;
 
     if eats_pineapple && eats_pizza {
-        println!("After our ML-powered analysis, we conclude that {} developers from {} are much more likely to put pineapple on pizzas", language, workplace);
+        println!("Thanks for your submission.\nWe have reported that a {} developer from {} puts pineapple on pizzas.", language, workplace);
     } else {
-        println!("After our ML-powered analysis, we were able to conclude absolutely nothing")
+        println!("Based on our ML-powered analysis, we were able to conclude absolutely nothing.")
     }
 }
