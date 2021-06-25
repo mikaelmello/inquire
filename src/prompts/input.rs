@@ -298,7 +298,7 @@ mod test {
 
         ($name:ident,$input:expr,$output:expr,$question:expr) => {
             #[test]
-            #[timeout(10)]
+            #[timeout(100)]
             fn $name() {
                 let mut read: &[u8] = $input.as_bytes();
 
