@@ -28,6 +28,7 @@ pub enum IO<'a> {
 
 pub struct Terminal<'a> {
     io: IO<'a>,
+    dull: bool,
 }
 
 #[derive(Copy, Clone)]
@@ -47,6 +48,7 @@ impl<'a> Terminal<'a> {
                 r: stdin().keys(),
                 w: stdout().into_raw_mode()?,
             },
+            dull: false,
         })
     }
 
@@ -63,7 +65,14 @@ impl<'a> Terminal<'a> {
                 r: reader.keys(),
                 w: writer,
             },
+            dull: false,
         })
+    }
+
+    pub fn dull(mut self) -> Self {
+        self.dull = true;
+
+        self
     }
 
     pub fn cursor_up(&mut self) -> Result<(), Error> {
@@ -118,6 +127,10 @@ impl<'a> Terminal<'a> {
     }
 
     pub fn set_style(&mut self, style: Style) -> Result<(), std::io::Error> {
+        if self.dull {
+            return Ok(());
+        }
+
         match style {
             Style::Bold => write!(self.get_writer(), "{}", termion::style::Bold),
             Style::Italic => write!(self.get_writer(), "{}", termion::style::Italic),
@@ -126,24 +139,44 @@ impl<'a> Terminal<'a> {
 
     #[allow(unused)]
     pub fn reset_style(&mut self) -> Result<(), std::io::Error> {
+        if self.dull {
+            return Ok(());
+        }
+
         write!(self.get_writer(), "{}", termion::style::Reset)
     }
 
     pub fn set_bg_color<C: Color>(&mut self, color: C) -> Result<(), std::io::Error> {
+        if self.dull {
+            return Ok(());
+        }
+
         write!(self.get_writer(), "{}", color::Bg(color))
     }
 
     #[allow(unused)]
     pub fn reset_bg_color(&mut self) -> Result<(), std::io::Error> {
+        if self.dull {
+            return Ok(());
+        }
+
         write!(self.get_writer(), "{}", color::Bg(color::Reset))
     }
 
     pub fn set_fg_color<C: Color>(&mut self, color: C) -> Result<(), std::io::Error> {
+        if self.dull {
+            return Ok(());
+        }
+
         write!(self.get_writer(), "{}", color::Fg(color))
     }
 
     #[allow(unused)]
     pub fn reset_fg_color(&mut self) -> Result<(), std::io::Error> {
+        if self.dull {
+            return Ok(());
+        }
+
         write!(self.get_writer(), "{}", color::Fg(color::Reset))
     }
 
@@ -270,6 +303,36 @@ mod test {
                 termion::color::Bg(termion::color::Green),
                 termion::cursor::Show,
             ),
+            std::str::from_utf8(&write).unwrap()
+        );
+    }
+
+    #[test]
+    fn dull_ignores_fg_bg_style() {
+        let mut write: Vec<u8> = Vec::new();
+        let read: Vec<u8> = Vec::new();
+        let mut read = read.as_slice();
+
+        {
+            let mut terminal = Terminal::new_with_io(&mut write, &mut read).unwrap().dull();
+
+            terminal.set_style(Style::Bold).unwrap();
+            terminal.set_style(Style::Italic).unwrap();
+            terminal.set_style(Style::Bold).unwrap();
+            terminal.reset_style().unwrap();
+            terminal.set_bg_color(termion::color::Red).unwrap();
+            terminal.reset_bg_color().unwrap();
+            terminal.set_bg_color(termion::color::Black).unwrap();
+            terminal.set_bg_color(termion::color::Green).unwrap();
+            terminal.write("wow").unwrap();
+            terminal.set_fg_color(termion::color::Red).unwrap();
+            terminal.reset_fg_color().unwrap();
+            terminal.set_fg_color(termion::color::Black).unwrap();
+            terminal.set_fg_color(termion::color::Green).unwrap();
+        }
+
+        assert_eq!(
+            format!("wow{}", termion::cursor::Show),
             std::str::from_utf8(&write).unwrap()
         );
     }
