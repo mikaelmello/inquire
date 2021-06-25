@@ -275,3 +275,82 @@ impl<'a> Prompt for Input<'a> {
         Ok(final_answer)
     }
 }
+
+#[cfg(test)]
+mod test {
+    use simple_error::SimpleError;
+
+    use crate::{
+        input::Input, renderer::Renderer, terminal::Terminal, Answer, InputOptions, Prompt,
+    };
+
+    fn default_input<'a>() -> Input<'a> {
+        let options = InputOptions::new("Question?");
+
+        Input::from(options)
+    }
+
+    #[test]
+    fn letters_and_enter() {
+        let mut read: &[u8] = b"normal input\n";
+
+        let mut write: Vec<u8> = Vec::new();
+        let terminal = Terminal::new_with_io(&mut write, &mut read).unwrap();
+        let mut renderer = Renderer::new(terminal).unwrap();
+
+        let ans = default_input().prompt(&mut renderer).unwrap();
+
+        assert_eq!(Answer::Content("normal input".to_string()), ans);
+    }
+
+    #[test]
+    fn letters_and_enter_with_emoji() {
+        let input = "with emoji 🧘🏻‍♂️, 🌍, 🍞, 🚗, 📞\n";
+        let mut read: &[u8] = input.as_bytes();
+
+        let mut write: Vec<u8> = Vec::new();
+        let terminal = Terminal::new_with_io(&mut write, &mut read).unwrap();
+        let mut renderer = Renderer::new(terminal).unwrap();
+
+        let ans = default_input().prompt(&mut renderer).unwrap();
+
+        assert_eq!(
+            Answer::Content("with emoji 🧘🏻‍♂️, 🌍, 🍞, 🚗, 📞".to_string()),
+            ans
+        );
+    }
+
+    #[test]
+    fn input_correction() {
+        let mut read: &[u8] = b"anor\x7F\x7F\x7F\x7Fnormal input\n";
+
+        let mut write: Vec<u8> = Vec::new();
+        let terminal = Terminal::new_with_io(&mut write, &mut read).unwrap();
+        let mut renderer = Renderer::new(terminal).unwrap();
+
+        let ans = default_input().prompt(&mut renderer).unwrap();
+
+        assert_eq!(Answer::Content("normal input".to_string()), ans);
+    }
+
+    #[test]
+    fn input_correction_after_validation() {
+        let mut read: &[u8] = b"1234567890\n\x7F\x7F\x7F\x7F\x7F\nyes\n";
+
+        let mut write: Vec<u8> = Vec::new();
+        let terminal = Terminal::new_with_io(&mut write, &mut read).unwrap();
+        let mut renderer = Renderer::new(terminal).unwrap();
+
+        let options = InputOptions::new("Question?").with_validator(|ans| match ans {
+            Answer::Content(val) => match val.len() {
+                len if len > 5 && len < 10 => Ok(()),
+                _ => Err(Box::new(SimpleError::new("Invalid"))),
+            },
+            _ => panic!(),
+        });
+
+        let ans = Input::from(options).prompt(&mut renderer).unwrap();
+
+        assert_eq!(Answer::Content("12345yes".to_string()), ans);
+    }
+}
