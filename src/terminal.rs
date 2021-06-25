@@ -1,7 +1,4 @@
-use std::{
-    fmt::Display,
-    io::{stdin, stdout, Error, Read, Write},
-};
+use std::io::{stdin, stdout, Error, Read, Write};
 
 use termion::{
     color::{self, Color},
@@ -22,9 +19,6 @@ pub struct Terminal<'a> {
     size: Size,
     reader: Box<dyn 'a + Read>,
     writer: Box<dyn 'a + Write>,
-    applied_fgs: Vec<String>,
-    applied_bgs: Vec<String>,
-    applied_styles: Vec<Style>,
 }
 
 #[derive(Copy, Clone)]
@@ -47,9 +41,6 @@ impl<'a> Terminal<'a> {
             },
             reader: Box::new(stdin()),
             writer: Box::new(stdout().into_raw_mode()?),
-            applied_bgs: vec![],
-            applied_fgs: vec![],
-            applied_styles: vec![],
         })
     }
 
@@ -69,9 +60,6 @@ impl<'a> Terminal<'a> {
             },
             reader: Box::new(reader),
             writer: Box::new(writer),
-            applied_bgs: vec![],
-            applied_fgs: vec![],
-            applied_styles: vec![],
         })
     }
 
@@ -124,46 +112,32 @@ impl<'a> Terminal<'a> {
     }
 
     pub fn set_style(&mut self, style: Style) -> Result<(), std::io::Error> {
-        self.applied_styles.push(style);
-        let style: Box<dyn Display> = match style {
-            Style::Bold => Box::new(termion::style::Bold),
-            Style::Italic => Box::new(termion::style::Italic),
-        };
-
-        write!(self.writer, "{}", style)
+        match style {
+            Style::Bold => write!(self.writer, "{}", termion::style::Bold),
+            Style::Italic => write!(self.writer, "{}", termion::style::Italic),
+        }
     }
 
     #[allow(unused)]
     pub fn reset_style(&mut self) -> Result<(), std::io::Error> {
-        self.applied_styles.clear();
         write!(self.writer, "{}", termion::style::Reset)
     }
 
     pub fn set_bg_color<C: Color>(&mut self, color: C) -> Result<(), std::io::Error> {
-        let fmt = format!("{}", color::Bg(color));
-        let res = write!(self.writer, "{}", fmt);
-        self.applied_bgs.push(fmt);
-
-        res
+        write!(self.writer, "{}", color::Bg(color))
     }
 
     #[allow(unused)]
     pub fn reset_bg_color(&mut self) -> Result<(), std::io::Error> {
-        self.applied_bgs.clear();
         write!(self.writer, "{}", color::Bg(color::Reset))
     }
 
     pub fn set_fg_color<C: Color>(&mut self, color: C) -> Result<(), std::io::Error> {
-        let fmt = format!("{}", color::Fg(color));
-        let res = write!(self.writer, "{}", fmt);
-        self.applied_fgs.push(fmt);
-
-        res
+        write!(self.writer, "{}", color::Fg(color))
     }
 
     #[allow(unused)]
     pub fn reset_fg_color(&mut self) -> Result<(), std::io::Error> {
-        self.applied_fgs.clear();
         write!(self.writer, "{}", color::Fg(color::Reset))
     }
 }
