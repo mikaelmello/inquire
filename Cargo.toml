@@ -17,3 +17,6 @@ unicode-segmentation = "1"
 simple-error = "0.2.3"
 regex = "1"
 lazy_static = "1.4.0"
+
+[dev-dependencies]
+ntest = "*"

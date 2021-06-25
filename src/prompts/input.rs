@@ -278,6 +278,7 @@ impl<'a> Prompt for Input<'a> {
 
 #[cfg(test)]
 mod test {
+    use ntest::timeout;
     use simple_error::SimpleError;
 
     use crate::{
@@ -290,67 +291,62 @@ mod test {
         Input::from(options)
     }
 
-    #[test]
-    fn letters_and_enter() {
-        let mut read: &[u8] = b"normal input\n";
+    macro_rules! input_test {
+        ($name:ident,$input:expr,$output:expr) => {
+            input_test! {$name, $input, $output, default_input()}
+        };
 
-        let mut write: Vec<u8> = Vec::new();
-        let terminal = Terminal::new_with_io(&mut write, &mut read).unwrap();
-        let mut renderer = Renderer::new(terminal).unwrap();
+        ($name:ident,$input:expr,$output:expr,$question:expr) => {
+            #[test]
+            #[timeout(10)]
+            fn $name() {
+                let mut read: &[u8] = $input.as_bytes();
 
-        let ans = default_input().prompt(&mut renderer).unwrap();
+                let mut write: Vec<u8> = Vec::new();
+                let terminal = Terminal::new_with_io(&mut write, &mut read).unwrap();
+                let mut renderer = Renderer::new(terminal).unwrap();
 
-        assert_eq!(Answer::Content("normal input".to_string()), ans);
+                let ans = Input::from($question).prompt(&mut renderer).unwrap();
+
+                assert_eq!(Answer::Content($output.to_string()), ans);
+            }
+        };
     }
 
-    #[test]
-    fn letters_and_enter_with_emoji() {
-        let input = "with emoji 🧘🏻‍♂️, 🌍, 🍞, 🚗, 📞\n";
-        let mut read: &[u8] = input.as_bytes();
+    input_test!(empty, "\n", "");
 
-        let mut write: Vec<u8> = Vec::new();
-        let terminal = Terminal::new_with_io(&mut write, &mut read).unwrap();
-        let mut renderer = Renderer::new(terminal).unwrap();
+    input_test!(single_letter, "b\n", "b");
 
-        let ans = default_input().prompt(&mut renderer).unwrap();
+    input_test!(letters_and_enter, "normal input\n", "normal input");
 
-        assert_eq!(
-            Answer::Content("with emoji 🧘🏻‍♂️, 🌍, 🍞, 🚗, 📞".to_string()),
-            ans
-        );
-    }
+    input_test!(
+        letters_and_enter_with_emoji,
+        "with emoji 🧘🏻‍♂️, 🌍, 🍞, 🚗, 📞\n",
+        "with emoji 🧘🏻‍♂️, 🌍, 🍞, 🚗, 📞"
+    );
 
-    #[test]
-    fn input_correction() {
-        let mut read: &[u8] = b"anor\x7F\x7F\x7F\x7Fnormal input\n";
+    input_test!(
+        input_and_correction,
+        "anor\x7F\x7F\x7F\x7Fnormal input\n",
+        "normal input"
+    );
 
-        let mut write: Vec<u8> = Vec::new();
-        let terminal = Terminal::new_with_io(&mut write, &mut read).unwrap();
-        let mut renderer = Renderer::new(terminal).unwrap();
+    input_test!(
+        input_and_excessive_correction,
+        "anor\x7F\x7F\x7F\x7F\x7F\x7F\x7F\x7Fnormal input\n",
+        "normal input"
+    );
 
-        let ans = default_input().prompt(&mut renderer).unwrap();
-
-        assert_eq!(Answer::Content("normal input".to_string()), ans);
-    }
-
-    #[test]
-    fn input_correction_after_validation() {
-        let mut read: &[u8] = b"1234567890\n\x7F\x7F\x7F\x7F\x7F\nyes\n";
-
-        let mut write: Vec<u8> = Vec::new();
-        let terminal = Terminal::new_with_io(&mut write, &mut read).unwrap();
-        let mut renderer = Renderer::new(terminal).unwrap();
-
-        let options = InputOptions::new("Question?").with_validator(|ans| match ans {
+    input_test!(
+        input_correction_after_validation,
+        "1234567890\n\x7F\x7F\x7F\x7F\x7F\nyes\n",
+        "12345yes",
+        InputOptions::new("").with_validator(|ans| match ans {
             Answer::Content(val) => match val.len() {
                 len if len > 5 && len < 10 => Ok(()),
                 _ => Err(Box::new(SimpleError::new("Invalid"))),
             },
             _ => panic!(),
-        });
-
-        let ans = Input::from(options).prompt(&mut renderer).unwrap();
-
-        assert_eq!(Answer::Content("12345yes".to_string()), ans);
-    }
+        })
+    );
 }
