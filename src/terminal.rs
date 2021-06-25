@@ -173,11 +173,12 @@ mod test {
 
         assert_eq!(
             format!(
-                "{}{}{}{}",
+                "{}{}{}{}{}",
                 termion::style::Bold,
                 termion::style::Italic,
                 termion::style::Bold,
                 termion::style::Reset,
+                termion::cursor::Show,
             ),
             std::str::from_utf8(&write).unwrap()
         );
@@ -200,11 +201,12 @@ mod test {
 
         assert_eq!(
             format!(
-                "{}{}{}{}",
+                "{}{}{}{}{}",
                 termion::color::Fg(termion::color::Red),
                 termion::color::Fg(termion::color::Reset),
                 termion::color::Fg(termion::color::Black),
                 termion::color::Fg(termion::color::Green),
+                termion::cursor::Show,
             ),
             std::str::from_utf8(&write).unwrap()
         );
@@ -227,11 +229,12 @@ mod test {
 
         assert_eq!(
             format!(
-                "{}{}{}{}",
+                "{}{}{}{}{}",
                 termion::color::Bg(termion::color::Red),
                 termion::color::Bg(termion::color::Reset),
                 termion::color::Bg(termion::color::Black),
                 termion::color::Bg(termion::color::Green),
+                termion::cursor::Show,
             ),
             std::str::from_utf8(&write).unwrap()
         );
