@@ -1,11 +1,11 @@
-use std::io::{stdin, stdout, Error, Read, Write};
+use std::io::{stdin, stdout, Error, Read, Stdin, Stdout, Write};
 
 use termion::{
     color::{self, Color},
     cursor,
     event::Key,
-    input::TermRead,
-    raw::IntoRawMode,
+    input::{Keys, TermRead},
+    raw::{IntoRawMode, RawTerminal},
 };
 
 #[derive(Default, Clone, Copy, PartialEq)]
@@ -14,11 +14,20 @@ pub struct Size {
     pub height: u16,
 }
 
-pub struct Terminal<'a> {
+pub enum IO<'a> {
+    Std {
+        r: Keys<Stdin>,
+        w: RawTerminal<Stdout>,
+    },
     #[allow(unused)]
-    size: Size,
-    reader: Box<dyn 'a + Read>,
-    writer: Box<dyn 'a + Write>,
+    Custom {
+        r: Keys<&'a mut (dyn 'a + Read)>,
+        w: &'a mut (dyn Write),
+    },
+}
+
+pub struct Terminal<'a> {
+    io: IO<'a>,
 }
 
 #[derive(Copy, Clone)]
@@ -33,14 +42,11 @@ impl<'a> Terminal<'a> {
     ///
     /// Will return `std::io::Error` if it fails to get terminal size
     pub fn new() -> Result<Self, std::io::Error> {
-        let size = termion::terminal_size()?;
         Ok(Self {
-            size: Size {
-                width: size.0,
-                height: size.1.saturating_sub(2),
+            io: IO::Std {
+                r: stdin().keys(),
+                w: stdout().into_raw_mode()?,
             },
-            reader: Box::new(stdin()),
-            writer: Box::new(stdout().into_raw_mode()?),
         })
     }
 
@@ -48,40 +54,31 @@ impl<'a> Terminal<'a> {
     ///
     /// Will return `std::io::Error` if it fails to get terminal size
     #[cfg(test)]
-    pub fn new_with_io<W: 'a + Write, R: 'a + Read>(
+    pub fn new_with_io<W: 'a + Write>(
         writer: &'a mut W,
-        reader: &'a mut R,
+        reader: &'a mut dyn Read,
     ) -> Result<Self, std::io::Error> {
-        let size = termion::terminal_size()?;
         Ok(Self {
-            size: Size {
-                width: size.0,
-                height: size.1.saturating_sub(2),
+            io: IO::Custom {
+                r: reader.keys(),
+                w: writer,
             },
-            reader: Box::new(reader),
-            writer: Box::new(writer),
         })
     }
 
-    #[must_use]
-    #[allow(unused)]
-    pub fn size(&self) -> Size {
-        self.size
-    }
-
     pub fn cursor_up(&mut self) -> Result<(), Error> {
-        write!(self.writer, "{}", cursor::Up(1))
+        write!(self.get_writer(), "{}", cursor::Up(1))
     }
 
     pub fn cursor_horizontal_reset(&mut self) -> Result<(), Error> {
-        write!(self.writer, "\x1b[0G")
+        write!(self.get_writer(), "\x1b[0G")
     }
 
     /// # Errors
     ///
     /// Will return error when call to stdout().flush() fails
     pub fn flush(&mut self) -> Result<(), std::io::Error> {
-        self.writer.flush()
+        self.get_writer().flush()
     }
 
     /// # Errors
@@ -89,56 +86,72 @@ impl<'a> Terminal<'a> {
     /// Will never return Error for now
     pub fn read_key(&mut self) -> Result<Key, std::io::Error> {
         loop {
-            if let Some(key) = (*self.reader).keys().next() {
-                return key;
+            match &mut self.io {
+                IO::Std { r, w: _ } => {
+                    if let Some(key) = r.next() {
+                        return key;
+                    }
+                }
+                IO::Custom { r, w: _ } => {
+                    if let Some(key) = r.next() {
+                        return key;
+                    }
+                }
             }
         }
     }
 
     pub fn write(&mut self, val: &str) -> Result<(), std::io::Error> {
-        write!(self.writer, "{}", val)
+        write!(self.get_writer(), "{}", val)
     }
 
     pub fn cursor_hide(&mut self) -> Result<(), std::io::Error> {
-        write!(self.writer, "{}", termion::cursor::Hide)
+        write!(self.get_writer(), "{}", termion::cursor::Hide)
     }
 
     pub fn cursor_show(&mut self) -> Result<(), std::io::Error> {
-        write!(self.writer, "{}", termion::cursor::Show)
+        write!(self.get_writer(), "{}", termion::cursor::Show)
     }
 
     pub fn clear_current_line(&mut self) -> Result<(), std::io::Error> {
-        write!(self.writer, "{}", termion::clear::CurrentLine)
+        write!(self.get_writer(), "{}", termion::clear::CurrentLine)
     }
 
     pub fn set_style(&mut self, style: Style) -> Result<(), std::io::Error> {
         match style {
-            Style::Bold => write!(self.writer, "{}", termion::style::Bold),
-            Style::Italic => write!(self.writer, "{}", termion::style::Italic),
+            Style::Bold => write!(self.get_writer(), "{}", termion::style::Bold),
+            Style::Italic => write!(self.get_writer(), "{}", termion::style::Italic),
         }
     }
 
     #[allow(unused)]
     pub fn reset_style(&mut self) -> Result<(), std::io::Error> {
-        write!(self.writer, "{}", termion::style::Reset)
+        write!(self.get_writer(), "{}", termion::style::Reset)
     }
 
     pub fn set_bg_color<C: Color>(&mut self, color: C) -> Result<(), std::io::Error> {
-        write!(self.writer, "{}", color::Bg(color))
+        write!(self.get_writer(), "{}", color::Bg(color))
     }
 
     #[allow(unused)]
     pub fn reset_bg_color(&mut self) -> Result<(), std::io::Error> {
-        write!(self.writer, "{}", color::Bg(color::Reset))
+        write!(self.get_writer(), "{}", color::Bg(color::Reset))
     }
 
     pub fn set_fg_color<C: Color>(&mut self, color: C) -> Result<(), std::io::Error> {
-        write!(self.writer, "{}", color::Fg(color))
+        write!(self.get_writer(), "{}", color::Fg(color))
     }
 
     #[allow(unused)]
     pub fn reset_fg_color(&mut self) -> Result<(), std::io::Error> {
-        write!(self.writer, "{}", color::Fg(color::Reset))
+        write!(self.get_writer(), "{}", color::Fg(color::Reset))
+    }
+
+    pub fn get_writer(&mut self) -> &mut dyn Write {
+        match &mut self.io {
+            IO::Std { r: _, w } => w,
+            IO::Custom { r: _, w } => w,
+        }
     }
 }
 
@@ -155,6 +168,27 @@ mod test {
     use crate::terminal::Style;
 
     use super::Terminal;
+
+    #[test]
+    fn writer() {
+        let mut write: Vec<u8> = Vec::new();
+        let read: Vec<u8> = Vec::new();
+        let mut read = read.as_slice();
+
+        {
+            let mut terminal = Terminal::new_with_io(&mut write, &mut read).unwrap();
+
+            terminal.write("testing ").unwrap();
+            terminal.write("writing ").unwrap();
+            terminal.flush().unwrap();
+            terminal.write("wow").unwrap();
+        }
+
+        assert_eq!(
+            format!("testing writing wow{}", termion::cursor::Show),
+            std::str::from_utf8(&write).unwrap()
+        );
+    }
 
     #[test]
     fn style_management() {
