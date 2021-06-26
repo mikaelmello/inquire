@@ -5,7 +5,11 @@ use unicode_segmentation::UnicodeSegmentation;
 
 use termion::event::Key;
 
-use crate::{formatter::BoolFormatter, renderer::Renderer, terminal::Terminal};
+use crate::{
+    formatter::{BoolFormatter, DEFAULT_BOOL_FORMATTER},
+    renderer::Renderer,
+    terminal::Terminal,
+};
 
 const ERROR_MESSAGE: &str = "Invalid answer, try typing 'y' for yes or 'n' for no";
 
@@ -18,17 +22,14 @@ pub struct Confirm<'a> {
 }
 
 impl<'a> Confirm<'a> {
-    pub const DEFAULT_FORMATTER: BoolFormatter<'a> = |ans| match ans {
-        true => "Yes",
-        false => "No",
-    };
+    pub const DEFAULT_FORMATTER: BoolFormatter<'a> = DEFAULT_BOOL_FORMATTER;
 
     pub fn new(message: &'a str) -> Self {
         Self {
             message,
             default: None,
             help_message: None,
-            formatter: Confirm::DEFAULT_FORMATTER,
+            formatter: Self::DEFAULT_FORMATTER,
         }
     }
 

@@ -7,22 +7,22 @@ use crate::{
     formatter::StringFormatter, renderer::Renderer, terminal::Terminal, validator::StringValidator,
 };
 
-const DEFAULT_FORMATTER: StringFormatter = |_| "********";
-
-#[derive(Clone)]
+#[derive(Copy, Clone)]
 pub struct Password<'a> {
-    message: &'a str,
-    help_message: Option<&'a str>,
-    formatter: StringFormatter,
-    validator: Option<StringValidator>,
+    pub message: &'a str,
+    pub help_message: Option<&'a str>,
+    pub formatter: StringFormatter,
+    pub validator: Option<StringValidator>,
 }
 
 impl<'a> Password<'a> {
+    pub const DEFAULT_FORMATTER: StringFormatter = |_| "********";
+
     pub fn new(message: &'a str) -> Self {
         Self {
             message,
             help_message: None,
-            formatter: DEFAULT_FORMATTER,
+            formatter: Self::DEFAULT_FORMATTER,
             validator: None,
         }
     }

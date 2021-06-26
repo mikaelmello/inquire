@@ -4,8 +4,8 @@ use unicode_segmentation::UnicodeSegmentation;
 use termion::event::Key;
 
 use crate::{
-    config::{Suggestor, DEFAULT_PAGE_SIZE},
-    formatter::StringFormatter,
+    config::{self, Suggestor},
+    formatter::{StringFormatter, DEFAULT_STRING_FORMATTER},
     renderer::Renderer,
     terminal::Terminal,
     utils::paginate,
@@ -17,24 +17,27 @@ const DEFAULT_HELP_MESSAGE: &str = "↑↓ to move, tab to auto-complete, enter 
 
 #[derive(Clone)]
 pub struct Text<'a> {
-    message: &'a str,
-    default: Option<&'a str>,
-    help_message: Option<&'a str>,
-    formatter: Option<StringFormatter>,
-    validator: Option<StringValidator>,
-    page_size: usize,
-    suggestor: Option<Suggestor>,
+    pub message: &'a str,
+    pub default: Option<&'a str>,
+    pub help_message: Option<&'a str>,
+    pub formatter: StringFormatter,
+    pub validator: Option<StringValidator>,
+    pub page_size: usize,
+    pub suggestor: Option<Suggestor>,
 }
 
 impl<'a> Text<'a> {
+    pub const DEFAULT_PAGE_SIZE: usize = config::DEFAULT_PAGE_SIZE;
+    pub const DEFAULT_FORMATTER: StringFormatter = DEFAULT_STRING_FORMATTER;
+
     pub fn new(message: &'a str) -> Self {
         Self {
             message,
             default: None,
             help_message: None,
-            formatter: None,
             validator: None,
-            page_size: DEFAULT_PAGE_SIZE,
+            formatter: Self::DEFAULT_FORMATTER,
+            page_size: Self::DEFAULT_PAGE_SIZE,
             suggestor: None,
         }
     }
@@ -55,7 +58,7 @@ impl<'a> Text<'a> {
     }
 
     pub fn with_formatter(mut self, formatter: StringFormatter) -> Self {
-        self.formatter = Some(formatter);
+        self.formatter = formatter;
         self
     }
 
@@ -95,7 +98,7 @@ struct TextPrompt<'a> {
     default: Option<&'a str>,
     help_message: Option<&'a str>,
     content: String,
-    formatter: Option<StringFormatter>,
+    formatter: StringFormatter,
     validator: Option<StringValidator>,
     error: Option<String>,
     suggestor: Option<Suggestor>,
@@ -272,13 +275,7 @@ impl<'a> TextPrompt<'a> {
             }
         }
 
-        renderer.cleanup(
-            &self.message,
-            match self.formatter {
-                Some(f) => f(&final_answer),
-                None => &final_answer,
-            },
-        )?;
+        renderer.cleanup(&self.message, (self.formatter)(&final_answer))?;
 
         Ok(final_answer)
     }
