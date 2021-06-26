@@ -1,63 +1,66 @@
-use lazy_static::__Deref;
 use std::{collections::HashSet, error::Error, iter::FromIterator};
 use unicode_segmentation::UnicodeSegmentation;
 
 use termion::event::Key;
 
 use crate::{
-    answer::Answer,
-    ask::{Question, QuestionOptions},
-    config::{
-        Filter, PromptConfig, Transformer, Validator, DEFAULT_FILTER, DEFAULT_KEEP_FILTER,
-        DEFAULT_PAGE_SIZE, DEFAULT_TRANSFORMER, DEFAULT_VALIDATOR, DEFAULT_VIM_MODE,
-    },
+    config::{self, Filter},
+    formatter::{self, MultiOptionFormatter},
     renderer::Renderer,
+    terminal::Terminal,
     utils::paginate,
-    OptionAnswer, Prompt,
+    validator::MultiOptionValidator,
+    OptionAnswer,
 };
 
-const DEFAULT_STARTING_SELECTION: usize = 0;
-const DEFAULT_HELP_MESSAGE: &str =
-    "↑↓ to move, space to select one, → to all, ← to none, type to filter";
-
-#[derive(Clone)]
-pub struct MultiSelectOptions<'a> {
-    message: &'a str,
-    options: &'a [&'a str],
-    default: Option<&'a [usize]>,
-    help_message: &'a str,
-    page_size: usize,
-    vim_mode: bool,
-    starting_selection: usize,
-    filter: Filter,
-    keep_filter: bool,
-    transformer: Transformer,
-    validator: Validator,
+#[derive(Copy, Clone)]
+pub struct MultiSelect<'a> {
+    pub message: &'a str,
+    pub options: &'a [&'a str],
+    pub default: Option<&'a [usize]>,
+    pub help_message: Option<&'a str>,
+    pub page_size: usize,
+    pub vim_mode: bool,
+    pub starting_cursor: usize,
+    pub filter: Filter,
+    pub keep_filter: bool,
+    pub formatter: MultiOptionFormatter,
+    pub validator: Option<MultiOptionValidator>,
 }
 
-impl<'a> MultiSelectOptions<'a> {
-    pub fn new(message: &'a str, options: &'a [&str]) -> Result<Self, Box<dyn Error>> {
-        if options.is_empty() {
-            bail!("Please provide options to select from");
-        }
+impl<'a> MultiSelect<'a> {
+    pub const DEFAULT_FORMATTER: MultiOptionFormatter = formatter::DEFAULT_MULTI_OPTION_FORMATTER;
+    pub const DEFAULT_FILTER: Filter = config::DEFAULT_FILTER;
+    pub const DEFAULT_PAGE_SIZE: usize = config::DEFAULT_PAGE_SIZE;
+    pub const DEFAULT_VIM_MODE: bool = config::DEFAULT_VIM_MODE;
+    pub const DEFAULT_KEEP_FILTER: bool = true;
+    pub const DEFAULT_STARTING_CURSOR: usize = 0;
+    pub const DEFAULT_HELP_MESSAGE: Option<&'a str> =
+        Some("↑↓ to move, space to select one, → to all, ← to none, type to filter");
 
-        Ok(Self {
+    pub fn new(message: &'a str, options: &'a [&str]) -> Self {
+        Self {
             message,
             options,
             default: None,
-            help_message: DEFAULT_HELP_MESSAGE,
-            page_size: DEFAULT_PAGE_SIZE,
-            vim_mode: DEFAULT_VIM_MODE,
-            starting_selection: DEFAULT_STARTING_SELECTION,
-            keep_filter: DEFAULT_KEEP_FILTER,
-            filter: DEFAULT_FILTER,
-            transformer: DEFAULT_TRANSFORMER,
-            validator: DEFAULT_VALIDATOR,
-        })
+            help_message: Self::DEFAULT_HELP_MESSAGE,
+            page_size: Self::DEFAULT_PAGE_SIZE,
+            vim_mode: Self::DEFAULT_VIM_MODE,
+            starting_cursor: Self::DEFAULT_STARTING_CURSOR,
+            keep_filter: Self::DEFAULT_KEEP_FILTER,
+            filter: Self::DEFAULT_FILTER,
+            formatter: Self::DEFAULT_FORMATTER,
+            validator: None,
+        }
     }
 
     pub fn with_help_message(mut self, message: &'a str) -> Self {
-        self.help_message = message;
+        self.help_message = Some(message);
+        self
+    }
+
+    pub fn without_help_message(mut self) -> Self {
+        self.help_message = None;
         self
     }
 
@@ -81,73 +84,44 @@ impl<'a> MultiSelectOptions<'a> {
         self
     }
 
-    pub fn with_transformer(mut self, transformer: Transformer) -> Self {
-        self.transformer = transformer;
+    pub fn with_formatter(mut self, formatter: MultiOptionFormatter) -> Self {
+        self.formatter = formatter;
         self
     }
 
-    pub fn with_validator(mut self, validator: Validator) -> Self {
-        self.validator = validator;
+    pub fn with_validator(mut self, validator: MultiOptionValidator) -> Self {
+        self.validator = Some(validator);
         self
     }
 
-    pub fn with_default(mut self, default: &'a [usize]) -> Result<Self, Box<dyn Error>> {
-        for i in default {
-            if i >= &self.options.len() {
-                bail!("Invalid index, larger than options available");
-            }
-        }
-
+    pub fn with_default(mut self, default: &'a [usize]) -> Self {
         self.default = Some(default);
-        Ok(self)
-    }
-
-    pub fn with_starting_cursor(mut self, starting_cursor: usize) -> Result<Self, Box<dyn Error>> {
-        if starting_cursor >= self.options.len() {
-            bail!("Starting selection should not be larger than length of options");
-        }
-
-        self.starting_selection = starting_cursor;
-        Ok(self)
-    }
-}
-
-impl<'a> QuestionOptions<'a> for MultiSelectOptions<'a> {
-    fn with_config(mut self, global_config: &'a PromptConfig) -> Self {
-        if let Some(page_size) = global_config.page_size {
-            self.page_size = page_size;
-        }
-        if let Some(vim_mode) = global_config.vim_mode {
-            self.vim_mode = vim_mode;
-        }
-        if let Some(keep_filter) = global_config.keep_filter {
-            self.keep_filter = keep_filter;
-        }
-        if let Some(filter) = global_config.filter {
-            self.filter = filter;
-        }
-        if let Some(transformer) = global_config.transformer {
-            self.transformer = transformer;
-        }
-        if let Some(validator) = global_config.validator {
-            self.validator = validator;
-        }
-        if let Some(help_message) = global_config.help_message {
-            self.help_message = help_message;
-        }
-
         self
     }
 
-    fn into_question(self) -> Question<'a> {
-        Question::MultiSelect(self)
+    pub fn with_starting_cursor(mut self, starting_cursor: usize) -> Self {
+        self.starting_cursor = starting_cursor;
+        self
+    }
+
+    pub fn prompt(self) -> Result<Vec<OptionAnswer>, Box<dyn Error>> {
+        let terminal = Terminal::new()?;
+        let mut renderer = Renderer::new(terminal)?;
+        self.prompt_with_renderer(&mut renderer)
+    }
+
+    pub(in crate) fn prompt_with_renderer(
+        self,
+        renderer: &mut Renderer,
+    ) -> Result<Vec<OptionAnswer>, Box<dyn Error>> {
+        MultiSelectPrompt::new(self)?.prompt(renderer)
     }
 }
 
-pub(in crate) struct MultiSelect<'a> {
+struct MultiSelectPrompt<'a> {
     message: &'a str,
     options: &'a [&'a str],
-    help_message: &'a str,
+    help_message: Option<&'a str>,
     vim_mode: bool,
     cursor_index: usize,
     checked: HashSet<usize>,
@@ -156,35 +130,44 @@ pub(in crate) struct MultiSelect<'a> {
     filter_value: Option<String>,
     filtered_options: Vec<usize>,
     filter: Filter,
-    transformer: Transformer,
-    validator: Validator,
-    error: Option<Box<dyn Error>>,
+    formatter: MultiOptionFormatter,
+    validator: Option<MultiOptionValidator>,
+    error: Option<String>,
 }
 
-impl<'a> From<MultiSelectOptions<'a>> for MultiSelect<'a> {
-    fn from(mso: MultiSelectOptions<'a>) -> Self {
-        Self {
+impl<'a> MultiSelectPrompt<'a> {
+    fn new(mso: MultiSelect<'a>) -> Result<Self, Box<dyn Error>> {
+        if mso.options.is_empty() {
+            bail!("Please provide options to select from");
+        }
+        if let Some(default) = mso.default {
+            for i in default {
+                if i >= &mso.options.len() {
+                    bail!("Invalid index, larger than options available");
+                }
+            }
+        }
+
+        Ok(Self {
             message: mso.message,
             options: mso.options,
             help_message: mso.help_message,
             vim_mode: mso.vim_mode,
-            cursor_index: mso.starting_selection,
+            cursor_index: mso.starting_cursor,
             page_size: mso.page_size,
             keep_filter: mso.keep_filter,
             filter_value: None,
             filtered_options: Vec::from_iter(0..mso.options.len()),
             filter: mso.filter,
-            transformer: mso.transformer,
+            formatter: mso.formatter,
             validator: mso.validator,
             error: None,
             checked: mso
                 .default
                 .map_or_else(|| HashSet::new(), |d| d.iter().cloned().collect()),
-        }
+        })
     }
-}
 
-impl<'a> MultiSelect<'a> {
     fn filter_options(&self) -> Vec<usize> {
         self.options
             .iter()
@@ -281,7 +264,7 @@ impl<'a> MultiSelect<'a> {
         }
     }
 
-    fn get_final_answer(&self) -> Result<Answer, Box<dyn Error>> {
+    fn get_final_answer(&self) -> Result<Vec<OptionAnswer>, String> {
         let selected_options = self
             .options
             .iter()
@@ -292,12 +275,14 @@ impl<'a> MultiSelect<'a> {
             })
             .collect::<Vec<OptionAnswer>>();
 
-        let answer = Answer::MultipleOptions(selected_options);
-
-        match (self.validator)(&answer) {
-            Ok(_) => Ok(answer),
-            Err(err) => Err(err),
+        if let Some(validator) = self.validator {
+            return match validator(&selected_options) {
+                Ok(_) => Ok(selected_options),
+                Err(err) => Err(err.to_string()),
+            };
         }
+
+        return Ok(selected_options);
     }
 
     fn render(&mut self, renderer: &mut Renderer) -> Result<(), std::io::Error> {
@@ -306,7 +291,7 @@ impl<'a> MultiSelect<'a> {
         renderer.reset_prompt()?;
 
         if let Some(err) = &self.error {
-            renderer.print_error(err.deref())?;
+            renderer.print_error_message(err)?;
         }
 
         renderer.print_prompt(&prompt, None, self.filter_value.as_deref())?;
@@ -328,17 +313,17 @@ impl<'a> MultiSelect<'a> {
             )?;
         }
 
-        renderer.print_help(self.help_message)?;
+        if let Some(help_message) = self.help_message {
+            renderer.print_help(help_message)?;
+        }
 
         renderer.flush()?;
 
         Ok(())
     }
-}
 
-impl<'a> Prompt for MultiSelect<'a> {
-    fn prompt(mut self, renderer: &mut Renderer) -> Result<Answer, Box<dyn Error>> {
-        let final_answer: Answer;
+    fn prompt(mut self, renderer: &mut Renderer) -> Result<Vec<OptionAnswer>, Box<dyn Error>> {
+        let final_answer: Vec<OptionAnswer>;
 
         loop {
             self.render(renderer)?;
@@ -358,9 +343,9 @@ impl<'a> Prompt for MultiSelect<'a> {
             }
         }
 
-        let transformed = (self.transformer)(&final_answer);
+        let formatted = (self.formatter)(&final_answer);
 
-        renderer.cleanup(&self.message, &transformed)?;
+        renderer.cleanup(&self.message, &formatted)?;
 
         Ok(final_answer)
     }

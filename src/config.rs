@@ -21,23 +21,9 @@ pub struct PromptConfig<'a> {
 
 pub(in crate) const DEFAULT_PAGE_SIZE: usize = 7;
 pub(in crate) const DEFAULT_VIM_MODE: bool = false;
-pub(in crate) const DEFAULT_KEEP_FILTER: bool = true;
 
 pub(in crate) const DEFAULT_FILTER: Filter = |filter: &str, value: &str, _| -> bool {
     let filter = filter.to_lowercase();
 
     value.to_lowercase().contains(&filter)
-};
-
-pub(in crate) const DEFAULT_TRANSFORMER: Transformer =
-    |answer: &Answer| -> String { answer.to_string() };
-
-pub(in crate) const DEFAULT_VALIDATOR: Validator = |answer: &Answer| -> Result<(), Box<dyn Error>> {
-    match answer {
-        Answer::Confirm(_) => Ok(()),
-        Answer::Content(_) => Ok(()),
-        Answer::Option(_) => Ok(()),
-        Answer::MultipleOptions(_) => Ok(()),
-        Answer::Password(_) => Ok(()),
-    }
 };

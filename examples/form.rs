@@ -1,7 +1,4 @@
-use inquire::{
-    validator::StringValidator, Answer, AskMany, Confirm, MultiSelectOptions, Password,
-    QuestionOptions, Select, Text,
-};
+use inquire::{validator::StringValidator, Confirm, MultiSelect, Password, Select, Text};
 
 fn main() {
     let fruits = vec![
@@ -52,12 +49,9 @@ fn main() {
         .prompt()
         .unwrap();
 
-    let eats_pineapple = MultiSelectOptions::new("What are your favorite fruits?", &fruits)
+    let eats_pineapple = MultiSelect::new("What are your favorite fruits?", &fruits)
+        .prompt()
         .unwrap()
-        .into_question()
-        .ask()
-        .unwrap()
-        .get_multiple_options()
         .into_iter()
         .find(|o| o.index == fruits.len() - 1)
         .is_some();

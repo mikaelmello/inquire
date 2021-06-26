@@ -172,9 +172,9 @@ impl<'a> ConfirmPrompt<'a> {
             }
         }
 
-        let transformed = (self.formatter)(final_answer);
+        let formatted = (self.formatter)(final_answer);
 
-        renderer.cleanup(&self.message, &transformed)?;
+        renderer.cleanup(&self.message, &formatted)?;
 
         Ok(final_answer)
     }

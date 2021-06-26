@@ -69,6 +69,7 @@ impl<'a> Terminal<'a> {
         })
     }
 
+    #[allow(unused)]
     pub fn dull(mut self) -> Self {
         self.dull = true;
 

@@ -97,7 +97,7 @@ impl<'a> Select<'a> {
     }
 }
 
-pub(in crate) struct SelectPrompt<'a> {
+struct SelectPrompt<'a> {
     message: &'a str,
     options: &'a [&'a str],
     help_message: Option<&'a str>,
@@ -259,9 +259,9 @@ impl<'a> SelectPrompt<'a> {
             }
         }
 
-        let transformed = (self.formatter)(&final_answer);
+        let formatted = (self.formatter)(&final_answer);
 
-        renderer.cleanup(&self.message, &transformed)?;
+        renderer.cleanup(&self.message, &formatted)?;
 
         Ok(final_answer)
     }
