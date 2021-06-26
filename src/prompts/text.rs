@@ -5,7 +5,7 @@ use termion::event::Key;
 
 use crate::{
     answer::OptionAnswer,
-    config::{self, Suggestor},
+    config::{self, Suggester},
     formatter::{StringFormatter, DEFAULT_STRING_FORMATTER},
     renderer::Renderer,
     terminal::Terminal,
@@ -40,7 +40,7 @@ impl<'a> Text<'a> {
             validators: Self::DEFAULT_VALIDATORS,
             formatter: Self::DEFAULT_FORMATTER,
             page_size: Self::DEFAULT_PAGE_SIZE,
-            suggestor: None,
+            suggester: None,
         }
     }
 
@@ -56,6 +56,7 @@ impl<'a> Text<'a> {
 
     pub fn with_suggestor(mut self, suggestor: Suggestor) -> Self {
         self.suggestor = Some(suggestor);
+        self.suggester = Some(suggester);
         self
     }
 
@@ -110,7 +111,7 @@ struct TextPrompt<'a> {
     formatter: StringFormatter,
     validators: Vec<StringValidator>,
     error: Option<String>,
-    suggestor: Option<Suggestor>,
+    suggester: Option<Suggester>,
     suggested_options: Vec<String>,
     cursor_index: usize,
     page_size: usize,
@@ -124,12 +125,12 @@ impl<'a> From<Text<'a>> for TextPrompt<'a> {
             help_message: so.help_message,
             formatter: so.formatter,
             validators: so.validators,
-            suggestor: so.suggestor,
+            suggester: so.suggester,
             content: String::new(),
             error: None,
             cursor_index: 0,
             page_size: so.page_size,
-            suggested_options: match so.suggestor {
+            suggested_options: match so.suggester {
                 Some(s) => s(""),
                 None => vec![],
             },
@@ -145,9 +146,9 @@ impl<'a> From<&'a str> for Text<'a> {
 
 impl<'a> TextPrompt<'a> {
     fn update_suggestions(&mut self) {
-        match self.suggestor {
-            Some(suggestor) => {
-                self.suggested_options = suggestor(&self.content);
+        match self.suggester {
+            Some(suggester) => {
+                self.suggested_options = suggester(&self.content);
                 if self.suggested_options.len() > 0
                     && self.suggested_options.len() <= self.cursor_index
                 {

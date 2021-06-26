@@ -1,5 +1,5 @@
 pub type Filter = fn(filter: &str, value: &str, index: usize) -> bool;
-pub type Suggestor = fn(value: &str) -> Vec<String>;
+pub type Suggester = fn(value: &str) -> Vec<String>;
 
 pub const DEFAULT_PAGE_SIZE: usize = 7;
 pub const DEFAULT_VIM_MODE: bool = false;
