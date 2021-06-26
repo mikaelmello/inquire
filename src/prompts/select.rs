@@ -14,27 +14,53 @@ use crate::{
     utils::paginate,
 };
 
+/// Presents a message to the user and a list of options for the user to choose from.
+/// The user is able to choose only one option.
 #[derive(Copy, Clone)]
 pub struct Select<'a> {
+    /// Message to be presented to the user.
     pub message: &'a str,
+
+    /// Options displayed to the user.
     pub options: &'a [&'a str],
+
+    /// Help message to be presented to the user.
     pub help_message: Option<&'a str>,
+
+    /// Page size of the options displayed to the user.
     pub page_size: usize,
+
+    /// Whether vim mode is enabled. When enabled, the user can
+    /// navigate through the options using hjkl.
     pub vim_mode: bool,
+
+    /// Starting cursor index of the selection.
     pub starting_cursor: usize,
+
+    /// Function called with the current user input to filter the provided
+    /// options.
     pub filter: Filter,
+
+    /// Function that formats the user input and presents it to the user as the final rendering of the prompt.
     pub formatter: OptionFormatter,
 }
 
 impl<'a> Select<'a> {
+    /// Default formatter.
     pub const DEFAULT_FORMATTER: OptionFormatter = formatter::DEFAULT_OPTION_FORMATTER;
+    /// Default filter.
     pub const DEFAULT_FILTER: Filter = config::DEFAULT_FILTER;
+    /// Default page size.
     pub const DEFAULT_PAGE_SIZE: usize = config::DEFAULT_PAGE_SIZE;
+    /// Default value of vim mode.
     pub const DEFAULT_VIM_MODE: bool = config::DEFAULT_VIM_MODE;
+    /// Default starting cursor index.
     pub const DEFAULT_STARTING_CURSOR: usize = 0;
+    /// Default help message.
     pub const DEFAULT_HELP_MESSAGE: Option<&'a str> =
         Some("↑↓ to move, space or enter to select, type to filter");
 
+    /// Creates a [Select] with the provided message and options, along with default configuration values.
     pub fn new(message: &'a str, options: &'a [&str]) -> Self {
         Self {
             message,
@@ -48,41 +74,50 @@ impl<'a> Select<'a> {
         }
     }
 
+    /// Sets the help message of the prompt.
     pub fn with_help_message(mut self, message: &'a str) -> Self {
         self.help_message = Some(message);
         self
     }
 
+    /// Removes the set help message.
     pub fn without_help_message(mut self) -> Self {
         self.help_message = None;
         self
     }
 
+    /// Sets the page size.
     pub fn with_page_size(mut self, page_size: usize) -> Self {
         self.page_size = page_size;
         self
     }
 
+    /// Enables or disabled vim_mode.
     pub fn with_vim_mode(mut self, vim_mode: bool) -> Self {
         self.vim_mode = vim_mode;
         self
     }
 
+    /// Sets the filter function.
     pub fn with_filter(mut self, filter: Filter) -> Self {
         self.filter = filter;
         self
     }
 
+    /// Sets the formatter.
     pub fn with_formatter(mut self, formatter: OptionFormatter) -> Self {
         self.formatter = formatter;
         self
     }
 
+    /// Sets the starting cursor index.
     pub fn with_starting_cursor(mut self, starting_cursor: usize) -> Self {
         self.starting_cursor = starting_cursor;
         self
     }
 
+    /// Parses the provided behavioral and rendering options and prompts
+    /// the CLI user for input according to them.
     pub fn prompt(self) -> Result<OptionAnswer, Box<dyn Error>> {
         let terminal = Terminal::new()?;
         let mut renderer = Renderer::new(terminal)?;

@@ -1,9 +1,21 @@
+//! This module contains the type aliases for functions called as validators
+//! of a given input.
+//!
+//! It also provides several built-in validators generated through macros.
+
 use crate::answer::OptionAnswer;
 
+/// Type alias for validators that receive a string slice as the input.
+/// When creating containers of validators, you might need to type hint
+/// them using this type.
 pub type StringValidator = fn(answer: &str) -> Result<(), String>;
 
+/// Type alias for validators that receive a collection of [OptionAnswer]'s as the input.
+/// When creating containers of validators, you might need to type hint
+/// them using this type.
 pub type MultiOptionValidator = fn(answer: &[OptionAnswer]) -> Result<(), String>;
 
+/// Built-in validator that checks whether the answer is not empty.
 #[macro_export]
 #[cfg(feature = "builtin_validators")]
 macro_rules! required {
@@ -19,6 +31,7 @@ macro_rules! required {
     };
 }
 
+/// Built-in validator that checks whether the answer length is below or equal to the specified threshold.
 #[macro_export]
 #[cfg(feature = "builtin_validators")]
 macro_rules! max_length {
@@ -37,6 +50,7 @@ macro_rules! max_length {
     };
 }
 
+/// Built-in validator that checks whether the answer length is above or equal to the specified threshold.
 #[macro_export]
 #[cfg(feature = "builtin_validators")]
 macro_rules! min_length {
@@ -54,6 +68,7 @@ macro_rules! min_length {
     };
 }
 
+/// Built-in validator that checks whether the answer length is equal to the specified value.
 #[macro_export]
 #[cfg(feature = "builtin_validators")]
 macro_rules! length {
@@ -69,6 +84,7 @@ macro_rules! length {
     }};
 }
 
+/// Built-in validator that checks whether the answer matches the specified ReGeX pattern.
 #[macro_export]
 #[cfg(feature = "builtin_validators")]
 macro_rules! regex {
@@ -89,6 +105,7 @@ macro_rules! regex {
     }};
 }
 
+/// Built-in validator that checks whether the answer is able to be successfully parsed to a primitive type, such as f64.
 #[macro_export]
 #[cfg(feature = "builtin_validators")]
 macro_rules! parse_primitive {

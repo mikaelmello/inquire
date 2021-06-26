@@ -13,17 +13,27 @@ use crate::{
 
 const ERROR_MESSAGE: &str = "Invalid answer, try typing 'y' for yes or 'n' for no";
 
+/// Presents a message to the user and asks them for a yes/no confirmation.
 #[derive(Copy, Clone)]
 pub struct Confirm<'a> {
+    /// Message to be presented to the user.
     pub message: &'a str,
+
+    /// Default value, returned when the user input is empty.
     pub default: Option<bool>,
+
+    /// Help message to be presented to the user.
     pub help_message: Option<&'a str>,
+
+    /// Function that formats the user input and presents it to the user as the final rendering of the prompt.
     pub formatter: BoolFormatter<'a>,
 }
 
 impl<'a> Confirm<'a> {
+    /// Default formatter, [true] maps to "Yes" and [false] maps to "No".
     pub const DEFAULT_FORMATTER: BoolFormatter<'a> = DEFAULT_BOOL_FORMATTER;
 
+    /// Creates a [Confirm] with the provided message and default configuration values.
     pub fn new(message: &'a str) -> Self {
         Self {
             message,
@@ -33,21 +43,26 @@ impl<'a> Confirm<'a> {
         }
     }
 
+    /// Sets the default input.
     pub fn with_default(mut self, default: bool) -> Self {
         self.default = Some(default);
         self
     }
 
+    /// Sets the help message of the prompt.
     pub fn with_help_message(mut self, message: &'a str) -> Self {
         self.help_message = Some(message);
         self
     }
 
+    /// Sets the formatter
     pub fn with_formatter(mut self, formatter: BoolFormatter<'a>) -> Self {
         self.formatter = formatter;
         self
     }
 
+    /// Parses the provided behavioral and rendering options and prompts
+    /// the CLI user for input according to them.
     pub fn prompt(self) -> Result<bool, Box<dyn Error>> {
         let terminal = Terminal::new()?;
         let mut renderer = Renderer::new(terminal)?;

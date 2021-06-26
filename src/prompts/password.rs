@@ -6,20 +6,37 @@ use termion::event::Key;
 use crate::{
     formatter::StringFormatter, renderer::Renderer, terminal::Terminal, validator::StringValidator,
 };
-
+/// Presents a message to the user and retrieves a single line of text input.
+///
+/// [Password] differs from [Text] by not echoing the user input and having
+/// a smaller set of custom behaviors in comparison.
+///
+/// By default, the response is always formatted as "********".
 #[derive(Clone)]
 pub struct Password<'a> {
+    /// Message to be presented to the user.
     pub message: &'a str,
+
+    /// Help message to be presented to the user.
     pub help_message: Option<&'a str>,
+
+    /// Function that formats the user input and presents it to the user as the final rendering of the prompt.
     pub formatter: StringFormatter,
+
+    /// Collection of validators to apply to the user input.
+    /// Validation errors are displayed to the user one line above the prompt.
     pub validators: Vec<StringValidator>,
 }
 
 impl<'a> Password<'a> {
+    /// Default formatter.
     pub const DEFAULT_FORMATTER: StringFormatter = |_| "********";
+    /// Default collection of validators.
     pub const DEFAULT_VALIDATORS: Vec<StringValidator> = Vec::new();
+    /// Default help message.
     pub const DEFAULT_HELP_MESSAGE: Option<&'a str> = None;
 
+    /// Creates a [Password] with the provided message and default options.
     pub fn new(message: &'a str) -> Self {
         Self {
             message,
@@ -29,21 +46,25 @@ impl<'a> Password<'a> {
         }
     }
 
+    /// Sets the help message of the prompt.
     pub fn with_help_message(mut self, message: &'a str) -> Self {
         self.help_message = Some(message);
         self
     }
 
+    /// Sets the formatter
     pub fn with_formatter(mut self, formatter: StringFormatter) -> Self {
         self.formatter = formatter;
         self
     }
 
+    /// Adds a validator to the collection of validators.
     pub fn with_validator(mut self, validator: StringValidator) -> Self {
         self.validators.push(validator);
         self
     }
 
+    /// Adds the validators to the collection of validators.
     pub fn with_validators(mut self, validators: &[StringValidator]) -> Self {
         for validator in validators {
             self.validators.push(validator.clone());
@@ -51,6 +72,8 @@ impl<'a> Password<'a> {
         self
     }
 
+    /// Parses the provided behavioral and rendering options and prompts
+    /// the CLI user for input according to them.
     pub fn prompt(self) -> Result<String, Box<dyn Error>> {
         let terminal = Terminal::new()?;
         let mut renderer = Renderer::new(terminal)?;

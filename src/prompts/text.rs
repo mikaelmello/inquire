@@ -15,23 +15,43 @@ use crate::{
 
 const DEFAULT_HELP_MESSAGE: &str = "↑↓ to move, tab to auto-complete, enter to submit";
 
+/// Presents a message to the user and retrieves a single line of text input.
 #[derive(Clone)]
 pub struct Text<'a> {
+    /// Message to be presented to the user.
     pub message: &'a str,
+
+    /// Default value, returned when the user input is empty.
     pub default: Option<&'a str>,
+
+    /// Help message to be presented to the user.
     pub help_message: Option<&'a str>,
+
+    /// Function that formats the user input and presents it to the user as the final rendering of the prompt.
     pub formatter: StringFormatter,
+
+    /// Collection of validators to apply to the user input.
+    /// Validation errors are displayed to the user one line above the prompt.
     pub validators: Vec<StringValidator>,
+
+    /// Page size of the suggestions displayed to the user, when applicable.
     pub page_size: usize,
-    pub suggestor: Option<Suggestor>,
+
+    /// Function that provides a list of suggestions to the user based on the current input.
+    pub suggester: Option<Suggester>,
 }
 
 impl<'a> Text<'a> {
+    /// Default page size, equal to the global default page size [config::DEFAULT_PAGE_SIZE]
     pub const DEFAULT_PAGE_SIZE: usize = config::DEFAULT_PAGE_SIZE;
+    /// Default formatter.
     pub const DEFAULT_FORMATTER: StringFormatter = DEFAULT_STRING_FORMATTER;
+    /// Default collection of validators.
     pub const DEFAULT_VALIDATORS: Vec<StringValidator> = Vec::new();
+    /// Default help message.
     pub const DEFAULT_HELP_MESSAGE: Option<&'a str> = None;
 
+    /// Creates a [Text] with the provided message and default options.
     pub fn new(message: &'a str) -> Self {
         Self {
             message,
@@ -44,32 +64,37 @@ impl<'a> Text<'a> {
         }
     }
 
+    /// Sets the help message of the prompt.
     pub fn with_help_message(mut self, message: &'a str) -> Self {
         self.help_message = Some(message);
         self
     }
 
+    /// Sets the default input.
     pub fn with_default(mut self, message: &'a str) -> Self {
         self.default = Some(message);
         self
     }
 
-    pub fn with_suggestor(mut self, suggestor: Suggestor) -> Self {
-        self.suggestor = Some(suggestor);
+    /// Sets the suggester.
+    pub fn with_suggester(mut self, suggester: Suggester) -> Self {
         self.suggester = Some(suggester);
         self
     }
 
+    /// Sets the formatter
     pub fn with_formatter(mut self, formatter: StringFormatter) -> Self {
         self.formatter = formatter;
         self
     }
 
+    /// Adds a validator to the collection of validators.
     pub fn with_validator(mut self, validator: StringValidator) -> Self {
         self.validators.push(validator);
         self
     }
 
+    /// Adds the validators to the collection of validators.
     pub fn with_validators(mut self, validators: &[StringValidator]) -> Self {
         for validator in validators {
             self.validators.push(validator.clone());
@@ -77,6 +102,8 @@ impl<'a> Text<'a> {
         self
     }
 
+    /// Parses the provided behavioral and rendering options and prompts
+    /// the CLI user for input according to them.
     pub fn prompt(self) -> Result<String, Box<dyn Error>> {
         let terminal = Terminal::new()?;
         let mut renderer = Renderer::new(terminal)?;
@@ -90,7 +117,11 @@ impl<'a> Text<'a> {
         TextPrompt::from(self).prompt(renderer)
     }
 }
+
+/// Trait to call prompt on a collection of [Text] instances.
 pub trait PromptMany {
+    /// Calls prompt on a collection of [Text] instances and return their respective
+    /// responses or the first error that appears.
     fn prompt(self) -> Result<Vec<String>, Box<dyn Error>>;
 }
 

@@ -1,8 +1,13 @@
 use std::fmt;
 
+/// Represents a selection made by the CLI user when prompted to select one or several
+/// options among those presented.
 #[derive(Clone, Debug, PartialEq)]
 pub struct OptionAnswer {
+    /// Index in the original collection of the selected option.
     pub index: usize,
+
+    /// String value of the select option.
     pub value: String,
 }
 
