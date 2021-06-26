@@ -4,13 +4,13 @@ use unicode_segmentation::UnicodeSegmentation;
 use termion::event::Key;
 
 use crate::{
+    answer::OptionAnswer,
     config::{self, Filter},
     formatter::{self, MultiOptionFormatter},
     renderer::Renderer,
     terminal::Terminal,
     utils::paginate,
     validator::MultiOptionValidator,
-    OptionAnswer,
 };
 
 #[derive(Copy, Clone)]

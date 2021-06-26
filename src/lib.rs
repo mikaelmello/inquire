@@ -13,7 +13,6 @@ mod utils;
 pub mod validator;
 
 pub use crate::prompts::*;
-pub use answer::*;
 
 #[cfg(test)]
 mod tests {

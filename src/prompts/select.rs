@@ -6,12 +6,12 @@ use unicode_segmentation::UnicodeSegmentation;
 use termion::event::Key;
 
 use crate::{
+    answer::OptionAnswer,
     config::{self, Filter},
     formatter::{self, OptionFormatter},
     renderer::Renderer,
     terminal::Terminal,
     utils::paginate,
-    OptionAnswer,
 };
 
 #[derive(Copy, Clone)]

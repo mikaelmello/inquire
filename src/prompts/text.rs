@@ -4,13 +4,13 @@ use unicode_segmentation::UnicodeSegmentation;
 use termion::event::Key;
 
 use crate::{
+    answer::OptionAnswer,
     config::{self, Suggestor},
     formatter::{StringFormatter, DEFAULT_STRING_FORMATTER},
     renderer::Renderer,
     terminal::Terminal,
     utils::paginate,
     validator::StringValidator,
-    OptionAnswer,
 };
 
 const DEFAULT_HELP_MESSAGE: &str = "↑↓ to move, tab to auto-complete, enter to submit";
