@@ -1,4 +1,4 @@
-use inquire::{Question, SelectOptions};
+use inquire::Select;
 
 fn main() {
     let options = vec![
@@ -15,11 +15,10 @@ fn main() {
         "Pineapple",
     ];
 
-    let ans = SelectOptions::new("What's your favorite fruit?", &options)
-        .map(|so| so.with_page_size(10))
-        .and_then(|so| so.with_starting_cursor(1))
-        .map(Question::Select)
-        .and_then(Question::ask)
+    let ans = Select::new("What's your favorite fruit?", &options)
+        .with_page_size(10)
+        .with_starting_cursor(1)
+        .prompt()
         .expect("Failed when creating so");
 
     println!("Final answer was {}", ans);

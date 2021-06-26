@@ -9,7 +9,7 @@ use std::error::Error;
 pub use confirm::Confirm;
 pub use multiselect::MultiSelectOptions;
 pub use password::Password;
-pub use select::SelectOptions;
+pub use select::Select;
 pub use text::Text;
 
 use crate::{renderer::Renderer, Answer};

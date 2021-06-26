@@ -1,6 +1,6 @@
 use inquire::{
     validator::StringValidator, Answer, AskMany, Confirm, MultiSelectOptions, Password,
-    QuestionOptions, SelectOptions, Text,
+    QuestionOptions, Select, Text,
 };
 
 fn main() {
@@ -67,22 +67,14 @@ fn main() {
         .prompt()
         .unwrap();
 
-    let answers =
-        vec![
-            SelectOptions::new("What is your favorite programming language?", &languages)
-                .unwrap()
-                .into_question(),
-        ]
-        .into_iter()
-        .ask()
+    let language = Select::new("What is your favorite programming language?", &languages)
+        .prompt()
         .unwrap();
 
     let _password = Password::new("Password:")
         .with_validator(pw_validator)
         .prompt()
         .unwrap();
-
-    let language = &answers.get(0).map(Answer::get_option).unwrap().value;
 
     if eats_pineapple && eats_pizza {
         println!("Thanks for your submission.\nWe have reported that a {} developer from {} puts pineapple on pizzas.", language, workplace);

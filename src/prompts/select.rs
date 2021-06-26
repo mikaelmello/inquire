@@ -6,52 +6,55 @@ use unicode_segmentation::UnicodeSegmentation;
 use termion::event::Key;
 
 use crate::{
-    answer::Answer,
-    ask::{Question, QuestionOptions},
-    config::{
-        Filter, PromptConfig, Transformer, DEFAULT_FILTER, DEFAULT_PAGE_SIZE, DEFAULT_TRANSFORMER,
-        DEFAULT_VIM_MODE,
-    },
+    config::{self, Filter},
+    formatter::{self, OptionFormatter},
     renderer::Renderer,
+    terminal::Terminal,
     utils::paginate,
-    OptionAnswer, Prompt,
+    OptionAnswer,
 };
 
-const DEFAULT_STARTING_SELECTION: usize = 0;
-const DEFAULT_HELP_MESSAGE: &str = "↑↓ to move, space or enter to select, type to filter";
-
-#[derive(Clone)]
-pub struct SelectOptions<'a> {
-    message: &'a str,
-    options: &'a [&'a str],
-    help_message: &'a str,
-    page_size: usize,
-    vim_mode: bool,
-    starting_selection: usize,
-    filter: Filter,
-    transformer: Transformer,
+#[derive(Copy, Clone)]
+pub struct Select<'a> {
+    pub message: &'a str,
+    pub options: &'a [&'a str],
+    pub help_message: Option<&'a str>,
+    pub page_size: usize,
+    pub vim_mode: bool,
+    pub starting_cursor: usize,
+    pub filter: Filter,
+    pub formatter: OptionFormatter,
 }
 
-impl<'a> SelectOptions<'a> {
-    pub fn new(message: &'a str, options: &'a [&str]) -> Result<Self, Box<dyn Error>> {
-        if options.is_empty() {
-            bail!("Please provide options to select from");
-        }
+impl<'a> Select<'a> {
+    pub const DEFAULT_FORMATTER: OptionFormatter = formatter::DEFAULT_OPTION_FORMATTER;
+    pub const DEFAULT_FILTER: Filter = config::DEFAULT_FILTER;
+    pub const DEFAULT_PAGE_SIZE: usize = config::DEFAULT_PAGE_SIZE;
+    pub const DEFAULT_VIM_MODE: bool = config::DEFAULT_VIM_MODE;
+    pub const DEFAULT_STARTING_CURSOR: usize = 0;
+    pub const DEFAULT_HELP_MESSAGE: Option<&'a str> =
+        Some("↑↓ to move, space or enter to select, type to filter");
 
-        Ok(Self {
+    pub fn new(message: &'a str, options: &'a [&str]) -> Self {
+        Self {
             message,
             options,
-            help_message: DEFAULT_HELP_MESSAGE,
-            page_size: DEFAULT_PAGE_SIZE,
-            vim_mode: DEFAULT_VIM_MODE,
-            starting_selection: DEFAULT_STARTING_SELECTION,
-            filter: DEFAULT_FILTER,
-            transformer: DEFAULT_TRANSFORMER,
-        })
+            help_message: Self::DEFAULT_HELP_MESSAGE,
+            page_size: Self::DEFAULT_PAGE_SIZE,
+            vim_mode: Self::DEFAULT_VIM_MODE,
+            starting_cursor: Self::DEFAULT_STARTING_CURSOR,
+            filter: Self::DEFAULT_FILTER,
+            formatter: Self::DEFAULT_FORMATTER,
+        }
     }
 
     pub fn with_help_message(mut self, message: &'a str) -> Self {
-        self.help_message = message;
+        self.help_message = Some(message);
+        self
+    }
+
+    pub fn without_help_message(mut self) -> Self {
+        self.help_message = None;
         self
     }
 
@@ -70,80 +73,69 @@ impl<'a> SelectOptions<'a> {
         self
     }
 
-    pub fn with_transformer(mut self, transformer: Transformer) -> Self {
-        self.transformer = transformer;
+    pub fn with_formatter(mut self, formatter: OptionFormatter) -> Self {
+        self.formatter = formatter;
         self
     }
 
-    pub fn with_starting_cursor(mut self, starting_cursor: usize) -> Result<Self, Box<dyn Error>> {
-        if starting_cursor >= self.options.len() {
-            bail!("Starting selection should not be larger than length of options");
-        }
-
-        self.starting_selection = starting_cursor;
-        Ok(self)
-    }
-}
-
-impl<'a> QuestionOptions<'a> for SelectOptions<'a> {
-    fn with_config(mut self, global_config: &'a PromptConfig) -> Self {
-        if let Some(page_size) = global_config.page_size {
-            self.page_size = page_size;
-        }
-        if let Some(vim_mode) = global_config.vim_mode {
-            self.vim_mode = vim_mode;
-        }
-        if let Some(filter) = global_config.filter {
-            self.filter = filter;
-        }
-        if let Some(transformer) = global_config.transformer {
-            self.transformer = transformer;
-        }
-        if let Some(help_message) = global_config.help_message {
-            self.help_message = help_message;
-        }
-
+    pub fn with_starting_cursor(mut self, starting_cursor: usize) -> Self {
+        self.starting_cursor = starting_cursor;
         self
     }
 
-    fn into_question(self) -> Question<'a> {
-        Question::Select(self)
+    pub fn prompt(self) -> Result<OptionAnswer, Box<dyn Error>> {
+        let terminal = Terminal::new()?;
+        let mut renderer = Renderer::new(terminal)?;
+        self.prompt_with_renderer(&mut renderer)
+    }
+
+    pub(in crate) fn prompt_with_renderer(
+        self,
+        renderer: &mut Renderer,
+    ) -> Result<OptionAnswer, Box<dyn Error>> {
+        SelectPrompt::new(self)?.prompt(renderer)
     }
 }
 
-pub(in crate) struct Select<'a> {
+pub(in crate) struct SelectPrompt<'a> {
     message: &'a str,
     options: &'a [&'a str],
-    help_message: &'a str,
+    help_message: Option<&'a str>,
     vim_mode: bool,
     cursor_index: usize,
     page_size: usize,
     filter_value: Option<String>,
     filtered_options: Vec<usize>,
     filter: Filter,
-    transformer: Transformer,
+    formatter: OptionFormatter,
     error: Option<Box<dyn Error>>,
 }
 
-impl<'a> From<SelectOptions<'a>> for Select<'a> {
-    fn from(so: SelectOptions<'a>) -> Self {
-        Self {
+impl<'a> SelectPrompt<'a> {
+    fn new(so: Select<'a>) -> Result<Self, Box<dyn Error>> {
+        if so.options.is_empty() {
+            bail!("Please provide options to select from");
+        }
+
+        if so.starting_cursor >= so.options.len() {
+            bail!("Starting selection should not be larger than length of options");
+        }
+
+        Ok(Self {
             message: so.message,
             options: so.options,
             help_message: so.help_message,
             vim_mode: so.vim_mode,
-            cursor_index: so.starting_selection,
+            cursor_index: so.starting_cursor,
             page_size: so.page_size,
             filter_value: None,
             filtered_options: Vec::from_iter(0..so.options.len()),
             filter: so.filter,
-            transformer: so.transformer,
+            formatter: so.formatter,
             error: None,
-        }
+        })
     }
-}
 
-impl<'a> Select<'a> {
     fn filter_options(&self) -> Vec<usize> {
         self.options
             .iter()
@@ -205,11 +197,10 @@ impl<'a> Select<'a> {
         }
     }
 
-    fn get_final_answer(&self) -> Result<Answer, Box<dyn Error>> {
+    fn get_final_answer(&self) -> Result<OptionAnswer, Box<dyn Error>> {
         self.filtered_options
             .get(self.cursor_index)
             .and_then(|i| self.options.get(*i).map(|opt| OptionAnswer::new(*i, opt)))
-            .map(|o| Answer::Option(o))
             .ok_or(Box::new(SimpleError::new("Invalid selected index")))
     }
 
@@ -237,17 +228,17 @@ impl<'a> Select<'a> {
             renderer.print_option(rel_sel == idx, &opt.value)?;
         }
 
-        renderer.print_help(self.help_message)?;
+        if let Some(help_message) = self.help_message {
+            renderer.print_help(help_message)?;
+        }
 
         renderer.flush()?;
 
         Ok(())
     }
-}
 
-impl<'a> Prompt for Select<'a> {
-    fn prompt(mut self, renderer: &mut Renderer) -> Result<Answer, Box<dyn Error>> {
-        let final_answer: Answer;
+    fn prompt(mut self, renderer: &mut Renderer) -> Result<OptionAnswer, Box<dyn Error>> {
+        let final_answer: OptionAnswer;
 
         loop {
             self.render(renderer)?;
@@ -268,7 +259,7 @@ impl<'a> Prompt for Select<'a> {
             }
         }
 
-        let transformed = (self.transformer)(&final_answer);
+        let transformed = (self.formatter)(&final_answer);
 
         renderer.cleanup(&self.message, &transformed)?;
 
