@@ -20,7 +20,7 @@ fn main() {
 
         match x {
             true => Ok(()),
-            false => Err("Remember to buy pineapples"),
+            false => Err("Remember to buy pineapples".into()),
         }
     };
 

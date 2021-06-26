@@ -7,23 +7,25 @@ use crate::{
     formatter::StringFormatter, renderer::Renderer, terminal::Terminal, validator::StringValidator,
 };
 
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 pub struct Password<'a> {
     pub message: &'a str,
     pub help_message: Option<&'a str>,
     pub formatter: StringFormatter,
-    pub validator: Option<StringValidator>,
+    pub validators: Vec<StringValidator>,
 }
 
 impl<'a> Password<'a> {
     pub const DEFAULT_FORMATTER: StringFormatter = |_| "********";
+    pub const DEFAULT_VALIDATORS: Vec<StringValidator> = Vec::new();
+    pub const DEFAULT_HELP_MESSAGE: Option<&'a str> = None;
 
     pub fn new(message: &'a str) -> Self {
         Self {
             message,
-            help_message: None,
+            help_message: Self::DEFAULT_HELP_MESSAGE,
             formatter: Self::DEFAULT_FORMATTER,
-            validator: None,
+            validators: Self::DEFAULT_VALIDATORS,
         }
     }
 
@@ -38,7 +40,14 @@ impl<'a> Password<'a> {
     }
 
     pub fn with_validator(mut self, validator: StringValidator) -> Self {
-        self.validator = Some(validator);
+        self.validators.push(validator);
+        self
+    }
+
+    pub fn with_validators(mut self, validators: &[StringValidator]) -> Self {
+        for validator in validators {
+            self.validators.push(validator.clone());
+        }
         self
     }
 
@@ -61,7 +70,7 @@ struct PasswordPrompt<'a> {
     help_message: Option<&'a str>,
     content: String,
     formatter: StringFormatter,
-    validator: Option<StringValidator>,
+    validators: Vec<StringValidator>,
     error: Option<String>,
 }
 
@@ -71,7 +80,7 @@ impl<'a> From<Password<'a>> for PasswordPrompt<'a> {
             message: so.message,
             help_message: so.help_message,
             formatter: so.formatter,
-            validator: so.validator,
+            validators: so.validators,
             content: String::new(),
             error: None,
         }
@@ -98,10 +107,10 @@ impl<'a> PasswordPrompt<'a> {
     }
 
     fn get_final_answer(&self) -> Result<String, String> {
-        if let Some(validator) = self.validator {
+        for validator in &self.validators {
             match validator(&self.content) {
                 Ok(_) => {}
-                Err(err) => return Err(err.to_string()),
+                Err(err) => return Err(err),
             }
         }
 
@@ -217,7 +226,7 @@ mod test {
         "12345yes",
         Password::new("").with_validator(|ans| match ans.len() {
             len if len > 5 && len < 10 => Ok(()),
-            _ => Err("Invalid"),
+            _ => Err("Invalid".to_string()),
         })
     );
 }

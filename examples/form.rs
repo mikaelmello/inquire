@@ -1,4 +1,4 @@
-use inquire::{validator::StringValidator, Confirm, MultiSelect, Password, Select, Text};
+use inquire::{min_length, Confirm, MultiSelect, Password, Select, Text};
 
 fn main() {
     let fruits = vec![
@@ -26,25 +26,9 @@ fn main() {
         "Go",
     ];
 
-    let input_validator: StringValidator = |ans: &str| {
-        if ans.len() < 5 {
-            return Err("Minimum of 5 characters");
-        }
-
-        Ok(())
-    };
-
-    let pw_validator: StringValidator = |ans| {
-        if ans.len() < 8 {
-            return Err("Minimum of 8 characters");
-        }
-
-        Ok(())
-    };
-
     let workplace = Text::new("Where do you work?")
         .with_help_message("Don't worry, this will not be sold to third-party advertisers.")
-        .with_validator(input_validator)
+        .with_validator(min_length!(5, "Minimum of 5 characters"))
         .with_default("Unemployed")
         .prompt()
         .unwrap();
@@ -66,7 +50,7 @@ fn main() {
         .unwrap();
 
     let _password = Password::new("Password:")
-        .with_validator(pw_validator)
+        .with_validator(min_length!(8, "Minimum of 8 characters"))
         .prompt()
         .unwrap();
 

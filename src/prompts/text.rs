@@ -21,7 +21,7 @@ pub struct Text<'a> {
     pub default: Option<&'a str>,
     pub help_message: Option<&'a str>,
     pub formatter: StringFormatter,
-    pub validator: Option<StringValidator>,
+    pub validators: Vec<StringValidator>,
     pub page_size: usize,
     pub suggestor: Option<Suggestor>,
 }
@@ -29,13 +29,15 @@ pub struct Text<'a> {
 impl<'a> Text<'a> {
     pub const DEFAULT_PAGE_SIZE: usize = config::DEFAULT_PAGE_SIZE;
     pub const DEFAULT_FORMATTER: StringFormatter = DEFAULT_STRING_FORMATTER;
+    pub const DEFAULT_VALIDATORS: Vec<StringValidator> = Vec::new();
+    pub const DEFAULT_HELP_MESSAGE: Option<&'a str> = None;
 
     pub fn new(message: &'a str) -> Self {
         Self {
             message,
             default: None,
-            help_message: None,
-            validator: None,
+            help_message: Self::DEFAULT_HELP_MESSAGE,
+            validators: Self::DEFAULT_VALIDATORS,
             formatter: Self::DEFAULT_FORMATTER,
             page_size: Self::DEFAULT_PAGE_SIZE,
             suggestor: None,
@@ -63,7 +65,14 @@ impl<'a> Text<'a> {
     }
 
     pub fn with_validator(mut self, validator: StringValidator) -> Self {
-        self.validator = Some(validator);
+        self.validators.push(validator);
+        self
+    }
+
+    pub fn with_validators(mut self, validators: &[StringValidator]) -> Self {
+        for validator in validators {
+            self.validators.push(validator.clone());
+        }
         self
     }
 
@@ -99,7 +108,7 @@ struct TextPrompt<'a> {
     help_message: Option<&'a str>,
     content: String,
     formatter: StringFormatter,
-    validator: Option<StringValidator>,
+    validators: Vec<StringValidator>,
     error: Option<String>,
     suggestor: Option<Suggestor>,
     suggested_options: Vec<String>,
@@ -114,7 +123,7 @@ impl<'a> From<Text<'a>> for TextPrompt<'a> {
             default: so.default,
             help_message: so.help_message,
             formatter: so.formatter,
-            validator: so.validator,
+            validators: so.validators,
             suggestor: so.suggestor,
             content: String::new(),
             error: None,
@@ -209,10 +218,10 @@ impl<'a> TextPrompt<'a> {
             }
         }
 
-        if let Some(validator) = self.validator {
+        for validator in &self.validators {
             match validator(&self.content) {
                 Ok(_) => {}
-                Err(err) => return Err(err.to_string()),
+                Err(err) => return Err(err),
             }
         }
 
@@ -345,7 +354,7 @@ mod test {
         "12345yes",
         Text::new("").with_validator(|ans| match ans.len() {
             len if len > 5 && len < 10 => Ok(()),
-            _ => Err("Invalid"),
+            _ => Err("Invalid".to_string()),
         })
     );
 }

@@ -278,7 +278,7 @@ impl<'a> MultiSelectPrompt<'a> {
         if let Some(validator) = self.validator {
             return match validator(&selected_options) {
                 Ok(_) => Ok(selected_options),
-                Err(err) => Err(err.to_string()),
+                Err(err) => Err(err),
             };
         }
 
