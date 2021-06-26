@@ -4,13 +4,11 @@ use crate::answer::Answer;
 use crate::config::PromptConfig;
 use crate::confirm::Confirm;
 use crate::multiselect::MultiSelect;
-use crate::password::Password;
 use crate::renderer::Renderer;
 use crate::select::Select;
 use crate::terminal::Terminal;
 use crate::ConfirmOptions;
 use crate::MultiSelectOptions;
-use crate::PasswordOptions;
 use crate::Prompt;
 use crate::SelectOptions;
 
@@ -18,7 +16,6 @@ pub enum Question<'a> {
     MultiSelect(MultiSelectOptions<'a>),
     Select(SelectOptions<'a>),
     Confirm(ConfirmOptions<'a>),
-    Password(PasswordOptions<'a>),
 }
 
 pub trait QuestionOptions<'a> {
@@ -39,7 +36,6 @@ impl<'a> Question<'a> {
             Question::MultiSelect(options) => MultiSelect::from(options).prompt(&mut renderer),
             Question::Select(options) => Select::from(options).prompt(&mut renderer),
             Question::Confirm(options) => Confirm::from(options).prompt(&mut renderer),
-            Question::Password(options) => Password::from(options).prompt(&mut renderer),
         }?;
 
         Ok(answer)
@@ -53,7 +49,6 @@ impl<'a> Question<'a> {
             Self::MultiSelect(opt) => Self::MultiSelect(opt.with_config(global_config)),
             Self::Select(opt) => Self::Select(opt.with_config(global_config)),
             Self::Confirm(opt) => Self::Confirm(opt.with_config(global_config)),
-            Self::Password(opt) => Self::Password(opt.with_config(global_config)),
         };
 
         questions.into_iter().map(with_global).collect()

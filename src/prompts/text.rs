@@ -5,14 +5,14 @@ use termion::event::Key;
 
 use crate::{
     config::{Suggestor, DEFAULT_PAGE_SIZE},
+    formatter::StringFormatter,
     renderer::Renderer,
     terminal::Terminal,
     utils::paginate,
+    validator::StringValidator,
     OptionAnswer,
 };
 
-type Formatter = fn(answer: &str) -> String;
-type Validator = fn(answer: &str) -> Result<(), &str>;
 const DEFAULT_HELP_MESSAGE: &str = "↑↓ to move, tab to auto-complete, enter to submit";
 
 #[derive(Clone)]
@@ -20,8 +20,8 @@ pub struct Text<'a> {
     message: &'a str,
     default: Option<&'a str>,
     help_message: Option<&'a str>,
-    formatter: Option<Formatter>,
-    validator: Option<Validator>,
+    formatter: Option<StringFormatter>,
+    validator: Option<StringValidator>,
     page_size: usize,
     suggestor: Option<Suggestor>,
 }
@@ -54,12 +54,12 @@ impl<'a> Text<'a> {
         self
     }
 
-    pub fn with_formatter(mut self, formatter: Formatter) -> Self {
+    pub fn with_formatter(mut self, formatter: StringFormatter) -> Self {
         self.formatter = Some(formatter);
         self
     }
 
-    pub fn with_validator(mut self, validator: Validator) -> Self {
+    pub fn with_validator(mut self, validator: StringValidator) -> Self {
         self.validator = Some(validator);
         self
     }
@@ -95,8 +95,8 @@ struct TextPrompt<'a> {
     default: Option<&'a str>,
     help_message: Option<&'a str>,
     content: String,
-    formatter: Option<Formatter>,
-    validator: Option<Validator>,
+    formatter: Option<StringFormatter>,
+    validator: Option<StringValidator>,
     error: Option<String>,
     suggestor: Option<Suggestor>,
     suggested_options: Vec<String>,

@@ -1,32 +1,29 @@
-use lazy_static::__Deref;
 use std::error::Error;
 use unicode_segmentation::UnicodeSegmentation;
 
 use termion::event::Key;
 
 use crate::{
-    answer::Answer,
-    ask::{Question, QuestionOptions},
-    config::{PromptConfig, Transformer, Validator, DEFAULT_TRANSFORMER, DEFAULT_VALIDATOR},
-    renderer::Renderer,
-    Prompt,
+    formatter::StringFormatter, renderer::Renderer, terminal::Terminal, validator::StringValidator,
 };
 
+const DEFAULT_FORMATTER: StringFormatter = |ans| String::from("********");
+
 #[derive(Clone)]
-pub struct PasswordOptions<'a> {
+pub struct Password<'a> {
     message: &'a str,
     help_message: Option<&'a str>,
-    transformer: Transformer,
-    validator: Validator,
+    formatter: StringFormatter,
+    validator: Option<StringValidator>,
 }
 
-impl<'a> PasswordOptions<'a> {
+impl<'a> Password<'a> {
     pub fn new(message: &'a str) -> Self {
         Self {
             message,
             help_message: None,
-            transformer: DEFAULT_TRANSFORMER,
-            validator: DEFAULT_VALIDATOR,
+            formatter: DEFAULT_FORMATTER,
+            validator: None,
         }
     }
 
@@ -35,52 +32,45 @@ impl<'a> PasswordOptions<'a> {
         self
     }
 
-    pub fn with_transformer(mut self, transformer: Transformer) -> Self {
-        self.transformer = transformer;
+    pub fn with_formatter(mut self, formatter: StringFormatter) -> Self {
+        self.formatter = formatter;
         self
     }
 
-    pub fn with_validator(mut self, validator: Validator) -> Self {
-        self.validator = validator;
+    pub fn with_validator(mut self, validator: StringValidator) -> Self {
+        self.validator = Some(validator);
         self
+    }
+
+    pub fn prompt(self) -> Result<String, Box<dyn Error>> {
+        let terminal = Terminal::new()?;
+        let mut renderer = Renderer::new(terminal)?;
+        self.prompt_with_renderer(&mut renderer)
+    }
+
+    pub(in crate) fn prompt_with_renderer(
+        self,
+        renderer: &mut Renderer,
+    ) -> Result<String, Box<dyn Error>> {
+        PasswordPrompt::from(self).prompt(renderer)
     }
 }
 
-impl<'a> QuestionOptions<'a> for PasswordOptions<'a> {
-    fn with_config(mut self, global_config: &'a PromptConfig) -> Self {
-        if let Some(transformer) = global_config.transformer {
-            self.transformer = transformer;
-        }
-        if let Some(help_message) = global_config.help_message {
-            self.help_message = Some(help_message);
-        }
-        if let Some(validator) = global_config.validator {
-            self.validator = validator;
-        }
-
-        self
-    }
-
-    fn into_question(self) -> Question<'a> {
-        Question::Password(self)
-    }
-}
-
-pub(in crate) struct Password<'a> {
+struct PasswordPrompt<'a> {
     message: &'a str,
     help_message: Option<&'a str>,
     content: String,
-    transformer: Transformer,
-    validator: Validator,
-    error: Option<Box<dyn Error>>,
+    formatter: StringFormatter,
+    validator: Option<StringValidator>,
+    error: Option<String>,
 }
 
-impl<'a> From<PasswordOptions<'a>> for Password<'a> {
-    fn from(so: PasswordOptions<'a>) -> Self {
+impl<'a> From<Password<'a>> for PasswordPrompt<'a> {
+    fn from(so: Password<'a>) -> Self {
         Self {
             message: so.message,
             help_message: so.help_message,
-            transformer: so.transformer,
+            formatter: so.formatter,
             validator: so.validator,
             content: String::new(),
             error: None,
@@ -88,13 +78,13 @@ impl<'a> From<PasswordOptions<'a>> for Password<'a> {
     }
 }
 
-impl<'a> From<&'a str> for PasswordOptions<'a> {
+impl<'a> From<&'a str> for Password<'a> {
     fn from(val: &'a str) -> Self {
-        PasswordOptions::new(val)
+        Password::new(val)
     }
 }
 
-impl<'a> Password<'a> {
+impl<'a> PasswordPrompt<'a> {
     fn on_change(&mut self, key: Key) {
         match key {
             Key::Backspace => {
@@ -107,13 +97,15 @@ impl<'a> Password<'a> {
         }
     }
 
-    fn get_final_answer(&self) -> Result<Answer, Box<dyn Error>> {
-        let answer = Answer::Password(self.content.clone());
-
-        match (self.validator)(&answer) {
-            Ok(_) => Ok(answer),
-            Err(err) => Err(err),
+    fn get_final_answer(&self) -> Result<String, String> {
+        if let Some(validator) = self.validator {
+            match validator(&self.content) {
+                Ok(_) => {}
+                Err(err) => return Err(err.to_string()),
+            }
         }
+
+        Ok(self.content.clone())
     }
 
     fn render(&mut self, renderer: &mut Renderer) -> Result<(), std::io::Error> {
@@ -122,7 +114,7 @@ impl<'a> Password<'a> {
         renderer.reset_prompt()?;
 
         if let Some(err) = &self.error {
-            renderer.print_error(err.deref())?;
+            renderer.print_error_message(err)?;
         }
 
         renderer.print_prompt(&prompt, None, None)?;
@@ -135,11 +127,9 @@ impl<'a> Password<'a> {
 
         Ok(())
     }
-}
 
-impl<'a> Prompt for Password<'a> {
-    fn prompt(mut self, renderer: &mut Renderer) -> Result<Answer, Box<dyn Error>> {
-        let final_answer: Answer;
+    fn prompt(mut self, renderer: &mut Renderer) -> Result<String, Box<dyn Error>> {
+        let final_answer: String;
 
         loop {
             self.render(renderer)?;
@@ -159,10 +149,75 @@ impl<'a> Prompt for Password<'a> {
             }
         }
 
-        let transformed = (self.transformer)(&final_answer);
-
-        renderer.cleanup(&self.message, &transformed)?;
+        renderer.cleanup(&self.message, &(self.formatter)(&final_answer))?;
 
         Ok(final_answer)
     }
+}
+
+#[cfg(test)]
+mod test {
+    use ntest::timeout;
+
+    use crate::{renderer::Renderer, terminal::Terminal, Password};
+
+    fn default<'a>() -> Password<'a> {
+        Password::new("Question?")
+    }
+
+    macro_rules! password_test {
+        ($name:ident,$input:expr,$output:expr) => {
+            password_test! {$name, $input, $output, default()}
+        };
+
+        ($name:ident,$input:expr,$output:expr,$prompt:expr) => {
+            #[test]
+            #[timeout(100)]
+            fn $name() {
+                let mut read: &[u8] = $input.as_bytes();
+
+                let mut write: Vec<u8> = Vec::new();
+                let terminal = Terminal::new_with_io(&mut write, &mut read).unwrap();
+                let mut renderer = Renderer::new(terminal).unwrap();
+
+                let ans = $prompt.prompt_with_renderer(&mut renderer).unwrap();
+
+                assert_eq!($output, ans);
+            }
+        };
+    }
+
+    password_test!(empty, "\n", "");
+
+    password_test!(single_letter, "b\n", "b");
+
+    password_test!(letters_and_enter, "normal input\n", "normal input");
+
+    password_test!(
+        letters_and_enter_with_emoji,
+        "with emoji 🧘🏻‍♂️, 🌍, 🍞, 🚗, 📞\n",
+        "with emoji 🧘🏻‍♂️, 🌍, 🍞, 🚗, 📞"
+    );
+
+    password_test!(
+        input_and_correction,
+        "anor\x7F\x7F\x7F\x7Fnormal input\n",
+        "normal input"
+    );
+
+    password_test!(
+        input_and_excessive_correction,
+        "anor\x7F\x7F\x7F\x7F\x7F\x7F\x7F\x7Fnormal input\n",
+        "normal input"
+    );
+
+    password_test!(
+        input_correction_after_validation,
+        "1234567890\n\x7F\x7F\x7F\x7F\x7F\nyes\n",
+        "12345yes",
+        Password::new("").with_validator(|ans| match ans.len() {
+            len if len > 5 && len < 10 => Ok(()),
+            _ => Err("Invalid"),
+        })
+    );
 }

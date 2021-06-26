@@ -1,8 +1,7 @@
 use inquire::{
-    config::Validator, Answer, AskMany, ConfirmOptions, MultiSelectOptions, PasswordOptions,
+    validator::StringValidator, Answer, AskMany, ConfirmOptions, MultiSelectOptions, Password,
     QuestionOptions, SelectOptions, Text,
 };
-use simple_error::bail;
 
 extern crate inquire;
 
@@ -32,7 +31,7 @@ fn main() {
         "Go",
     ];
 
-    let input_validator = |ans: &str| {
+    let input_validator: StringValidator = |ans: &str| {
         if ans.len() < 5 {
             return Err("Minimum of 5 characters");
         }
@@ -40,10 +39,12 @@ fn main() {
         Ok(())
     };
 
-    let pw_validator: Validator = |ans| match ans {
-        Answer::Password(val) if val.len() < 8 => bail!("Minimum of 8 characters"),
-        Answer::Password(_) => Ok(()),
-        _ => panic!("Should not happen"),
+    let pw_validator: StringValidator = |ans| {
+        if ans.len() < 8 {
+            return Err("Minimum of 8 characters");
+        }
+
+        Ok(())
     };
 
     let workplace = Text::new("Where do you work?")
@@ -63,23 +64,25 @@ fn main() {
         SelectOptions::new("What is your favorite programming language?", &languages)
             .unwrap()
             .into_question(),
-        PasswordOptions::new("Password:")
-            .with_validator(pw_validator)
-            .into_question(),
     ]
     .into_iter()
     .ask()
     .unwrap();
 
+    let _password = Password::new("Password:")
+        .with_validator(pw_validator)
+        .prompt()
+        .unwrap();
+
     let eats_pineapple = answers
-        .get(1)
+        .get(0)
         .map(Answer::get_multiple_options)
         .unwrap()
         .into_iter()
         .find(|o| o.index == fruits.len() - 1)
         .is_some();
-    let eats_pizza = answers.get(2).map(Answer::get_confirm).unwrap();
-    let language = &answers.get(3).map(Answer::get_option).unwrap().value;
+    let eats_pizza = answers.get(1).map(Answer::get_confirm).unwrap();
+    let language = &answers.get(2).map(Answer::get_option).unwrap().value;
 
     if eats_pineapple && eats_pizza {
         println!("Thanks for your submission.\nWe have reported that a {} developer from {} puts pineapple on pizzas.", language, workplace);

@@ -8,7 +8,7 @@ use std::error::Error;
 
 pub use confirm::ConfirmOptions;
 pub use multiselect::MultiSelectOptions;
-pub use password::PasswordOptions;
+pub use password::Password;
 pub use select::SelectOptions;
 pub use text::Text;
 
