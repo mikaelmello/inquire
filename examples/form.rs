@@ -1,6 +1,6 @@
 use inquire::{
-    config::Validator, Answer, AskMany, ConfirmOptions, InputOptions, MultiSelectOptions,
-    PasswordOptions, QuestionOptions, SelectOptions,
+    config::Validator, Answer, AskMany, ConfirmOptions, MultiSelectOptions, PasswordOptions,
+    QuestionOptions, SelectOptions, Text,
 };
 use simple_error::bail;
 
@@ -32,10 +32,12 @@ fn main() {
         "Go",
     ];
 
-    let input_validator: Validator = |ans| match ans {
-        Answer::Content(val) if val.len() < 5 => bail!("Minimum of 5 characters"),
-        Answer::Content(_) => Ok(()),
-        _ => panic!("Should not happen"),
+    let input_validator = |ans: &str| {
+        if ans.len() < 5 {
+            return Err("Minimum of 5 characters");
+        }
+
+        Ok(())
     };
 
     let pw_validator: Validator = |ans| match ans {
@@ -44,12 +46,14 @@ fn main() {
         _ => panic!("Should not happen"),
     };
 
+    let workplace = Text::new("Where do you work?")
+        .with_help_message("Don't worry, this will not be sold to third-party advertisers.")
+        .with_validator(input_validator)
+        .with_default("Unemployed")
+        .prompt()
+        .unwrap();
+
     let answers = vec![
-        InputOptions::new("Where do you work?")
-            .with_help_message("Don't worry, this will not be sold to third-party advertisers.")
-            .with_validator(input_validator)
-            .with_default("Unemployed")
-            .into_question(),
         MultiSelectOptions::new("What are your favorite fruits?", &fruits)
             .unwrap()
             .into_question(),
@@ -67,7 +71,6 @@ fn main() {
     .ask()
     .unwrap();
 
-    let workplace = answers.get(0).map(Answer::get_content).unwrap();
     let eats_pineapple = answers
         .get(1)
         .map(Answer::get_multiple_options)

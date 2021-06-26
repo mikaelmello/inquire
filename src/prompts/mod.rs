@@ -1,16 +1,16 @@
 pub(in crate) mod confirm;
-pub(in crate) mod input;
 pub(in crate) mod multiselect;
 pub(in crate) mod password;
 pub(in crate) mod select;
+pub mod text;
 
 use std::error::Error;
 
 pub use confirm::ConfirmOptions;
-pub use input::InputOptions;
 pub use multiselect::MultiSelectOptions;
 pub use password::PasswordOptions;
 pub use select::SelectOptions;
+pub use text::Text;
 
 use crate::{renderer::Renderer, Answer};
 

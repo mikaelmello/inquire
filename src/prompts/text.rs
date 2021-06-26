@@ -1,42 +1,39 @@
-use lazy_static::__Deref;
 use std::error::Error;
 use unicode_segmentation::UnicodeSegmentation;
 
 use termion::event::Key;
 
 use crate::{
-    answer::Answer,
-    ask::{Question, QuestionOptions},
-    config::{
-        PromptConfig, Suggestor, Transformer, Validator, DEFAULT_PAGE_SIZE, DEFAULT_TRANSFORMER,
-        DEFAULT_VALIDATOR,
-    },
+    config::{Suggestor, DEFAULT_PAGE_SIZE},
     renderer::Renderer,
+    terminal::Terminal,
     utils::paginate,
-    OptionAnswer, Prompt,
+    OptionAnswer,
 };
 
+type Formatter = fn(answer: &str) -> String;
+type Validator = fn(answer: &str) -> Result<(), &str>;
 const DEFAULT_HELP_MESSAGE: &str = "↑↓ to move, tab to auto-complete, enter to submit";
 
 #[derive(Clone)]
-pub struct InputOptions<'a> {
+pub struct Text<'a> {
     message: &'a str,
     default: Option<&'a str>,
     help_message: Option<&'a str>,
-    transformer: Transformer,
-    validator: Validator,
+    formatter: Option<Formatter>,
+    validator: Option<Validator>,
     page_size: usize,
     suggestor: Option<Suggestor>,
 }
 
-impl<'a> InputOptions<'a> {
+impl<'a> Text<'a> {
     pub fn new(message: &'a str) -> Self {
         Self {
             message,
             default: None,
             help_message: None,
-            transformer: DEFAULT_TRANSFORMER,
-            validator: DEFAULT_VALIDATOR,
+            formatter: None,
+            validator: None,
             page_size: DEFAULT_PAGE_SIZE,
             suggestor: None,
         }
@@ -57,58 +54,63 @@ impl<'a> InputOptions<'a> {
         self
     }
 
-    pub fn with_transformer(mut self, transformer: Transformer) -> Self {
-        self.transformer = transformer;
+    pub fn with_formatter(mut self, formatter: Formatter) -> Self {
+        self.formatter = Some(formatter);
         self
     }
 
     pub fn with_validator(mut self, validator: Validator) -> Self {
-        self.validator = validator;
-        self
-    }
-}
-
-impl<'a> QuestionOptions<'a> for InputOptions<'a> {
-    fn with_config(mut self, global_config: &'a PromptConfig) -> Self {
-        if let Some(transformer) = global_config.transformer {
-            self.transformer = transformer;
-        }
-        if let Some(validator) = global_config.validator {
-            self.validator = validator;
-        }
-        if let Some(help_message) = global_config.help_message {
-            self.help_message = Some(help_message);
-        }
-
+        self.validator = Some(validator);
         self
     }
 
-    fn into_question(self) -> Question<'a> {
-        Question::Input(self)
+    pub fn prompt(self) -> Result<String, Box<dyn Error>> {
+        let terminal = Terminal::new()?;
+        let mut renderer = Renderer::new(terminal)?;
+        self.prompt_with_renderer(&mut renderer)
+    }
+
+    pub(in crate) fn prompt_with_renderer(
+        self,
+        renderer: &mut Renderer,
+    ) -> Result<String, Box<dyn Error>> {
+        TextPrompt::from(self).prompt(renderer)
+    }
+}
+pub trait PromptMany {
+    fn prompt(self) -> Result<Vec<String>, Box<dyn Error>>;
+}
+
+impl<'a, I> PromptMany for I
+where
+    I: Iterator<Item = Text<'a>>,
+{
+    fn prompt(self) -> Result<Vec<String>, Box<dyn Error>> {
+        self.map(Text::prompt).collect()
     }
 }
 
-pub(in crate) struct Input<'a> {
+struct TextPrompt<'a> {
     message: &'a str,
     default: Option<&'a str>,
     help_message: Option<&'a str>,
     content: String,
-    transformer: Transformer,
-    validator: Validator,
-    error: Option<Box<dyn Error>>,
+    formatter: Option<Formatter>,
+    validator: Option<Validator>,
+    error: Option<String>,
     suggestor: Option<Suggestor>,
     suggested_options: Vec<String>,
     cursor_index: usize,
     page_size: usize,
 }
 
-impl<'a> From<InputOptions<'a>> for Input<'a> {
-    fn from(so: InputOptions<'a>) -> Self {
+impl<'a> From<Text<'a>> for TextPrompt<'a> {
+    fn from(so: Text<'a>) -> Self {
         Self {
             message: so.message,
             default: so.default,
             help_message: so.help_message,
-            transformer: so.transformer,
+            formatter: so.formatter,
             validator: so.validator,
             suggestor: so.suggestor,
             content: String::new(),
@@ -123,13 +125,13 @@ impl<'a> From<InputOptions<'a>> for Input<'a> {
     }
 }
 
-impl<'a> From<&'a str> for InputOptions<'a> {
+impl<'a> From<&'a str> for Text<'a> {
     fn from(val: &'a str) -> Self {
-        InputOptions::new(val)
+        Text::new(val)
     }
 }
 
-impl<'a> Input<'a> {
+impl<'a> TextPrompt<'a> {
     fn update_suggestions(&mut self) {
         match self.suggestor {
             Some(suggestor) => {
@@ -140,7 +142,7 @@ impl<'a> Input<'a> {
                     self.cursor_index = self.suggested_options.len().saturating_sub(1);
                 }
             }
-            _ => {}
+            None => {}
         }
     }
 
@@ -196,18 +198,22 @@ impl<'a> Input<'a> {
         }
     }
 
-    fn get_final_answer(&self) -> Result<Answer, Box<dyn Error>> {
-        match self.default {
-            Some(val) if self.content.is_empty() => return Ok(Answer::Content(val.to_string())),
-            _ => {}
+    fn get_final_answer(&self) -> Result<String, String> {
+        if self.content.is_empty() {
+            match self.default {
+                Some(val) => return Ok(val.to_string()),
+                None => {}
+            }
         }
 
-        let answer = Answer::Content(self.content.clone());
-
-        match (self.validator)(&answer) {
-            Ok(_) => Ok(answer),
-            Err(err) => Err(err),
+        if let Some(validator) = self.validator {
+            match validator(&self.content) {
+                Ok(_) => {}
+                Err(err) => return Err(err.to_string()),
+            }
         }
+
+        Ok(self.content.clone())
     }
 
     fn render(&mut self, renderer: &mut Renderer) -> Result<(), std::io::Error> {
@@ -216,7 +222,7 @@ impl<'a> Input<'a> {
         renderer.reset_prompt()?;
 
         if let Some(err) = &self.error {
-            renderer.print_error(err.deref())?;
+            renderer.print_error_message(err)?;
         }
 
         renderer.print_prompt(&prompt, self.default, Some(&self.content))?;
@@ -243,11 +249,9 @@ impl<'a> Input<'a> {
 
         Ok(())
     }
-}
 
-impl<'a> Prompt for Input<'a> {
-    fn prompt(mut self, renderer: &mut Renderer) -> Result<Answer, Box<dyn Error>> {
-        let final_answer: Answer;
+    fn prompt(mut self, renderer: &mut Renderer) -> Result<String, Box<dyn Error>> {
+        let final_answer: String;
 
         loop {
             self.render(renderer)?;
@@ -268,9 +272,10 @@ impl<'a> Prompt for Input<'a> {
             }
         }
 
-        let transformed = (self.transformer)(&final_answer);
-
-        renderer.cleanup(&self.message, &transformed)?;
+        match self.formatter {
+            Some(f) => renderer.cleanup(&self.message, &f(&final_answer))?,
+            None => renderer.cleanup(&self.message, &final_answer)?,
+        };
 
         Ok(final_answer)
     }
@@ -279,24 +284,21 @@ impl<'a> Prompt for Input<'a> {
 #[cfg(test)]
 mod test {
     use ntest::timeout;
-    use simple_error::SimpleError;
 
-    use crate::{
-        input::Input, renderer::Renderer, terminal::Terminal, Answer, InputOptions, Prompt,
-    };
+    use crate::{renderer::Renderer, terminal::Terminal};
 
-    fn default_input<'a>() -> Input<'a> {
-        let options = InputOptions::new("Question?");
+    use super::Text;
 
-        Input::from(options)
+    fn default<'a>() -> Text<'a> {
+        Text::new("Question?")
     }
 
-    macro_rules! input_test {
+    macro_rules! text_test {
         ($name:ident,$input:expr,$output:expr) => {
-            input_test! {$name, $input, $output, default_input()}
+            text_test! {$name, $input, $output, default()}
         };
 
-        ($name:ident,$input:expr,$output:expr,$question:expr) => {
+        ($name:ident,$input:expr,$output:expr,$prompt:expr) => {
             #[test]
             #[timeout(100)]
             fn $name() {
@@ -306,47 +308,44 @@ mod test {
                 let terminal = Terminal::new_with_io(&mut write, &mut read).unwrap();
                 let mut renderer = Renderer::new(terminal).unwrap();
 
-                let ans = Input::from($question).prompt(&mut renderer).unwrap();
+                let ans = $prompt.prompt_with_renderer(&mut renderer).unwrap();
 
-                assert_eq!(Answer::Content($output.to_string()), ans);
+                assert_eq!($output, ans);
             }
         };
     }
 
-    input_test!(empty, "\n", "");
+    text_test!(empty, "\n", "");
 
-    input_test!(single_letter, "b\n", "b");
+    text_test!(single_letter, "b\n", "b");
 
-    input_test!(letters_and_enter, "normal input\n", "normal input");
+    text_test!(letters_and_enter, "normal input\n", "normal input");
 
-    input_test!(
+    text_test!(
         letters_and_enter_with_emoji,
         "with emoji 🧘🏻‍♂️, 🌍, 🍞, 🚗, 📞\n",
         "with emoji 🧘🏻‍♂️, 🌍, 🍞, 🚗, 📞"
     );
 
-    input_test!(
+    text_test!(
         input_and_correction,
         "anor\x7F\x7F\x7F\x7Fnormal input\n",
         "normal input"
     );
 
-    input_test!(
+    text_test!(
         input_and_excessive_correction,
         "anor\x7F\x7F\x7F\x7F\x7F\x7F\x7F\x7Fnormal input\n",
         "normal input"
     );
 
-    input_test!(
+    text_test!(
         input_correction_after_validation,
         "1234567890\n\x7F\x7F\x7F\x7F\x7F\nyes\n",
         "12345yes",
-        InputOptions::new("").with_validator(|ans| match ans {
-            Answer::Content(val) => match val.len() {
-                len if len > 5 && len < 10 => Ok(()),
-                _ => Err(Box::new(SimpleError::new("Invalid"))),
-            },
-            _ => panic!(),
+        Text::new("").with_validator(|ans| match ans.len() {
+            len if len > 5 && len < 10 => Ok(()),
+            _ => Err("Invalid"),
         })
     );
 }
