@@ -1,9 +1,7 @@
 use inquire::{
-    validator::StringValidator, Answer, AskMany, ConfirmOptions, MultiSelectOptions, Password,
+    validator::StringValidator, Answer, AskMany, Confirm, MultiSelectOptions, Password,
     QuestionOptions, SelectOptions, Text,
 };
-
-extern crate inquire;
 
 fn main() {
     let fruits = vec![
@@ -54,35 +52,37 @@ fn main() {
         .prompt()
         .unwrap();
 
-    let answers = vec![
-        MultiSelectOptions::new("What are your favorite fruits?", &fruits)
-            .unwrap()
-            .into_question(),
-        ConfirmOptions::new("Do you eat pizza?")
-            .with_default(true)
-            .into_question(),
-        SelectOptions::new("What is your favorite programming language?", &languages)
-            .unwrap()
-            .into_question(),
-    ]
-    .into_iter()
-    .ask()
-    .unwrap();
+    let eats_pineapple = MultiSelectOptions::new("What are your favorite fruits?", &fruits)
+        .unwrap()
+        .into_question()
+        .ask()
+        .unwrap()
+        .get_multiple_options()
+        .into_iter()
+        .find(|o| o.index == fruits.len() - 1)
+        .is_some();
+
+    let eats_pizza = Confirm::new("Do you eat pizza?")
+        .with_default(true)
+        .prompt()
+        .unwrap();
+
+    let answers =
+        vec![
+            SelectOptions::new("What is your favorite programming language?", &languages)
+                .unwrap()
+                .into_question(),
+        ]
+        .into_iter()
+        .ask()
+        .unwrap();
 
     let _password = Password::new("Password:")
         .with_validator(pw_validator)
         .prompt()
         .unwrap();
 
-    let eats_pineapple = answers
-        .get(0)
-        .map(Answer::get_multiple_options)
-        .unwrap()
-        .into_iter()
-        .find(|o| o.index == fruits.len() - 1)
-        .is_some();
-    let eats_pizza = answers.get(1).map(Answer::get_confirm).unwrap();
-    let language = &answers.get(2).map(Answer::get_option).unwrap().value;
+    let language = &answers.get(0).map(Answer::get_option).unwrap().value;
 
     if eats_pineapple && eats_pizza {
         println!("Thanks for your submission.\nWe have reported that a {} developer from {} puts pineapple on pizzas.", language, workplace);

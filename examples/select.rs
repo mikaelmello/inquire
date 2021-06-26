@@ -1,7 +1,5 @@
 use inquire::{Question, SelectOptions};
 
-extern crate inquire;
-
 fn main() {
     let options = vec![
         "Banana",

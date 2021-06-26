@@ -2,12 +2,10 @@ use std::error::Error;
 
 use crate::answer::Answer;
 use crate::config::PromptConfig;
-use crate::confirm::Confirm;
 use crate::multiselect::MultiSelect;
 use crate::renderer::Renderer;
 use crate::select::Select;
 use crate::terminal::Terminal;
-use crate::ConfirmOptions;
 use crate::MultiSelectOptions;
 use crate::Prompt;
 use crate::SelectOptions;
@@ -15,7 +13,6 @@ use crate::SelectOptions;
 pub enum Question<'a> {
     MultiSelect(MultiSelectOptions<'a>),
     Select(SelectOptions<'a>),
-    Confirm(ConfirmOptions<'a>),
 }
 
 pub trait QuestionOptions<'a> {
@@ -35,7 +32,6 @@ impl<'a> Question<'a> {
         let answer = match self {
             Question::MultiSelect(options) => MultiSelect::from(options).prompt(&mut renderer),
             Question::Select(options) => Select::from(options).prompt(&mut renderer),
-            Question::Confirm(options) => Confirm::from(options).prompt(&mut renderer),
         }?;
 
         Ok(answer)
@@ -48,7 +44,6 @@ impl<'a> Question<'a> {
         let with_global = |q| match q {
             Self::MultiSelect(opt) => Self::MultiSelect(opt.with_config(global_config)),
             Self::Select(opt) => Self::Select(opt.with_config(global_config)),
-            Self::Confirm(opt) => Self::Confirm(opt.with_config(global_config)),
         };
 
         questions.into_iter().map(with_global).collect()

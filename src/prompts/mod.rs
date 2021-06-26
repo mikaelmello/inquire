@@ -6,7 +6,7 @@ pub mod text;
 
 use std::error::Error;
 
-pub use confirm::ConfirmOptions;
+pub use confirm::Confirm;
 pub use multiselect::MultiSelectOptions;
 pub use password::Password;
 pub use select::SelectOptions;

@@ -7,7 +7,7 @@ use crate::{
     formatter::StringFormatter, renderer::Renderer, terminal::Terminal, validator::StringValidator,
 };
 
-const DEFAULT_FORMATTER: StringFormatter = |ans| String::from("********");
+const DEFAULT_FORMATTER: StringFormatter = |_| "********";
 
 #[derive(Clone)]
 pub struct Password<'a> {

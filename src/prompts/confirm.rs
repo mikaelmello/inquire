@@ -5,31 +5,30 @@ use unicode_segmentation::UnicodeSegmentation;
 
 use termion::event::Key;
 
-use crate::{
-    answer::Answer,
-    ask::{Question, QuestionOptions},
-    config::{PromptConfig, Transformer, DEFAULT_TRANSFORMER},
-    renderer::Renderer,
-    Prompt,
-};
+use crate::{formatter::BoolFormatter, renderer::Renderer, terminal::Terminal};
 
 const ERROR_MESSAGE: &str = "Invalid answer, try typing 'y' for yes or 'n' for no";
 
-#[derive(Clone)]
-pub struct ConfirmOptions<'a> {
-    message: &'a str,
-    default: Option<bool>,
-    help_message: Option<&'a str>,
-    transformer: Transformer,
+#[derive(Copy, Clone)]
+pub struct Confirm<'a> {
+    pub message: &'a str,
+    pub default: Option<bool>,
+    pub help_message: Option<&'a str>,
+    pub formatter: BoolFormatter<'a>,
 }
 
-impl<'a> ConfirmOptions<'a> {
+impl<'a> Confirm<'a> {
+    pub const DEFAULT_FORMATTER: BoolFormatter<'a> = |ans| match ans {
+        true => "Yes",
+        false => "No",
+    };
+
     pub fn new(message: &'a str) -> Self {
         Self {
             message,
             default: None,
             help_message: None,
-            transformer: DEFAULT_TRANSFORMER,
+            formatter: Confirm::DEFAULT_FORMATTER,
         }
     }
 
@@ -43,61 +42,54 @@ impl<'a> ConfirmOptions<'a> {
         self
     }
 
-    pub fn with_transformer(mut self, transformer: Transformer) -> Self {
-        self.transformer = transformer;
-        self
-    }
-}
-
-impl<'a> QuestionOptions<'a> for ConfirmOptions<'a> {
-    fn with_config(mut self, global_config: &'a PromptConfig) -> Self {
-        if let Some(transformer) = global_config.transformer {
-            self.transformer = transformer;
-        }
-        if let Some(help_message) = global_config.help_message {
-            self.help_message = Some(help_message);
-        }
-        if let Some(default) = global_config.confirm_default {
-            self.default = Some(default);
-        }
-
+    pub fn with_formatter(mut self, formatter: BoolFormatter<'a>) -> Self {
+        self.formatter = formatter;
         self
     }
 
-    fn into_question(self) -> Question<'a> {
-        Question::Confirm(self)
+    pub fn prompt(self) -> Result<bool, Box<dyn Error>> {
+        let terminal = Terminal::new()?;
+        let mut renderer = Renderer::new(terminal)?;
+        self.prompt_with_renderer(&mut renderer)
+    }
+
+    pub(in crate) fn prompt_with_renderer(
+        self,
+        renderer: &mut Renderer,
+    ) -> Result<bool, Box<dyn Error>> {
+        ConfirmPrompt::from(self).prompt(renderer)
     }
 }
 
-impl<'a> From<&'a str> for ConfirmOptions<'a> {
+impl<'a> From<&'a str> for Confirm<'a> {
     fn from(val: &'a str) -> Self {
-        ConfirmOptions::new(val)
+        Confirm::new(val)
     }
 }
 
-pub(in crate) struct Confirm<'a> {
+struct ConfirmPrompt<'a> {
     message: &'a str,
     error_state: bool,
     help_message: Option<&'a str>,
     default: Option<bool>,
     content: String,
-    transformer: Transformer,
+    formatter: BoolFormatter<'a>,
 }
 
-impl<'a> From<ConfirmOptions<'a>> for Confirm<'a> {
-    fn from(co: ConfirmOptions<'a>) -> Self {
+impl<'a> From<Confirm<'a>> for ConfirmPrompt<'a> {
+    fn from(co: Confirm<'a>) -> Self {
         Self {
             message: co.message,
             error_state: false,
             default: co.default,
             help_message: co.help_message,
-            transformer: co.transformer,
+            formatter: co.formatter,
             content: String::new(),
         }
     }
 }
 
-impl<'a> Confirm<'a> {
+impl<'a> ConfirmPrompt<'a> {
     fn on_change(&mut self, key: Key) {
         match key {
             Key::Backspace => {
@@ -154,11 +146,9 @@ impl<'a> Confirm<'a> {
 
         Ok(())
     }
-}
 
-impl<'a> Prompt for Confirm<'a> {
-    fn prompt(mut self, renderer: &mut Renderer) -> Result<Answer, Box<dyn Error>> {
-        let final_answer: Answer;
+    fn prompt(mut self, renderer: &mut Renderer) -> Result<bool, Box<dyn Error>> {
+        let final_answer: bool;
 
         loop {
             self.render(renderer)?;
@@ -169,7 +159,7 @@ impl<'a> Prompt for Confirm<'a> {
                 Key::Ctrl('c') => bail!("Confirm interrupted by ctrl-c"),
                 Key::Char('\n') | Key::Char('\r') => match self.get_final_answer() {
                     Ok(answer) => {
-                        final_answer = Answer::Confirm(answer);
+                        final_answer = answer;
                         break;
                     }
                     Err(_) => {
@@ -181,7 +171,7 @@ impl<'a> Prompt for Confirm<'a> {
             }
         }
 
-        let transformed = (self.transformer)(&final_answer);
+        let transformed = (self.formatter)(final_answer);
 
         renderer.cleanup(&self.message, &transformed)?;
 

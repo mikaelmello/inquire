@@ -1,21 +1,28 @@
-use inquire::{ConfirmOptions, Question};
-
-extern crate inquire;
+use inquire::Confirm;
 
 fn main() {
-    let ans = Question::Confirm(
-        ConfirmOptions::new("Do you live in Brazil?")
-            .with_default(false)
-            .with_help_message("This data is stored for good reasons"),
-    )
-    .ask()
-    .unwrap();
+    let ans = Confirm::new("Do you live in Brazil?")
+        .with_default(false)
+        .with_help_message("This data is stored for good reasons")
+        .prompt()
+        .unwrap();
 
     println!("Your answer: {}", ans);
 
-    let ans = Question::Confirm("Do you want to move to another country?".into())
-        .ask()
+    let ans = Confirm::new("Do you want to move to another country?")
+        .prompt()
         .unwrap();
+
+    println!("Your answer: {}", ans);
+
+    let ans = Confirm {
+        message: "Are you happy?",
+        default: Some(false),
+        help_message: Some("It's alright if you're not"),
+        formatter: Confirm::DEFAULT_FORMATTER,
+    }
+    .prompt()
+    .unwrap();
 
     println!("Your answer: {}", ans);
 }

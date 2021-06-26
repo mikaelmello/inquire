@@ -272,10 +272,13 @@ impl<'a> TextPrompt<'a> {
             }
         }
 
-        match self.formatter {
-            Some(f) => renderer.cleanup(&self.message, &f(&final_answer))?,
-            None => renderer.cleanup(&self.message, &final_answer)?,
-        };
+        renderer.cleanup(
+            &self.message,
+            match self.formatter {
+                Some(f) => f(&final_answer),
+                None => &final_answer,
+            },
+        )?;
 
         Ok(final_answer)
     }

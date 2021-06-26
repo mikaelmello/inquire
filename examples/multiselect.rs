@@ -1,8 +1,6 @@
 use inquire::{config::Validator, Answer, MultiSelectOptions, Question};
 use simple_error::SimpleError;
 
-extern crate inquire;
-
 fn main() {
     let options = vec![
         "Banana",

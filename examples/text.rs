@@ -1,7 +1,5 @@
 use inquire::{text::PromptMany, Text};
 
-extern crate inquire;
-
 fn main() {
     let answers = vec![
         Text::new("What's your name?").with_suggestor(suggestor),
