@@ -3,9 +3,9 @@ extern crate simple_error;
 
 extern crate regex;
 
-pub mod answer;
-pub mod config;
-pub mod formatter;
+mod answer;
+mod config;
+mod formatter;
 mod prompts;
 mod renderer;
 mod terminal;
