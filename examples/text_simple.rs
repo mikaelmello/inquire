@@ -1,9 +1,7 @@
-use inquire::{regex, Text};
+use inquire::Text;
 
 fn main() {
-    let name = Text::new("What is your name?")
-        .with_validator(regex!("[A-Z][a-z]*", "Sorry, this name is invalid"))
-        .prompt();
+    let name = Text::new("What is your name?").prompt();
 
     match name {
         Ok(name) => println!("Hello {}", name),
