@@ -218,6 +218,87 @@ impl<'a> Renderer<'a> {
         Ok(())
     }
 
+    #[cfg(feature = "date")]
+    pub fn print_calendar_month(
+        &mut self,
+        month: chrono::Month,
+        year: i32,
+        week_start: chrono::Weekday,
+        today: chrono::NaiveDate,
+        selected_date: chrono::NaiveDate,
+    ) -> Result<(), std::io::Error> {
+        use crate::date_utils::get_start_date;
+        use chrono::Datelike;
+
+        // print header (month year)
+        let header = format!("{} {}", month.name().to_lowercase(), year);
+
+        self.print_tokens(&vec![
+            Token::new("> ").with_fg(color::Green),
+            Token::new(&format!("{:^20}", header)),
+        ])?;
+        self.new_line()?;
+
+        // print week header
+        let mut current_weekday = week_start;
+        let mut week_days: Vec<String> = vec![];
+        for _ in 0..7 {
+            let mut formatted = format!("{}", current_weekday);
+            formatted.make_ascii_lowercase();
+            formatted.pop();
+            week_days.push(formatted);
+
+            current_weekday = current_weekday.succ();
+        }
+        let week_days = week_days.join(" ");
+
+        Token::new("> ")
+            .with_fg(color::Green)
+            .print(&mut self.terminal)?;
+        Token::new(&week_days).print(&mut self.terminal)?;
+        self.new_line()?;
+
+        // print dates
+        let mut date_it = get_start_date(month, year);
+        // first date of week-line is possibly in the previous month
+        while date_it.weekday() != week_start {
+            date_it = date_it.pred();
+        }
+
+        loop {
+            Token::new("> ")
+                .with_fg(color::Green)
+                .print(&mut self.terminal)?;
+
+            for i in 0..7 {
+                let date = format!("{}{:2}", if i > 0 { " " } else { "" }, date_it.day());
+
+                let mut token = Token::new(&date);
+
+                if date_it == selected_date {
+                    token = token.with_bg(color::LightWhite).with_fg(color::Black);
+                } else if date_it == today {
+                    token = token.with_fg(color::Green);
+                } else if date_it.month() != month.number_from_month() {
+                    token = token.with_fg(color::LightBlack);
+                }
+
+                token.print(&mut self.terminal)?;
+
+                date_it = date_it.succ();
+            }
+
+            self.new_line()?;
+
+            if date_it.year() > year || date_it.month() > month.number_from_month() {
+                // next line leaves our month-year range
+                break;
+            }
+        }
+
+        Ok(())
+    }
+
     pub fn cleanup(&mut self, message: &str, answer: &str) -> Result<(), Box<dyn Error>> {
         self.reset_prompt()?;
         self.print_prompt_answer(message, answer)?;

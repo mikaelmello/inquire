@@ -14,11 +14,21 @@ categories = ["command-line-interface", "value-formatting"]
 [features]
 default = ["builtin_validators"]
 builtin_validators = []
+date = ["chrono"]
 
 [dependencies]
 termion = "1"
 unicode-segmentation = "1"
 simple-error = "0.2.3"
+chrono = {version = "0.4",  optional = true }
 
 [dev-dependencies]
 ntest = "0.7.3"
+
+[[example]]
+name = "form"
+required-features = ["date"]
+
+[[example]]
+name = "date"
+required-features = ["date"]

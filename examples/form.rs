@@ -1,4 +1,4 @@
-use inquire::{min_length, Confirm, MultiSelect, Password, Select, Text};
+use inquire::{min_length, Confirm, DateSelect, MultiSelect, Password, Select, Text};
 
 fn main() {
     let fruits = vec![
@@ -51,6 +51,10 @@ fn main() {
 
     let _password = Password::new("Password:")
         .with_validator(min_length!(8, "Minimum of 8 characters"))
+        .prompt()
+        .unwrap();
+
+    let _when = DateSelect::new("When are you going to travel?")
         .prompt()
         .unwrap();
 
