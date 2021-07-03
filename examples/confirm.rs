@@ -20,6 +20,15 @@ fn main() {
         default: Some(false),
         help_message: Some("It's alright if you're not"),
         formatter: Confirm::DEFAULT_FORMATTER,
+        parser: |ans| match ans {
+            "si" => Ok(true),
+            "no" => Ok(false),
+            _ => Err("Reply with 'si' or 'no'".into()),
+        },
+        default_value_formatter: |def| match def {
+            true => "si",
+            false => "no",
+        },
     }
     .prompt()
     .unwrap();

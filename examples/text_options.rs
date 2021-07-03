@@ -1,14 +1,7 @@
-use inquire::{
-    max_length, min_length, regex, required, validator::StringValidator, PromptMany, Text,
-};
+use inquire::{max_length, min_length, required, validator::StringValidator, PromptMany, Text};
 
 fn main() {
-    let validators: &[StringValidator] = &[
-        required!(),
-        max_length!(5),
-        min_length!(2),
-        regex!("[A-Z][a-z]*"),
-    ];
+    let validators: &[StringValidator] = &[required!(), max_length!(5), min_length!(2)];
 
     let answers = vec![
         Text::new("What's your name?")

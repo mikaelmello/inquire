@@ -1,4 +1,3 @@
-use lazy_static::__Deref;
 use simple_error::SimpleError;
 use std::{error::Error, iter::FromIterator};
 use unicode_segmentation::UnicodeSegmentation;
@@ -245,7 +244,7 @@ impl<'a> SelectPrompt<'a> {
         renderer.reset_prompt()?;
 
         if let Some(err) = &self.error {
-            renderer.print_error(err.deref())?;
+            renderer.print_error(&**err)?;
         }
 
         renderer.print_prompt(&prompt, None, self.filter_value.as_deref())?;

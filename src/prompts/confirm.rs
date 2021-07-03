@@ -1,5 +1,3 @@
-use lazy_static::lazy_static;
-use regex::Regex;
 use std::error::Error;
 use unicode_segmentation::UnicodeSegmentation;
 
@@ -7,11 +5,10 @@ use termion::event::Key;
 
 use crate::{
     formatter::{BoolFormatter, DEFAULT_BOOL_FORMATTER},
+    parser::{BoolParser, DEFAULT_BOOL_PARSER},
     renderer::Renderer,
     terminal::Terminal,
 };
-
-const ERROR_MESSAGE: &str = "Invalid answer, try typing 'y' for yes or 'n' for no";
 
 /// Presents a message to the user and asks them for a yes/no confirmation.
 #[derive(Copy, Clone)]
@@ -27,11 +24,27 @@ pub struct Confirm<'a> {
 
     /// Function that formats the user input and presents it to the user as the final rendering of the prompt.
     pub formatter: BoolFormatter<'a>,
+
+    /// Function that parses the user input and returns the result
+    pub parser: BoolParser,
+
+    /// Function that formats the default value to be presented to the user
+    pub default_value_formatter: BoolFormatter<'a>,
 }
 
 impl<'a> Confirm<'a> {
     /// Default formatter, [true] maps to "Yes" and [false] maps to "No".
     pub const DEFAULT_FORMATTER: BoolFormatter<'a> = DEFAULT_BOOL_FORMATTER;
+    /// Default parser, matches ["y"] and ["yes"] to [true], ["n"] and ["no"]
+    /// to [false], and an [Err] otherwise.
+    pub const DEFAULT_PARSER: BoolParser = DEFAULT_BOOL_PARSER;
+
+    /// Default formatter for default values, mapping [true] to ["Y/n"] and
+    /// [false] to ["y/N"]
+    pub const DEFAULT_DEFAULT_VALUE_FORMATTER: BoolFormatter<'a> = |ans| match ans {
+        true => "Y/n",
+        false => "y/N",
+    };
 
     /// Creates a [Confirm] with the provided message and default configuration values.
     pub fn new(message: &'a str) -> Self {
@@ -40,6 +53,8 @@ impl<'a> Confirm<'a> {
             default: None,
             help_message: None,
             formatter: Self::DEFAULT_FORMATTER,
+            parser: Self::DEFAULT_PARSER,
+            default_value_formatter: Self::DEFAULT_DEFAULT_VALUE_FORMATTER,
         }
     }
 
@@ -58,6 +73,18 @@ impl<'a> Confirm<'a> {
     /// Sets the formatter
     pub fn with_formatter(mut self, formatter: BoolFormatter<'a>) -> Self {
         self.formatter = formatter;
+        self
+    }
+
+    /// Sets the parser
+    pub fn with_parser(mut self, parser: BoolParser) -> Self {
+        self.parser = parser;
+        self
+    }
+
+    /// Sets the default value formatter
+    pub fn with_default_value_formatter(mut self, formatter: BoolFormatter<'a>) -> Self {
+        self.default_value_formatter = formatter;
         self
     }
 
@@ -85,21 +112,25 @@ impl<'a> From<&'a str> for Confirm<'a> {
 
 struct ConfirmPrompt<'a> {
     message: &'a str,
-    error_state: bool,
+    error: Option<String>,
     help_message: Option<&'a str>,
     default: Option<bool>,
     content: String,
     formatter: BoolFormatter<'a>,
+    parser: BoolParser,
+    default_value_formatter: BoolFormatter<'a>,
 }
 
 impl<'a> From<Confirm<'a>> for ConfirmPrompt<'a> {
     fn from(co: Confirm<'a>) -> Self {
         Self {
             message: co.message,
-            error_state: false,
+            error: None,
             default: co.default,
             help_message: co.help_message,
             formatter: co.formatter,
+            parser: co.parser,
+            default_value_formatter: co.default_value_formatter,
             content: String::new(),
         }
     }
@@ -118,24 +149,13 @@ impl<'a> ConfirmPrompt<'a> {
         }
     }
 
-    fn get_final_answer(&self) -> Result<bool, ()> {
-        lazy_static! {
-            static ref YES_REGEX: Regex = Regex::new(r"^(?i:y(?:es)?)$").unwrap();
-            static ref NO_REGEX: Regex = Regex::new(r"^(?i:n(?:o)?)$").unwrap();
-        }
-
+    fn get_final_answer(&self) -> Result<bool, String> {
         match self.default {
             Some(val) if self.content.is_empty() => return Ok(val),
             _ => {}
         }
 
-        if YES_REGEX.is_match(&self.content) {
-            Ok(true)
-        } else if NO_REGEX.is_match(&self.content) {
-            Ok(false)
-        } else {
-            Err(())
-        }
+        (self.parser)(&self.content)
     }
 
     fn render(&mut self, renderer: &mut Renderer) -> Result<(), std::io::Error> {
@@ -143,14 +163,11 @@ impl<'a> ConfirmPrompt<'a> {
 
         renderer.reset_prompt()?;
 
-        if self.error_state {
-            renderer.print_error_message(ERROR_MESSAGE)?;
+        if let Some(error_message) = &self.error {
+            renderer.print_error_message(error_message)?;
         }
 
-        let default_message = self.default.map(|v| match v {
-            true => "Y/n",
-            false => "y/N",
-        });
+        let default_message = self.default.map(self.default_value_formatter);
 
         renderer.print_prompt(&prompt, default_message, Some(&self.content))?;
 
@@ -178,8 +195,8 @@ impl<'a> ConfirmPrompt<'a> {
                         final_answer = answer;
                         break;
                     }
-                    Err(_) => {
-                        self.error_state = true;
+                    Err(message) => {
+                        self.error = Some(message);
                         self.content.clear();
                     }
                 },

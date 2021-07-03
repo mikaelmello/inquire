@@ -84,27 +84,6 @@ macro_rules! length {
     }};
 }
 
-/// Built-in validator that checks whether the answer matches the specified ReGeX pattern.
-#[macro_export]
-#[cfg(feature = "builtin_validators")]
-macro_rules! regex {
-    ($regex:expr) => {
-        $crate::regex! {$regex, format!("The response should match pattern {}", $regex)}
-    };
-
-    ($regex:expr,$message:expr) => {{
-        |a| {
-            use regex::Regex;
-            let regex = Regex::new($regex).unwrap();
-            if regex.is_match(a) {
-                Ok(())
-            } else {
-                Err(String::from($message))
-            }
-        }
-    }};
-}
-
 /// Built-in validator that checks whether the answer is able to be successfully parsed to a primitive type, such as f64.
 #[macro_export]
 #[cfg(feature = "builtin_validators")]

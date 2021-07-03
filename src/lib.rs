@@ -37,11 +37,10 @@
 #[macro_use]
 extern crate simple_error;
 
-extern crate regex;
-
 mod answer;
 pub mod config;
 mod formatter;
+mod parser;
 mod prompts;
 mod renderer;
 mod terminal;
