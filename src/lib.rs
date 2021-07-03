@@ -20,15 +20,17 @@
 //!
 //! Example
 //! ```rust
-//! use inquire::{regex, Text};
+//! use inquire::{min_length, Text};
 //!
 //! fn main() {
 //!     let name = Text::new("What is your name?")
-//!         .with_validator(regex!("[A-Z][a-z]*", "Sorry, this name is invalid"))
-//!         .prompt()
-//!         .unwrap();
-//!
-//!     println!("Hello {}", name);
+//!         .with_validator(min_length!(8, "Sorry, this name is invalid"))
+//!         .prompt();
+//!     
+//!     match name {
+//!         Ok(name) => println!("Hello {}", name),
+//!         Err(err) => println!("Error: {}", err),
+//!     }
 //! }
 //! ```
 
