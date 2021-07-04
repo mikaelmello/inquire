@@ -255,7 +255,7 @@ impl<'a> Renderer<'a> {
         Token::new("> ")
             .with_fg(color::Green)
             .print(&mut self.terminal)?;
-        Token::new(&week_days).print(&mut self.terminal)?;
+        self.terminal.write(&week_days)?;
         self.new_line()?;
 
         // print dates
@@ -271,7 +271,11 @@ impl<'a> Renderer<'a> {
                 .print(&mut self.terminal)?;
 
             for i in 0..7 {
-                let date = format!("{}{:2}", if i > 0 { " " } else { "" }, date_it.day());
+                if i > 0 {
+                    self.terminal.write(" ")?;
+                }
+
+                let date = format!("{:2}", date_it.day());
 
                 let mut token = Token::new(&date);
 
