@@ -22,6 +22,9 @@ pub struct DateSelect<'a> {
     /// Message to be presented to the user.
     pub message: &'a str,
 
+    /// First day of the week when displaying week rows.
+    pub week_start: chrono::Weekday,
+
     /// Default date to be selected.
     pub default: NaiveDate,
 
@@ -52,6 +55,8 @@ impl<'a> DateSelect<'a> {
         Some("↑↓ to move, space or enter to select, type to filter");
     /// Default validator.
     pub const DEFAULT_VALIDATORS: Vec<DateValidator> = vec![];
+    /// Default week start.
+    pub const DEFAULT_WEEK_START: chrono::Weekday = chrono::Weekday::Sun;
 
     /// Creates a [Date] with the provided message and options, along with default configuration values.
     pub fn new(message: &'a str) -> Self {
@@ -62,6 +67,7 @@ impl<'a> DateSelect<'a> {
             vim_mode: Self::DEFAULT_VIM_MODE,
             formatter: Self::DEFAULT_FORMATTER,
             validators: Self::DEFAULT_VALIDATORS,
+            week_start: Self::DEFAULT_WEEK_START,
         }
     }
 
@@ -80,6 +86,12 @@ impl<'a> DateSelect<'a> {
     /// Sets the default date.
     pub fn with_default(mut self, default: NaiveDate) -> Self {
         self.default = default;
+        self
+    }
+
+    /// Sets the week start.
+    pub fn with_week_start(mut self, week_start: chrono::Weekday) -> Self {
+        self.week_start = week_start;
         self
     }
 
@@ -128,6 +140,7 @@ impl<'a> DateSelect<'a> {
 struct DateSelectPrompt<'a> {
     message: &'a str,
     current_date: NaiveDate,
+    week_start: chrono::Weekday,
     help_message: Option<&'a str>,
     vim_mode: bool,
     filter_value: Option<String>,
@@ -141,6 +154,7 @@ impl<'a> DateSelectPrompt<'a> {
         Self {
             message: so.message,
             current_date: so.default,
+            week_start: so.week_start,
             help_message: so.help_message,
             vim_mode: so.vim_mode,
             filter_value: None,
@@ -219,7 +233,7 @@ impl<'a> DateSelectPrompt<'a> {
         renderer.print_calendar_month(
             get_month(self.current_date.month()),
             self.current_date.year(),
-            chrono::Weekday::Sun,
+            self.week_start,
             chrono::Local::now().date().naive_local(),
             self.current_date,
         )?;

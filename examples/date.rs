@@ -4,6 +4,12 @@ fn main() {
     let date = DateSelect::new("Simple input").prompt().unwrap();
 
     println!("{}", date);
+    let date = DateSelect::new("With week start input")
+        .with_week_start(chrono::Weekday::Mon)
+        .prompt()
+        .unwrap();
+
+    println!("{}", date);
 
     let date = DateSelect::new("Validated input")
         .with_validator(|d| {
