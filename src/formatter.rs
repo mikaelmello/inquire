@@ -21,7 +21,7 @@ pub(in crate) const DEFAULT_MULTI_OPTION_FORMATTER: MultiOptionFormatter = |ans|
     ans.iter()
         .map(OptionAnswer::to_string)
         .collect::<Vec<String>>()
-        .join(",")
+        .join(", ")
 };
 
 #[cfg(feature = "date")]
