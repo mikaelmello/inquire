@@ -57,6 +57,8 @@ With Text, you can customize several aspects:
 
 ### MultiSelect
 
+### DateSelect
+
 ## Prompt-generic concerns
 
 ### Validation
