@@ -14,7 +14,7 @@
 Examples can be found in the `examples` directory. Run them to see basic behavior:
 
 ```
-$ cargo run --example form
+$ cargo run --example form --features date
 ```
 
 [crates.io]: https://crates.io/crates/inquire
