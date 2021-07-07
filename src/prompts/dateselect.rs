@@ -4,7 +4,6 @@ use std::{
     error::Error,
     ops::Add,
 };
-use unicode_segmentation::UnicodeSegmentation;
 
 use termion::event::Key;
 
@@ -170,7 +169,6 @@ struct DateSelectPrompt<'a> {
     max_date: Option<NaiveDate>,
     help_message: Option<&'a str>,
     vim_mode: bool,
-    filter_value: Option<String>,
     formatter: DateFormatter,
     validators: Vec<DateValidator>,
     error: Option<String>,
@@ -197,7 +195,6 @@ impl<'a> DateSelectPrompt<'a> {
             week_start: so.week_start,
             help_message: so.help_message,
             vim_mode: so.vim_mode,
-            filter_value: None,
             formatter: so.formatter,
             validators: so.validators,
             error: None,
@@ -241,20 +238,6 @@ impl<'a> DateSelectPrompt<'a> {
             Key::Char('h') if self.vim_mode => self.move_cursor_left(),
             Key::Right => self.move_cursor_right(),
             Key::Char('l') if self.vim_mode => self.move_cursor_right(),
-            Key::Char('\x17') | Key::Char('\x18') => {
-                self.filter_value = None;
-            }
-            Key::Backspace => {
-                if let Some(filter) = &self.filter_value {
-                    let len = filter[..].graphemes(true).count();
-                    let new_len = len.saturating_sub(1);
-                    self.filter_value = Some(filter[..].graphemes(true).take(new_len).collect());
-                }
-            }
-            Key::Char(c) => match &mut self.filter_value {
-                Some(val) => val.push(c),
-                None => self.filter_value = Some(String::from(c)),
-            },
             _ => {}
         }
     }
@@ -279,7 +262,7 @@ impl<'a> DateSelectPrompt<'a> {
             renderer.print_error_message(err)?;
         }
 
-        renderer.print_prompt(&prompt, None, self.filter_value.as_deref())?;
+        renderer.print_prompt(&prompt, None, None)?;
 
         renderer.print_calendar_month(
             get_month(self.current_date.month()),
