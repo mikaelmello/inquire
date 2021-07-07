@@ -227,6 +227,8 @@ impl<'a> Renderer<'a> {
         week_start: chrono::Weekday,
         today: chrono::NaiveDate,
         selected_date: chrono::NaiveDate,
+        min_date: Option<chrono::NaiveDate>,
+        max_date: Option<chrono::NaiveDate>,
     ) -> Result<(), std::io::Error> {
         use crate::date_utils::get_start_date;
         use chrono::Datelike;
@@ -290,6 +292,18 @@ impl<'a> Renderer<'a> {
                     token = token.with_fg(color::Green);
                 } else if date_it.month() != month.number_from_month() {
                     token = token.with_fg(color::LightBlack);
+                }
+
+                if let Some(min_date) = min_date {
+                    if date_it < min_date {
+                        token = token.with_fg(color::LightBlack);
+                    }
+                }
+
+                if let Some(max_date) = max_date {
+                    if date_it > max_date {
+                        token = token.with_fg(color::LightBlack);
+                    }
                 }
 
                 token.print(&mut self.terminal)?;

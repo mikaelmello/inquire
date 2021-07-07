@@ -1,7 +1,8 @@
 use chrono::{Datelike, NaiveDate};
 use std::{
+    cmp::{max, min},
     error::Error,
-    ops::{Add, Sub},
+    ops::Add,
 };
 use unicode_segmentation::UnicodeSegmentation;
 
@@ -25,8 +26,14 @@ pub struct DateSelect<'a> {
     /// First day of the week when displaying week rows.
     pub week_start: chrono::Weekday,
 
-    /// Default date to be selected.
-    pub default: NaiveDate,
+    /// Starting date to be selected.
+    pub starting_date: NaiveDate,
+
+    /// Min date allowed to be selected.
+    pub min_date: Option<NaiveDate>,
+
+    /// Max date allowed to be selected.
+    pub max_date: Option<NaiveDate>,
 
     /// Help message to be presented to the user.
     pub help_message: Option<&'a str>,
@@ -57,12 +64,18 @@ impl<'a> DateSelect<'a> {
     pub const DEFAULT_VALIDATORS: Vec<DateValidator> = vec![];
     /// Default week start.
     pub const DEFAULT_WEEK_START: chrono::Weekday = chrono::Weekday::Sun;
+    /// Default min date.
+    pub const DEFAULT_MIN_DATE: Option<NaiveDate> = None;
+    /// Default max date.
+    pub const DEFAULT_MAX_DATE: Option<NaiveDate> = None;
 
     /// Creates a [Date] with the provided message and options, along with default configuration values.
     pub fn new(message: &'a str) -> Self {
         Self {
             message,
-            default: chrono::Local::now().date().naive_local(),
+            starting_date: chrono::Local::now().date().naive_local(),
+            min_date: Self::DEFAULT_MIN_DATE,
+            max_date: Self::DEFAULT_MAX_DATE,
             help_message: Self::DEFAULT_HELP_MESSAGE,
             vim_mode: Self::DEFAULT_VIM_MODE,
             formatter: Self::DEFAULT_FORMATTER,
@@ -85,13 +98,25 @@ impl<'a> DateSelect<'a> {
 
     /// Sets the default date.
     pub fn with_default(mut self, default: NaiveDate) -> Self {
-        self.default = default;
+        self.starting_date = default;
         self
     }
 
     /// Sets the week start.
     pub fn with_week_start(mut self, week_start: chrono::Weekday) -> Self {
         self.week_start = week_start;
+        self
+    }
+
+    /// Sets the min date.
+    pub fn with_min_date(mut self, min_date: NaiveDate) -> Self {
+        self.min_date = Some(min_date);
+        self
+    }
+
+    /// Sets the max date.
+    pub fn with_max_date(mut self, max_date: NaiveDate) -> Self {
+        self.max_date = Some(max_date);
         self
     }
 
@@ -133,7 +158,7 @@ impl<'a> DateSelect<'a> {
         self,
         renderer: &mut Renderer,
     ) -> Result<NaiveDate, Box<dyn Error>> {
-        DateSelectPrompt::new(self).prompt(renderer)
+        DateSelectPrompt::new(self)?.prompt(renderer)
     }
 }
 
@@ -141,6 +166,8 @@ struct DateSelectPrompt<'a> {
     message: &'a str,
     current_date: NaiveDate,
     week_start: chrono::Weekday,
+    min_date: Option<NaiveDate>,
+    max_date: Option<NaiveDate>,
     help_message: Option<&'a str>,
     vim_mode: bool,
     filter_value: Option<String>,
@@ -150,10 +177,23 @@ struct DateSelectPrompt<'a> {
 }
 
 impl<'a> DateSelectPrompt<'a> {
-    fn new(so: DateSelect<'a>) -> Self {
-        Self {
+    fn new(so: DateSelect<'a>) -> Result<Self, Box<dyn Error>> {
+        if let Some(min_date) = so.min_date {
+            if min_date > so.starting_date {
+                bail!("Min date can not be greater than starting date");
+            }
+        }
+        if let Some(max_date) = so.max_date {
+            if max_date < so.starting_date {
+                bail!("Max date can not be smaller than starting date");
+            }
+        }
+
+        Ok(Self {
             message: so.message,
-            current_date: so.default,
+            current_date: so.starting_date,
+            min_date: so.min_date,
+            max_date: so.max_date,
             week_start: so.week_start,
             help_message: so.help_message,
             vim_mode: so.vim_mode,
@@ -161,23 +201,34 @@ impl<'a> DateSelectPrompt<'a> {
             formatter: so.formatter,
             validators: so.validators,
             error: None,
+        })
+    }
+
+    fn move_days(&mut self, days: i64) {
+        self.current_date = self.current_date.add(chrono::Duration::days(days));
+
+        if let Some(min_date) = self.min_date {
+            self.current_date = max(self.current_date, min_date);
+        }
+        if let Some(max_date) = self.max_date {
+            self.current_date = min(self.current_date, max_date);
         }
     }
 
     fn move_cursor_up(&mut self) {
-        self.current_date = self.current_date.sub(chrono::Duration::weeks(1));
+        self.move_days(-7);
     }
 
     fn move_cursor_down(&mut self) {
-        self.current_date = self.current_date.add(chrono::Duration::weeks(1));
+        self.move_days(7);
     }
 
     fn move_cursor_left(&mut self) {
-        self.current_date = self.current_date.sub(chrono::Duration::days(1));
+        self.move_days(-1);
     }
 
     fn move_cursor_right(&mut self) {
-        self.current_date = self.current_date.add(chrono::Duration::days(1));
+        self.move_days(1);
     }
 
     fn on_change(&mut self, key: Key) {
@@ -236,6 +287,8 @@ impl<'a> DateSelectPrompt<'a> {
             self.week_start,
             chrono::Local::now().date().naive_local(),
             self.current_date,
+            self.min_date,
+            self.max_date,
         )?;
 
         if let Some(help_message) = self.help_message {
