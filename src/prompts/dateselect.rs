@@ -1,4 +1,4 @@
-use chrono::{Datelike, NaiveDate};
+use chrono::{Datelike, Duration, NaiveDate};
 use std::{
     cmp::{max, min},
     error::Error,
@@ -54,8 +54,8 @@ impl<'a> DateSelect<'a> {
     pub const DEFAULT_FORMATTER: DateFormatter = formatter::DEFAULT_DATE_FORMATTER;
     /// Default filter.
     pub const DEFAULT_FILTER: Filter = config::DEFAULT_FILTER;
-    /// Default value of vim mode.
-    pub const DEFAULT_VIM_MODE: bool = config::DEFAULT_VIM_MODE;
+    /// Default value of vim mode. It is true because there is no typing functionality to be lost here.
+    pub const DEFAULT_VIM_MODE: bool = true;
     /// Default help message.
     pub const DEFAULT_HELP_MESSAGE: Option<&'a str> =
         Some("↑↓ to move, space or enter to select, type to filter");
@@ -201,9 +201,34 @@ impl<'a> DateSelectPrompt<'a> {
         })
     }
 
-    fn move_days(&mut self, days: i64) {
-        self.current_date = self.current_date.add(chrono::Duration::days(days));
+    fn shift_date(&mut self, duration: chrono::Duration) {
+        self.update_date(self.current_date.add(duration));
+    }
 
+    fn shift_months(&mut self, qty: i32) {
+        let date = self.current_date;
+
+        let years = qty / 12;
+        let months = qty % 12;
+
+        let new_year = date.year() + years;
+        let cur_month = date.month0() as i32;
+        let mut new_month = (cur_month + months) % 12;
+        if new_month < 0 {
+            new_month += 12;
+        }
+
+        let new_date = date
+            .with_month0(new_month as u32)
+            .and_then(|d| d.with_year(new_year));
+
+        if let Some(new_date) = new_date {
+            self.update_date(new_date);
+        }
+    }
+
+    fn update_date(&mut self, new_date: NaiveDate) {
+        self.current_date = new_date;
         if let Some(min_date) = self.min_date {
             self.current_date = max(self.current_date, min_date);
         }
@@ -212,32 +237,24 @@ impl<'a> DateSelectPrompt<'a> {
         }
     }
 
-    fn move_cursor_up(&mut self) {
-        self.move_days(-7);
-    }
-
-    fn move_cursor_down(&mut self) {
-        self.move_days(7);
-    }
-
-    fn move_cursor_left(&mut self) {
-        self.move_days(-1);
-    }
-
-    fn move_cursor_right(&mut self) {
-        self.move_days(1);
-    }
-
     fn on_change(&mut self, key: Key) {
         match key {
-            Key::Up => self.move_cursor_up(),
-            Key::Char('k') if self.vim_mode => self.move_cursor_up(),
-            Key::Char('\t') | Key::Down => self.move_cursor_down(),
-            Key::Char('j') if self.vim_mode => self.move_cursor_down(),
-            Key::Left => self.move_cursor_left(),
-            Key::Char('h') if self.vim_mode => self.move_cursor_left(),
-            Key::Right => self.move_cursor_right(),
-            Key::Char('l') if self.vim_mode => self.move_cursor_right(),
+            Key::Up => self.shift_date(Duration::weeks(-1)),
+            Key::Char('k') if self.vim_mode => self.shift_date(Duration::weeks(-1)),
+
+            Key::Down | Key::Char('\t') => self.shift_date(Duration::weeks(1)),
+            Key::Char('j') if self.vim_mode => self.shift_date(Duration::weeks(1)),
+
+            Key::Left => self.shift_date(Duration::days(-1)),
+            Key::Char('h') if self.vim_mode => self.shift_date(Duration::days(-1)),
+
+            Key::Right => self.shift_date(Duration::days(1)),
+            Key::Char('l') if self.vim_mode => self.shift_date(Duration::days(1)),
+
+            Key::Char('w') => self.shift_months(-12),
+            Key::Char('s') => self.shift_months(12),
+            Key::Char('a') => self.shift_months(-1),
+            Key::Char('d') => self.shift_months(1),
             _ => {}
         }
     }
@@ -293,8 +310,7 @@ impl<'a> DateSelectPrompt<'a> {
 
             match key {
                 Key::Ctrl('c') => bail!("Multi-selection interrupted by ctrl-c"),
-                Key::Char('\n') | Key::Char('\r') | Key::Char(' ') => match self.get_final_answer()
-                {
+                Key::Char('\n') => match self.get_final_answer() {
                     Ok(answer) => {
                         final_answer = answer;
                         break;
