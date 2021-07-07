@@ -1,6 +1,6 @@
 mod confirm;
 #[cfg(feature = "date")]
-mod date_select;
+mod dateselect;
 
 mod multiselect;
 mod password;
@@ -10,7 +10,7 @@ mod text;
 pub use confirm::Confirm;
 
 #[cfg(feature = "date")]
-pub use date_select::DateSelect;
+pub use dateselect::DateSelect;
 
 pub use multiselect::MultiSelect;
 pub use password::Password;
