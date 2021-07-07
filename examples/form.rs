@@ -26,26 +26,26 @@ fn main() {
         "Go",
     ];
 
-    let workplace = Text::new("Where do you work?")
+    let _workplace = Text::new("Where do you work?")
         .with_help_message("Don't worry, this will not be sold to third-party advertisers.")
         .with_validator(min_length!(5, "Minimum of 5 characters"))
         .with_default("Unemployed")
         .prompt()
         .unwrap();
 
-    let eats_pineapple = MultiSelect::new("What are your favorite fruits?", &fruits)
+    let _eats_pineapple = MultiSelect::new("What are your favorite fruits?", &fruits)
         .prompt()
         .unwrap()
         .into_iter()
         .find(|o| o.index == fruits.len() - 1)
         .is_some();
 
-    let eats_pizza = Confirm::new("Do you eat pizza?")
+    let _eats_pizza = Confirm::new("Do you eat pizza?")
         .with_default(true)
         .prompt()
         .unwrap();
 
-    let language = Select::new("What is your favorite programming language?", &languages)
+    let _language = Select::new("What is your favorite programming language?", &languages)
         .prompt()
         .unwrap();
 
@@ -58,9 +58,5 @@ fn main() {
         .prompt()
         .unwrap();
 
-    if eats_pineapple && eats_pizza {
-        println!("Thanks for your submission.\nWe have reported that a {} developer from {} puts pineapple on pizzas.", language, workplace);
-    } else {
-        println!("Based on our ML-powered analysis, we were able to conclude absolutely nothing.")
-    }
+    println!("Based on our ML-powered analysis, we were able to conclude absolutely nothing.")
 }
