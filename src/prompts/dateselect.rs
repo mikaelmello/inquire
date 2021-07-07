@@ -58,7 +58,7 @@ impl<'a> DateSelect<'a> {
     pub const DEFAULT_VIM_MODE: bool = true;
     /// Default help message.
     pub const DEFAULT_HELP_MESSAGE: Option<&'a str> =
-        Some("↑↓ to move, space or enter to select, type to filter");
+        Some("arrows to move days, wasd to move months and years, enter to select");
     /// Default validator.
     pub const DEFAULT_VALIDATORS: Vec<DateValidator> = vec![];
     /// Default week start.
