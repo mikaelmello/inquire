@@ -10,6 +10,12 @@ use crate::answer::OptionAnswer;
 /// them using this type.
 pub type StringValidator = fn(answer: &str) -> Result<(), String>;
 
+/// Type alias for validators that receive a string slice as the input.
+/// When creating containers of validators, you might need to type hint
+/// them using this type.
+#[cfg(feature = "date")]
+pub type DateValidator = fn(answer: chrono::NaiveDate) -> Result<(), String>;
+
 /// Type alias for validators that receive a collection of [OptionAnswer]'s as the input.
 /// When creating containers of validators, you might need to type hint
 /// them using this type.

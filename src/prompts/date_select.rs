@@ -13,10 +13,11 @@ use crate::{
     formatter::{self, DateFormatter},
     renderer::Renderer,
     terminal::Terminal,
+    validator::DateValidator,
 };
 
 /// Presents a message to the user and a date picker for the user to choose from.
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 pub struct DateSelect<'a> {
     /// Message to be presented to the user.
     pub message: &'a str,
@@ -33,6 +34,10 @@ pub struct DateSelect<'a> {
 
     /// Function that formats the user input and presents it to the user as the final rendering of the prompt.
     pub formatter: DateFormatter,
+
+    /// Collection of validators to apply to the user input.
+    /// Validation errors are displayed to the user one line above the prompt.
+    pub validators: Vec<DateValidator>,
 }
 
 impl<'a> DateSelect<'a> {
@@ -45,6 +50,8 @@ impl<'a> DateSelect<'a> {
     /// Default help message.
     pub const DEFAULT_HELP_MESSAGE: Option<&'a str> =
         Some("↑↓ to move, space or enter to select, type to filter");
+    /// Default validator.
+    pub const DEFAULT_VALIDATORS: Vec<DateValidator> = vec![];
 
     /// Creates a [Date] with the provided message and options, along with default configuration values.
     pub fn new(message: &'a str) -> Self {
@@ -54,6 +61,7 @@ impl<'a> DateSelect<'a> {
             help_message: Self::DEFAULT_HELP_MESSAGE,
             vim_mode: Self::DEFAULT_VIM_MODE,
             formatter: Self::DEFAULT_FORMATTER,
+            validators: Self::DEFAULT_VALIDATORS,
         }
     }
 
@@ -72,6 +80,20 @@ impl<'a> DateSelect<'a> {
     /// Sets the default date.
     pub fn with_default(mut self, default: NaiveDate) -> Self {
         self.default = default;
+        self
+    }
+
+    /// Adds a validator to the collection of validators.
+    pub fn with_validator(mut self, validator: DateValidator) -> Self {
+        self.validators.push(validator);
+        self
+    }
+
+    /// Adds the validators to the collection of validators.
+    pub fn with_validators(mut self, validators: &[DateValidator]) -> Self {
+        for validator in validators {
+            self.validators.push(validator.clone());
+        }
         self
     }
 
@@ -110,6 +132,7 @@ struct DateSelectPrompt<'a> {
     vim_mode: bool,
     filter_value: Option<String>,
     formatter: DateFormatter,
+    validators: Vec<DateValidator>,
     error: Option<String>,
 }
 
@@ -122,6 +145,7 @@ impl<'a> DateSelectPrompt<'a> {
             vim_mode: so.vim_mode,
             filter_value: None,
             formatter: so.formatter,
+            validators: so.validators,
             error: None,
         }
     }
@@ -171,6 +195,13 @@ impl<'a> DateSelectPrompt<'a> {
     }
 
     fn get_final_answer(&self) -> Result<NaiveDate, String> {
+        for validator in &self.validators {
+            match validator(self.current_date) {
+                Ok(_) => {}
+                Err(err) => return Err(err),
+            }
+        }
+
         Ok(self.current_date)
     }
 
