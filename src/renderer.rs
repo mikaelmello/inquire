@@ -63,7 +63,7 @@ impl<'a> Token<'a> {
             terminal.set_bg_color(color.as_ref())?;
         }
         if let Some(style) = &self.style {
-            terminal.set_style(style.clone())?;
+            terminal.set_style(*style)?;
         }
 
         terminal.write(self.content)?;
