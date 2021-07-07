@@ -1,5 +1,6 @@
-use std::error::Error;
+use std::{error::Error, ops::Sub};
 
+use chrono::Duration;
 use termion::{
     color::{self, Color},
     event::Key,
@@ -226,6 +227,8 @@ impl<'a> Renderer<'a> {
         week_start: chrono::Weekday,
         today: chrono::NaiveDate,
         selected_date: chrono::NaiveDate,
+        min_date: Option<chrono::NaiveDate>,
+        max_date: Option<chrono::NaiveDate>,
     ) -> Result<(), std::io::Error> {
         use crate::date_utils::get_start_date;
         use chrono::Datelike;
@@ -261,11 +264,15 @@ impl<'a> Renderer<'a> {
         // print dates
         let mut date_it = get_start_date(month, year);
         // first date of week-line is possibly in the previous month
-        while date_it.weekday() != week_start {
-            date_it = date_it.pred();
+        if date_it.weekday() == week_start {
+            date_it = date_it.sub(Duration::weeks(1));
+        } else {
+            while date_it.weekday() != week_start {
+                date_it = date_it.pred();
+            }
         }
 
-        loop {
+        for _ in 0..6 {
             Token::new("> ")
                 .with_fg(color::Green)
                 .print(&mut self.terminal)?;
@@ -287,17 +294,24 @@ impl<'a> Renderer<'a> {
                     token = token.with_fg(color::LightBlack);
                 }
 
+                if let Some(min_date) = min_date {
+                    if date_it < min_date {
+                        token = token.with_fg(color::LightBlack);
+                    }
+                }
+
+                if let Some(max_date) = max_date {
+                    if date_it > max_date {
+                        token = token.with_fg(color::LightBlack);
+                    }
+                }
+
                 token.print(&mut self.terminal)?;
 
                 date_it = date_it.succ();
             }
 
             self.new_line()?;
-
-            if date_it.year() > year || date_it.month() > month.number_from_month() {
-                // next line leaves our month-year range
-                break;
-            }
         }
 
         Ok(())
