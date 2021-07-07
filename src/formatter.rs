@@ -25,4 +25,5 @@ pub(in crate) const DEFAULT_MULTI_OPTION_FORMATTER: MultiOptionFormatter = |ans|
 };
 
 #[cfg(feature = "date")]
-pub(in crate) const DEFAULT_DATE_FORMATTER: DateFormatter = |val| val.format("%v").to_string();
+pub(in crate) const DEFAULT_DATE_FORMATTER: DateFormatter =
+    |val| val.format("%B %-e, %Y").to_string();
