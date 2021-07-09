@@ -1,4 +1,4 @@
-use std::{error::Error, ops::Sub};
+use std::ops::Sub;
 
 use chrono::Duration;
 use termion::{
@@ -118,16 +118,6 @@ impl<'a> Renderer<'a> {
 
     pub fn print_error_message(&mut self, message: &str) -> InquireResult<()> {
         Token::new(&format!("# {}", message))
-            .with_fg(color::Red)
-            .print(&mut self.terminal)?;
-
-        self.new_line()?;
-
-        Ok(())
-    }
-
-    pub fn print_error(&mut self, error: &(dyn Error)) -> InquireResult<()> {
-        Token::new(&format!("# {}", error))
             .with_fg(color::Red)
             .print(&mut self.terminal)?;
 
