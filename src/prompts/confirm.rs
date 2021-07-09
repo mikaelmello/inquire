@@ -1,10 +1,9 @@
-use std::error::Error;
 use unicode_segmentation::UnicodeSegmentation;
 
 use termion::event::Key;
 
 use crate::{
-    error::InquireResult,
+    error::{InquireError, InquireResult},
     formatter::{BoolFormatter, DEFAULT_BOOL_FORMATTER},
     parser::{BoolParser, DEFAULT_BOOL_PARSER},
     renderer::Renderer,
@@ -91,16 +90,13 @@ impl<'a> Confirm<'a> {
 
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to them.
-    pub fn prompt(self) -> Result<bool, Box<dyn Error>> {
+    pub fn prompt(self) -> InquireResult<bool> {
         let terminal = Terminal::new()?;
         let mut renderer = Renderer::new(terminal)?;
         self.prompt_with_renderer(&mut renderer)
     }
 
-    pub(in crate) fn prompt_with_renderer(
-        self,
-        renderer: &mut Renderer,
-    ) -> Result<bool, Box<dyn Error>> {
+    pub(in crate) fn prompt_with_renderer(self, renderer: &mut Renderer) -> InquireResult<bool> {
         ConfirmPrompt::from(self).prompt(renderer)
     }
 }
@@ -181,7 +177,7 @@ impl<'a> ConfirmPrompt<'a> {
         Ok(())
     }
 
-    fn prompt(mut self, renderer: &mut Renderer) -> Result<bool, Box<dyn Error>> {
+    fn prompt(mut self, renderer: &mut Renderer) -> InquireResult<bool> {
         let final_answer: bool;
 
         loop {
@@ -190,7 +186,7 @@ impl<'a> ConfirmPrompt<'a> {
             let key = renderer.read_key()?;
 
             match key {
-                Key::Ctrl('c') => bail!("Confirm interrupted by ctrl-c"),
+                Key::Ctrl('c') => return Err(InquireError::OperationCanceled),
                 Key::Char('\n') | Key::Char('\r') => match self.get_final_answer() {
                     Ok(answer) => {
                         final_answer = answer;
