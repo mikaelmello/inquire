@@ -377,6 +377,8 @@ mod test {
 
     #[test]
     #[timeout(100)]
+    /// Tests that a closure that actually closes on a variable can be used
+    /// as a DateSelect validator.
     fn closure_validator() {
         let mut read: &[u8] = "\n\x1B[D\n".as_bytes();
 
