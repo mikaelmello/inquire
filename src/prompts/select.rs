@@ -1,5 +1,4 @@
-use simple_error::SimpleError;
-use std::{error::Error, iter::FromIterator};
+use std::iter::FromIterator;
 use unicode_segmentation::UnicodeSegmentation;
 
 use termion::event::Key;
@@ -7,7 +6,7 @@ use termion::event::Key;
 use crate::{
     answer::OptionAnswer,
     config::{self, Filter},
-    error::InquireResult,
+    error::{InquireError, InquireResult},
     formatter::{self, OptionFormatter},
     renderer::Renderer,
     terminal::Terminal,
@@ -118,7 +117,7 @@ impl<'a> Select<'a> {
 
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to them.
-    pub fn prompt(self) -> Result<OptionAnswer, Box<dyn Error>> {
+    pub fn prompt(self) -> InquireResult<OptionAnswer> {
         let terminal = Terminal::new()?;
         let mut renderer = Renderer::new(terminal)?;
         self.prompt_with_renderer(&mut renderer)
@@ -127,7 +126,7 @@ impl<'a> Select<'a> {
     pub(in crate) fn prompt_with_renderer(
         self,
         renderer: &mut Renderer,
-    ) -> Result<OptionAnswer, Box<dyn Error>> {
+    ) -> InquireResult<OptionAnswer> {
         SelectPrompt::new(self)?.prompt(renderer)
     }
 }
@@ -143,17 +142,22 @@ struct SelectPrompt<'a> {
     filtered_options: Vec<usize>,
     filter: Filter,
     formatter: OptionFormatter,
-    error: Option<Box<dyn Error>>,
 }
 
 impl<'a> SelectPrompt<'a> {
-    fn new(so: Select<'a>) -> Result<Self, Box<dyn Error>> {
+    fn new(so: Select<'a>) -> InquireResult<Self> {
         if so.options.is_empty() {
-            bail!("Please provide options to select from");
+            return Err(InquireError::InvalidConfiguration(
+                "Available options can not be empty".into(),
+            ));
         }
 
         if so.starting_cursor >= so.options.len() {
-            bail!("Starting selection should not be larger than length of options");
+            return Err(InquireError::InvalidConfiguration(format!(
+                "Starting cursor index {} is larger than length {} of options",
+                so.starting_cursor,
+                &so.options.len()
+            )));
         }
 
         Ok(Self {
@@ -167,7 +171,6 @@ impl<'a> SelectPrompt<'a> {
             filtered_options: Vec::from_iter(0..so.options.len()),
             filter: so.filter,
             formatter: so.formatter,
-            error: None,
         })
     }
 
@@ -232,21 +235,21 @@ impl<'a> SelectPrompt<'a> {
         }
     }
 
-    fn get_final_answer(&self) -> Result<OptionAnswer, Box<dyn Error>> {
+    fn get_final_answer(&self) -> InquireResult<OptionAnswer> {
         self.filtered_options
             .get(self.cursor_index)
             .and_then(|i| self.options.get(*i).map(|opt| OptionAnswer::new(*i, opt)))
-            .ok_or(Box::new(SimpleError::new("Invalid selected index")))
+            .ok_or(InquireError::InvalidState(format!(
+                "Index {} is not in the range of options with len {}",
+                self.cursor_index,
+                self.options.len()
+            )))
     }
 
     fn render(&mut self, renderer: &mut Renderer) -> InquireResult<()> {
         let prompt = &self.message;
 
         renderer.reset_prompt()?;
-
-        if let Some(err) = &self.error {
-            renderer.print_error(&**err)?;
-        }
 
         renderer.print_prompt(&prompt, None, self.filter_value.as_deref())?;
 
@@ -272,7 +275,7 @@ impl<'a> SelectPrompt<'a> {
         Ok(())
     }
 
-    fn prompt(mut self, renderer: &mut Renderer) -> Result<OptionAnswer, Box<dyn Error>> {
+    fn prompt(mut self, renderer: &mut Renderer) -> InquireResult<OptionAnswer> {
         let final_answer: OptionAnswer;
 
         loop {
@@ -281,14 +284,14 @@ impl<'a> SelectPrompt<'a> {
             let key = renderer.read_key()?;
 
             match key {
-                Key::Ctrl('c') => bail!("Multi-selection interrupted by ctrl-c"),
+                Key::Ctrl('c') => return Err(InquireError::OperationCanceled),
                 Key::Char('\n') | Key::Char('\r') | Key::Char(' ') => match self.get_final_answer()
                 {
                     Ok(answer) => {
                         final_answer = answer;
                         break;
                     }
-                    Err(err) => self.error = Some(err),
+                    Err(err) => return Err(err),
                 },
                 key => self.on_change(key),
             }
