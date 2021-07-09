@@ -51,7 +51,7 @@ pub struct MultiSelect<'a> {
     pub formatter: MultiOptionFormatter,
 
     /// Validator to apply to the user input.
-    pub validator: Option<MultiOptionValidator>,
+    pub validator: Option<MultiOptionValidator<'a>>,
 }
 
 impl<'a> MultiSelect<'a> {
@@ -131,7 +131,7 @@ impl<'a> MultiSelect<'a> {
     }
 
     /// Adds a validator to the collection of validators.
-    pub fn with_validator(mut self, validator: MultiOptionValidator) -> Self {
+    pub fn with_validator(mut self, validator: MultiOptionValidator<'a>) -> Self {
         self.validator = Some(validator);
         self
     }
@@ -177,7 +177,7 @@ struct MultiSelectPrompt<'a> {
     filtered_options: Vec<usize>,
     filter: Filter,
     formatter: MultiOptionFormatter,
-    validator: Option<MultiOptionValidator>,
+    validator: Option<MultiOptionValidator<'a>>,
     error: Option<String>,
 }
 

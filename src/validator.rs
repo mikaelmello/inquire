@@ -19,7 +19,7 @@ pub type DateValidator<'a> = &'a dyn Fn(chrono::NaiveDate) -> Result<(), String>
 /// Type alias for validators that receive a collection of [OptionAnswer]'s as the input.
 /// When creating containers of validators, you might need to type hint
 /// them using this type.
-pub type MultiOptionValidator = fn(answer: &[OptionAnswer]) -> Result<(), String>;
+pub type MultiOptionValidator<'a> = &'a dyn Fn(&[OptionAnswer]) -> Result<(), String>;
 
 /// Built-in validator that checks whether the answer is not empty.
 #[macro_export]

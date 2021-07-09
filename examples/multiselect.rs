@@ -15,7 +15,7 @@ fn main() {
         "Pineapple",
     ];
 
-    let validator: MultiOptionValidator = |a| {
+    let validator: MultiOptionValidator = &|a| {
         let x = a.iter().any(|o| o.value == "Pineapple");
 
         match x {
