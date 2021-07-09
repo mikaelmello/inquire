@@ -1,4 +1,3 @@
-use std::error::Error;
 use unicode_segmentation::UnicodeSegmentation;
 
 use termion::event::Key;
@@ -6,7 +5,7 @@ use termion::event::Key;
 use crate::{
     answer::OptionAnswer,
     config::{self, Suggester},
-    error::InquireResult,
+    error::{InquireError, InquireResult},
     formatter::{StringFormatter, DEFAULT_STRING_FORMATTER},
     renderer::Renderer,
     terminal::Terminal,
@@ -105,16 +104,13 @@ impl<'a> Text<'a> {
 
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to them.
-    pub fn prompt(self) -> Result<String, Box<dyn Error>> {
+    pub fn prompt(self) -> InquireResult<String> {
         let terminal = Terminal::new()?;
         let mut renderer = Renderer::new(terminal)?;
         self.prompt_with_renderer(&mut renderer)
     }
 
-    pub(in crate) fn prompt_with_renderer(
-        self,
-        renderer: &mut Renderer,
-    ) -> Result<String, Box<dyn Error>> {
+    pub(in crate) fn prompt_with_renderer(self, renderer: &mut Renderer) -> InquireResult<String> {
         TextPrompt::from(self).prompt(renderer)
     }
 }
@@ -123,14 +119,14 @@ impl<'a> Text<'a> {
 pub trait PromptMany {
     /// Calls prompt on a collection of [Text] instances and return their respective
     /// responses or the first error that appears.
-    fn prompt(self) -> Result<Vec<String>, Box<dyn Error>>;
+    fn prompt(self) -> InquireResult<Vec<String>>;
 }
 
 impl<'a, I> PromptMany for I
 where
     I: Iterator<Item = Text<'a>>,
 {
-    fn prompt(self) -> Result<Vec<String>, Box<dyn Error>> {
+    fn prompt(self) -> InquireResult<Vec<String>> {
         self.map(Text::prompt).collect()
     }
 }
@@ -295,7 +291,7 @@ impl<'a> TextPrompt<'a> {
         Ok(())
     }
 
-    fn prompt(mut self, renderer: &mut Renderer) -> Result<String, Box<dyn Error>> {
+    fn prompt(mut self, renderer: &mut Renderer) -> InquireResult<String> {
         let final_answer: String;
 
         loop {
@@ -304,7 +300,7 @@ impl<'a> TextPrompt<'a> {
             let key = renderer.read_key()?;
 
             match key {
-                Key::Ctrl('c') => bail!("Input interrupted by ctrl-c"),
+                Key::Ctrl('c') => return Err(InquireError::OperationCanceled),
                 Key::Char('\t') => self.use_select_option(),
                 Key::Char('\n') | Key::Char('\r') => match self.get_final_answer() {
                     Ok(answer) => {
