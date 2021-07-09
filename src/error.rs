@@ -12,7 +12,7 @@ pub enum InquireError {
     NotTTY,
 
     /// Error when executing IO operations.
-    #[error("IO error")]
+    #[error("IO error: {0}")]
     IO(#[from] io::Error),
 
     /// Returned when the user canceled the operation, probably
