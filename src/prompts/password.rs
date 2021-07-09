@@ -1,10 +1,12 @@
-use std::error::Error;
 use unicode_segmentation::UnicodeSegmentation;
 
 use termion::event::Key;
 
 use crate::{
-    error::InquireResult, formatter::StringFormatter, renderer::Renderer, terminal::Terminal,
+    error::{InquireError, InquireResult},
+    formatter::StringFormatter,
+    renderer::Renderer,
+    terminal::Terminal,
     validator::StringValidator,
 };
 /// Presents a message to the user and retrieves a single line of text input.
@@ -75,16 +77,13 @@ impl<'a> Password<'a> {
 
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to them.
-    pub fn prompt(self) -> Result<String, Box<dyn Error>> {
+    pub fn prompt(self) -> InquireResult<String> {
         let terminal = Terminal::new()?;
         let mut renderer = Renderer::new(terminal)?;
         self.prompt_with_renderer(&mut renderer)
     }
 
-    pub(in crate) fn prompt_with_renderer(
-        self,
-        renderer: &mut Renderer,
-    ) -> Result<String, Box<dyn Error>> {
+    pub(in crate) fn prompt_with_renderer(self, renderer: &mut Renderer) -> InquireResult<String> {
         PasswordPrompt::from(self).prompt(renderer)
     }
 }
@@ -161,7 +160,7 @@ impl<'a> PasswordPrompt<'a> {
         Ok(())
     }
 
-    fn prompt(mut self, renderer: &mut Renderer) -> Result<String, Box<dyn Error>> {
+    fn prompt(mut self, renderer: &mut Renderer) -> InquireResult<String> {
         let final_answer: String;
 
         loop {
@@ -170,7 +169,7 @@ impl<'a> PasswordPrompt<'a> {
             let key = renderer.read_key()?;
 
             match key {
-                Key::Ctrl('c') => bail!("Password input interrupted by ctrl-c"),
+                Key::Ctrl('c') => return Err(InquireError::OperationCanceled),
                 Key::Char('\n') | Key::Char('\r') => match self.get_final_answer() {
                     Ok(answer) => {
                         final_answer = answer;
