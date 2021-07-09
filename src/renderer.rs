@@ -317,7 +317,7 @@ impl<'a> Renderer<'a> {
         Ok(())
     }
 
-    pub fn cleanup(&mut self, message: &str, answer: &str) -> Result<(), Box<dyn Error>> {
+    pub fn cleanup(&mut self, message: &str, answer: &str) -> InquireResult<()> {
         self.reset_prompt()?;
         self.print_prompt_answer(message, answer)?;
 
