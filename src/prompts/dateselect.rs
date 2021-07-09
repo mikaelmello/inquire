@@ -46,7 +46,7 @@ pub struct DateSelect<'a> {
 
     /// Collection of validators to apply to the user input.
     /// Validation errors are displayed to the user one line above the prompt.
-    pub validators: Vec<DateValidator>,
+    pub validators: Vec<DateValidator<'a>>,
 }
 
 impl<'a> DateSelect<'a> {
@@ -60,7 +60,7 @@ impl<'a> DateSelect<'a> {
     pub const DEFAULT_HELP_MESSAGE: Option<&'a str> =
         Some("arrows to move days, wasd to move months and years, enter to select");
     /// Default validator.
-    pub const DEFAULT_VALIDATORS: Vec<DateValidator> = vec![];
+    pub const DEFAULT_VALIDATORS: Vec<DateValidator<'a>> = vec![];
     /// Default week start.
     pub const DEFAULT_WEEK_START: chrono::Weekday = chrono::Weekday::Sun;
     /// Default min date.
@@ -120,13 +120,13 @@ impl<'a> DateSelect<'a> {
     }
 
     /// Adds a validator to the collection of validators.
-    pub fn with_validator(mut self, validator: DateValidator) -> Self {
+    pub fn with_validator(mut self, validator: DateValidator<'a>) -> Self {
         self.validators.push(validator);
         self
     }
 
     /// Adds the validators to the collection of validators.
-    pub fn with_validators(mut self, validators: &[DateValidator]) -> Self {
+    pub fn with_validators(mut self, validators: &[DateValidator<'a>]) -> Self {
         for validator in validators {
             self.validators.push(validator.clone());
         }
@@ -170,7 +170,7 @@ struct DateSelectPrompt<'a> {
     help_message: Option<&'a str>,
     vim_mode: bool,
     formatter: DateFormatter,
-    validators: Vec<DateValidator>,
+    validators: Vec<DateValidator<'a>>,
     error: Option<String>,
 }
 
@@ -330,5 +330,77 @@ impl<'a> DateSelectPrompt<'a> {
         renderer.cleanup(&self.message, &formatted)?;
 
         Ok(final_answer)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use chrono::NaiveDate;
+    use ntest::timeout;
+
+    use crate::{renderer::Renderer, terminal::Terminal, DateSelect};
+
+    fn default<'a>() -> DateSelect<'a> {
+        DateSelect::new("Question?")
+    }
+
+    macro_rules! date_test {
+        ($name:ident,$input:expr,$output:expr) => {
+            date_test! {$name, $input, $output, default()}
+        };
+
+        ($name:ident,$input:expr,$output:expr,$prompt:expr) => {
+            #[test]
+            #[timeout(100)]
+            fn $name() {
+                let mut read: &[u8] = $input.as_bytes();
+
+                let mut write: Vec<u8> = Vec::new();
+                let terminal = Terminal::new_with_io(&mut write, &mut read);
+                let mut renderer = Renderer::new(terminal).unwrap();
+
+                let ans = $prompt.prompt_with_renderer(&mut renderer).unwrap();
+
+                assert_eq!($output, ans);
+            }
+        };
+    }
+
+    date_test!(today_date, "\n", chrono::Local::now().date().naive_local());
+
+    date_test!(
+        custom_default_date,
+        "\n",
+        NaiveDate::from_ymd(2021, 1, 9),
+        DateSelect::new("Date").with_default(NaiveDate::from_ymd(2021, 1, 9))
+    );
+
+    #[test]
+    #[timeout(100)]
+    /// Tests that a closure that actually closes on a variable can be used
+    /// as a DateSelect validator.
+    fn closure_validator() {
+        let mut read: &[u8] = "\n\x1B[D\n".as_bytes();
+
+        let today_date = chrono::Local::now().date().naive_local();
+
+        let validator = |d| {
+            if today_date > d {
+                Ok(())
+            } else {
+                Err(String::from("Date must be in the past"))
+            }
+        };
+
+        let mut write: Vec<u8> = Vec::new();
+        let terminal = Terminal::new_with_io(&mut write, &mut read);
+        let mut renderer = Renderer::new(terminal).unwrap();
+
+        let ans = DateSelect::new("Question")
+            .with_validator(&validator)
+            .prompt_with_renderer(&mut renderer)
+            .unwrap();
+
+        assert_eq!(today_date.pred(), ans);
     }
 }
