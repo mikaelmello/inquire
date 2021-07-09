@@ -28,14 +28,14 @@ pub struct Password<'a> {
 
     /// Collection of validators to apply to the user input.
     /// Validation errors are displayed to the user one line above the prompt.
-    pub validators: Vec<StringValidator>,
+    pub validators: Vec<StringValidator<'a>>,
 }
 
 impl<'a> Password<'a> {
     /// Default formatter.
     pub const DEFAULT_FORMATTER: StringFormatter = |_| "********";
     /// Default collection of validators.
-    pub const DEFAULT_VALIDATORS: Vec<StringValidator> = Vec::new();
+    pub const DEFAULT_VALIDATORS: Vec<StringValidator<'a>> = Vec::new();
     /// Default help message.
     pub const DEFAULT_HELP_MESSAGE: Option<&'a str> = None;
 
@@ -62,13 +62,13 @@ impl<'a> Password<'a> {
     }
 
     /// Adds a validator to the collection of validators.
-    pub fn with_validator(mut self, validator: StringValidator) -> Self {
+    pub fn with_validator(mut self, validator: StringValidator<'a>) -> Self {
         self.validators.push(validator);
         self
     }
 
     /// Adds the validators to the collection of validators.
-    pub fn with_validators(mut self, validators: &[StringValidator]) -> Self {
+    pub fn with_validators(mut self, validators: &[StringValidator<'a>]) -> Self {
         for validator in validators {
             self.validators.push(validator.clone());
         }
@@ -93,7 +93,7 @@ struct PasswordPrompt<'a> {
     help_message: Option<&'a str>,
     content: String,
     formatter: StringFormatter,
-    validators: Vec<StringValidator>,
+    validators: Vec<StringValidator<'a>>,
     error: Option<String>,
 }
 
@@ -247,7 +247,7 @@ mod test {
         input_correction_after_validation,
         "1234567890\n\x7F\x7F\x7F\x7F\x7F\nyes\n",
         "12345yes",
-        Password::new("").with_validator(|ans| match ans.len() {
+        Password::new("").with_validator(&|ans| match ans.len() {
             len if len > 5 && len < 10 => Ok(()),
             _ => Err("Invalid".to_string()),
         })

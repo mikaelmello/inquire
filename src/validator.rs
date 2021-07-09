@@ -8,7 +8,7 @@ use crate::answer::OptionAnswer;
 /// Type alias for validators that receive a string slice as the input.
 /// When creating containers of validators, you might need to type hint
 /// them using this type.
-pub type StringValidator = fn(answer: &str) -> Result<(), String>;
+pub type StringValidator<'a> = &'a dyn Fn(&str) -> Result<(), String>;
 
 /// Type alias for validators that receive a string slice as the input.
 /// When creating containers of validators, you might need to type hint
@@ -30,7 +30,7 @@ macro_rules! required {
     };
 
     ($message:expr) => {
-        |a| match a.is_empty() {
+        &|a| match a.is_empty() {
             true => Err(String::from($message)),
             false => Ok(()),
         }
@@ -47,7 +47,7 @@ macro_rules! max_length {
 
     ($length:expr, $message:expr) => {
         {
-            |a| match a.len() {
+            &|a| match a.len() {
                 _len if _len <= $length => Ok(()),
                 _ => Err(String::from($message)),
             }
@@ -66,7 +66,7 @@ macro_rules! min_length {
 
     ($length:expr, $message:expr) => {
         {
-            |a| match a.len() {
+            &|a| match a.len() {
                 _len if _len >= $length => Ok(()),
                 _ => Err(String::from($message)),
             }
@@ -83,7 +83,7 @@ macro_rules! length {
     };
 
     ($length:expr, $message:expr) => {{
-        |a| match a.len() {
+        &|a| match a.len() {
             _len if _len == $length => Ok(()),
             _ => Err(String::from($message)),
         }
@@ -99,7 +99,7 @@ macro_rules! parse_primitive {
     };
 
     ($type:ty, $message:expr) => {{
-        |a| match a.parse::<$type>() {
+        &|a| match a.parse::<$type>() {
             Ok(_) => Ok(()),
             Err(err) => Err(String::from($message)),
         }
