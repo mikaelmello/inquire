@@ -18,7 +18,7 @@ pub enum InquireError {
     /// Returned when the user canceled the operation, probably
     /// by pressing Ctrl+C or ESC.
     #[error("Operation was canceled by the user")]
-    Cancel,
+    OperationCanceled,
 }
 
 /// Result type where errors are from type InquireError
