@@ -4,7 +4,8 @@ use unicode_segmentation::UnicodeSegmentation;
 use termion::event::Key;
 
 use crate::{
-    formatter::StringFormatter, renderer::Renderer, terminal::Terminal, validator::StringValidator,
+    error::InquireResult, formatter::StringFormatter, renderer::Renderer, terminal::Terminal,
+    validator::StringValidator,
 };
 /// Presents a message to the user and retrieves a single line of text input.
 ///
@@ -140,7 +141,7 @@ impl<'a> PasswordPrompt<'a> {
         Ok(self.content.clone())
     }
 
-    fn render(&mut self, renderer: &mut Renderer) -> Result<(), std::io::Error> {
+    fn render(&mut self, renderer: &mut Renderer) -> InquireResult<()> {
         let prompt = &self.message;
 
         renderer.reset_prompt()?;

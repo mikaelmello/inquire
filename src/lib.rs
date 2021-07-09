@@ -43,6 +43,7 @@ mod answer;
 pub mod config;
 #[cfg(feature = "date")]
 mod date_utils;
+pub mod error;
 mod formatter;
 mod parser;
 mod prompts;

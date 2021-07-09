@@ -10,6 +10,7 @@ use termion::event::Key;
 use crate::{
     config::{self, Filter},
     date_utils::get_month,
+    error::InquireResult,
     formatter::{self, DateFormatter},
     renderer::Renderer,
     terminal::Terminal,
@@ -270,7 +271,7 @@ impl<'a> DateSelectPrompt<'a> {
         Ok(self.current_date)
     }
 
-    fn render(&mut self, renderer: &mut Renderer) -> Result<(), std::io::Error> {
+    fn render(&mut self, renderer: &mut Renderer) -> InquireResult<()> {
         let prompt = &self.message;
 
         renderer.reset_prompt()?;

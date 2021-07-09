@@ -6,6 +6,7 @@ use termion::event::Key;
 use crate::{
     answer::OptionAnswer,
     config::{self, Filter},
+    error::InquireResult,
     formatter::{self, MultiOptionFormatter},
     renderer::Renderer,
     terminal::Terminal,
@@ -330,7 +331,7 @@ impl<'a> MultiSelectPrompt<'a> {
         return Ok(selected_options);
     }
 
-    fn render(&mut self, renderer: &mut Renderer) -> Result<(), std::io::Error> {
+    fn render(&mut self, renderer: &mut Renderer) -> InquireResult<()> {
         let prompt = &self.message;
 
         renderer.reset_prompt()?;

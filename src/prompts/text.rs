@@ -6,6 +6,7 @@ use termion::event::Key;
 use crate::{
     answer::OptionAnswer,
     config::{self, Suggester},
+    error::InquireResult,
     formatter::{StringFormatter, DEFAULT_STRING_FORMATTER},
     renderer::Renderer,
     terminal::Terminal,
@@ -260,7 +261,7 @@ impl<'a> TextPrompt<'a> {
         Ok(self.content.clone())
     }
 
-    fn render(&mut self, renderer: &mut Renderer) -> Result<(), std::io::Error> {
+    fn render(&mut self, renderer: &mut Renderer) -> InquireResult<()> {
         let prompt = &self.message;
 
         renderer.reset_prompt()?;

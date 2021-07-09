@@ -6,7 +6,10 @@ use termion::{
     event::Key,
 };
 
-use crate::terminal::{Style, Terminal};
+use crate::{
+    error::{InquireError, InquireResult},
+    terminal::{Style, Terminal},
+};
 
 pub struct Renderer<'a> {
     cur_line: usize,
@@ -51,7 +54,7 @@ impl<'a> Token<'a> {
         self
     }
 
-    pub fn print(&self, terminal: &mut Terminal) -> Result<(), std::io::Error> {
+    pub fn print(&self, terminal: &mut Terminal) -> InquireResult<()> {
         if self.content.is_empty() {
             return Ok(());
         }
@@ -83,7 +86,7 @@ impl<'a> Token<'a> {
 }
 
 impl<'a> Renderer<'a> {
-    pub fn new(terminal: Terminal<'a>) -> Result<Self, Box<dyn Error>> {
+    pub fn new(terminal: Terminal<'a>) -> InquireResult<Self> {
         let mut renderer = Self {
             cur_line: 0,
             terminal,
@@ -94,7 +97,7 @@ impl<'a> Renderer<'a> {
         Ok(renderer)
     }
 
-    pub fn reset_prompt(&mut self) -> Result<(), std::io::Error> {
+    pub fn reset_prompt(&mut self) -> InquireResult<()> {
         for _ in 0..self.cur_line {
             self.terminal.cursor_up()?;
             self.terminal.cursor_horizontal_reset()?;
@@ -105,14 +108,15 @@ impl<'a> Renderer<'a> {
         Ok(())
     }
 
-    pub fn print_tokens(&mut self, tokens: &[Token]) -> Result<(), std::io::Error> {
+    pub fn print_tokens(&mut self, tokens: &[Token]) -> InquireResult<()> {
         for t in tokens {
             t.print(&mut self.terminal)?;
         }
+
         Ok(())
     }
 
-    pub fn print_error_message(&mut self, message: &str) -> Result<(), std::io::Error> {
+    pub fn print_error_message(&mut self, message: &str) -> InquireResult<()> {
         Token::new(&format!("# {}", message))
             .with_fg(color::Red)
             .print(&mut self.terminal)?;
@@ -122,7 +126,7 @@ impl<'a> Renderer<'a> {
         Ok(())
     }
 
-    pub fn print_error(&mut self, error: &(dyn Error)) -> Result<(), std::io::Error> {
+    pub fn print_error(&mut self, error: &(dyn Error)) -> InquireResult<()> {
         Token::new(&format!("# {}", error))
             .with_fg(color::Red)
             .print(&mut self.terminal)?;
@@ -132,11 +136,7 @@ impl<'a> Renderer<'a> {
         Ok(())
     }
 
-    pub fn print_prompt_answer(
-        &mut self,
-        prompt: &str,
-        answer: &str,
-    ) -> Result<(), std::io::Error> {
+    pub fn print_prompt_answer(&mut self, prompt: &str, answer: &str) -> InquireResult<()> {
         self.print_tokens(&vec![
             Token::new("? ").with_fg(color::Green),
             Token::new(prompt),
@@ -152,7 +152,7 @@ impl<'a> Renderer<'a> {
         prompt: &str,
         default: Option<&str>,
         content: Option<&str>,
-    ) -> Result<(), std::io::Error> {
+    ) -> InquireResult<()> {
         Token::new("? ")
             .with_fg(color::Green)
             .print(&mut self.terminal)?;
@@ -174,7 +174,7 @@ impl<'a> Renderer<'a> {
         Ok(())
     }
 
-    pub fn print_help(&mut self, message: &str) -> Result<(), std::io::Error> {
+    pub fn print_help(&mut self, message: &str) -> InquireResult<()> {
         Token::new(&format!("[{}]", message))
             .with_fg(color::Cyan)
             .print(&mut self.terminal)?;
@@ -183,7 +183,7 @@ impl<'a> Renderer<'a> {
         Ok(())
     }
 
-    pub fn print_option(&mut self, cursor: bool, content: &str) -> Result<(), std::io::Error> {
+    pub fn print_option(&mut self, cursor: bool, content: &str) -> InquireResult<()> {
         match cursor {
             true => Token::new(&format!("> {}", content))
                 .with_fg(color::Cyan)
@@ -201,7 +201,7 @@ impl<'a> Renderer<'a> {
         cursor: bool,
         checked: bool,
         content: &str,
-    ) -> Result<(), std::io::Error> {
+    ) -> InquireResult<()> {
         self.print_tokens(&vec![
             match cursor {
                 true => Token::new("> ").with_fg(color::Cyan),
@@ -229,7 +229,7 @@ impl<'a> Renderer<'a> {
         selected_date: chrono::NaiveDate,
         min_date: Option<chrono::NaiveDate>,
         max_date: Option<chrono::NaiveDate>,
-    ) -> Result<(), std::io::Error> {
+    ) -> InquireResult<()> {
         use crate::date_utils::get_start_date;
         use chrono::Datelike;
 
@@ -324,15 +324,17 @@ impl<'a> Renderer<'a> {
         Ok(())
     }
 
-    pub fn flush(&mut self) -> Result<(), std::io::Error> {
-        self.terminal.flush()
+    pub fn flush(&mut self) -> InquireResult<()> {
+        self.terminal.flush()?;
+
+        Ok(())
     }
 
-    pub fn read_key(&mut self) -> Result<Key, std::io::Error> {
-        self.terminal.read_key()
+    pub fn read_key(&mut self) -> InquireResult<Key> {
+        self.terminal.read_key().map_err(InquireError::from)
     }
 
-    fn new_line(&mut self) -> Result<(), std::io::Error> {
+    fn new_line(&mut self) -> InquireResult<()> {
         self.terminal.cursor_horizontal_reset()?;
         self.terminal.write("\n")?;
         self.cur_line = self.cur_line.saturating_add(1);

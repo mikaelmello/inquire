@@ -7,6 +7,7 @@ use termion::event::Key;
 use crate::{
     answer::OptionAnswer,
     config::{self, Filter},
+    error::InquireResult,
     formatter::{self, OptionFormatter},
     renderer::Renderer,
     terminal::Terminal,
@@ -238,7 +239,7 @@ impl<'a> SelectPrompt<'a> {
             .ok_or(Box::new(SimpleError::new("Invalid selected index")))
     }
 
-    fn render(&mut self, renderer: &mut Renderer) -> Result<(), std::io::Error> {
+    fn render(&mut self, renderer: &mut Renderer) -> InquireResult<()> {
         let prompt = &self.message;
 
         renderer.reset_prompt()?;
