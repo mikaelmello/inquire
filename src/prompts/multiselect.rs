@@ -1,4 +1,4 @@
-use std::{collections::HashSet, error::Error, iter::FromIterator};
+use std::{collections::HashSet, iter::FromIterator};
 use unicode_segmentation::UnicodeSegmentation;
 
 use termion::event::Key;
@@ -6,7 +6,7 @@ use termion::event::Key;
 use crate::{
     answer::OptionAnswer,
     config::{self, Filter},
-    error::InquireResult,
+    error::{InquireError, InquireResult},
     formatter::{self, MultiOptionFormatter},
     renderer::Renderer,
     terminal::Terminal,
@@ -150,7 +150,7 @@ impl<'a> MultiSelect<'a> {
 
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to them.
-    pub fn prompt(self) -> Result<Vec<OptionAnswer>, Box<dyn Error>> {
+    pub fn prompt(self) -> InquireResult<Vec<OptionAnswer>> {
         let terminal = Terminal::new()?;
         let mut renderer = Renderer::new(terminal)?;
         self.prompt_with_renderer(&mut renderer)
@@ -159,7 +159,7 @@ impl<'a> MultiSelect<'a> {
     pub(in crate) fn prompt_with_renderer(
         self,
         renderer: &mut Renderer,
-    ) -> Result<Vec<OptionAnswer>, Box<dyn Error>> {
+    ) -> InquireResult<Vec<OptionAnswer>> {
         MultiSelectPrompt::new(self)?.prompt(renderer)
     }
 }
@@ -182,14 +182,20 @@ struct MultiSelectPrompt<'a> {
 }
 
 impl<'a> MultiSelectPrompt<'a> {
-    fn new(mso: MultiSelect<'a>) -> Result<Self, Box<dyn Error>> {
+    fn new(mso: MultiSelect<'a>) -> InquireResult<Self> {
         if mso.options.is_empty() {
-            bail!("Please provide options to select from");
+            return Err(InquireError::InvalidConfiguration(
+                "Available options can not be empty".into(),
+            ));
         }
         if let Some(default) = mso.default {
             for i in default {
                 if i >= &mso.options.len() {
-                    bail!("Invalid index, larger than options available");
+                    return Err(InquireError::InvalidConfiguration(format!(
+                        "Index {} is larger than length {} of options",
+                        i,
+                        &mso.options.len()
+                    )));
                 }
             }
         }
@@ -368,7 +374,7 @@ impl<'a> MultiSelectPrompt<'a> {
         Ok(())
     }
 
-    fn prompt(mut self, renderer: &mut Renderer) -> Result<Vec<OptionAnswer>, Box<dyn Error>> {
+    fn prompt(mut self, renderer: &mut Renderer) -> InquireResult<Vec<OptionAnswer>> {
         let final_answer: Vec<OptionAnswer>;
 
         loop {
@@ -377,7 +383,7 @@ impl<'a> MultiSelectPrompt<'a> {
             let key = renderer.read_key()?;
 
             match key {
-                Key::Ctrl('c') => bail!("Multi-selection interrupted by ctrl-c"),
+                Key::Ctrl('c') => return Err(InquireError::OperationCanceled),
                 Key::Char('\n') | Key::Char('\r') => match self.get_final_answer() {
                     Ok(answer) => {
                         final_answer = answer;
