@@ -1,6 +1,3 @@
-use std::ops::Sub;
-
-use chrono::Duration;
 use termion::{
     color::{self, Color},
     event::Key,
@@ -221,7 +218,8 @@ impl<'a> Renderer<'a> {
         max_date: Option<chrono::NaiveDate>,
     ) -> InquireResult<()> {
         use crate::date_utils::get_start_date;
-        use chrono::Datelike;
+        use chrono::{Datelike, Duration};
+        use std::ops::Sub;
 
         // print header (month year)
         let header = format!("{} {}", month.name().to_lowercase(), year);
