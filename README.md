@@ -1,6 +1,6 @@
 # inquire
 
-[![Latest Version]][crates.io] ![License]
+[![Latest Version]][crates.io] ![Build] ![Platforms] ![License]
 
 `inquire` is a library for building interactive prompts on terminals, inspired by [survey](https://github.com/AlecAivazis/survey).
 
@@ -19,6 +19,8 @@ $ cargo run --example form --features date
 
 [crates.io]: https://crates.io/crates/inquire
 [Latest Version]: https://img.shields.io/crates/v/inquire.svg
+[Build]: https://github.com/github/docs/actions/workflows/test.yml/badge.svg
+[Platforms]: https://img.shields.io/badge/platform-linux%20%7C%20macos-lightgray
 [License]: https://img.shields.io/crates/l/inquire.svg
 
 ## Prompts
