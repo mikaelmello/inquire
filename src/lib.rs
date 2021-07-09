@@ -36,9 +36,6 @@
 
 #![warn(missing_docs)]
 
-#[macro_use]
-extern crate simple_error;
-
 mod answer;
 pub mod config;
 #[cfg(feature = "date")]

@@ -19,7 +19,6 @@ date = ["chrono"]
 [dependencies]
 termion = "1"
 unicode-segmentation = "1"
-simple-error = "0.2.3"
 chrono = {version = "0.4",  optional = true }
 thiserror = "1"
 
