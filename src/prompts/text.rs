@@ -347,7 +347,7 @@ mod test {
                 let mut read: &[u8] = $input.as_bytes();
 
                 let mut write: Vec<u8> = Vec::new();
-                let terminal = Terminal::new_with_io(&mut write, &mut read).unwrap();
+                let terminal = Terminal::new_with_io(&mut write, &mut read);
                 let mut renderer = Renderer::new(terminal).unwrap();
 
                 let ans = $prompt.prompt_with_renderer(&mut renderer).unwrap();
