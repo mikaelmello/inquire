@@ -1,5 +1,6 @@
 use std::io::{stdin, stdout, Error, Read, Stdin, Stdout, Write};
 
+use crate::error::{InquireError, InquireResult};
 use termion::{
     color::{self, Color},
     cursor,
@@ -42,11 +43,19 @@ impl<'a> Terminal<'a> {
     /// # Errors
     ///
     /// Will return `std::io::Error` if it fails to get terminal size
-    pub fn new() -> Result<Self, std::io::Error> {
+    pub fn new() -> InquireResult<Self> {
+        let raw_mode = stdout().into_raw_mode().map_err(|e| {
+            if e.raw_os_error() == Some(25i32) {
+                InquireError::NotTTY
+            } else {
+                InquireError::from(e)
+            }
+        });
+
         Ok(Self {
             io: IO::Std {
                 r: stdin().keys(),
-                w: stdout().into_raw_mode()?,
+                w: raw_mode?,
             },
             dull: false,
         })
@@ -56,17 +65,14 @@ impl<'a> Terminal<'a> {
     ///
     /// Will return `std::io::Error` if it fails to get terminal size
     #[cfg(test)]
-    pub fn new_with_io<W: 'a + Write>(
-        writer: &'a mut W,
-        reader: &'a mut dyn Read,
-    ) -> Result<Self, std::io::Error> {
-        Ok(Self {
+    pub fn new_with_io<W: 'a + Write>(writer: &'a mut W, reader: &'a mut dyn Read) -> Self {
+        Self {
             io: IO::Custom {
                 r: reader.keys(),
                 w: writer,
             },
             dull: false,
-        })
+        }
     }
 
     #[allow(unused)]
@@ -210,7 +216,7 @@ mod test {
         let mut read = read.as_slice();
 
         {
-            let mut terminal = Terminal::new_with_io(&mut write, &mut read).unwrap();
+            let mut terminal = Terminal::new_with_io(&mut write, &mut read);
 
             terminal.write("testing ").unwrap();
             terminal.write("writing ").unwrap();
@@ -231,7 +237,7 @@ mod test {
         let mut read = read.as_slice();
 
         {
-            let mut terminal = Terminal::new_with_io(&mut write, &mut read).unwrap();
+            let mut terminal = Terminal::new_with_io(&mut write, &mut read);
 
             terminal.set_style(Style::Bold).unwrap();
             terminal.set_style(Style::Italic).unwrap();
@@ -259,7 +265,7 @@ mod test {
         let mut read = read.as_slice();
 
         {
-            let mut terminal = Terminal::new_with_io(&mut write, &mut read).unwrap();
+            let mut terminal = Terminal::new_with_io(&mut write, &mut read);
 
             terminal.set_fg_color(termion::color::Red).unwrap();
             terminal.reset_fg_color().unwrap();
@@ -287,7 +293,7 @@ mod test {
         let mut read = read.as_slice();
 
         {
-            let mut terminal = Terminal::new_with_io(&mut write, &mut read).unwrap();
+            let mut terminal = Terminal::new_with_io(&mut write, &mut read);
 
             terminal.set_bg_color(termion::color::Red).unwrap();
             terminal.reset_bg_color().unwrap();
@@ -315,7 +321,7 @@ mod test {
         let mut read = read.as_slice();
 
         {
-            let mut terminal = Terminal::new_with_io(&mut write, &mut read).unwrap().dull();
+            let mut terminal = Terminal::new_with_io(&mut write, &mut read).dull();
 
             terminal.set_style(Style::Bold).unwrap();
             terminal.set_style(Style::Italic).unwrap();

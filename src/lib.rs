@@ -36,13 +36,11 @@
 
 #![warn(missing_docs)]
 
-#[macro_use]
-extern crate simple_error;
-
 mod answer;
 pub mod config;
 #[cfg(feature = "date")]
 mod date_utils;
+pub mod error;
 mod formatter;
 mod parser;
 mod prompts;

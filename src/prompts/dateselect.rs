@@ -1,7 +1,6 @@
 use chrono::{Datelike, Duration, NaiveDate};
 use std::{
     cmp::{max, min},
-    error::Error,
     ops::Add,
 };
 
@@ -10,6 +9,7 @@ use termion::event::Key;
 use crate::{
     config::{self, Filter},
     date_utils::get_month,
+    error::{InquireError, InquireResult},
     formatter::{self, DateFormatter},
     renderer::Renderer,
     terminal::Terminal,
@@ -147,7 +147,7 @@ impl<'a> DateSelect<'a> {
 
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to them.
-    pub fn prompt(self) -> Result<NaiveDate, Box<dyn Error>> {
+    pub fn prompt(self) -> InquireResult<NaiveDate> {
         let terminal = Terminal::new()?;
         let mut renderer = Renderer::new(terminal)?;
         self.prompt_with_renderer(&mut renderer)
@@ -156,7 +156,7 @@ impl<'a> DateSelect<'a> {
     pub(in crate) fn prompt_with_renderer(
         self,
         renderer: &mut Renderer,
-    ) -> Result<NaiveDate, Box<dyn Error>> {
+    ) -> InquireResult<NaiveDate> {
         DateSelectPrompt::new(self)?.prompt(renderer)
     }
 }
@@ -175,15 +175,19 @@ struct DateSelectPrompt<'a> {
 }
 
 impl<'a> DateSelectPrompt<'a> {
-    fn new(so: DateSelect<'a>) -> Result<Self, Box<dyn Error>> {
+    fn new(so: DateSelect<'a>) -> InquireResult<Self> {
         if let Some(min_date) = so.min_date {
             if min_date > so.starting_date {
-                bail!("Min date can not be greater than starting date");
+                return Err(InquireError::InvalidConfiguration(
+                    "Min date can not be greater than starting date".into(),
+                ));
             }
         }
         if let Some(max_date) = so.max_date {
             if max_date < so.starting_date {
-                bail!("Max date can not be smaller than starting date");
+                return Err(InquireError::InvalidConfiguration(
+                    "Max date can not be smaller than starting date".into(),
+                ));
             }
         }
 
@@ -270,7 +274,7 @@ impl<'a> DateSelectPrompt<'a> {
         Ok(self.current_date)
     }
 
-    fn render(&mut self, renderer: &mut Renderer) -> Result<(), std::io::Error> {
+    fn render(&mut self, renderer: &mut Renderer) -> InquireResult<()> {
         let prompt = &self.message;
 
         renderer.reset_prompt()?;
@@ -300,7 +304,7 @@ impl<'a> DateSelectPrompt<'a> {
         Ok(())
     }
 
-    fn prompt(mut self, renderer: &mut Renderer) -> Result<NaiveDate, Box<dyn Error>> {
+    fn prompt(mut self, renderer: &mut Renderer) -> InquireResult<NaiveDate> {
         let final_answer: NaiveDate;
 
         loop {
@@ -309,7 +313,7 @@ impl<'a> DateSelectPrompt<'a> {
             let key = renderer.read_key()?;
 
             match key {
-                Key::Ctrl('c') => bail!("Multi-selection interrupted by ctrl-c"),
+                Key::Ctrl('c') => return Err(InquireError::OperationCanceled),
                 Key::Char('\n') => match self.get_final_answer() {
                     Ok(answer) => {
                         final_answer = answer;
