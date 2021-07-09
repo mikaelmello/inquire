@@ -332,3 +332,73 @@ impl<'a> DateSelectPrompt<'a> {
         Ok(final_answer)
     }
 }
+
+#[cfg(test)]
+mod test {
+    use chrono::NaiveDate;
+    use ntest::timeout;
+
+    use crate::{renderer::Renderer, terminal::Terminal, DateSelect};
+
+    fn default<'a>() -> DateSelect<'a> {
+        DateSelect::new("Question?")
+    }
+
+    macro_rules! date_test {
+        ($name:ident,$input:expr,$output:expr) => {
+            date_test! {$name, $input, $output, default()}
+        };
+
+        ($name:ident,$input:expr,$output:expr,$prompt:expr) => {
+            #[test]
+            #[timeout(100)]
+            fn $name() {
+                let mut read: &[u8] = $input.as_bytes();
+
+                let mut write: Vec<u8> = Vec::new();
+                let terminal = Terminal::new_with_io(&mut write, &mut read);
+                let mut renderer = Renderer::new(terminal).unwrap();
+
+                let ans = $prompt.prompt_with_renderer(&mut renderer).unwrap();
+
+                assert_eq!($output, ans);
+            }
+        };
+    }
+
+    date_test!(today_date, "\n", chrono::Local::now().date().naive_local());
+
+    date_test!(
+        custom_default_date,
+        "\n",
+        NaiveDate::from_ymd(2021, 1, 9),
+        DateSelect::new("Date").with_default(NaiveDate::from_ymd(2021, 1, 9))
+    );
+
+    #[test]
+    #[timeout(100)]
+    fn closure_validator() {
+        let mut read: &[u8] = "\n\x1B[D\n".as_bytes();
+
+        let today_date = chrono::Local::now().date().naive_local();
+
+        let validator = |d| {
+            if today_date > d {
+                Ok(())
+            } else {
+                Err(String::from("Date must be in the past"))
+            }
+        };
+
+        let mut write: Vec<u8> = Vec::new();
+        let terminal = Terminal::new_with_io(&mut write, &mut read);
+        let mut renderer = Renderer::new(terminal).unwrap();
+
+        let ans = DateSelect::new("Question")
+            .with_validator(validator)
+            .prompt_with_renderer(&mut renderer)
+            .unwrap();
+
+        assert_eq!(today_date.pred(), ans);
+    }
+}
