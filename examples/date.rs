@@ -19,7 +19,7 @@ fn main() {
     println!("{}", date);
 
     let date = DateSelect::new("Validated input")
-        .with_validator(|d| {
+        .with_validator(&|d| {
             let now = chrono::Utc::now().naive_utc().date();
 
             if d.ge(&now) {
