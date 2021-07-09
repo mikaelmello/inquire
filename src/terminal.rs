@@ -1,5 +1,6 @@
 use std::io::{stdin, stdout, Error, Read, Stdin, Stdout, Write};
 
+use crate::error::{InquireError, InquireResult};
 use termion::{
     color::{self, Color},
     cursor,
@@ -42,11 +43,19 @@ impl<'a> Terminal<'a> {
     /// # Errors
     ///
     /// Will return `std::io::Error` if it fails to get terminal size
-    pub fn new() -> Result<Self, std::io::Error> {
+    pub fn new() -> InquireResult<Self> {
+        let raw_mode = stdout().into_raw_mode().map_err(|e| {
+            if e.raw_os_error() == Some(25i32) {
+                InquireError::NotTTY
+            } else {
+                InquireError::from(e)
+            }
+        });
+
         Ok(Self {
             io: IO::Std {
                 r: stdin().keys(),
-                w: stdout().into_raw_mode()?,
+                w: raw_mode?,
             },
             dull: false,
         })
