@@ -11,6 +11,10 @@ pub enum InquireError {
     #[error("The input device is not a TTY")]
     NotTTY,
 
+    /// The input device is not a TTY.
+    #[error("The prompt configuration is invalid: {0}")]
+    InvalidConfiguration(String),
+
     /// Error when executing IO operations.
     #[error("IO error: {0}")]
     IO(#[from] io::Error),
