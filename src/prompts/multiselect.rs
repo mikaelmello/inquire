@@ -192,7 +192,7 @@ impl<'a> MultiSelectPrompt<'a> {
             for i in default {
                 if i >= &mso.options.len() {
                     return Err(InquireError::InvalidConfiguration(format!(
-                        "Index {} is larger than length {} of options",
+                        "Index {} is out-of-bounds for length {} of options",
                         i,
                         &mso.options.len()
                     )));

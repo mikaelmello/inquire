@@ -154,7 +154,7 @@ impl<'a> SelectPrompt<'a> {
 
         if so.starting_cursor >= so.options.len() {
             return Err(InquireError::InvalidConfiguration(format!(
-                "Starting cursor index {} is larger than length {} of options",
+                "Starting cursor index {} is out-of-bounds for length {} of options",
                 so.starting_cursor,
                 &so.options.len()
             )));
