@@ -18,6 +18,7 @@ date = ["chrono"]
 
 [dependencies]
 termion = "1"
+crossterm = "0.20"
 unicode-segmentation = "1"
 chrono = {version = "0.4",  optional = true }
 thiserror = "1"
