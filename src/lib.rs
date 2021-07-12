@@ -38,6 +38,7 @@
 
 mod answer;
 pub mod config;
+mod cross_renderer;
 mod cross_terminal;
 #[cfg(feature = "date")]
 mod date_utils;
