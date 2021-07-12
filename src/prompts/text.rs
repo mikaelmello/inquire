@@ -1,14 +1,13 @@
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use unicode_segmentation::UnicodeSegmentation;
-
-use termion::event::Key;
 
 use crate::{
     answer::OptionAnswer,
     config::{self, Suggester},
+    cross_renderer::Renderer,
+    cross_terminal::CrossTerminal,
     error::{InquireError, InquireResult},
     formatter::{StringFormatter, DEFAULT_STRING_FORMATTER},
-    renderer::Renderer,
-    terminal::Terminal,
     utils::paginate,
     validator::StringValidator,
 };
@@ -105,7 +104,7 @@ impl<'a> Text<'a> {
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to them.
     pub fn prompt(self) -> InquireResult<String> {
-        let terminal = Terminal::new()?;
+        let terminal = CrossTerminal::new()?;
         let mut renderer = Renderer::new(terminal)?;
         self.prompt_with_renderer(&mut renderer)
     }
@@ -202,26 +201,39 @@ impl<'a> TextPrompt<'a> {
         }
     }
 
-    fn on_change(&mut self, key: Key) {
+    fn on_change(&mut self, key: KeyEvent) {
         let mut dirty = false;
 
         match key {
-            Key::Backspace => {
+            KeyEvent {
+                code: KeyCode::Tab,
+                modifiers: KeyModifiers::NONE,
+            } => self.use_select_option(),
+            KeyEvent {
+                code: KeyCode::Backspace,
+                modifiers: KeyModifiers::NONE,
+            } => {
                 let len = self.content[..].graphemes(true).count();
                 let new_len = len.saturating_sub(1);
                 self.content = self.content[..].graphemes(true).take(new_len).collect();
                 dirty = true;
             }
-            Key::Up => self.move_cursor_up(),
-            Key::Down => self.move_cursor_down(),
-            Key::Char('\x17') | Key::Char('\x18') => {
-                self.content.clear();
-                dirty = true;
-            }
-            Key::Char(c) => {
+            KeyEvent {
+                code: KeyCode::Up,
+                modifiers: KeyModifiers::NONE,
+            } => self.move_cursor_up(),
+            KeyEvent {
+                code: KeyCode::Down,
+                modifiers: KeyModifiers::NONE,
+            } => self.move_cursor_down(),
+            KeyEvent {
+                code: KeyCode::Char(c),
+                modifiers: KeyModifiers::NONE,
+            } => {
                 self.content.push(c);
                 dirty = true;
             }
+
             _ => {}
         }
 
@@ -300,9 +312,26 @@ impl<'a> TextPrompt<'a> {
             let key = renderer.read_key()?;
 
             match key {
-                Key::Ctrl('c') => return Err(InquireError::OperationCanceled),
-                Key::Char('\t') => self.use_select_option(),
-                Key::Char('\n') | Key::Char('\r') => match self.get_final_answer() {
+                KeyEvent {
+                    code: KeyCode::Char('c'),
+                    modifiers: KeyModifiers::CONTROL,
+                }
+                | KeyEvent {
+                    code: KeyCode::Esc,
+                    modifiers: _,
+                } => return Err(InquireError::OperationCanceled),
+                KeyEvent {
+                    code: KeyCode::Enter,
+                    modifiers: _,
+                }
+                | KeyEvent {
+                    code: KeyCode::Char('\n'),
+                    modifiers: _,
+                }
+                | KeyEvent {
+                    code: KeyCode::Char('\r'),
+                    modifiers: _,
+                } => match self.get_final_answer() {
                     Ok(answer) => {
                         final_answer = answer;
                         break;
@@ -321,14 +350,21 @@ impl<'a> TextPrompt<'a> {
 
 #[cfg(test)]
 mod test {
+    use crossterm::event::{KeyCode, KeyEvent};
     use ntest::timeout;
 
-    use crate::{renderer::Renderer, terminal::Terminal};
+    use crate::{cross_renderer::Renderer, cross_terminal::CrossTerminal};
 
     use super::Text;
 
     fn default<'a>() -> Text<'a> {
         Text::new("Question?")
+    }
+
+    macro_rules! text_to_events {
+        ($text:expr) => {{
+            $text.chars().map(|c| KeyCode::Char(c))
+        }};
     }
 
     macro_rules! text_test {
@@ -340,10 +376,11 @@ mod test {
             #[test]
             #[timeout(100)]
             fn $name() {
-                let mut read: &[u8] = $input.as_bytes();
+                let read: Vec<KeyEvent> = $input.into_iter().map(KeyEvent::from).collect();
+                let mut read = read.iter();
 
                 let mut write: Vec<u8> = Vec::new();
-                let terminal = Terminal::new_with_io(&mut write, &mut read);
+                let terminal = CrossTerminal::new_with_io(&mut write, &mut read);
                 let mut renderer = Renderer::new(terminal).unwrap();
 
                 let ans = $prompt.prompt_with_renderer(&mut renderer).unwrap();
@@ -353,33 +390,75 @@ mod test {
         };
     }
 
-    text_test!(empty, "\n", "");
+    text_test!(empty, vec![KeyCode::Enter], "");
 
-    text_test!(single_letter, "b\n", "b");
+    text_test!(single_letter, vec![KeyCode::Char('b'), KeyCode::Enter], "b");
 
-    text_test!(letters_and_enter, "normal input\n", "normal input");
+    text_test!(
+        letters_and_enter,
+        text_to_events!("normal input\n"),
+        "normal input"
+    );
 
     text_test!(
         letters_and_enter_with_emoji,
-        "with emoji 🧘🏻‍♂️, 🌍, 🍞, 🚗, 📞\n",
+        text_to_events!("with emoji 🧘🏻‍♂️, 🌍, 🍞, 🚗, 📞\n"),
         "with emoji 🧘🏻‍♂️, 🌍, 🍞, 🚗, 📞"
     );
 
     text_test!(
         input_and_correction,
-        "anor\x7F\x7F\x7F\x7Fnormal input\n",
+        {
+            let mut events = vec![];
+            events.append(&mut text_to_events!("anor").collect());
+            events.push(KeyCode::Backspace);
+            events.push(KeyCode::Backspace);
+            events.push(KeyCode::Backspace);
+            events.push(KeyCode::Backspace);
+            events.append(&mut text_to_events!("normal input").collect());
+            events.push(KeyCode::Enter);
+            events
+        },
         "normal input"
     );
 
     text_test!(
         input_and_excessive_correction,
-        "anor\x7F\x7F\x7F\x7F\x7F\x7F\x7F\x7Fnormal input\n",
+        {
+            let mut events = vec![];
+            events.append(&mut text_to_events!("anor").collect());
+            events.push(KeyCode::Backspace);
+            events.push(KeyCode::Backspace);
+            events.push(KeyCode::Backspace);
+            events.push(KeyCode::Backspace);
+            events.push(KeyCode::Backspace);
+            events.push(KeyCode::Backspace);
+            events.push(KeyCode::Backspace);
+            events.push(KeyCode::Backspace);
+            events.push(KeyCode::Backspace);
+            events.push(KeyCode::Backspace);
+            events.append(&mut text_to_events!("normal input").collect());
+            events.push(KeyCode::Enter);
+            events
+        },
         "normal input"
     );
 
     text_test!(
         input_correction_after_validation,
-        "1234567890\n\x7F\x7F\x7F\x7F\x7F\nyes\n",
+        {
+            let mut events = vec![];
+            events.append(&mut text_to_events!("1234567890").collect());
+            events.push(KeyCode::Enter);
+            events.push(KeyCode::Backspace);
+            events.push(KeyCode::Backspace);
+            events.push(KeyCode::Backspace);
+            events.push(KeyCode::Backspace);
+            events.push(KeyCode::Backspace);
+            events.append(&mut text_to_events!("yes").collect());
+            events.push(KeyCode::Enter);
+            events
+        },
         "12345yes",
         Text::new("").with_validator(&|ans| match ans.len() {
             len if len > 5 && len < 10 => Ok(()),
