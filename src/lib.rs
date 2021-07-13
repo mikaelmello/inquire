@@ -38,8 +38,6 @@
 
 mod answer;
 pub mod config;
-mod cross_renderer;
-mod cross_terminal;
 #[cfg(feature = "date")]
 mod date_utils;
 pub mod error;
@@ -47,6 +45,8 @@ mod formatter;
 mod key;
 mod parser;
 mod prompts;
+mod renderer;
+mod terminal;
 mod utils;
 pub mod validator;
 

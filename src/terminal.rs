@@ -25,7 +25,7 @@ pub enum IO<'a> {
     },
 }
 
-pub struct CrossTerminal<'a> {
+pub struct Terminal<'a> {
     io: IO<'a>,
     dull: bool,
 }
@@ -37,7 +37,7 @@ pub enum Style {
     Italic,
 }
 
-impl<'a> CrossTerminal<'a> {
+impl<'a> Terminal<'a> {
     /// # Errors
     ///
     /// Will return `std::io::Error` if it fails to get terminal size
@@ -218,7 +218,7 @@ impl<'a> CrossTerminal<'a> {
     }
 }
 
-impl<'a> Drop for CrossTerminal<'a> {
+impl<'a> Drop for Terminal<'a> {
     fn drop(&mut self) {
         let _ = self.cursor_show();
         let _ = self.flush();
@@ -229,9 +229,9 @@ impl<'a> Drop for CrossTerminal<'a> {
 #[cfg(test)]
 mod test {
 
-    use crate::cross_terminal::Style;
+    use crate::terminal::Style;
 
-    use super::CrossTerminal;
+    use super::Terminal;
 
     #[test]
     fn writer() {
@@ -240,7 +240,7 @@ mod test {
         let mut read = read.iter();
 
         {
-            let mut terminal = CrossTerminal::new_with_io(&mut write, &mut read);
+            let mut terminal = Terminal::new_with_io(&mut write, &mut read);
 
             terminal.write("testing ").unwrap();
             terminal.write("writing ").unwrap();
@@ -262,7 +262,7 @@ mod test {
         let mut read = read.iter();
 
         {
-            let mut terminal = CrossTerminal::new_with_io(&mut write, &mut read);
+            let mut terminal = Terminal::new_with_io(&mut write, &mut read);
 
             terminal.set_style(Style::Bold).unwrap();
             terminal.set_style(Style::Italic).unwrap();
@@ -284,7 +284,7 @@ mod test {
         let mut read = read.iter();
 
         {
-            let mut terminal = CrossTerminal::new_with_io(&mut write, &mut read);
+            let mut terminal = Terminal::new_with_io(&mut write, &mut read);
 
             terminal.set_fg_color(crossterm::style::Color::Red).unwrap();
             terminal.reset_fg_color().unwrap();
@@ -310,7 +310,7 @@ mod test {
         let mut read = read.iter();
 
         {
-            let mut terminal = CrossTerminal::new_with_io(&mut write, &mut read);
+            let mut terminal = Terminal::new_with_io(&mut write, &mut read);
 
             terminal.set_bg_color(crossterm::style::Color::Red).unwrap();
             terminal.reset_bg_color().unwrap();
@@ -336,7 +336,7 @@ mod test {
         let mut read = read.iter();
 
         {
-            let mut terminal = CrossTerminal::new_with_io(&mut write, &mut read).dull();
+            let mut terminal = Terminal::new_with_io(&mut write, &mut read).dull();
 
             terminal.set_style(Style::Bold).unwrap();
             terminal.set_style(Style::Italic).unwrap();

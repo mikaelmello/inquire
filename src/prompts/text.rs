@@ -4,11 +4,11 @@ use unicode_segmentation::UnicodeSegmentation;
 use crate::{
     answer::OptionAnswer,
     config::{self, Suggester},
-    cross_renderer::Renderer,
-    cross_terminal::CrossTerminal,
     error::{InquireError, InquireResult},
     formatter::{StringFormatter, DEFAULT_STRING_FORMATTER},
     key::Key,
+    renderer::Renderer,
+    terminal::Terminal,
     utils::paginate,
     validator::StringValidator,
 };
@@ -105,7 +105,7 @@ impl<'a> Text<'a> {
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to them.
     pub fn prompt(self) -> InquireResult<String> {
-        let terminal = CrossTerminal::new()?;
+        let terminal = Terminal::new()?;
         let mut renderer = Renderer::new(terminal)?;
         self.prompt_with_renderer(&mut renderer)
     }
@@ -320,7 +320,7 @@ mod test {
     use crossterm::event::{KeyCode, KeyEvent};
     use ntest::timeout;
 
-    use crate::{cross_renderer::Renderer, cross_terminal::CrossTerminal};
+    use crate::{renderer::Renderer, terminal::Terminal};
 
     use super::Text;
 
@@ -347,7 +347,7 @@ mod test {
                 let mut read = read.iter();
 
                 let mut write: Vec<u8> = Vec::new();
-                let terminal = CrossTerminal::new_with_io(&mut write, &mut read);
+                let terminal = Terminal::new_with_io(&mut write, &mut read);
                 let mut renderer = Renderer::new(terminal).unwrap();
 
                 let ans = $prompt.prompt_with_renderer(&mut renderer).unwrap();

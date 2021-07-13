@@ -2,12 +2,12 @@ use crossterm::event::KeyModifiers;
 use unicode_segmentation::UnicodeSegmentation;
 
 use crate::{
-    cross_renderer::Renderer,
-    cross_terminal::CrossTerminal,
     error::{InquireError, InquireResult},
     formatter::{BoolFormatter, DEFAULT_BOOL_FORMATTER},
     key::Key,
     parser::{BoolParser, DEFAULT_BOOL_PARSER},
+    renderer::Renderer,
+    terminal::Terminal,
 };
 
 /// Presents a message to the user and asks them for a yes/no confirmation.
@@ -91,7 +91,7 @@ impl<'a> Confirm<'a> {
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to them.
     pub fn prompt(self) -> InquireResult<bool> {
-        let terminal = CrossTerminal::new()?;
+        let terminal = Terminal::new()?;
         let mut renderer = Renderer::new(terminal)?;
         self.prompt_with_renderer(&mut renderer)
     }

@@ -5,11 +5,11 @@ use unicode_segmentation::UnicodeSegmentation;
 use crate::{
     answer::OptionAnswer,
     config::{self, Filter},
-    cross_renderer::Renderer,
-    cross_terminal::CrossTerminal,
     error::{InquireError, InquireResult},
     formatter::{self, MultiOptionFormatter},
     key::Key,
+    renderer::Renderer,
+    terminal::Terminal,
     utils::paginate,
     validator::MultiOptionValidator,
 };
@@ -151,7 +151,7 @@ impl<'a> MultiSelect<'a> {
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to them.
     pub fn prompt(self) -> InquireResult<Vec<OptionAnswer>> {
-        let terminal = CrossTerminal::new()?;
+        let terminal = Terminal::new()?;
         let mut renderer = Renderer::new(terminal)?;
         self.prompt_with_renderer(&mut renderer)
     }

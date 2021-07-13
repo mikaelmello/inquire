@@ -2,11 +2,11 @@ use crossterm::event::KeyModifiers;
 use unicode_segmentation::UnicodeSegmentation;
 
 use crate::{
-    cross_renderer::Renderer,
-    cross_terminal::CrossTerminal,
     error::{InquireError, InquireResult},
     formatter::StringFormatter,
     key::Key,
+    renderer::Renderer,
+    terminal::Terminal,
     validator::StringValidator,
 };
 /// Presents a message to the user and retrieves a single line of text input.
@@ -78,7 +78,7 @@ impl<'a> Password<'a> {
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to them.
     pub fn prompt(self) -> InquireResult<String> {
-        let terminal = CrossTerminal::new()?;
+        let terminal = Terminal::new()?;
         let mut renderer = Renderer::new(terminal)?;
         self.prompt_with_renderer(&mut renderer)
     }
@@ -190,7 +190,7 @@ impl<'a> PasswordPrompt<'a> {
 #[cfg(test)]
 mod test {
     use super::Password;
-    use crate::{cross_renderer::Renderer, cross_terminal::CrossTerminal};
+    use crate::{renderer::Renderer, terminal::Terminal};
     use crossterm::event::{KeyCode, KeyEvent};
     use ntest::timeout;
 
@@ -217,7 +217,7 @@ mod test {
                 let mut read = read.iter();
 
                 let mut write: Vec<u8> = Vec::new();
-                let terminal = CrossTerminal::new_with_io(&mut write, &mut read);
+                let terminal = Terminal::new_with_io(&mut write, &mut read);
                 let mut renderer = Renderer::new(terminal).unwrap();
 
                 let ans = $prompt.prompt_with_renderer(&mut renderer).unwrap();

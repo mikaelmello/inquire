@@ -1,14 +1,14 @@
 use crossterm::style::Color;
 
 use crate::{
-    cross_terminal::{CrossTerminal, Style},
     error::{InquireError, InquireResult},
     key::Key,
+    terminal::{Style, Terminal},
 };
 
 pub struct Renderer<'a> {
     cur_line: usize,
-    terminal: CrossTerminal<'a>,
+    terminal: Terminal<'a>,
 }
 
 pub struct Token<'a> {
@@ -49,7 +49,7 @@ impl<'a> Token<'a> {
         self
     }
 
-    pub fn print(&self, terminal: &mut CrossTerminal) -> InquireResult<()> {
+    pub fn print(&self, terminal: &mut Terminal) -> InquireResult<()> {
         if self.content.is_empty() {
             return Ok(());
         }
@@ -81,7 +81,7 @@ impl<'a> Token<'a> {
 }
 
 impl<'a> Renderer<'a> {
-    pub fn new(terminal: CrossTerminal<'a>) -> InquireResult<Self> {
+    pub fn new(terminal: Terminal<'a>) -> InquireResult<Self> {
         let mut renderer = Self {
             cur_line: 0,
             terminal,

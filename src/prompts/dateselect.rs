@@ -7,12 +7,12 @@ use std::{
 
 use crate::{
     config::{self, Filter},
-    cross_renderer::Renderer,
-    cross_terminal::CrossTerminal,
     date_utils::get_month,
     error::{InquireError, InquireResult},
     formatter::{self, DateFormatter},
     key::Key,
+    renderer::Renderer,
+    terminal::Terminal,
     validator::DateValidator,
 };
 
@@ -148,7 +148,7 @@ impl<'a> DateSelect<'a> {
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to them.
     pub fn prompt(self) -> InquireResult<NaiveDate> {
-        let terminal = CrossTerminal::new()?;
+        let terminal = Terminal::new()?;
         let mut renderer = Renderer::new(terminal)?;
         self.prompt_with_renderer(&mut renderer)
     }
@@ -343,7 +343,7 @@ impl<'a> DateSelectPrompt<'a> {
 
 #[cfg(test)]
 mod test {
-    use crate::{cross_renderer::Renderer, cross_terminal::CrossTerminal, DateSelect};
+    use crate::{renderer::Renderer, terminal::Terminal, DateSelect};
     use chrono::NaiveDate;
     use crossterm::event::{KeyCode, KeyEvent};
     use ntest::timeout;
@@ -365,7 +365,7 @@ mod test {
                 let mut read = read.iter();
 
                 let mut write: Vec<u8> = Vec::new();
-                let terminal = CrossTerminal::new_with_io(&mut write, &mut read);
+                let terminal = Terminal::new_with_io(&mut write, &mut read);
                 let mut renderer = Renderer::new(terminal).unwrap();
 
                 let ans = $prompt.prompt_with_renderer(&mut renderer).unwrap();
@@ -410,7 +410,7 @@ mod test {
         };
 
         let mut write: Vec<u8> = Vec::new();
-        let terminal = CrossTerminal::new_with_io(&mut write, &mut read);
+        let terminal = Terminal::new_with_io(&mut write, &mut read);
         let mut renderer = Renderer::new(terminal).unwrap();
 
         let ans = DateSelect::new("Question")
