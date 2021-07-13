@@ -19,7 +19,7 @@
 //!
 //!
 //! Example
-//! ```rust
+//! ```rust no_run
 //! use inquire::{min_length, Text};
 //!
 //! fn main() {
