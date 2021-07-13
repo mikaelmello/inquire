@@ -1,13 +1,12 @@
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use unicode_segmentation::UnicodeSegmentation;
 
-use termion::event::Key;
-
 use crate::{
+    cross_renderer::Renderer,
+    cross_terminal::CrossTerminal,
     error::{InquireError, InquireResult},
     formatter::{BoolFormatter, DEFAULT_BOOL_FORMATTER},
     parser::{BoolParser, DEFAULT_BOOL_PARSER},
-    renderer::Renderer,
-    terminal::Terminal,
 };
 
 /// Presents a message to the user and asks them for a yes/no confirmation.
@@ -91,7 +90,7 @@ impl<'a> Confirm<'a> {
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to them.
     pub fn prompt(self) -> InquireResult<bool> {
-        let terminal = Terminal::new()?;
+        let terminal = CrossTerminal::new()?;
         let mut renderer = Renderer::new(terminal)?;
         self.prompt_with_renderer(&mut renderer)
     }
@@ -134,14 +133,22 @@ impl<'a> From<Confirm<'a>> for ConfirmPrompt<'a> {
 }
 
 impl<'a> ConfirmPrompt<'a> {
-    fn on_change(&mut self, key: Key) {
+    fn on_change(&mut self, key: KeyEvent) {
         match key {
-            Key::Backspace => {
+            KeyEvent {
+                code: KeyCode::Backspace,
+                modifiers: KeyModifiers::NONE,
+            } => {
                 let len = self.content[..].graphemes(true).count();
                 let new_len = len.saturating_sub(1);
                 self.content = self.content[..].graphemes(true).take(new_len).collect();
             }
-            Key::Char(c) => self.content.push(c),
+            KeyEvent {
+                code: KeyCode::Char(c),
+                modifiers: KeyModifiers::NONE,
+            } => {
+                self.content.push(c);
+            }
             _ => {}
         }
     }
@@ -186,8 +193,26 @@ impl<'a> ConfirmPrompt<'a> {
             let key = renderer.read_key()?;
 
             match key {
-                Key::Ctrl('c') => return Err(InquireError::OperationCanceled),
-                Key::Char('\n') | Key::Char('\r') => match self.get_final_answer() {
+                KeyEvent {
+                    code: KeyCode::Char('c'),
+                    modifiers: KeyModifiers::CONTROL,
+                }
+                | KeyEvent {
+                    code: KeyCode::Esc,
+                    modifiers: _,
+                } => return Err(InquireError::OperationCanceled),
+                KeyEvent {
+                    code: KeyCode::Enter,
+                    modifiers: _,
+                }
+                | KeyEvent {
+                    code: KeyCode::Char('\n'),
+                    modifiers: _,
+                }
+                | KeyEvent {
+                    code: KeyCode::Char('\r'),
+                    modifiers: _,
+                } => match self.get_final_answer() {
                     Ok(answer) => {
                         final_answer = answer;
                         break;
