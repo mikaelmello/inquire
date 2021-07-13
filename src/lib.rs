@@ -44,6 +44,7 @@ mod cross_terminal;
 mod date_utils;
 pub mod error;
 mod formatter;
+mod key;
 mod parser;
 mod prompts;
 mod renderer;

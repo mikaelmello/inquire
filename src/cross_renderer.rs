@@ -3,6 +3,7 @@ use crossterm::{event::KeyEvent, style::Color};
 use crate::{
     cross_terminal::{CrossTerminal, Style},
     error::{InquireError, InquireResult},
+    key::Key,
 };
 
 pub struct Renderer<'a> {
@@ -315,8 +316,11 @@ impl<'a> Renderer<'a> {
         Ok(())
     }
 
-    pub fn read_key(&mut self) -> InquireResult<KeyEvent> {
-        self.terminal.read_key().map_err(InquireError::from)
+    pub fn read_key(&mut self) -> InquireResult<Key> {
+        self.terminal
+            .read_key()
+            .map(Key::from)
+            .map_err(InquireError::from)
     }
 
     fn new_line(&mut self) -> InquireResult<()> {

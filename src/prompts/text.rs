@@ -1,4 +1,4 @@
-use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use crossterm::event::KeyModifiers;
 use unicode_segmentation::UnicodeSegmentation;
 
 use crate::{
@@ -8,6 +8,7 @@ use crate::{
     cross_terminal::CrossTerminal,
     error::{InquireError, InquireResult},
     formatter::{StringFormatter, DEFAULT_STRING_FORMATTER},
+    key::Key,
     utils::paginate,
     validator::StringValidator,
 };
@@ -201,39 +202,23 @@ impl<'a> TextPrompt<'a> {
         }
     }
 
-    fn on_change(&mut self, key: KeyEvent) {
+    fn on_change(&mut self, key: Key) {
         let mut dirty = false;
 
         match key {
-            KeyEvent {
-                code: KeyCode::Tab,
-                modifiers: KeyModifiers::NONE,
-            } => self.use_select_option(),
-            KeyEvent {
-                code: KeyCode::Backspace,
-                modifiers: KeyModifiers::NONE,
-            } => {
+            Key::Tab => self.use_select_option(),
+            Key::Backspace => {
                 let len = self.content[..].graphemes(true).count();
                 let new_len = len.saturating_sub(1);
                 self.content = self.content[..].graphemes(true).take(new_len).collect();
                 dirty = true;
             }
-            KeyEvent {
-                code: KeyCode::Up,
-                modifiers: KeyModifiers::NONE,
-            } => self.move_cursor_up(),
-            KeyEvent {
-                code: KeyCode::Down,
-                modifiers: KeyModifiers::NONE,
-            } => self.move_cursor_down(),
-            KeyEvent {
-                code: KeyCode::Char(c),
-                modifiers: KeyModifiers::NONE,
-            } => {
+            Key::Up(KeyModifiers::NONE) => self.move_cursor_up(),
+            Key::Down(KeyModifiers::NONE) => self.move_cursor_down(),
+            Key::Char(c, KeyModifiers::NONE) => {
                 self.content.push(c);
                 dirty = true;
             }
-
             _ => {}
         }
 
@@ -312,26 +297,8 @@ impl<'a> TextPrompt<'a> {
             let key = renderer.read_key()?;
 
             match key {
-                KeyEvent {
-                    code: KeyCode::Char('c'),
-                    modifiers: KeyModifiers::CONTROL,
-                }
-                | KeyEvent {
-                    code: KeyCode::Esc,
-                    modifiers: _,
-                } => return Err(InquireError::OperationCanceled),
-                KeyEvent {
-                    code: KeyCode::Enter,
-                    modifiers: _,
-                }
-                | KeyEvent {
-                    code: KeyCode::Char('\n'),
-                    modifiers: _,
-                }
-                | KeyEvent {
-                    code: KeyCode::Char('\r'),
-                    modifiers: _,
-                } => match self.get_final_answer() {
+                Key::Cancel => return Err(InquireError::OperationCanceled),
+                Key::Submit => match self.get_final_answer() {
                     Ok(answer) => {
                         final_answer = answer;
                         break;

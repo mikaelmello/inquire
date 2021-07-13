@@ -1,4 +1,4 @@
-use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use crossterm::event::KeyModifiers;
 use unicode_segmentation::UnicodeSegmentation;
 
 use crate::{
@@ -6,6 +6,7 @@ use crate::{
     cross_terminal::CrossTerminal,
     error::{InquireError, InquireResult},
     formatter::{BoolFormatter, DEFAULT_BOOL_FORMATTER},
+    key::Key,
     parser::{BoolParser, DEFAULT_BOOL_PARSER},
 };
 
@@ -133,22 +134,14 @@ impl<'a> From<Confirm<'a>> for ConfirmPrompt<'a> {
 }
 
 impl<'a> ConfirmPrompt<'a> {
-    fn on_change(&mut self, key: KeyEvent) {
+    fn on_change(&mut self, key: Key) {
         match key {
-            KeyEvent {
-                code: KeyCode::Backspace,
-                modifiers: KeyModifiers::NONE,
-            } => {
+            Key::Backspace => {
                 let len = self.content[..].graphemes(true).count();
                 let new_len = len.saturating_sub(1);
                 self.content = self.content[..].graphemes(true).take(new_len).collect();
             }
-            KeyEvent {
-                code: KeyCode::Char(c),
-                modifiers: KeyModifiers::NONE,
-            } => {
-                self.content.push(c);
-            }
+            Key::Char(c, KeyModifiers::NONE) => self.content.push(c),
             _ => {}
         }
     }
@@ -193,26 +186,8 @@ impl<'a> ConfirmPrompt<'a> {
             let key = renderer.read_key()?;
 
             match key {
-                KeyEvent {
-                    code: KeyCode::Char('c'),
-                    modifiers: KeyModifiers::CONTROL,
-                }
-                | KeyEvent {
-                    code: KeyCode::Esc,
-                    modifiers: _,
-                } => return Err(InquireError::OperationCanceled),
-                KeyEvent {
-                    code: KeyCode::Enter,
-                    modifiers: _,
-                }
-                | KeyEvent {
-                    code: KeyCode::Char('\n'),
-                    modifiers: _,
-                }
-                | KeyEvent {
-                    code: KeyCode::Char('\r'),
-                    modifiers: _,
-                } => match self.get_final_answer() {
+                Key::Cancel => return Err(InquireError::OperationCanceled),
+                Key::Submit => match self.get_final_answer() {
                     Ok(answer) => {
                         final_answer = answer;
                         break;
