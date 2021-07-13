@@ -47,8 +47,6 @@ mod formatter;
 mod key;
 mod parser;
 mod prompts;
-mod renderer;
-mod terminal;
 mod utils;
 pub mod validator;
 
