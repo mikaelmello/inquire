@@ -1,13 +1,13 @@
+use crossterm::event::KeyModifiers;
 use std::{collections::HashSet, iter::FromIterator};
 use unicode_segmentation::UnicodeSegmentation;
-
-use termion::event::Key;
 
 use crate::{
     answer::OptionAnswer,
     config::{self, Filter},
     error::{InquireError, InquireResult},
     formatter::{self, MultiOptionFormatter},
+    key::Key,
     renderer::Renderer,
     terminal::Terminal,
     utils::paginate,
@@ -268,14 +268,11 @@ impl<'a> MultiSelectPrompt<'a> {
         let old_filter = self.filter_value.clone();
 
         match key {
-            Key::Up => self.move_cursor_up(),
-            Key::Char('k') if self.vim_mode => self.move_cursor_up(),
-            Key::Char('\t') | Key::Down => self.move_cursor_down(),
-            Key::Char('j') if self.vim_mode => self.move_cursor_down(),
-            Key::Char(' ') => self.toggle_cursor_selection(),
-            Key::Char('\x17') | Key::Char('\x18') => {
-                self.filter_value = None;
-            }
+            Key::Up(KeyModifiers::NONE) => self.move_cursor_up(),
+            Key::Char('k', KeyModifiers::NONE) if self.vim_mode => self.move_cursor_up(),
+            Key::Tab | Key::Down(KeyModifiers::NONE) => self.move_cursor_down(),
+            Key::Char('j', KeyModifiers::NONE) if self.vim_mode => self.move_cursor_down(),
+            Key::Char(' ', KeyModifiers::NONE) => self.toggle_cursor_selection(),
             Key::Backspace => {
                 if let Some(filter) = &self.filter_value {
                     let len = filter[..].graphemes(true).count();
@@ -283,7 +280,7 @@ impl<'a> MultiSelectPrompt<'a> {
                     self.filter_value = Some(filter[..].graphemes(true).take(new_len).collect());
                 }
             }
-            Key::Right => {
+            Key::Right(KeyModifiers::NONE) => {
                 self.checked.clear();
                 for idx in &self.filtered_options {
                     self.checked.insert(*idx);
@@ -293,14 +290,14 @@ impl<'a> MultiSelectPrompt<'a> {
                     self.filter_value = None;
                 }
             }
-            Key::Left => {
+            Key::Left(KeyModifiers::NONE) => {
                 self.checked.clear();
 
                 if !self.keep_filter {
                     self.filter_value = None;
                 }
             }
-            Key::Char(c) => match &mut self.filter_value {
+            Key::Char(c, KeyModifiers::NONE) => match &mut self.filter_value {
                 Some(val) => val.push(c),
                 None => self.filter_value = Some(String::from(c)),
             },
@@ -383,8 +380,8 @@ impl<'a> MultiSelectPrompt<'a> {
             let key = renderer.read_key()?;
 
             match key {
-                Key::Ctrl('c') => return Err(InquireError::OperationCanceled),
-                Key::Char('\n') | Key::Char('\r') => match self.get_final_answer() {
+                Key::Cancel => return Err(InquireError::OperationCanceled),
+                Key::Submit => match self.get_final_answer() {
                     Ok(answer) => {
                         final_answer = answer;
                         break;

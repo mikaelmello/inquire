@@ -1,12 +1,11 @@
-use std::io::{stdin, stdout, Error, Read, Stdin, Stdout, Write};
+use std::io::{stdout, Error, Stdout, Write};
 
 use crate::error::{InquireError, InquireResult};
-use termion::{
-    color::{self, Color},
-    cursor,
-    event::Key,
-    input::{Keys, TermRead},
-    raw::{IntoRawMode, RawTerminal},
+use crossterm::{
+    event::KeyEvent,
+    queue,
+    style::Attribute,
+    terminal::{self, ClearType},
 };
 
 #[derive(Default, Clone, Copy, PartialEq)]
@@ -17,12 +16,11 @@ pub struct Size {
 
 pub enum IO<'a> {
     Std {
-        r: Keys<Stdin>,
-        w: RawTerminal<Stdout>,
+        w: Stdout,
     },
     #[allow(unused)]
     Custom {
-        r: Keys<&'a mut (dyn 'a + Read)>,
+        r: &'a mut dyn Iterator<Item = &'a KeyEvent>,
         w: &'a mut (dyn Write),
     },
 }
@@ -44,19 +42,16 @@ impl<'a> Terminal<'a> {
     ///
     /// Will return `std::io::Error` if it fails to get terminal size
     pub fn new() -> InquireResult<Self> {
-        let raw_mode = stdout().into_raw_mode().map_err(|e| {
+        terminal::enable_raw_mode().map_err(|e| {
             if e.raw_os_error() == Some(25i32) {
                 InquireError::NotTTY
             } else {
                 InquireError::from(e)
             }
-        });
+        })?;
 
         Ok(Self {
-            io: IO::Std {
-                r: stdin().keys(),
-                w: raw_mode?,
-            },
+            io: IO::Std { w: stdout() },
             dull: false,
         })
     }
@@ -65,10 +60,13 @@ impl<'a> Terminal<'a> {
     ///
     /// Will return `std::io::Error` if it fails to get terminal size
     #[cfg(test)]
-    pub fn new_with_io<W: 'a + Write>(writer: &'a mut W, reader: &'a mut dyn Read) -> Self {
+    pub fn new_with_io<W: 'a + Write>(
+        writer: &'a mut W,
+        reader: &'a mut dyn Iterator<Item = &'a KeyEvent>,
+    ) -> Self {
         Self {
             io: IO::Custom {
-                r: reader.keys(),
+                r: reader,
                 w: writer,
             },
             dull: false,
@@ -83,11 +81,11 @@ impl<'a> Terminal<'a> {
     }
 
     pub fn cursor_up(&mut self) -> Result<(), Error> {
-        write!(self.get_writer(), "{}", cursor::Up(1))
+        queue!(&mut self.get_writer(), crossterm::cursor::MoveUp(1))
     }
 
     pub fn cursor_horizontal_reset(&mut self) -> Result<(), Error> {
-        write!(self.get_writer(), "\x1b[0G")
+        queue!(&mut self.get_writer(), crossterm::cursor::MoveToColumn(0))
     }
 
     /// # Errors
@@ -100,18 +98,17 @@ impl<'a> Terminal<'a> {
     /// # Errors
     ///
     /// Will never return Error for now
-    pub fn read_key(&mut self) -> Result<Key, std::io::Error> {
+    pub fn read_key(&mut self) -> Result<KeyEvent, std::io::Error> {
         loop {
             match &mut self.io {
-                IO::Std { r, w: _ } => {
-                    if let Some(key) = r.next() {
-                        return key;
-                    }
-                }
+                IO::Std { w: _ } => match crossterm::event::read()? {
+                    crossterm::event::Event::Key(key_event) => return Ok(key_event),
+                    crossterm::event::Event::Mouse(_) => {}
+                    crossterm::event::Event::Resize(_, _) => {}
+                },
                 IO::Custom { r, w: _ } => {
-                    if let Some(key) = r.next() {
-                        return key;
-                    }
+                    let key = r.next().expect("Custom stream of characters has ended");
+                    return Ok(key.clone());
                 }
             }
         }
@@ -122,15 +119,18 @@ impl<'a> Terminal<'a> {
     }
 
     pub fn cursor_hide(&mut self) -> Result<(), std::io::Error> {
-        write!(self.get_writer(), "{}", termion::cursor::Hide)
+        queue!(&mut self.get_writer(), crossterm::cursor::Hide)
     }
 
     pub fn cursor_show(&mut self) -> Result<(), std::io::Error> {
-        write!(self.get_writer(), "{}", termion::cursor::Show)
+        queue!(&mut self.get_writer(), crossterm::cursor::Show)
     }
 
     pub fn clear_current_line(&mut self) -> Result<(), std::io::Error> {
-        write!(self.get_writer(), "{}", termion::clear::CurrentLine)
+        queue!(
+            &mut self.get_writer(),
+            crossterm::terminal::Clear(ClearType::CurrentLine)
+        )
     }
 
     pub fn set_style(&mut self, style: Style) -> Result<(), std::io::Error> {
@@ -139,8 +139,16 @@ impl<'a> Terminal<'a> {
         }
 
         match style {
-            Style::Bold => write!(self.get_writer(), "{}", termion::style::Bold),
-            Style::Italic => write!(self.get_writer(), "{}", termion::style::Italic),
+            Style::Bold => queue!(
+                &mut self.get_writer(),
+                crossterm::style::SetAttribute(Attribute::Bold)
+            ),
+            Style::Italic => {
+                queue!(
+                    &mut self.get_writer(),
+                    crossterm::style::SetAttribute(Attribute::Italic)
+                )
+            }
         }
     }
 
@@ -150,15 +158,21 @@ impl<'a> Terminal<'a> {
             return Ok(());
         }
 
-        write!(self.get_writer(), "{}", termion::style::Reset)
+        queue!(
+            &mut self.get_writer(),
+            crossterm::style::SetAttribute(Attribute::Reset)
+        )
     }
 
-    pub fn set_bg_color<C: Color>(&mut self, color: C) -> Result<(), std::io::Error> {
+    pub fn set_bg_color(&mut self, color: crossterm::style::Color) -> Result<(), std::io::Error> {
         if self.dull {
             return Ok(());
         }
 
-        write!(self.get_writer(), "{}", color::Bg(color))
+        queue!(
+            &mut self.get_writer(),
+            crossterm::style::SetBackgroundColor(color)
+        )
     }
 
     #[allow(unused)]
@@ -167,15 +181,21 @@ impl<'a> Terminal<'a> {
             return Ok(());
         }
 
-        write!(self.get_writer(), "{}", color::Bg(color::Reset))
+        queue!(
+            &mut self.get_writer(),
+            crossterm::style::SetBackgroundColor(crossterm::style::Color::Reset)
+        )
     }
 
-    pub fn set_fg_color<C: Color>(&mut self, color: C) -> Result<(), std::io::Error> {
+    pub fn set_fg_color(&mut self, color: crossterm::style::Color) -> Result<(), std::io::Error> {
         if self.dull {
             return Ok(());
         }
 
-        write!(self.get_writer(), "{}", color::Fg(color))
+        queue!(
+            &mut self.get_writer(),
+            crossterm::style::SetForegroundColor(color)
+        )
     }
 
     #[allow(unused)]
@@ -184,12 +204,15 @@ impl<'a> Terminal<'a> {
             return Ok(());
         }
 
-        write!(self.get_writer(), "{}", color::Fg(color::Reset))
+        queue!(
+            &mut self.get_writer(),
+            crossterm::style::SetForegroundColor(crossterm::style::Color::Reset)
+        )
     }
 
     pub fn get_writer(&mut self) -> &mut dyn Write {
         match &mut self.io {
-            IO::Std { r: _, w } => w,
+            IO::Std { w } => w,
             IO::Custom { r: _, w } => w,
         }
     }
@@ -199,6 +222,7 @@ impl<'a> Drop for Terminal<'a> {
     fn drop(&mut self) {
         let _ = self.cursor_show();
         let _ = self.flush();
+        let _ = terminal::disable_raw_mode();
     }
 }
 
@@ -212,8 +236,8 @@ mod test {
     #[test]
     fn writer() {
         let mut write: Vec<u8> = Vec::new();
-        let read: Vec<u8> = Vec::new();
-        let mut read = read.as_slice();
+        let read = Vec::new();
+        let mut read = read.iter();
 
         {
             let mut terminal = Terminal::new_with_io(&mut write, &mut read);
@@ -224,8 +248,9 @@ mod test {
             terminal.write("wow").unwrap();
         }
 
+        #[cfg(unix)]
         assert_eq!(
-            format!("testing writing wow{}", termion::cursor::Show),
+            "testing writing wow\x1B[?25h",
             std::str::from_utf8(&write).unwrap()
         );
     }
@@ -233,8 +258,8 @@ mod test {
     #[test]
     fn style_management() {
         let mut write: Vec<u8> = Vec::new();
-        let read: Vec<u8> = Vec::new();
-        let mut read = read.as_slice();
+        let read = Vec::new();
+        let mut read = read.iter();
 
         {
             let mut terminal = Terminal::new_with_io(&mut write, &mut read);
@@ -245,15 +270,9 @@ mod test {
             terminal.reset_style().unwrap();
         }
 
+        #[cfg(unix)]
         assert_eq!(
-            format!(
-                "{}{}{}{}{}",
-                termion::style::Bold,
-                termion::style::Italic,
-                termion::style::Bold,
-                termion::style::Reset,
-                termion::cursor::Show,
-            ),
+            "\x1B[1m\x1B[3m\x1B[1m\x1B[0m\x1B[?25h",
             std::str::from_utf8(&write).unwrap()
         );
     }
@@ -261,27 +280,25 @@ mod test {
     #[test]
     fn fg_color_management() {
         let mut write: Vec<u8> = Vec::new();
-        let read: Vec<u8> = Vec::new();
-        let mut read = read.as_slice();
+        let read = Vec::new();
+        let mut read = read.iter();
 
         {
             let mut terminal = Terminal::new_with_io(&mut write, &mut read);
 
-            terminal.set_fg_color(termion::color::Red).unwrap();
+            terminal.set_fg_color(crossterm::style::Color::Red).unwrap();
             terminal.reset_fg_color().unwrap();
-            terminal.set_fg_color(termion::color::Black).unwrap();
-            terminal.set_fg_color(termion::color::Green).unwrap();
+            terminal
+                .set_fg_color(crossterm::style::Color::Black)
+                .unwrap();
+            terminal
+                .set_fg_color(crossterm::style::Color::Green)
+                .unwrap();
         }
 
+        #[cfg(unix)]
         assert_eq!(
-            format!(
-                "{}{}{}{}{}",
-                termion::color::Fg(termion::color::Red),
-                termion::color::Fg(termion::color::Reset),
-                termion::color::Fg(termion::color::Black),
-                termion::color::Fg(termion::color::Green),
-                termion::cursor::Show,
-            ),
+            "\x1B[38;5;9m\x1B[39m\x1B[38;5;0m\x1B[38;5;10m\x1B[?25h",
             std::str::from_utf8(&write).unwrap()
         );
     }
@@ -289,27 +306,25 @@ mod test {
     #[test]
     fn bg_color_management() {
         let mut write: Vec<u8> = Vec::new();
-        let read: Vec<u8> = Vec::new();
-        let mut read = read.as_slice();
+        let read = Vec::new();
+        let mut read = read.iter();
 
         {
             let mut terminal = Terminal::new_with_io(&mut write, &mut read);
 
-            terminal.set_bg_color(termion::color::Red).unwrap();
+            terminal.set_bg_color(crossterm::style::Color::Red).unwrap();
             terminal.reset_bg_color().unwrap();
-            terminal.set_bg_color(termion::color::Black).unwrap();
-            terminal.set_bg_color(termion::color::Green).unwrap();
+            terminal
+                .set_bg_color(crossterm::style::Color::Black)
+                .unwrap();
+            terminal
+                .set_bg_color(crossterm::style::Color::Green)
+                .unwrap();
         }
 
+        #[cfg(unix)]
         assert_eq!(
-            format!(
-                "{}{}{}{}{}",
-                termion::color::Bg(termion::color::Red),
-                termion::color::Bg(termion::color::Reset),
-                termion::color::Bg(termion::color::Black),
-                termion::color::Bg(termion::color::Green),
-                termion::cursor::Show,
-            ),
+            "\x1B[48;5;9m\x1B[49m\x1B[48;5;0m\x1B[48;5;10m\x1B[?25h",
             std::str::from_utf8(&write).unwrap()
         );
     }
@@ -317,8 +332,8 @@ mod test {
     #[test]
     fn dull_ignores_fg_bg_style() {
         let mut write: Vec<u8> = Vec::new();
-        let read: Vec<u8> = Vec::new();
-        let mut read = read.as_slice();
+        let read = Vec::new();
+        let mut read = read.iter();
 
         {
             let mut terminal = Terminal::new_with_io(&mut write, &mut read).dull();
@@ -327,20 +342,26 @@ mod test {
             terminal.set_style(Style::Italic).unwrap();
             terminal.set_style(Style::Bold).unwrap();
             terminal.reset_style().unwrap();
-            terminal.set_bg_color(termion::color::Red).unwrap();
+            terminal.set_bg_color(crossterm::style::Color::Red).unwrap();
             terminal.reset_bg_color().unwrap();
-            terminal.set_bg_color(termion::color::Black).unwrap();
-            terminal.set_bg_color(termion::color::Green).unwrap();
+            terminal
+                .set_bg_color(crossterm::style::Color::Black)
+                .unwrap();
+            terminal
+                .set_bg_color(crossterm::style::Color::Green)
+                .unwrap();
             terminal.write("wow").unwrap();
-            terminal.set_fg_color(termion::color::Red).unwrap();
+            terminal.set_fg_color(crossterm::style::Color::Red).unwrap();
             terminal.reset_fg_color().unwrap();
-            terminal.set_fg_color(termion::color::Black).unwrap();
-            terminal.set_fg_color(termion::color::Green).unwrap();
+            terminal
+                .set_fg_color(crossterm::style::Color::Black)
+                .unwrap();
+            terminal
+                .set_fg_color(crossterm::style::Color::Green)
+                .unwrap();
         }
 
-        assert_eq!(
-            format!("wow{}", termion::cursor::Show),
-            std::str::from_utf8(&write).unwrap()
-        );
+        #[cfg(unix)]
+        assert_eq!("wow\x1B[?25h", std::str::from_utf8(&write).unwrap());
     }
 }

@@ -1,10 +1,8 @@
-use termion::{
-    color::{self, Color},
-    event::Key,
-};
+use crossterm::style::Color;
 
 use crate::{
     error::{InquireError, InquireResult},
+    key::Key,
     terminal::{Style, Terminal},
 };
 
@@ -15,8 +13,8 @@ pub struct Renderer<'a> {
 
 pub struct Token<'a> {
     pub content: &'a str,
-    pub fg: Option<Box<dyn Color>>,
-    pub bg: Option<Box<dyn Color>>,
+    pub fg: Option<Color>,
+    pub bg: Option<Color>,
     pub style: Option<Style>,
 }
 
@@ -35,14 +33,14 @@ impl<'a> Token<'a> {
         Self::new("")
     }
 
-    pub fn with_fg<C: 'static + Color + Clone>(mut self, fg: C) -> Self {
-        self.fg = Some(Box::new(fg.clone()));
+    pub fn with_fg(mut self, fg: Color) -> Self {
+        self.fg = Some(fg);
         self
     }
 
     #[allow(unused)]
-    pub fn with_bg<C: 'static + Color + Clone>(mut self, fg: C) -> Self {
-        self.bg = Some(Box::new(fg.clone()));
+    pub fn with_bg(mut self, bg: Color) -> Self {
+        self.bg = Some(bg);
         self
     }
 
@@ -56,11 +54,11 @@ impl<'a> Token<'a> {
             return Ok(());
         }
 
-        if let Some(color) = self.fg.as_ref() {
-            terminal.set_fg_color(color.as_ref())?;
+        if let Some(color) = self.fg {
+            terminal.set_fg_color(color)?;
         }
-        if let Some(color) = self.bg.as_ref() {
-            terminal.set_bg_color(color.as_ref())?;
+        if let Some(color) = self.bg {
+            terminal.set_bg_color(color)?;
         }
         if let Some(style) = &self.style {
             terminal.set_style(*style)?;
@@ -115,7 +113,7 @@ impl<'a> Renderer<'a> {
 
     pub fn print_error_message(&mut self, message: &str) -> InquireResult<()> {
         Token::new(&format!("# {}", message))
-            .with_fg(color::Red)
+            .with_fg(Color::Red)
             .print(&mut self.terminal)?;
 
         self.new_line()?;
@@ -125,9 +123,9 @@ impl<'a> Renderer<'a> {
 
     pub fn print_prompt_answer(&mut self, prompt: &str, answer: &str) -> InquireResult<()> {
         self.print_tokens(&vec![
-            Token::new("? ").with_fg(color::Green),
+            Token::new("? ").with_fg(Color::Green),
             Token::new(prompt),
-            Token::new(&format!(" {}", answer)).with_fg(color::Cyan),
+            Token::new(&format!(" {}", answer)).with_fg(Color::Cyan),
         ])?;
         self.new_line()?;
 
@@ -141,7 +139,7 @@ impl<'a> Renderer<'a> {
         content: Option<&str>,
     ) -> InquireResult<()> {
         Token::new("? ")
-            .with_fg(color::Green)
+            .with_fg(Color::Green)
             .print(&mut self.terminal)?;
         Token::new(prompt).print(&mut self.terminal)?;
 
@@ -163,7 +161,7 @@ impl<'a> Renderer<'a> {
 
     pub fn print_help(&mut self, message: &str) -> InquireResult<()> {
         Token::new(&format!("[{}]", message))
-            .with_fg(color::Cyan)
+            .with_fg(Color::Cyan)
             .print(&mut self.terminal)?;
         self.new_line()?;
 
@@ -173,7 +171,7 @@ impl<'a> Renderer<'a> {
     pub fn print_option(&mut self, cursor: bool, content: &str) -> InquireResult<()> {
         match cursor {
             true => Token::new(&format!("> {}", content))
-                .with_fg(color::Cyan)
+                .with_fg(Color::Cyan)
                 .print(&mut self.terminal),
             false => Token::new(&format!("  {}", content)).print(&mut self.terminal),
         }?;
@@ -191,11 +189,11 @@ impl<'a> Renderer<'a> {
     ) -> InquireResult<()> {
         self.print_tokens(&vec![
             match cursor {
-                true => Token::new("> ").with_fg(color::Cyan),
+                true => Token::new("> ").with_fg(Color::Cyan),
                 false => Token::new("  "),
             },
             match checked {
-                true => Token::new("[x] ").with_fg(color::Green),
+                true => Token::new("[x] ").with_fg(Color::Green),
                 false => Token::new("[ ] "),
             },
             Token::new(content),
@@ -225,7 +223,7 @@ impl<'a> Renderer<'a> {
         let header = format!("{} {}", month.name().to_lowercase(), year);
 
         self.print_tokens(&vec![
-            Token::new("> ").with_fg(color::Green),
+            Token::new("> ").with_fg(Color::Green),
             Token::new(&format!("{:^20}", header)),
         ])?;
         self.new_line()?;
@@ -244,7 +242,7 @@ impl<'a> Renderer<'a> {
         let week_days = week_days.join(" ");
 
         Token::new("> ")
-            .with_fg(color::Green)
+            .with_fg(Color::Green)
             .print(&mut self.terminal)?;
         self.terminal.write(&week_days)?;
         self.new_line()?;
@@ -262,7 +260,7 @@ impl<'a> Renderer<'a> {
 
         for _ in 0..6 {
             Token::new("> ")
-                .with_fg(color::Green)
+                .with_fg(Color::Green)
                 .print(&mut self.terminal)?;
 
             for i in 0..7 {
@@ -275,22 +273,22 @@ impl<'a> Renderer<'a> {
                 let mut token = Token::new(&date);
 
                 if date_it == selected_date {
-                    token = token.with_bg(color::LightWhite).with_fg(color::Black);
+                    token = token.with_bg(Color::Grey).with_fg(Color::Black);
                 } else if date_it == today {
-                    token = token.with_fg(color::Green);
+                    token = token.with_fg(Color::Green);
                 } else if date_it.month() != month.number_from_month() {
-                    token = token.with_fg(color::LightBlack);
+                    token = token.with_fg(Color::DarkGrey);
                 }
 
                 if let Some(min_date) = min_date {
                     if date_it < min_date {
-                        token = token.with_fg(color::LightBlack);
+                        token = token.with_fg(Color::DarkGrey);
                     }
                 }
 
                 if let Some(max_date) = max_date {
                     if date_it > max_date {
-                        token = token.with_fg(color::LightBlack);
+                        token = token.with_fg(Color::DarkGrey);
                     }
                 }
 
@@ -319,7 +317,10 @@ impl<'a> Renderer<'a> {
     }
 
     pub fn read_key(&mut self) -> InquireResult<Key> {
-        self.terminal.read_key().map_err(InquireError::from)
+        self.terminal
+            .read_key()
+            .map(Key::from)
+            .map_err(InquireError::from)
     }
 
     fn new_line(&mut self) -> InquireResult<()> {

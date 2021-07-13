@@ -1,10 +1,10 @@
+use crossterm::event::KeyModifiers;
 use unicode_segmentation::UnicodeSegmentation;
-
-use termion::event::Key;
 
 use crate::{
     error::{InquireError, InquireResult},
     formatter::{BoolFormatter, DEFAULT_BOOL_FORMATTER},
+    key::Key,
     parser::{BoolParser, DEFAULT_BOOL_PARSER},
     renderer::Renderer,
     terminal::Terminal,
@@ -141,7 +141,7 @@ impl<'a> ConfirmPrompt<'a> {
                 let new_len = len.saturating_sub(1);
                 self.content = self.content[..].graphemes(true).take(new_len).collect();
             }
-            Key::Char(c) => self.content.push(c),
+            Key::Char(c, KeyModifiers::NONE) => self.content.push(c),
             _ => {}
         }
     }
@@ -186,8 +186,8 @@ impl<'a> ConfirmPrompt<'a> {
             let key = renderer.read_key()?;
 
             match key {
-                Key::Ctrl('c') => return Err(InquireError::OperationCanceled),
-                Key::Char('\n') | Key::Char('\r') => match self.get_final_answer() {
+                Key::Cancel => return Err(InquireError::OperationCanceled),
+                Key::Submit => match self.get_final_answer() {
                     Ok(answer) => {
                         final_answer = answer;
                         break;
