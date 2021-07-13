@@ -1,18 +1,18 @@
 use chrono::{Datelike, Duration, NaiveDate};
+use crossterm::event::KeyModifiers;
 use std::{
     cmp::{max, min},
     ops::Add,
 };
 
-use termion::event::Key;
-
 use crate::{
     config::{self, Filter},
+    cross_renderer::Renderer,
+    cross_terminal::CrossTerminal,
     date_utils::get_month,
     error::{InquireError, InquireResult},
     formatter::{self, DateFormatter},
-    renderer::Renderer,
-    terminal::Terminal,
+    key::Key,
     validator::DateValidator,
 };
 
@@ -58,7 +58,7 @@ impl<'a> DateSelect<'a> {
     pub const DEFAULT_VIM_MODE: bool = true;
     /// Default help message.
     pub const DEFAULT_HELP_MESSAGE: Option<&'a str> =
-        Some("arrows to move days, wasd to move months and years, enter to select");
+        Some("arrows to move, with ctrl to move months and years, enter to select");
     /// Default validator.
     pub const DEFAULT_VALIDATORS: Vec<DateValidator<'a>> = vec![];
     /// Default week start.
@@ -148,7 +148,7 @@ impl<'a> DateSelect<'a> {
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to them.
     pub fn prompt(self) -> InquireResult<NaiveDate> {
-        let terminal = Terminal::new()?;
+        let terminal = CrossTerminal::new()?;
         let mut renderer = Renderer::new(terminal)?;
         self.prompt_with_renderer(&mut renderer)
     }
@@ -243,22 +243,30 @@ impl<'a> DateSelectPrompt<'a> {
 
     fn on_change(&mut self, key: Key) {
         match key {
-            Key::Up => self.shift_date(Duration::weeks(-1)),
-            Key::Char('k') if self.vim_mode => self.shift_date(Duration::weeks(-1)),
+            Key::Up(KeyModifiers::NONE) => self.shift_date(Duration::weeks(-1)),
+            Key::Char('k', KeyModifiers::NONE) if self.vim_mode => {
+                self.shift_date(Duration::weeks(-1))
+            }
 
-            Key::Down | Key::Char('\t') => self.shift_date(Duration::weeks(1)),
-            Key::Char('j') if self.vim_mode => self.shift_date(Duration::weeks(1)),
+            Key::Down(KeyModifiers::NONE) | Key::Tab => self.shift_date(Duration::weeks(1)),
+            Key::Char('j', KeyModifiers::NONE) if self.vim_mode => {
+                self.shift_date(Duration::weeks(1))
+            }
 
-            Key::Left => self.shift_date(Duration::days(-1)),
-            Key::Char('h') if self.vim_mode => self.shift_date(Duration::days(-1)),
+            Key::Left(KeyModifiers::NONE) => self.shift_date(Duration::days(-1)),
+            Key::Char('h', KeyModifiers::NONE) if self.vim_mode => {
+                self.shift_date(Duration::days(-1))
+            }
 
-            Key::Right => self.shift_date(Duration::days(1)),
-            Key::Char('l') if self.vim_mode => self.shift_date(Duration::days(1)),
+            Key::Right(KeyModifiers::NONE) => self.shift_date(Duration::days(1)),
+            Key::Char('l', KeyModifiers::NONE) if self.vim_mode => {
+                self.shift_date(Duration::days(1))
+            }
 
-            Key::Char('w') => self.shift_months(-12),
-            Key::Char('s') => self.shift_months(12),
-            Key::Char('a') => self.shift_months(-1),
-            Key::Char('d') => self.shift_months(1),
+            Key::Up(KeyModifiers::CONTROL) => self.shift_months(-12),
+            Key::Down(KeyModifiers::CONTROL) => self.shift_months(12),
+            Key::Left(KeyModifiers::CONTROL) => self.shift_months(-1),
+            Key::Right(KeyModifiers::CONTROL) => self.shift_months(1),
             _ => {}
         }
     }
@@ -313,8 +321,8 @@ impl<'a> DateSelectPrompt<'a> {
             let key = renderer.read_key()?;
 
             match key {
-                Key::Ctrl('c') => return Err(InquireError::OperationCanceled),
-                Key::Char('\n') => match self.get_final_answer() {
+                Key::Cancel => return Err(InquireError::OperationCanceled),
+                Key::Submit => match self.get_final_answer() {
                     Ok(answer) => {
                         final_answer = answer;
                         break;
@@ -335,10 +343,10 @@ impl<'a> DateSelectPrompt<'a> {
 
 #[cfg(test)]
 mod test {
+    use crate::{cross_renderer::Renderer, cross_terminal::CrossTerminal, DateSelect};
     use chrono::NaiveDate;
+    use crossterm::event::{KeyCode, KeyEvent};
     use ntest::timeout;
-
-    use crate::{renderer::Renderer, terminal::Terminal, DateSelect};
 
     fn default<'a>() -> DateSelect<'a> {
         DateSelect::new("Question?")
@@ -353,10 +361,11 @@ mod test {
             #[test]
             #[timeout(100)]
             fn $name() {
-                let mut read: &[u8] = $input.as_bytes();
+                let read: Vec<KeyEvent> = $input.into_iter().map(KeyEvent::from).collect();
+                let mut read = read.iter();
 
                 let mut write: Vec<u8> = Vec::new();
-                let terminal = Terminal::new_with_io(&mut write, &mut read);
+                let terminal = CrossTerminal::new_with_io(&mut write, &mut read);
                 let mut renderer = Renderer::new(terminal).unwrap();
 
                 let ans = $prompt.prompt_with_renderer(&mut renderer).unwrap();
@@ -366,11 +375,15 @@ mod test {
         };
     }
 
-    date_test!(today_date, "\n", chrono::Local::now().date().naive_local());
+    date_test!(
+        today_date,
+        vec![KeyCode::Enter],
+        chrono::Local::now().date().naive_local()
+    );
 
     date_test!(
         custom_default_date,
-        "\n",
+        vec![KeyCode::Enter],
         NaiveDate::from_ymd(2021, 1, 9),
         DateSelect::new("Date").with_default(NaiveDate::from_ymd(2021, 1, 9))
     );
@@ -380,7 +393,11 @@ mod test {
     /// Tests that a closure that actually closes on a variable can be used
     /// as a DateSelect validator.
     fn closure_validator() {
-        let mut read: &[u8] = "\n\x1B[D\n".as_bytes();
+        let read: Vec<KeyEvent> = vec![KeyCode::Enter, KeyCode::Left, KeyCode::Enter]
+            .into_iter()
+            .map(KeyEvent::from)
+            .collect();
+        let mut read = read.iter();
 
         let today_date = chrono::Local::now().date().naive_local();
 
@@ -393,7 +410,7 @@ mod test {
         };
 
         let mut write: Vec<u8> = Vec::new();
-        let terminal = Terminal::new_with_io(&mut write, &mut read);
+        let terminal = CrossTerminal::new_with_io(&mut write, &mut read);
         let mut renderer = Renderer::new(terminal).unwrap();
 
         let ans = DateSelect::new("Question")

@@ -1,4 +1,4 @@
-use crossterm::{event::KeyEvent, style::Color};
+use crossterm::style::Color;
 
 use crate::{
     cross_terminal::{CrossTerminal, Style},

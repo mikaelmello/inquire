@@ -41,6 +41,10 @@ impl From<KeyEvent> for Key {
             KeyEvent {
                 code: KeyCode::Tab,
                 modifiers: _,
+            }
+            | KeyEvent {
+                code: KeyCode::Char('\t'),
+                modifiers: _,
             } => Self::Tab,
             KeyEvent {
                 code: KeyCode::Backspace,
