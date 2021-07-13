@@ -1,12 +1,12 @@
+use crossterm::event::KeyModifiers;
 use unicode_segmentation::UnicodeSegmentation;
 
-use termion::event::Key;
-
 use crate::{
+    cross_renderer::Renderer,
+    cross_terminal::CrossTerminal,
     error::{InquireError, InquireResult},
     formatter::StringFormatter,
-    renderer::Renderer,
-    terminal::Terminal,
+    key::Key,
     validator::StringValidator,
 };
 /// Presents a message to the user and retrieves a single line of text input.
@@ -78,7 +78,7 @@ impl<'a> Password<'a> {
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to them.
     pub fn prompt(self) -> InquireResult<String> {
-        let terminal = Terminal::new()?;
+        let terminal = CrossTerminal::new()?;
         let mut renderer = Renderer::new(terminal)?;
         self.prompt_with_renderer(&mut renderer)
     }
@@ -124,7 +124,7 @@ impl<'a> PasswordPrompt<'a> {
                 let new_len = len.saturating_sub(1);
                 self.content = self.content[..].graphemes(true).take(new_len).collect();
             }
-            Key::Char(c) => self.content.push(c),
+            Key::Char(c, KeyModifiers::NONE) => self.content.push(c),
             _ => {}
         }
     }
@@ -169,8 +169,8 @@ impl<'a> PasswordPrompt<'a> {
             let key = renderer.read_key()?;
 
             match key {
-                Key::Ctrl('c') => return Err(InquireError::OperationCanceled),
-                Key::Char('\n') | Key::Char('\r') => match self.get_final_answer() {
+                Key::Cancel => return Err(InquireError::OperationCanceled),
+                Key::Submit => match self.get_final_answer() {
                     Ok(answer) => {
                         final_answer = answer;
                         break;
@@ -189,12 +189,19 @@ impl<'a> PasswordPrompt<'a> {
 
 #[cfg(test)]
 mod test {
+    use super::Password;
+    use crate::{cross_renderer::Renderer, cross_terminal::CrossTerminal};
+    use crossterm::event::{KeyCode, KeyEvent};
     use ntest::timeout;
-
-    use crate::{renderer::Renderer, terminal::Terminal, Password};
 
     fn default<'a>() -> Password<'a> {
         Password::new("Question?")
+    }
+
+    macro_rules! text_to_events {
+        ($text:expr) => {{
+            $text.chars().map(|c| KeyCode::Char(c))
+        }};
     }
 
     macro_rules! password_test {
@@ -206,10 +213,11 @@ mod test {
             #[test]
             #[timeout(100)]
             fn $name() {
-                let mut read: &[u8] = $input.as_bytes();
+                let read: Vec<KeyEvent> = $input.into_iter().map(KeyEvent::from).collect();
+                let mut read = read.iter();
 
                 let mut write: Vec<u8> = Vec::new();
-                let terminal = Terminal::new_with_io(&mut write, &mut read);
+                let terminal = CrossTerminal::new_with_io(&mut write, &mut read);
                 let mut renderer = Renderer::new(terminal).unwrap();
 
                 let ans = $prompt.prompt_with_renderer(&mut renderer).unwrap();
@@ -219,33 +227,75 @@ mod test {
         };
     }
 
-    password_test!(empty, "\n", "");
+    password_test!(empty, vec![KeyCode::Enter], "");
 
-    password_test!(single_letter, "b\n", "b");
+    password_test!(single_letter, vec![KeyCode::Char('b'), KeyCode::Enter], "b");
 
-    password_test!(letters_and_enter, "normal input\n", "normal input");
+    password_test!(
+        letters_and_enter,
+        text_to_events!("normal input\n"),
+        "normal input"
+    );
 
     password_test!(
         letters_and_enter_with_emoji,
-        "with emoji 🧘🏻‍♂️, 🌍, 🍞, 🚗, 📞\n",
+        text_to_events!("with emoji 🧘🏻‍♂️, 🌍, 🍞, 🚗, 📞\n"),
         "with emoji 🧘🏻‍♂️, 🌍, 🍞, 🚗, 📞"
     );
 
     password_test!(
         input_and_correction,
-        "anor\x7F\x7F\x7F\x7Fnormal input\n",
+        {
+            let mut events = vec![];
+            events.append(&mut text_to_events!("anor").collect());
+            events.push(KeyCode::Backspace);
+            events.push(KeyCode::Backspace);
+            events.push(KeyCode::Backspace);
+            events.push(KeyCode::Backspace);
+            events.append(&mut text_to_events!("normal input").collect());
+            events.push(KeyCode::Enter);
+            events
+        },
         "normal input"
     );
 
     password_test!(
         input_and_excessive_correction,
-        "anor\x7F\x7F\x7F\x7F\x7F\x7F\x7F\x7Fnormal input\n",
+        {
+            let mut events = vec![];
+            events.append(&mut text_to_events!("anor").collect());
+            events.push(KeyCode::Backspace);
+            events.push(KeyCode::Backspace);
+            events.push(KeyCode::Backspace);
+            events.push(KeyCode::Backspace);
+            events.push(KeyCode::Backspace);
+            events.push(KeyCode::Backspace);
+            events.push(KeyCode::Backspace);
+            events.push(KeyCode::Backspace);
+            events.push(KeyCode::Backspace);
+            events.push(KeyCode::Backspace);
+            events.append(&mut text_to_events!("normal input").collect());
+            events.push(KeyCode::Enter);
+            events
+        },
         "normal input"
     );
 
     password_test!(
         input_correction_after_validation,
-        "1234567890\n\x7F\x7F\x7F\x7F\x7F\nyes\n",
+        {
+            let mut events = vec![];
+            events.append(&mut text_to_events!("1234567890").collect());
+            events.push(KeyCode::Enter);
+            events.push(KeyCode::Backspace);
+            events.push(KeyCode::Backspace);
+            events.push(KeyCode::Backspace);
+            events.push(KeyCode::Backspace);
+            events.push(KeyCode::Backspace);
+            events.append(&mut text_to_events!("yes").collect());
+            events.push(KeyCode::Enter);
+            events
+        },
         "12345yes",
         Password::new("").with_validator(&|ans| match ans.len() {
             len if len > 5 && len < 10 => Ok(()),
