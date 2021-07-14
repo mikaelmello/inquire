@@ -1,10 +1,9 @@
-use crossterm::event::KeyModifiers;
 use unicode_segmentation::UnicodeSegmentation;
 
 use crate::{
     error::{InquireError, InquireResult},
     formatter::{BoolFormatter, DEFAULT_BOOL_FORMATTER},
-    key::Key,
+    key::{Key, KeyModifiers},
     parser::{BoolParser, DEFAULT_BOOL_PARSER},
     renderer::Renderer,
     terminal::Terminal,

@@ -1,4 +1,3 @@
-use crossterm::event::KeyModifiers;
 use std::iter::FromIterator;
 use unicode_segmentation::UnicodeSegmentation;
 
@@ -7,7 +6,7 @@ use crate::{
     config::{self, Filter},
     error::{InquireError, InquireResult},
     formatter::{self, OptionFormatter},
-    key::Key,
+    key::{Key, KeyModifiers},
     renderer::Renderer,
     terminal::Terminal,
     utils::paginate,

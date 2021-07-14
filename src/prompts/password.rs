@@ -1,10 +1,9 @@
-use crossterm::event::KeyModifiers;
 use unicode_segmentation::UnicodeSegmentation;
 
 use crate::{
     error::{InquireError, InquireResult},
     formatter::StringFormatter,
-    key::Key,
+    key::{Key, KeyModifiers},
     renderer::Renderer,
     terminal::Terminal,
     validator::StringValidator,

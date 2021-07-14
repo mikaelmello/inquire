@@ -1,4 +1,22 @@
-use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use bitflags::bitflags;
+use crossterm::event::{KeyCode, KeyEvent};
+
+// Using the same struct, but without importing, to cut prompts' direct dependencies to crossterm
+// https://github.com/crossterm-rs/crossterm/blob/e1260446e94e9a8f7809fef61dc1369b6f8d6e12/src/event.rs#L376-L385
+bitflags! {
+    pub struct KeyModifiers: u8 {
+        const SHIFT = 0b0000_0001;
+        const CONTROL = 0b0000_0010;
+        const ALT = 0b0000_0100;
+        const NONE = 0b0000_0000;
+    }
+}
+
+impl From<crossterm::event::KeyModifiers> for KeyModifiers {
+    fn from(m: crossterm::event::KeyModifiers) -> Self {
+        Self { bits: m.bits() }
+    }
+}
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Key {
@@ -20,7 +38,7 @@ impl From<KeyEvent> for Key {
         match event {
             KeyEvent {
                 code: KeyCode::Char('c'),
-                modifiers: KeyModifiers::CONTROL,
+                modifiers: crossterm::event::KeyModifiers::CONTROL,
             }
             | KeyEvent {
                 code: KeyCode::Esc,
@@ -53,28 +71,28 @@ impl From<KeyEvent> for Key {
             KeyEvent {
                 code: KeyCode::Up,
                 modifiers: m,
-            } => Self::Up(m),
+            } => Self::Up(m.into()),
             KeyEvent {
                 code: KeyCode::Down,
                 modifiers: m,
-            } => Self::Down(m),
+            } => Self::Down(m.into()),
             KeyEvent {
                 code: KeyCode::Left,
                 modifiers: m,
-            } => Self::Left(m),
+            } => Self::Left(m.into()),
             KeyEvent {
                 code: KeyCode::Right,
                 modifiers: m,
-            } => Self::Right(m),
+            } => Self::Right(m.into()),
             KeyEvent {
                 code: KeyCode::Char(c),
                 modifiers: m,
-            } => Self::Char(c, m),
+            } => Self::Char(c, m.into()),
             #[allow(deprecated)]
             KeyEvent {
                 code: c,
                 modifiers: m,
-            } => Self::Any(c, m),
+            } => Self::Any(c, m.into()),
         }
     }
 }

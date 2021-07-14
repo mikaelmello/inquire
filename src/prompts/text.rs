@@ -1,4 +1,3 @@
-use crossterm::event::KeyModifiers;
 use unicode_segmentation::UnicodeSegmentation;
 
 use crate::{
@@ -6,7 +5,7 @@ use crate::{
     config::{self, Suggester},
     error::{InquireError, InquireResult},
     formatter::{StringFormatter, DEFAULT_STRING_FORMATTER},
-    key::Key,
+    key::{Key, KeyModifiers},
     renderer::Renderer,
     terminal::Terminal,
     utils::paginate,

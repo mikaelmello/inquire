@@ -1,5 +1,4 @@
 use chrono::{Datelike, Duration, NaiveDate};
-use crossterm::event::KeyModifiers;
 use std::{
     cmp::{max, min},
     ops::Add,
@@ -10,7 +9,7 @@ use crate::{
     date_utils::get_month,
     error::{InquireError, InquireResult},
     formatter::{self, DateFormatter},
-    key::Key,
+    key::{Key, KeyModifiers},
     renderer::Renderer,
     terminal::Terminal,
     validator::DateValidator,

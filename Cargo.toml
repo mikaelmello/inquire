@@ -21,6 +21,7 @@ crossterm = "0.20"
 unicode-segmentation = "1"
 chrono = {version = "0.4",  optional = true }
 thiserror = "1"
+bitflags = "1.0"
 
 [dev-dependencies]
 ntest = "0.7.3"
