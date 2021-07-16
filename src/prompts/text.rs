@@ -37,7 +37,7 @@ pub struct Text<'a> {
     pub page_size: usize,
 
     /// Function that provides a list of suggestions to the user based on the current input.
-    pub suggester: Option<Suggester>,
+    pub suggester: Option<Suggester<'a>>,
 }
 
 impl<'a> Text<'a> {
@@ -76,7 +76,7 @@ impl<'a> Text<'a> {
     }
 
     /// Sets the suggester.
-    pub fn with_suggester(mut self, suggester: Suggester) -> Self {
+    pub fn with_suggester(mut self, suggester: Suggester<'a>) -> Self {
         self.suggester = Some(suggester);
         self
     }
@@ -138,7 +138,7 @@ struct TextPrompt<'a> {
     formatter: StringFormatter,
     validators: Vec<StringValidator<'a>>,
     error: Option<String>,
-    suggester: Option<Suggester>,
+    suggester: Option<Suggester<'a>>,
     suggested_options: Vec<String>,
     cursor_index: usize,
     page_size: usize,
