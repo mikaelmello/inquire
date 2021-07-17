@@ -3,7 +3,7 @@ use crate::answer::OptionAnswer;
 pub type StringFormatter<'a> = &'a dyn Fn(&str) -> String;
 pub type BoolFormatter<'a> = &'a dyn Fn(bool) -> String;
 pub type OptionFormatter<'a> = &'a dyn Fn(&OptionAnswer) -> String;
-pub type MultiOptionFormatter = fn(answer: &[OptionAnswer]) -> String;
+pub type MultiOptionFormatter<'a> = &'a dyn Fn(&[OptionAnswer]) -> String;
 
 #[cfg(feature = "date")]
 pub type DateFormatter = fn(answer: &chrono::NaiveDate) -> String;
@@ -17,7 +17,7 @@ pub(in crate) const DEFAULT_BOOL_FORMATTER: BoolFormatter = &|ans| match ans {
 
 pub(in crate) const DEFAULT_OPTION_FORMATTER: OptionFormatter = &|ans| ans.to_string();
 
-pub(in crate) const DEFAULT_MULTI_OPTION_FORMATTER: MultiOptionFormatter = |ans| {
+pub(in crate) const DEFAULT_MULTI_OPTION_FORMATTER: MultiOptionFormatter = &|ans| {
     ans.iter()
         .map(OptionAnswer::to_string)
         .collect::<Vec<String>>()
