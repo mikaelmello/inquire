@@ -40,12 +40,12 @@ pub struct Select<'a> {
     pub filter: Filter<'a>,
 
     /// Function that formats the user input and presents it to the user as the final rendering of the prompt.
-    pub formatter: OptionFormatter,
+    pub formatter: OptionFormatter<'a>,
 }
 
 impl<'a> Select<'a> {
     /// Default formatter.
-    pub const DEFAULT_FORMATTER: OptionFormatter = formatter::DEFAULT_OPTION_FORMATTER;
+    pub const DEFAULT_FORMATTER: OptionFormatter<'a> = formatter::DEFAULT_OPTION_FORMATTER;
     /// Default filter.
     pub const DEFAULT_FILTER: Filter<'a> = config::DEFAULT_FILTER;
     /// Default page size.
@@ -103,7 +103,7 @@ impl<'a> Select<'a> {
     }
 
     /// Sets the formatter.
-    pub fn with_formatter(mut self, formatter: OptionFormatter) -> Self {
+    pub fn with_formatter(mut self, formatter: OptionFormatter<'a>) -> Self {
         self.formatter = formatter;
         self
     }
@@ -140,7 +140,7 @@ struct SelectPrompt<'a> {
     filter_value: Option<String>,
     filtered_options: Vec<usize>,
     filter: Filter<'a>,
-    formatter: OptionFormatter,
+    formatter: OptionFormatter<'a>,
 }
 
 impl<'a> SelectPrompt<'a> {

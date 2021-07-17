@@ -47,7 +47,7 @@ pub struct MultiSelect<'a> {
     pub keep_filter: bool,
 
     /// Function that formats the user input and presents it to the user as the final rendering of the prompt.
-    pub formatter: MultiOptionFormatter,
+    pub formatter: MultiOptionFormatter<'a>,
 
     /// Validator to apply to the user input.
     pub validator: Option<MultiOptionValidator<'a>>,
@@ -55,7 +55,8 @@ pub struct MultiSelect<'a> {
 
 impl<'a> MultiSelect<'a> {
     /// Default formatter that maps the collection of options to their string values and joins them using a comma as the separator.
-    pub const DEFAULT_FORMATTER: MultiOptionFormatter = formatter::DEFAULT_MULTI_OPTION_FORMATTER;
+    pub const DEFAULT_FORMATTER: MultiOptionFormatter<'a> =
+        formatter::DEFAULT_MULTI_OPTION_FORMATTER;
     /// Default filter, equal to the global default filter [config::DEFAULT_FILTER]
     pub const DEFAULT_FILTER: Filter<'a> = config::DEFAULT_FILTER;
     /// Default page size, equal to the global default page size [config::DEFAULT_PAGE_SIZE]
@@ -124,7 +125,7 @@ impl<'a> MultiSelect<'a> {
     }
 
     /// Sets the formatter.
-    pub fn with_formatter(mut self, formatter: MultiOptionFormatter) -> Self {
+    pub fn with_formatter(mut self, formatter: MultiOptionFormatter<'a>) -> Self {
         self.formatter = formatter;
         self
     }
@@ -175,7 +176,7 @@ struct MultiSelectPrompt<'a> {
     filter_value: Option<String>,
     filtered_options: Vec<usize>,
     filter: Filter<'a>,
-    formatter: MultiOptionFormatter,
+    formatter: MultiOptionFormatter<'a>,
     validator: Option<MultiOptionValidator<'a>>,
     error: Option<String>,
 }
