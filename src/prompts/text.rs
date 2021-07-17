@@ -308,7 +308,7 @@ impl<'a> TextPrompt<'a> {
             }
         }
 
-        renderer.cleanup(&self.message, (self.formatter)(&final_answer))?;
+        renderer.cleanup(&self.message, &(self.formatter)(&final_answer))?;
 
         Ok(final_answer)
     }

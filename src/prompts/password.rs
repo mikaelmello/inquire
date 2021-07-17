@@ -32,7 +32,7 @@ pub struct Password<'a> {
 
 impl<'a> Password<'a> {
     /// Default formatter.
-    pub const DEFAULT_FORMATTER: StringFormatter<'a> = &|_| "********";
+    pub const DEFAULT_FORMATTER: StringFormatter<'a> = &|_| String::from("********");
     /// Default collection of validators.
     pub const DEFAULT_VALIDATORS: Vec<StringValidator<'a>> = Vec::new();
     /// Default help message.
