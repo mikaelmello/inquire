@@ -23,7 +23,7 @@ pub struct Password<'a> {
     pub help_message: Option<&'a str>,
 
     /// Function that formats the user input and presents it to the user as the final rendering of the prompt.
-    pub formatter: StringFormatter,
+    pub formatter: StringFormatter<'a>,
 
     /// Collection of validators to apply to the user input.
     /// Validation errors are displayed to the user one line above the prompt.
@@ -32,7 +32,7 @@ pub struct Password<'a> {
 
 impl<'a> Password<'a> {
     /// Default formatter.
-    pub const DEFAULT_FORMATTER: StringFormatter = |_| "********";
+    pub const DEFAULT_FORMATTER: StringFormatter<'a> = &|_| "********";
     /// Default collection of validators.
     pub const DEFAULT_VALIDATORS: Vec<StringValidator<'a>> = Vec::new();
     /// Default help message.
@@ -55,7 +55,7 @@ impl<'a> Password<'a> {
     }
 
     /// Sets the formatter
-    pub fn with_formatter(mut self, formatter: StringFormatter) -> Self {
+    pub fn with_formatter(mut self, formatter: StringFormatter<'a>) -> Self {
         self.formatter = formatter;
         self
     }
@@ -91,7 +91,7 @@ struct PasswordPrompt<'a> {
     message: &'a str,
     help_message: Option<&'a str>,
     content: String,
-    formatter: StringFormatter,
+    formatter: StringFormatter<'a>,
     validators: Vec<StringValidator<'a>>,
     error: Option<String>,
 }
