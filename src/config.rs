@@ -8,7 +8,7 @@ pub type Filter = fn(filter: &str, value: &str, index: usize) -> bool;
 /// Type alias to represent the function used to retrieve text input suggestions.
 /// The function receives the current input and should return a collection of strings
 /// containing the suggestions to be made to the user.
-pub type Suggester = fn(value: &str) -> Vec<String>;
+pub type Suggester<'a> = &'a dyn Fn(&str) -> Vec<String>;
 
 /// Default page size when displaying options to the user.
 pub const DEFAULT_PAGE_SIZE: usize = 7;

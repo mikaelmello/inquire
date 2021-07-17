@@ -5,7 +5,7 @@ fn main() {
 
     let answers = vec![
         Text::new("What's your name?")
-            .with_suggester(suggester)
+            .with_suggester(&suggester)
             .with_validators(validators),
         Text::new("What's your location?")
             .with_help_message("This data is stored for good reasons"),
