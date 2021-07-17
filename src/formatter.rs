@@ -1,7 +1,7 @@
 use crate::answer::OptionAnswer;
 
 pub type StringFormatter<'a> = &'a dyn Fn(&str) -> String;
-pub type BoolFormatter<'a> = fn(answer: bool) -> &'a str;
+pub type BoolFormatter<'a> = &'a dyn Fn(bool) -> String;
 pub type OptionFormatter = fn(answer: &OptionAnswer) -> String;
 pub type MultiOptionFormatter = fn(answer: &[OptionAnswer]) -> String;
 
@@ -10,9 +10,9 @@ pub type DateFormatter = fn(answer: &chrono::NaiveDate) -> String;
 
 pub(in crate) const DEFAULT_STRING_FORMATTER: StringFormatter = &|val| String::from(val);
 
-pub(in crate) const DEFAULT_BOOL_FORMATTER: BoolFormatter = |ans| match ans {
-    true => "Yes",
-    false => "No",
+pub(in crate) const DEFAULT_BOOL_FORMATTER: BoolFormatter = &|ans| match ans {
+    true => String::from("Yes"),
+    false => String::from("No"),
 };
 
 pub(in crate) const DEFAULT_OPTION_FORMATTER: OptionFormatter = |ans| ans.to_string();

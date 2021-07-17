@@ -40,9 +40,9 @@ impl<'a> Confirm<'a> {
 
     /// Default formatter for default values, mapping [true] to ["Y/n"] and
     /// [false] to ["y/N"]
-    pub const DEFAULT_DEFAULT_VALUE_FORMATTER: BoolFormatter<'a> = |ans| match ans {
-        true => "Y/n",
-        false => "y/N",
+    pub const DEFAULT_DEFAULT_VALUE_FORMATTER: BoolFormatter<'a> = &|ans| match ans {
+        true => String::from("Y/n"),
+        false => String::from("y/N"),
     };
 
     /// Creates a [Confirm] with the provided message and default configuration values.
@@ -165,7 +165,7 @@ impl<'a> ConfirmPrompt<'a> {
 
         let default_message = self.default.map(self.default_value_formatter);
 
-        renderer.print_prompt(&prompt, default_message, Some(&self.content))?;
+        renderer.print_prompt(&prompt, default_message.as_deref(), Some(&self.content))?;
 
         if let Some(message) = self.help_message {
             renderer.print_help(message)?;
