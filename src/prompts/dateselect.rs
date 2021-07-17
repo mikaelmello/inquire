@@ -41,7 +41,7 @@ pub struct DateSelect<'a> {
     pub vim_mode: bool,
 
     /// Function that formats the user input and presents it to the user as the final rendering of the prompt.
-    pub formatter: DateFormatter,
+    pub formatter: DateFormatter<'a>,
 
     /// Collection of validators to apply to the user input.
     /// Validation errors are displayed to the user one line above the prompt.
@@ -50,7 +50,7 @@ pub struct DateSelect<'a> {
 
 impl<'a> DateSelect<'a> {
     /// Default formatter.
-    pub const DEFAULT_FORMATTER: DateFormatter = formatter::DEFAULT_DATE_FORMATTER;
+    pub const DEFAULT_FORMATTER: DateFormatter<'a> = formatter::DEFAULT_DATE_FORMATTER;
     /// Default filter.
     pub const DEFAULT_FILTER: Filter = config::DEFAULT_FILTER;
     /// Default value of vim mode. It is true because there is no typing functionality to be lost here.
@@ -139,7 +139,7 @@ impl<'a> DateSelect<'a> {
     }
 
     /// Sets the formatter.
-    pub fn with_formatter(mut self, formatter: DateFormatter) -> Self {
+    pub fn with_formatter(mut self, formatter: DateFormatter<'a>) -> Self {
         self.formatter = formatter;
         self
     }
@@ -168,7 +168,7 @@ struct DateSelectPrompt<'a> {
     max_date: Option<NaiveDate>,
     help_message: Option<&'a str>,
     vim_mode: bool,
-    formatter: DateFormatter,
+    formatter: DateFormatter<'a>,
     validators: Vec<DateValidator<'a>>,
     error: Option<String>,
 }
@@ -332,7 +332,7 @@ impl<'a> DateSelectPrompt<'a> {
             }
         }
 
-        let formatted = (self.formatter)(&final_answer);
+        let formatted = (self.formatter)(final_answer);
 
         renderer.cleanup(&self.message, &formatted)?;
 
