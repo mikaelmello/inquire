@@ -37,7 +37,7 @@ pub struct Select<'a> {
 
     /// Function called with the current user input to filter the provided
     /// options.
-    pub filter: Filter,
+    pub filter: Filter<'a>,
 
     /// Function that formats the user input and presents it to the user as the final rendering of the prompt.
     pub formatter: OptionFormatter,
@@ -47,7 +47,7 @@ impl<'a> Select<'a> {
     /// Default formatter.
     pub const DEFAULT_FORMATTER: OptionFormatter = formatter::DEFAULT_OPTION_FORMATTER;
     /// Default filter.
-    pub const DEFAULT_FILTER: Filter = config::DEFAULT_FILTER;
+    pub const DEFAULT_FILTER: Filter<'a> = config::DEFAULT_FILTER;
     /// Default page size.
     pub const DEFAULT_PAGE_SIZE: usize = config::DEFAULT_PAGE_SIZE;
     /// Default value of vim mode.
@@ -97,7 +97,7 @@ impl<'a> Select<'a> {
     }
 
     /// Sets the filter function.
-    pub fn with_filter(mut self, filter: Filter) -> Self {
+    pub fn with_filter(mut self, filter: Filter<'a>) -> Self {
         self.filter = filter;
         self
     }
@@ -139,7 +139,7 @@ struct SelectPrompt<'a> {
     page_size: usize,
     filter_value: Option<String>,
     filtered_options: Vec<usize>,
-    filter: Filter,
+    filter: Filter<'a>,
     formatter: OptionFormatter,
 }
 
