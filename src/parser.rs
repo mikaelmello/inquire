@@ -1,6 +1,6 @@
-pub type BoolParser = fn(answer: &str) -> Result<bool, String>;
+pub type BoolParser<'a> = &'a dyn Fn(&str) -> Result<bool, String>;
 
-pub(in crate) const DEFAULT_BOOL_PARSER: BoolParser = |ans| {
+pub(in crate) const DEFAULT_BOOL_PARSER: BoolParser = &|ans| {
     static ERROR_MESSAGE: &str = "Invalid answer, try typing 'y' for yes or 'n' for no";
 
     if ans.len() > 3 {

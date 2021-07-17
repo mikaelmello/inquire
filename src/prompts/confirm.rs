@@ -25,7 +25,7 @@ pub struct Confirm<'a> {
     pub formatter: BoolFormatter<'a>,
 
     /// Function that parses the user input and returns the result
-    pub parser: BoolParser,
+    pub parser: BoolParser<'a>,
 
     /// Function that formats the default value to be presented to the user
     pub default_value_formatter: BoolFormatter<'a>,
@@ -36,7 +36,7 @@ impl<'a> Confirm<'a> {
     pub const DEFAULT_FORMATTER: BoolFormatter<'a> = DEFAULT_BOOL_FORMATTER;
     /// Default parser, matches ["y"] and ["yes"] to [true], ["n"] and ["no"]
     /// to [false], and an [Err] otherwise.
-    pub const DEFAULT_PARSER: BoolParser = DEFAULT_BOOL_PARSER;
+    pub const DEFAULT_PARSER: BoolParser<'a> = DEFAULT_BOOL_PARSER;
 
     /// Default formatter for default values, mapping [true] to ["Y/n"] and
     /// [false] to ["y/N"]
@@ -76,7 +76,7 @@ impl<'a> Confirm<'a> {
     }
 
     /// Sets the parser
-    pub fn with_parser(mut self, parser: BoolParser) -> Self {
+    pub fn with_parser(mut self, parser: BoolParser<'a>) -> Self {
         self.parser = parser;
         self
     }
@@ -113,7 +113,7 @@ struct ConfirmPrompt<'a> {
     default: Option<bool>,
     content: String,
     formatter: BoolFormatter<'a>,
-    parser: BoolParser,
+    parser: BoolParser<'a>,
     default_value_formatter: BoolFormatter<'a>,
 }
 
