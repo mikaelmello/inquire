@@ -5,7 +5,6 @@ use std::{
 };
 
 use crate::{
-    config::{self, Filter},
     date_utils::get_month,
     error::{InquireError, InquireResult},
     formatter::{self, DateFormatter},
@@ -51,8 +50,6 @@ pub struct DateSelect<'a> {
 impl<'a> DateSelect<'a> {
     /// Default formatter.
     pub const DEFAULT_FORMATTER: DateFormatter = formatter::DEFAULT_DATE_FORMATTER;
-    /// Default filter.
-    pub const DEFAULT_FILTER: Filter = config::DEFAULT_FILTER;
     /// Default value of vim mode. It is true because there is no typing functionality to be lost here.
     pub const DEFAULT_VIM_MODE: bool = true;
     /// Default help message.

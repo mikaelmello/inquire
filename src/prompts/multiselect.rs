@@ -41,7 +41,7 @@ pub struct MultiSelect<'a> {
 
     /// Function called with the current user input to filter the provided
     /// options.
-    pub filter: Filter,
+    pub filter: Filter<'a>,
 
     /// Whether the current filter typed by the user is kept or cleaned after a selection is made.
     pub keep_filter: bool,
@@ -57,7 +57,7 @@ impl<'a> MultiSelect<'a> {
     /// Default formatter that maps the collection of options to their string values and joins them using a comma as the separator.
     pub const DEFAULT_FORMATTER: MultiOptionFormatter = formatter::DEFAULT_MULTI_OPTION_FORMATTER;
     /// Default filter, equal to the global default filter [config::DEFAULT_FILTER]
-    pub const DEFAULT_FILTER: Filter = config::DEFAULT_FILTER;
+    pub const DEFAULT_FILTER: Filter<'a> = config::DEFAULT_FILTER;
     /// Default page size, equal to the global default page size [config::DEFAULT_PAGE_SIZE]
     pub const DEFAULT_PAGE_SIZE: usize = config::DEFAULT_PAGE_SIZE;
     /// Default value of vim mode, equal to the global default value [config::DEFAULT_PAGE_SIZE]
@@ -118,7 +118,7 @@ impl<'a> MultiSelect<'a> {
     }
 
     /// Sets the filter function.
-    pub fn with_filter(mut self, filter: Filter) -> Self {
+    pub fn with_filter(mut self, filter: Filter<'a>) -> Self {
         self.filter = filter;
         self
     }
@@ -174,7 +174,7 @@ struct MultiSelectPrompt<'a> {
     keep_filter: bool,
     filter_value: Option<String>,
     filtered_options: Vec<usize>,
-    filter: Filter,
+    filter: Filter<'a>,
     formatter: MultiOptionFormatter,
     validator: Option<MultiOptionValidator<'a>>,
     error: Option<String>,
