@@ -24,6 +24,9 @@ pub enum Key {
     Submit,
     Backspace,
     Tab,
+    Delete,
+    Home,
+    End,
     Up(KeyModifiers),
     Down(KeyModifiers),
     Left(KeyModifiers),
@@ -68,6 +71,18 @@ impl From<KeyEvent> for Key {
                 code: KeyCode::Backspace,
                 modifiers: _,
             } => Self::Backspace,
+            KeyEvent {
+                code: KeyCode::Delete,
+                modifiers: _,
+            } => Self::Delete,
+            KeyEvent {
+                code: KeyCode::Home,
+                modifiers: _,
+            } => Self::Home,
+            KeyEvent {
+                code: KeyCode::End,
+                modifiers: _,
+            } => Self::End,
             KeyEvent {
                 code: KeyCode::Up,
                 modifiers: m,
