@@ -62,7 +62,7 @@ impl Input {
             Key::Left(m) if m.contains(KeyModifiers::CONTROL) => self.move_backward(MoveKind::Word),
             Key::Left(_) => self.move_backward(MoveKind::Char),
 
-            Key::End => self.move_forward(MoveKind::Char),
+            Key::End => self.move_forward(MoveKind::Line),
             Key::Right(m) if m.contains(KeyModifiers::CONTROL) => self.move_forward(MoveKind::Word),
             Key::Right(_) => self.move_forward(MoveKind::Char),
 
