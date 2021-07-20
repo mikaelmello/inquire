@@ -38,6 +38,12 @@ impl Input {
         self
     }
 
+    pub fn reset_with(&mut self, content: &str) {
+        self.content = String::from(content);
+        self.length = content.graphemes(true).count();
+        self.cursor = self.length;
+    }
+
     #[cfg(test)]
     pub fn with_cursor(mut self, cursor: usize) -> Self {
         assert!(

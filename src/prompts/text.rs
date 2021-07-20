@@ -1,3 +1,5 @@
+use std::cmp::min;
+
 use crate::{
     answer::OptionAnswer,
     config::{self, Suggester},
@@ -134,6 +136,7 @@ struct TextPrompt<'a> {
     default: Option<&'a str>,
     help_message: Option<&'a str>,
     input: Input,
+    original_input: Option<Input>,
     formatter: StringFormatter<'a>,
     validators: Vec<StringValidator<'a>>,
     error: Option<String>,
@@ -153,6 +156,7 @@ impl<'a> From<Text<'a>> for TextPrompt<'a> {
             validators: so.validators,
             suggester: so.suggester,
             input: Input::new(),
+            original_input: None,
             error: None,
             cursor_index: 0,
             page_size: so.page_size,
@@ -175,55 +179,56 @@ impl<'a> TextPrompt<'a> {
         match self.suggester {
             Some(suggester) => {
                 self.suggested_options = suggester(self.input.content());
-                if self.suggested_options.len() > 0
-                    && self.suggested_options.len() <= self.cursor_index
-                {
-                    self.cursor_index = self.suggested_options.len().saturating_sub(1);
-                }
+                self.cursor_index = 0;
             }
             None => {}
         }
     }
 
-    fn move_cursor_up(&mut self) -> bool {
-        self.cursor_index = self
-            .cursor_index
-            .checked_sub(1)
-            .or(self.suggested_options.len().checked_sub(1))
-            .unwrap_or_else(|| 0);
-        false
+    fn move_cursor_up(&mut self) {
+        self.cursor_index = self.cursor_index.saturating_sub(1);
     }
 
-    fn move_cursor_down(&mut self) -> bool {
-        self.cursor_index = self.cursor_index.saturating_add(1);
-        if self.cursor_index >= self.suggested_options.len() {
-            self.cursor_index = 0;
-        }
-        false
+    fn move_cursor_down(&mut self) {
+        self.cursor_index = min(
+            self.cursor_index.saturating_add(1),
+            self.suggested_options.len(),
+        );
     }
 
     fn on_change(&mut self, key: Key) {
-        let dirty = match key {
-            Key::Tab => self.use_select_option(),
+        match key {
             Key::Up(KeyModifiers::NONE) => self.move_cursor_up(),
             Key::Down(KeyModifiers::NONE) => self.move_cursor_down(),
-            key => self.input.handle_key(key),
-        };
+            key => {
+                let dirty = self.input.handle_key(key);
 
-        if dirty {
-            self.update_suggestions();
+                if dirty {
+                    self.update_suggestions();
+                }
+            }
         }
+
+        self.update_current_input();
     }
 
-    fn use_select_option(&mut self) -> bool {
-        let selected_suggestion = self.suggested_options.get(self.cursor_index);
-
-        if let Some(ans) = selected_suggestion {
-            self.input = self.input.clone().with_content(ans);
-            self.update_suggestions();
-            true
+    fn update_current_input(&mut self) {
+        if self.cursor_index == 0 {
+            if let Some(input) = self.original_input.take() {
+                self.input = input;
+            }
         } else {
-            false
+            let suggestion = self
+                .suggested_options
+                .get(self.cursor_index - 1)
+                .map(|s| &**s);
+
+            if let Some(suggestion) = suggestion {
+                if self.original_input.is_none() {
+                    self.original_input = Some(self.input.clone());
+                }
+                self.input.reset_with(suggestion);
+            }
         }
     }
 
@@ -263,9 +268,12 @@ impl<'a> TextPrompt<'a> {
             .map(|(i, val)| OptionAnswer::new(i, val))
             .collect::<Vec<OptionAnswer>>();
 
-        let (paginated_opts, rel_sel) = paginate(self.page_size, &choices, self.cursor_index);
+        let display_cursor = self.cursor_index > 0;
+        let list_index = self.cursor_index.saturating_sub(1);
+        let (paginated_opts, rel_sel) = paginate(self.page_size, &choices, list_index);
+
         for (idx, opt) in paginated_opts.iter().enumerate() {
-            renderer.print_option(rel_sel == idx, &opt.value)?;
+            renderer.print_option(display_cursor && rel_sel == idx, &opt.value)?;
         }
 
         if let Some(message) = self.help_message {

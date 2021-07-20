@@ -1,7 +1,7 @@
-use inquire::{max_length, min_length, required, validator::StringValidator, PromptMany, Text};
+use inquire::{required, validator::StringValidator, PromptMany, Text};
 
 fn main() {
-    let validators: &[StringValidator] = &[required!(), max_length!(5), min_length!(2)];
+    let validators: &[StringValidator] = &[required!()];
 
     let answers = vec![
         Text::new("What's your name?")
@@ -30,11 +30,39 @@ fn main() {
 }
 
 fn suggester(val: &str) -> Vec<String> {
-    let suggestions = vec!["Johnny", "John", "Paul", "Mark"];
+    let mut suggestions = [
+        "Johnny",
+        "John",
+        "Paul",
+        "Mark",
+        "James",
+        "Robert",
+        "John",
+        "Michael",
+        "William",
+        "David",
+        "Richard",
+        "Thomas",
+        "Charles",
+        "Christopher",
+        "Daniel",
+        "Mark",
+        "Donald",
+        "Steven",
+        "Paul",
+        "Andrew",
+        "Kevin",
+        "George",
+        "Edward",
+    ];
+
+    suggestions.sort();
+
+    let val_lower = val.to_lowercase();
 
     suggestions
-        .into_iter()
-        .map(|v| v.to_string())
-        .filter(|s| s.contains(val))
+        .iter()
+        .filter(|s| s.to_lowercase().contains(&val_lower))
+        .map(|s| String::from(*s))
         .collect()
 }
