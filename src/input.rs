@@ -54,7 +54,8 @@ impl Input {
         match key {
             Key::Backspace => self.backspace(),
 
-            Key::Delete => self.delete(),
+            Key::Delete(m) if m.contains(KeyModifiers::CONTROL) => self.delete_next_word(),
+            Key::Delete(_) => self.delete(1),
 
             Key::Home => self.move_backward(MoveKind::Line),
             Key::Left(m) if m.contains(KeyModifiers::CONTROL) => self.move_backward(MoveKind::Word),
@@ -109,7 +110,7 @@ impl Input {
 
         match kind {
             MoveKind::Char => self.cursor = self.cursor.saturating_sub(1),
-            MoveKind::Word => self.move_prev_word(),
+            MoveKind::Word => self.cursor = self.prev_word_index(),
             MoveKind::Line => self.cursor = 0,
         }
 
@@ -128,14 +129,14 @@ impl Input {
 
         match kind {
             MoveKind::Char => self.cursor = self.cursor.saturating_add(1),
-            MoveKind::Word => self.move_next_word(),
+            MoveKind::Word => self.cursor = self.next_word_index(),
             MoveKind::Line => self.cursor = self.length,
         }
 
         true
     }
 
-    fn move_next_word(&mut self) {
+    fn next_word_index(&mut self) -> usize {
         let graphemes = self.content.graphemes(true).enumerate().skip(self.cursor);
         let mut seen_word = false;
 
@@ -143,15 +144,14 @@ impl Input {
             if is_alphanumeric(g) {
                 seen_word = true;
             } else if seen_word {
-                self.cursor = idx;
-                return;
+                return idx;
             }
         }
 
-        self.cursor = self.length;
+        self.length
     }
 
-    fn move_prev_word(&mut self) {
+    fn prev_word_index(&mut self) -> usize {
         let mut seen_word = false;
         let left = self.cursor;
         let right = self.length - left;
@@ -168,12 +168,11 @@ impl Input {
                 seen_word = true;
             } else if seen_word {
                 // word found
-                self.cursor = self.cursor.saturating_sub(dist - 1);
-                return;
+                return self.cursor.saturating_sub(dist - 1);
             }
         }
 
-        self.cursor = 0;
+        0
     }
 
     fn insert(&mut self, c: char) -> bool {
@@ -208,18 +207,28 @@ impl Input {
         }
 
         self.cursor = self.cursor.saturating_sub(1);
-        self.delete()
+        self.delete(1)
     }
 
-    fn delete(&mut self) -> bool {
-        let at = self.cursor;
+    fn delete_next_word(&mut self) -> bool {
+        let start = self.cursor;
+        let end = self.next_word_index();
+
+        let len = end - start;
+
+        self.delete(len)
+    }
+
+    fn delete(&mut self, qty: usize) -> bool {
+        let start = self.cursor;
+        let end = start.saturating_add(qty);
 
         let mut result: String = String::new();
         let mut length = 0;
         let mut dirty = false;
 
         for (index, grapheme) in self.content[..].graphemes(true).enumerate() {
-            if index != at {
+            if index < start || index >= end {
                 length += 1;
                 result.push_str(grapheme);
             } else {
