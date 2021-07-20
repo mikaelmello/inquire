@@ -39,6 +39,21 @@ $ cargo run --example expense_tracker --features date
 - Support for custom formatting of user input after it is submitted and echoed back to the terminal.
 - Fine-grained configuration, e.g. page size of option list, vim mode for navigation, etc.
 
+## Cross-cutting concerns
+
+There are several features that are shared among different types of prompts. This section will give an overview on each of them.
+
+### Validation
+
+### Formatting
+
+### Parsing
+
+### Filtering
+
+### Error handling
+
+
 ## Prompts
 
 Currently, there are 5 different prompt types supported.
@@ -64,23 +79,14 @@ With Text, you can customize several aspects:
 
 - Help message: Display a helpful message at the line below the prompt.
 - Default value: Set a default value for when the user just presses enter without any text input.
-- 
 
 
-### Password
-
-### Confirm
+### DateSelect
 
 ### Select
 
 ### MultiSelect
 
-### DateSelect
+### Password
 
-## Prompt-generic concerns
-
-### Validation
-
-### Formatting
-
-### Option Filtering
+### Confirm
