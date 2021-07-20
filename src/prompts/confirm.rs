@@ -1,9 +1,8 @@
-use unicode_segmentation::UnicodeSegmentation;
-
 use crate::{
     error::{InquireError, InquireResult},
     formatter::{BoolFormatter, DEFAULT_BOOL_FORMATTER},
-    key::{Key, KeyModifiers},
+    input::Input,
+    key::Key,
     parser::{BoolParser, DEFAULT_BOOL_PARSER},
     renderer::Renderer,
     terminal::Terminal,
@@ -111,7 +110,7 @@ struct ConfirmPrompt<'a> {
     error: Option<String>,
     help_message: Option<&'a str>,
     default: Option<bool>,
-    content: String,
+    input: Input,
     formatter: BoolFormatter<'a>,
     parser: BoolParser<'a>,
     default_value_formatter: BoolFormatter<'a>,
@@ -127,31 +126,23 @@ impl<'a> From<Confirm<'a>> for ConfirmPrompt<'a> {
             formatter: co.formatter,
             parser: co.parser,
             default_value_formatter: co.default_value_formatter,
-            content: String::new(),
+            input: Input::new(),
         }
     }
 }
 
 impl<'a> ConfirmPrompt<'a> {
     fn on_change(&mut self, key: Key) {
-        match key {
-            Key::Backspace => {
-                let len = self.content[..].graphemes(true).count();
-                let new_len = len.saturating_sub(1);
-                self.content = self.content[..].graphemes(true).take(new_len).collect();
-            }
-            Key::Char(c, KeyModifiers::NONE) => self.content.push(c),
-            _ => {}
-        }
+        self.input.handle_key(key);
     }
 
     fn get_final_answer(&self) -> Result<bool, String> {
         match self.default {
-            Some(val) if self.content.is_empty() => return Ok(val),
+            Some(val) if self.input.content().is_empty() => return Ok(val),
             _ => {}
         }
 
-        (self.parser)(&self.content)
+        (self.parser)(self.input.content())
     }
 
     fn render(&mut self, renderer: &mut Renderer) -> InquireResult<()> {
@@ -165,7 +156,7 @@ impl<'a> ConfirmPrompt<'a> {
 
         let default_message = self.default.map(self.default_value_formatter);
 
-        renderer.print_prompt(&prompt, default_message.as_deref(), Some(&self.content))?;
+        renderer.print_prompt_input(&prompt, default_message.as_deref(), Some(&self.input))?;
 
         if let Some(message) = self.help_message {
             renderer.print_help(message)?;
@@ -193,7 +184,7 @@ impl<'a> ConfirmPrompt<'a> {
                     }
                     Err(message) => {
                         self.error = Some(message);
-                        self.content.clear();
+                        self.input.clear();
                     }
                 },
                 key => self.on_change(key),
