@@ -1,5 +1,3 @@
-use unicode_segmentation::UnicodeSegmentation;
-
 use crate::{
     answer::OptionAnswer,
     config::{self, Suggester},

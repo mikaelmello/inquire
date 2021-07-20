@@ -38,6 +38,7 @@ impl Input {
         self
     }
 
+    #[cfg(test)]
     pub fn with_cursor(mut self, cursor: usize) -> Self {
         assert!(
             cursor <= self.length,
@@ -100,6 +101,7 @@ impl Input {
         &self.content
     }
 
+    #[cfg(test)]
     pub fn cursor(&self) -> usize {
         self.cursor
     }
