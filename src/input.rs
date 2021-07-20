@@ -56,13 +56,13 @@ impl Input {
 
             Key::Delete => self.delete(),
 
-            Key::Home => self.move_left(MoveKind::Line),
-            Key::Left(m) if m.contains(KeyModifiers::CONTROL) => self.move_left(MoveKind::Word),
-            Key::Left(_) => self.move_left(MoveKind::Char),
+            Key::Home => self.move_backward(MoveKind::Line),
+            Key::Left(m) if m.contains(KeyModifiers::CONTROL) => self.move_backward(MoveKind::Word),
+            Key::Left(_) => self.move_backward(MoveKind::Char),
 
-            Key::End => self.move_right(MoveKind::Char),
-            Key::Right(m) if m.contains(KeyModifiers::CONTROL) => self.move_right(MoveKind::Word),
-            Key::Right(_) => self.move_right(MoveKind::Char),
+            Key::End => self.move_forward(MoveKind::Char),
+            Key::Right(m) if m.contains(KeyModifiers::CONTROL) => self.move_forward(MoveKind::Word),
+            Key::Right(_) => self.move_forward(MoveKind::Char),
 
             Key::Char(c, _) => self.insert(c),
             _ => false,
@@ -102,7 +102,7 @@ impl Input {
         self.cursor
     }
 
-    fn move_left(&mut self, kind: MoveKind) -> bool {
+    fn move_backward(&mut self, kind: MoveKind) -> bool {
         if self.cursor == 0 {
             return false;
         }
@@ -116,7 +116,7 @@ impl Input {
         true
     }
 
-    fn move_right(&mut self, kind: MoveKind) -> bool {
+    fn move_forward(&mut self, kind: MoveKind) -> bool {
         if self.cursor == self.length {
             return false;
         } else if self.cursor > self.length {
@@ -240,10 +240,10 @@ mod test {
     use crate::key::{Key, KeyModifiers};
 
     #[test]
-    fn move_left_word() {
+    fn move_previous_word() {
         let content = "great 🌍, 🍞, 🚗, 1231321📞, 🎉, 🍆xsa232 s2da ake iak eaik";
 
-        let assert_right_move = |expected, initial| {
+        let assert = |expected, initial| {
             let mut input = Input::new().with_content(content).with_cursor(initial);
 
             let dirty = input.handle_key(Key::Left(KeyModifiers::CONTROL));
@@ -259,25 +259,25 @@ mod test {
         };
 
         for i in 0..16 {
-            assert_right_move(0, i);
+            assert(0, i);
         }
         for i in 16..30 {
-            assert_right_move(15, i);
+            assert(15, i);
         }
         for i in 30..37 {
-            assert_right_move(29, i);
+            assert(29, i);
         }
         for i in 37..42 {
-            assert_right_move(36, i);
+            assert(36, i);
         }
         for i in 42..46 {
-            assert_right_move(41, i);
+            assert(41, i);
         }
         for i in 46..50 {
-            assert_right_move(45, i);
+            assert(45, i);
         }
         for i in 50..54 {
-            assert_right_move(49, i);
+            assert(49, i);
         }
     }
 }
