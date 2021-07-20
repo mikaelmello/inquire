@@ -12,15 +12,15 @@
 
 ## Demo
 
-![Animated GIF making a demonstration of a questionnaire created with this library. You can replay this recording in your terminal with asciinema play command - asciinema play 422086.cast](assets/form.gif)
-[Source](examples/form.rs)
+![Animated GIF making a demonstration of a questionnaire created with this library. You can replay this recording in your terminal with asciinema play command - asciinema play ./assets/expense_tracker.cast](assets/expense_tracker.gif)
+[Source](examples/expense_tracker.rs)
 
 ## Examples
 
 Examples can be found in the `examples` directory. Run them to see basic behavior:
 
 ```
-$ cargo run --example form --features date
+$ cargo run --example expense_tracker --features date
 ```
 
 ## Prompts
