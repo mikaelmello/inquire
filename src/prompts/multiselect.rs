@@ -232,27 +232,25 @@ impl<'a> MultiSelectPrompt<'a> {
             .collect()
     }
 
-    fn move_cursor_up(&mut self) -> bool {
+    fn move_cursor_up(&mut self) {
         self.cursor_index = self
             .cursor_index
             .checked_sub(1)
             .or(self.filtered_options.len().checked_sub(1))
             .unwrap_or_else(|| 0);
-        true
     }
 
-    fn move_cursor_down(&mut self) -> bool {
+    fn move_cursor_down(&mut self) {
         self.cursor_index = self.cursor_index.saturating_add(1);
         if self.cursor_index >= self.filtered_options.len() {
             self.cursor_index = 0;
         }
-        true
     }
 
-    fn toggle_cursor_selection(&mut self) -> bool {
+    fn toggle_cursor_selection(&mut self) {
         let idx = match self.filtered_options.get(self.cursor_index) {
             Some(val) => val,
-            None => return false,
+            None => return,
         };
 
         if self.checked.contains(idx) {
@@ -264,12 +262,10 @@ impl<'a> MultiSelectPrompt<'a> {
         if !self.keep_filter {
             self.input.clear();
         }
-
-        true
     }
 
     fn on_change(&mut self, key: Key) {
-        let dirty = match key {
+        match key {
             Key::Up(KeyModifiers::NONE) => self.move_cursor_up(),
             Key::Char('k', KeyModifiers::NONE) if self.vim_mode => self.move_cursor_up(),
             Key::Down(KeyModifiers::NONE) => self.move_cursor_down(),
@@ -284,8 +280,6 @@ impl<'a> MultiSelectPrompt<'a> {
                 if !self.keep_filter {
                     self.input.clear();
                 }
-
-                true
             }
             Key::Left(KeyModifiers::NONE) => {
                 self.checked.clear();
@@ -293,19 +287,19 @@ impl<'a> MultiSelectPrompt<'a> {
                 if !self.keep_filter {
                     self.input.clear();
                 }
-
-                true
             }
-            key => self.input.handle_key(key),
+            key => {
+                let dirty = self.input.handle_key(key);
+
+                if dirty {
+                    let options = self.filter_options();
+                    if options.len() > 0 && options.len() <= self.cursor_index {
+                        self.cursor_index = options.len().saturating_sub(1);
+                    }
+                    self.filtered_options = options;
+                }
+            }
         };
-
-        if dirty {
-            let options = self.filter_options();
-            if options.len() > 0 && options.len() <= self.cursor_index {
-                self.cursor_index = options.len().saturating_sub(1);
-            }
-            self.filtered_options = options;
-        }
     }
 
     fn get_final_answer(&self) -> Result<Vec<OptionAnswer>, String> {
