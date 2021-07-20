@@ -210,6 +210,7 @@ impl<'a> TextPrompt<'a> {
                 let dirty = self.input.handle_key(key);
 
                 if dirty {
+                    self.original_input.take();
                     self.update_suggestions();
                 }
             }
