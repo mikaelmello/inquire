@@ -5,6 +5,7 @@ use crate::{
     config::{self, Suggester},
     error::{InquireError, InquireResult},
     formatter::{StringFormatter, DEFAULT_STRING_FORMATTER},
+    input::Input,
     key::{Key, KeyModifiers},
     renderer::Renderer,
     terminal::Terminal,
@@ -134,7 +135,7 @@ struct TextPrompt<'a> {
     message: &'a str,
     default: Option<&'a str>,
     help_message: Option<&'a str>,
-    content: String,
+    input: Input,
     formatter: StringFormatter<'a>,
     validators: Vec<StringValidator<'a>>,
     error: Option<String>,
@@ -153,7 +154,7 @@ impl<'a> From<Text<'a>> for TextPrompt<'a> {
             formatter: so.formatter,
             validators: so.validators,
             suggester: so.suggester,
-            content: String::new(),
+            input: Input::new(),
             error: None,
             cursor_index: 0,
             page_size: so.page_size,
@@ -175,7 +176,7 @@ impl<'a> TextPrompt<'a> {
     fn update_suggestions(&mut self) {
         match self.suggester {
             Some(suggester) => {
-                self.suggested_options = suggester(&self.content);
+                self.suggested_options = suggester(self.input.content());
                 if self.suggested_options.len() > 0
                     && self.suggested_options.len() <= self.cursor_index
                 {
@@ -186,57 +187,50 @@ impl<'a> TextPrompt<'a> {
         }
     }
 
-    fn move_cursor_up(&mut self) {
+    fn move_cursor_up(&mut self) -> bool {
         self.cursor_index = self
             .cursor_index
             .checked_sub(1)
             .or(self.suggested_options.len().checked_sub(1))
             .unwrap_or_else(|| 0);
+        false
     }
 
-    fn move_cursor_down(&mut self) {
+    fn move_cursor_down(&mut self) -> bool {
         self.cursor_index = self.cursor_index.saturating_add(1);
         if self.cursor_index >= self.suggested_options.len() {
             self.cursor_index = 0;
         }
+        false
     }
 
     fn on_change(&mut self, key: Key) {
-        let mut dirty = false;
-
-        match key {
+        let dirty = match key {
             Key::Tab => self.use_select_option(),
-            Key::Backspace => {
-                let len = self.content[..].graphemes(true).count();
-                let new_len = len.saturating_sub(1);
-                self.content = self.content[..].graphemes(true).take(new_len).collect();
-                dirty = true;
-            }
             Key::Up(KeyModifiers::NONE) => self.move_cursor_up(),
             Key::Down(KeyModifiers::NONE) => self.move_cursor_down(),
-            Key::Char(c, KeyModifiers::NONE) => {
-                self.content.push(c);
-                dirty = true;
-            }
-            _ => {}
-        }
+            key => self.input.handle_key(key),
+        };
 
         if dirty {
             self.update_suggestions();
         }
     }
 
-    fn use_select_option(&mut self) {
+    fn use_select_option(&mut self) -> bool {
         let selected_suggestion = self.suggested_options.get(self.cursor_index);
 
         if let Some(ans) = selected_suggestion {
-            self.content = ans.clone();
+            self.input = self.input.clone().with_content(ans);
             self.update_suggestions();
+            true
+        } else {
+            false
         }
     }
 
     fn get_final_answer(&self) -> Result<String, String> {
-        if self.content.is_empty() {
+        if self.input.content().is_empty() {
             match self.default {
                 Some(val) => return Ok(val.to_string()),
                 None => {}
@@ -244,13 +238,13 @@ impl<'a> TextPrompt<'a> {
         }
 
         for validator in &self.validators {
-            match validator(&self.content) {
+            match validator(self.input.content()) {
                 Ok(_) => {}
                 Err(err) => return Err(err),
             }
         }
 
-        Ok(self.content.clone())
+        Ok(self.input.content().into())
     }
 
     fn render(&mut self, renderer: &mut Renderer) -> InquireResult<()> {
@@ -262,7 +256,7 @@ impl<'a> TextPrompt<'a> {
             renderer.print_error_message(err)?;
         }
 
-        renderer.print_prompt(&prompt, self.default, Some(&self.content))?;
+        renderer.print_prompt_input(&prompt, self.default, &self.input)?;
 
         let choices = self
             .suggested_options
