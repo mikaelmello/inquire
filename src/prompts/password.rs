@@ -1,9 +1,8 @@
-use unicode_segmentation::UnicodeSegmentation;
-
 use crate::{
     error::{InquireError, InquireResult},
     formatter::StringFormatter,
-    key::{Key, KeyModifiers},
+    input::Input,
+    key::Key,
     renderer::Renderer,
     terminal::Terminal,
     validator::StringValidator,
@@ -90,7 +89,7 @@ impl<'a> Password<'a> {
 struct PasswordPrompt<'a> {
     message: &'a str,
     help_message: Option<&'a str>,
-    content: String,
+    input: Input,
     formatter: StringFormatter<'a>,
     validators: Vec<StringValidator<'a>>,
     error: Option<String>,
@@ -103,7 +102,7 @@ impl<'a> From<Password<'a>> for PasswordPrompt<'a> {
             help_message: so.help_message,
             formatter: so.formatter,
             validators: so.validators,
-            content: String::new(),
+            input: Input::new(),
             error: None,
         }
     }
@@ -117,26 +116,18 @@ impl<'a> From<&'a str> for Password<'a> {
 
 impl<'a> PasswordPrompt<'a> {
     fn on_change(&mut self, key: Key) {
-        match key {
-            Key::Backspace => {
-                let len = self.content[..].graphemes(true).count();
-                let new_len = len.saturating_sub(1);
-                self.content = self.content[..].graphemes(true).take(new_len).collect();
-            }
-            Key::Char(c, KeyModifiers::NONE) => self.content.push(c),
-            _ => {}
-        }
+        self.input.handle_key(key);
     }
 
     fn get_final_answer(&self) -> Result<String, String> {
         for validator in &self.validators {
-            match validator(&self.content) {
+            match validator(self.input.content()) {
                 Ok(_) => {}
                 Err(err) => return Err(err),
             }
         }
 
-        Ok(self.content.clone())
+        Ok(self.input.content().into())
     }
 
     fn render(&mut self, renderer: &mut Renderer) -> InquireResult<()> {
