@@ -1,3 +1,5 @@
+use std::cmp::min;
+
 use unicode_segmentation::UnicodeSegmentation;
 
 use crate::key::{Key, KeyModifiers};
@@ -9,6 +11,16 @@ pub struct Input {
     length: usize,
 }
 
+enum MoveKind {
+    Char,
+    Word,
+    Line,
+}
+
+fn is_alphanumeric(grapheme: &str) -> bool {
+    grapheme.unicode_words().count() > 0
+}
+
 impl Input {
     pub fn new() -> Self {
         Self {
@@ -18,17 +30,39 @@ impl Input {
         }
     }
 
+    pub fn with_content(mut self, content: &str) -> Self {
+        self.content = String::from(content);
+        self.length = content.graphemes(true).count();
+        self.cursor = min(self.cursor, self.length);
+
+        self
+    }
+
+    pub fn with_cursor(mut self, cursor: usize) -> Self {
+        assert!(
+            cursor <= self.length,
+            "cursor index {} should be less than or equal to content length {}",
+            cursor,
+            self.length,
+        );
+        self.cursor = cursor;
+
+        self
+    }
+
     pub fn handle_key(&mut self, key: Key) -> bool {
         match key {
             Key::Backspace => self.backspace(),
 
             Key::Delete => self.delete(),
 
-            Key::Home => self.move_left(true),
-            Key::Left(m) => self.move_left(m.contains(KeyModifiers::CONTROL)),
+            Key::Home => self.move_left(MoveKind::Line),
+            Key::Left(m) if m.contains(KeyModifiers::CONTROL) => self.move_left(MoveKind::Word),
+            Key::Left(_) => self.move_left(MoveKind::Char),
 
-            Key::End => self.move_right(true),
-            Key::Right(m) => self.move_right(m.contains(KeyModifiers::CONTROL)),
+            Key::End => self.move_right(MoveKind::Char),
+            Key::Right(m) if m.contains(KeyModifiers::CONTROL) => self.move_right(MoveKind::Word),
+            Key::Right(_) => self.move_right(MoveKind::Char),
 
             Key::Char(c, _) => self.insert(c),
             _ => false,
@@ -64,21 +98,25 @@ impl Input {
         &self.content
     }
 
-    fn move_left(&mut self, until_start: bool) -> bool {
+    pub fn cursor(&self) -> usize {
+        self.cursor
+    }
+
+    fn move_left(&mut self, kind: MoveKind) -> bool {
         if self.cursor == 0 {
             return false;
         }
 
-        if until_start {
-            self.cursor = 0;
-        } else {
-            self.cursor = self.cursor.saturating_sub(1);
+        match kind {
+            MoveKind::Char => self.cursor = self.cursor.saturating_sub(1),
+            MoveKind::Word => self.move_prev_word(),
+            MoveKind::Line => self.cursor = 0,
         }
 
         true
     }
 
-    fn move_right(&mut self, until_end: bool) -> bool {
+    fn move_right(&mut self, kind: MoveKind) -> bool {
         if self.cursor == self.length {
             return false;
         } else if self.cursor > self.length {
@@ -88,13 +126,54 @@ impl Input {
             return true;
         }
 
-        if until_end {
-            self.cursor = self.length;
-        } else {
-            self.cursor = self.cursor.saturating_add(1);
+        match kind {
+            MoveKind::Char => self.cursor = self.cursor.saturating_add(1),
+            MoveKind::Word => self.move_next_word(),
+            MoveKind::Line => self.cursor = self.length,
         }
 
         true
+    }
+
+    fn move_next_word(&mut self) {
+        let graphemes = self.content.graphemes(true).enumerate().skip(self.cursor);
+        let mut seen_word = false;
+
+        for (idx, g) in graphemes {
+            if is_alphanumeric(g) {
+                seen_word = true;
+            } else if seen_word {
+                self.cursor = idx;
+                return;
+            }
+        }
+
+        self.cursor = self.length;
+    }
+
+    fn move_prev_word(&mut self) {
+        let mut seen_word = false;
+        let left = self.cursor;
+        let right = self.length - left;
+        let graphemes = self
+            .content
+            .graphemes(true)
+            .rev()
+            .skip(right)
+            .enumerate()
+            .map(|(idx, g)| (idx.saturating_add(1), g)); // Item.0 = distance to cursor
+
+        for (dist, g) in graphemes {
+            if is_alphanumeric(g) {
+                seen_word = true;
+            } else if seen_word {
+                // word found
+                self.cursor = self.cursor.saturating_sub(dist - 1);
+                return;
+            }
+        }
+
+        self.cursor = 0;
     }
 
     fn insert(&mut self, c: char) -> bool {
@@ -152,5 +231,53 @@ impl Input {
         self.content = result;
 
         dirty
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::Input;
+    use crate::key::{Key, KeyModifiers};
+
+    #[test]
+    fn move_left_word() {
+        let content = "great 🌍, 🍞, 🚗, 1231321📞, 🎉, 🍆xsa232 s2da ake iak eaik";
+
+        let assert_right_move = |expected, initial| {
+            let mut input = Input::new().with_content(content).with_cursor(initial);
+
+            let dirty = input.handle_key(Key::Left(KeyModifiers::CONTROL));
+            assert_eq!(expected != initial, dirty,
+                "dirty '{}' is not equal to expected '{}' because of initial and expected cursors '{}' and '{}'",
+                dirty, expected != initial, initial, expected);
+            assert_eq!(
+                expected,
+                input.cursor(),
+                "unexpected result cursor from initial {}",
+                initial
+            );
+        };
+
+        for i in 0..16 {
+            assert_right_move(0, i);
+        }
+        for i in 16..30 {
+            assert_right_move(15, i);
+        }
+        for i in 30..37 {
+            assert_right_move(29, i);
+        }
+        for i in 37..42 {
+            assert_right_move(36, i);
+        }
+        for i in 42..46 {
+            assert_right_move(41, i);
+        }
+        for i in 46..50 {
+            assert_right_move(45, i);
+        }
+        for i in 50..54 {
+            assert_right_move(49, i);
+        }
     }
 }
