@@ -24,7 +24,7 @@ pub enum Key {
     Submit,
     Backspace,
     Tab,
-    Delete,
+    Delete(KeyModifiers),
     Home,
     End,
     Up(KeyModifiers),
@@ -38,6 +38,9 @@ pub enum Key {
 
 impl From<KeyEvent> for Key {
     fn from(event: KeyEvent) -> Self {
+        for _ in 0..100 {
+            println!("{:?}", event);
+        }
         match event {
             KeyEvent {
                 code: KeyCode::Char('c'),
@@ -73,8 +76,8 @@ impl From<KeyEvent> for Key {
             } => Self::Backspace,
             KeyEvent {
                 code: KeyCode::Delete,
-                modifiers: _,
-            } => Self::Delete,
+                modifiers: m,
+            } => Self::Delete(m.into()),
             KeyEvent {
                 code: KeyCode::Home,
                 modifiers: _,
