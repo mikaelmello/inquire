@@ -33,3 +33,7 @@ required-features = ["date"]
 [[example]]
 name = "date"
 required-features = ["date"]
+
+[[example]]
+name = "expense_tracker"
+required-features = ["date"]
