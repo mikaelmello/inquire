@@ -2,6 +2,7 @@ use crossterm::style::Color;
 
 use crate::{
     error::{InquireError, InquireResult},
+    input::Input,
     key::Key,
     terminal::{Style, Terminal},
 };
@@ -153,6 +154,39 @@ impl<'a> Renderer<'a> {
                 .print(&mut self.terminal)?,
             _ => {}
         }
+
+        self.new_line()?;
+
+        Ok(())
+    }
+
+    pub fn print_prompt_input(
+        &mut self,
+        prompt: &str,
+        default: Option<&str>,
+        content: &Input,
+    ) -> InquireResult<()> {
+        Token::new("? ")
+            .with_fg(Color::Green)
+            .print(&mut self.terminal)?;
+        Token::new(prompt).print(&mut self.terminal)?;
+
+        if let Some(default) = default {
+            Token::new(&format!(" ({})", default)).print(&mut self.terminal)?;
+        }
+
+        let (before, mut at, after) = content.split();
+
+        if at.is_empty() {
+            at.push(' ');
+        }
+
+        self.print_tokens(&[
+            Token::new(" "),
+            Token::new(&before),
+            Token::new(&at).with_bg(Color::Grey).with_fg(Color::Black),
+            Token::new(&after),
+        ])?;
 
         self.new_line()?;
 

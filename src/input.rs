@@ -53,6 +53,7 @@ impl Input {
     pub fn handle_key(&mut self, key: Key) -> bool {
         match key {
             Key::Backspace => self.backspace(),
+            Key::Char('h', m) if m.contains(KeyModifiers::CONTROL) => false,
 
             Key::Delete(m) if m.contains(KeyModifiers::CONTROL) => self.delete_next_word(),
             Key::Delete(_) => self.delete(1),
@@ -61,7 +62,7 @@ impl Input {
             Key::Left(m) if m.contains(KeyModifiers::CONTROL) => self.move_backward(MoveKind::Word),
             Key::Left(_) => self.move_backward(MoveKind::Char),
 
-            Key::End => self.move_forward(MoveKind::Char),
+            Key::End => self.move_forward(MoveKind::Line),
             Key::Right(m) if m.contains(KeyModifiers::CONTROL) => self.move_forward(MoveKind::Word),
             Key::Right(_) => self.move_forward(MoveKind::Char),
 

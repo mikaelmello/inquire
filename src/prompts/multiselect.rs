@@ -1,11 +1,11 @@
 use std::{collections::HashSet, iter::FromIterator};
-use unicode_segmentation::UnicodeSegmentation;
 
 use crate::{
     answer::OptionAnswer,
     config::{self, Filter},
     error::{InquireError, InquireResult},
     formatter::{self, MultiOptionFormatter},
+    input::Input,
     key::{Key, KeyModifiers},
     renderer::Renderer,
     terminal::Terminal,
@@ -173,7 +173,7 @@ struct MultiSelectPrompt<'a> {
     checked: HashSet<usize>,
     page_size: usize,
     keep_filter: bool,
-    filter_value: Option<String>,
+    input: Input,
     filtered_options: Vec<usize>,
     filter: Filter<'a>,
     formatter: MultiOptionFormatter<'a>,
@@ -208,7 +208,7 @@ impl<'a> MultiSelectPrompt<'a> {
             cursor_index: mso.starting_cursor,
             page_size: mso.page_size,
             keep_filter: mso.keep_filter,
-            filter_value: None,
+            input: Input::new(),
             filtered_options: Vec::from_iter(0..mso.options.len()),
             filter: mso.filter,
             formatter: mso.formatter,
@@ -224,10 +224,10 @@ impl<'a> MultiSelectPrompt<'a> {
         self.options
             .iter()
             .enumerate()
-            .filter_map(|(i, opt)| match &self.filter_value {
-                Some(val) if (self.filter)(&val, opt, i) => Some(i),
-                Some(_) => None,
-                None => Some(i),
+            .filter_map(|(i, opt)| match self.input.content() {
+                val if val.is_empty() => Some(i),
+                val if (self.filter)(&val, opt, i) => Some(i),
+                _ => None,
             })
             .collect()
     }
@@ -260,26 +260,17 @@ impl<'a> MultiSelectPrompt<'a> {
         }
 
         if !self.keep_filter {
-            self.filter_value = None;
+            self.input.clear();
         }
     }
 
     fn on_change(&mut self, key: Key) {
-        let old_filter = self.filter_value.clone();
-
         match key {
             Key::Up(KeyModifiers::NONE) => self.move_cursor_up(),
             Key::Char('k', KeyModifiers::NONE) if self.vim_mode => self.move_cursor_up(),
-            Key::Tab | Key::Down(KeyModifiers::NONE) => self.move_cursor_down(),
+            Key::Down(KeyModifiers::NONE) => self.move_cursor_down(),
             Key::Char('j', KeyModifiers::NONE) if self.vim_mode => self.move_cursor_down(),
             Key::Char(' ', KeyModifiers::NONE) => self.toggle_cursor_selection(),
-            Key::Backspace => {
-                if let Some(filter) = &self.filter_value {
-                    let len = filter[..].graphemes(true).count();
-                    let new_len = len.saturating_sub(1);
-                    self.filter_value = Some(filter[..].graphemes(true).take(new_len).collect());
-                }
-            }
             Key::Right(KeyModifiers::NONE) => {
                 self.checked.clear();
                 for idx in &self.filtered_options {
@@ -287,30 +278,28 @@ impl<'a> MultiSelectPrompt<'a> {
                 }
 
                 if !self.keep_filter {
-                    self.filter_value = None;
+                    self.input.clear();
                 }
             }
             Key::Left(KeyModifiers::NONE) => {
                 self.checked.clear();
 
                 if !self.keep_filter {
-                    self.filter_value = None;
+                    self.input.clear();
                 }
             }
-            Key::Char(c, KeyModifiers::NONE) => match &mut self.filter_value {
-                Some(val) => val.push(c),
-                None => self.filter_value = Some(String::from(c)),
-            },
-            _ => {}
-        }
+            key => {
+                let dirty = self.input.handle_key(key);
 
-        if self.filter_value != old_filter {
-            let options = self.filter_options();
-            if options.len() > 0 && options.len() <= self.cursor_index {
-                self.cursor_index = options.len().saturating_sub(1);
+                if dirty {
+                    let options = self.filter_options();
+                    if options.len() > 0 && options.len() <= self.cursor_index {
+                        self.cursor_index = options.len().saturating_sub(1);
+                    }
+                    self.filtered_options = options;
+                }
             }
-            self.filtered_options = options;
-        }
+        };
     }
 
     fn get_final_answer(&self) -> Result<Vec<OptionAnswer>, String> {
@@ -343,7 +332,7 @@ impl<'a> MultiSelectPrompt<'a> {
             renderer.print_error_message(err)?;
         }
 
-        renderer.print_prompt(&prompt, None, self.filter_value.as_deref())?;
+        renderer.print_prompt_input(&prompt, None, &self.input)?;
 
         let choices = self
             .filtered_options

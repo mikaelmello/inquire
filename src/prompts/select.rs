@@ -1,11 +1,11 @@
 use std::iter::FromIterator;
-use unicode_segmentation::UnicodeSegmentation;
 
 use crate::{
     answer::OptionAnswer,
     config::{self, Filter},
     error::{InquireError, InquireResult},
     formatter::{self, OptionFormatter},
+    input::Input,
     key::{Key, KeyModifiers},
     renderer::Renderer,
     terminal::Terminal,
@@ -137,7 +137,7 @@ struct SelectPrompt<'a> {
     vim_mode: bool,
     cursor_index: usize,
     page_size: usize,
-    filter_value: Option<String>,
+    input: Input,
     filtered_options: Vec<usize>,
     filter: Filter<'a>,
     formatter: OptionFormatter<'a>,
@@ -166,7 +166,7 @@ impl<'a> SelectPrompt<'a> {
             vim_mode: so.vim_mode,
             cursor_index: so.starting_cursor,
             page_size: so.page_size,
-            filter_value: None,
+            input: Input::new(),
             filtered_options: Vec::from_iter(0..so.options.len()),
             filter: so.filter,
             formatter: so.formatter,
@@ -177,10 +177,10 @@ impl<'a> SelectPrompt<'a> {
         self.options
             .iter()
             .enumerate()
-            .filter_map(|(i, opt)| match &self.filter_value {
-                Some(val) if (self.filter)(&val, opt, i) => Some(i),
-                Some(_) => None,
-                None => Some(i),
+            .filter_map(|(i, opt)| match self.input.content() {
+                val if val.is_empty() => Some(i),
+                val if (self.filter)(&val, opt, i) => Some(i),
+                _ => None,
             })
             .collect()
     }
@@ -201,45 +201,29 @@ impl<'a> SelectPrompt<'a> {
     }
 
     fn on_change(&mut self, key: Key) {
-        let old_filter = self.filter_value.clone();
-
         match key {
             Key::Up(KeyModifiers::NONE) => self.move_cursor_up(),
             Key::Char('k', KeyModifiers::NONE) if self.vim_mode => self.move_cursor_up(),
-            Key::Tab | Key::Down(KeyModifiers::NONE) => self.move_cursor_down(),
+            Key::Down(KeyModifiers::NONE) => self.move_cursor_down(),
             Key::Char('j', KeyModifiers::NONE) if self.vim_mode => self.move_cursor_down(),
-            Key::Backspace => {
-                if let Some(filter) = &self.filter_value {
-                    let len = filter[..].graphemes(true).count();
-                    let new_len = len.saturating_sub(1);
-                    self.filter_value = Some(filter[..].graphemes(true).take(new_len).collect());
+            key => {
+                let dirty = self.input.handle_key(key);
+
+                if dirty {
+                    let options = self.filter_options();
+                    if options.len() > 0 && options.len() <= self.cursor_index {
+                        self.cursor_index = options.len().saturating_sub(1);
+                    }
+                    self.filtered_options = options;
                 }
             }
-            Key::Char(c, KeyModifiers::NONE) => match &mut self.filter_value {
-                Some(val) => val.push(c),
-                None => self.filter_value = Some(String::from(c)),
-            },
-            _ => {}
-        }
-
-        if self.filter_value != old_filter {
-            let options = self.filter_options();
-            if options.len() > 0 && options.len() <= self.cursor_index {
-                self.cursor_index = options.len().saturating_sub(1);
-            }
-            self.filtered_options = options;
-        }
+        };
     }
 
-    fn get_final_answer(&self) -> InquireResult<OptionAnswer> {
+    fn get_final_answer(&self) -> Option<OptionAnswer> {
         self.filtered_options
             .get(self.cursor_index)
             .and_then(|i| self.options.get(*i).map(|opt| OptionAnswer::new(*i, opt)))
-            .ok_or(InquireError::InvalidState(format!(
-                "Index {} is not in the range of options with len {}",
-                self.cursor_index,
-                self.options.len()
-            )))
     }
 
     fn render(&mut self, renderer: &mut Renderer) -> InquireResult<()> {
@@ -247,7 +231,7 @@ impl<'a> SelectPrompt<'a> {
 
         renderer.reset_prompt()?;
 
-        renderer.print_prompt(&prompt, None, self.filter_value.as_deref())?;
+        renderer.print_prompt_input(&prompt, None, &self.input)?;
 
         let choices = self
             .filtered_options
@@ -282,11 +266,11 @@ impl<'a> SelectPrompt<'a> {
             match key {
                 Key::Cancel => return Err(InquireError::OperationCanceled),
                 Key::Submit | Key::Char(' ', KeyModifiers::NONE) => match self.get_final_answer() {
-                    Ok(answer) => {
+                    Some(answer) => {
                         final_answer = answer;
                         break;
                     }
-                    Err(err) => return Err(err),
+                    None => {}
                 },
                 key => self.on_change(key),
             }
