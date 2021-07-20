@@ -94,6 +94,12 @@ impl<'a> Text<'a> {
         self
     }
 
+    /// Sets the page size
+    pub fn with_page_size(mut self, page_size: usize) -> Self {
+        self.page_size = page_size;
+        self
+    }
+
     /// Adds the validators to the collection of validators.
     pub fn with_validators(mut self, validators: &[StringValidator<'a>]) -> Self {
         for validator in validators {
