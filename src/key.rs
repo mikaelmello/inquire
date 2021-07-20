@@ -38,9 +38,6 @@ pub enum Key {
 
 impl From<KeyEvent> for Key {
     fn from(event: KeyEvent) -> Self {
-        for _ in 0..100 {
-            println!("{:?}", event);
-        }
         match event {
             KeyEvent {
                 code: KeyCode::Char('c'),
