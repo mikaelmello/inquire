@@ -23,6 +23,22 @@ Examples can be found in the `examples` directory. Run them to see basic behavio
 $ cargo run --example expense_tracker --features date
 ```
 
+## Features
+
+- Cross-platform, supporting UNIX and Windows terminals (thanks to [crossterm](https://github.com/crossterm-rs/crossterm)).
+- Five (5) kinds of prompts and their own custom features (to see the full list of features check the full documentation below):
+  - Text input, with auto-completion support.
+  - Date picker, with support to limit allowed date ranges.
+  - Selection inputs, with support for single and multiple selections, as well as custom filtering based on user input.
+  - Confirm prompt, with support for custom parsing of input.
+  - Password prompt, where user input is not echoed back to the terminal.
+- Standardized error handling (thanks to [thiserror](https://github.com/dtolnay/thiserror))
+- Support for customized help messages.
+- Support for default values.
+- Support for validation of user input.
+- Support for custom formatting of user input after it is submitted and echoed back to the terminal.
+- Fine-grained configuration, e.g. page size of option list, vim mode for navigation, etc.
+
 ## Prompts
 
 Currently, there are 5 different prompt types supported.
