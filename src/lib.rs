@@ -42,6 +42,7 @@ pub mod config;
 mod date_utils;
 pub mod error;
 mod formatter;
+mod input;
 mod key;
 mod parser;
 mod prompts;
