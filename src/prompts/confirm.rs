@@ -156,7 +156,7 @@ impl<'a> ConfirmPrompt<'a> {
 
         let default_message = self.default.map(self.default_value_formatter);
 
-        renderer.print_prompt_input(&prompt, default_message.as_deref(), Some(&self.input))?;
+        renderer.print_prompt_input(&prompt, default_message.as_deref(), &self.input)?;
 
         if let Some(message) = self.help_message {
             renderer.print_help(message)?;

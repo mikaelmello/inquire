@@ -164,7 +164,7 @@ impl<'a> Renderer<'a> {
         &mut self,
         prompt: &str,
         default: Option<&str>,
-        content: Option<&Input>,
+        content: &Input,
     ) -> InquireResult<()> {
         Token::new("? ")
             .with_fg(Color::Green)
@@ -175,20 +175,18 @@ impl<'a> Renderer<'a> {
             Token::new(&format!(" ({})", default)).print(&mut self.terminal)?;
         }
 
-        if let Some(content) = content {
-            let (before, mut at, after) = content.split();
+        let (before, mut at, after) = content.split();
 
-            if at.is_empty() {
-                at.push(' ');
-            }
-
-            self.print_tokens(&[
-                Token::new(" "),
-                Token::new(&before),
-                Token::new(&at).with_bg(Color::Grey).with_fg(Color::Black),
-                Token::new(&after),
-            ])?;
+        if at.is_empty() {
+            at.push(' ');
         }
+
+        self.print_tokens(&[
+            Token::new(" "),
+            Token::new(&before),
+            Token::new(&at).with_bg(Color::Grey).with_fg(Color::Black),
+            Token::new(&after),
+        ])?;
 
         self.new_line()?;
 
