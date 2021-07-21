@@ -50,6 +50,8 @@ pub struct MultiSelect<'a> {
     pub formatter: MultiOptionFormatter<'a>,
 
     /// Validator to apply to the user input.
+    ///
+    /// In case of error, the message is displayed one line above the prompt.
     pub validator: Option<MultiOptionValidator<'a>>,
 }
 
@@ -71,6 +73,9 @@ impl<'a> MultiSelect<'a> {
     pub const DEFAULT_HELP_MESSAGE: Option<&'a str> =
         Some("↑↓ to move, space to select one, → to all, ← to none, type to filter");
 
+    /// Default validator set for the [MultiSelect] prompt, none.
+    pub const DEFAULT_VALIDATOR: Option<MultiOptionValidator<'a>> = None;
+
     /// Creates a [MultiSelect] with the provided message and options, along with default configuration values.
     pub fn new(message: &'a str, options: &'a [&str]) -> Self {
         Self {
@@ -84,7 +89,7 @@ impl<'a> MultiSelect<'a> {
             keep_filter: Self::DEFAULT_KEEP_FILTER,
             filter: Self::DEFAULT_FILTER,
             formatter: Self::DEFAULT_FORMATTER,
-            validator: None,
+            validator: Self::DEFAULT_VALIDATOR,
         }
     }
 
@@ -130,7 +135,9 @@ impl<'a> MultiSelect<'a> {
         self
     }
 
-    /// Adds a validator to the collection of validators.
+    /// Sets the validator to apply to the user input.
+    ///
+    /// In case of error, the message is displayed one line above the prompt.
     pub fn with_validator(mut self, validator: MultiOptionValidator<'a>) -> Self {
         self.validator = Some(validator);
         self

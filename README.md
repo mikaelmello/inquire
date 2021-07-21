@@ -45,6 +45,18 @@ There are several features that are shared among different types of prompts. Thi
 
 ### Validation
 
+Almost all prompts provide an API to set custom validators.
+
+The validators provided to a given prompt are called whenever the user submits their input. These validators vary by prompt type, receiving different types of variables as arguments, such as `&str`, `&[OptionAnswer]`, or `NaiveDate`, but their return type are always the same: `Result<(), String>`.
+
+If the input provided by the user is invalid, your validator should return `Ok(())`.
+
+If the input is not valid, your validator should return `Err(String)`, where the content of `Err` is a string whose content will be displayed to the user as an error message. It is recommended that this value gives a helpful feedback to the user, e.g. "This field should contain at least 5 characters".
+
+The validators are typed as a reference to `dyn Fn`. This allows both functions and closures to be used as validators, but it also means that the functions can not hold any mutable references.
+
+Finally, `inquire` has a feature called `builtin_validators` that is included by default. When the feature is on, several built-in validators are exported at the root-level of the library in the form of macros, check their documentation to see more details.
+
 ### Formatting
 
 ### Parsing
@@ -85,8 +97,12 @@ With Text, you can customize several aspects:
 
 ### Select
 
+The Select prompt does not support custom validators because of the nature of the prompt. A submission always selects exactly one of the options. If this option was not supposed to be selected or is invalid in some way, it probably should not be included in the options list.
+
 ### MultiSelect
 
 ### Password
 
 ### Confirm
+
+The Confirm prompt does not support custom validators because of the nature of the prompt. The user input is always parsed to true or false. If one of the two alternatives is invalid, a Confirm prompt that only allows yes or no answers does not make a lot of sense to me, but if someone provides a clear use-case I will reconsider.

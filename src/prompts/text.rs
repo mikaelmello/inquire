@@ -31,7 +31,11 @@ pub struct Text<'a> {
     pub formatter: StringFormatter<'a>,
 
     /// Collection of validators to apply to the user input.
-    /// Validation errors are displayed to the user one line above the prompt.
+    ///
+    /// Validators are executed in the order they are stored, stopping at and displaying to the user
+    /// only the first validation error that might appear.
+    ///
+    /// The possible error is displayed to the user one line above the prompt.
     pub validators: Vec<StringValidator<'a>>,
 
     /// Page size of the suggestions displayed to the user, when applicable.
@@ -46,8 +50,10 @@ impl<'a> Text<'a> {
     pub const DEFAULT_PAGE_SIZE: usize = config::DEFAULT_PAGE_SIZE;
     /// Default formatter.
     pub const DEFAULT_FORMATTER: StringFormatter<'a> = DEFAULT_STRING_FORMATTER;
-    /// Default collection of validators.
-    pub const DEFAULT_VALIDATORS: Vec<StringValidator<'a>> = Vec::new();
+
+    /// Default validators added to the [Password] prompt, none.
+    pub const DEFAULT_VALIDATORS: Vec<StringValidator<'a>> = vec![];
+
     /// Default help message.
     pub const DEFAULT_HELP_MESSAGE: Option<&'a str> = None;
 
@@ -88,19 +94,29 @@ impl<'a> Text<'a> {
         self
     }
 
-    /// Adds a validator to the collection of validators.
-    pub fn with_validator(mut self, validator: StringValidator<'a>) -> Self {
-        self.validators.push(validator);
-        self
-    }
-
     /// Sets the page size
     pub fn with_page_size(mut self, page_size: usize) -> Self {
         self.page_size = page_size;
         self
     }
 
-    /// Adds the validators to the collection of validators.
+    /// Adds a validator to the collection of validators.
+    ///
+    /// Validators are executed in the order they are stored, stopping at and displaying to the user
+    /// only the first validation error that might appear.
+    ///
+    /// The possible error is displayed to the user one line above the prompt.
+    pub fn with_validator(mut self, validator: StringValidator<'a>) -> Self {
+        self.validators.push(validator);
+        self
+    }
+
+    /// Adds the validators to the collection of validators in the order they are given.
+    ///
+    /// Validators are executed in the order they are stored, stopping at and displaying to the user
+    /// only the first validation error that might appear.
+    ///
+    /// The possible error is displayed to the user one line above the prompt.
     pub fn with_validators(mut self, validators: &[StringValidator<'a>]) -> Self {
         for validator in validators {
             self.validators.push(validator.clone());

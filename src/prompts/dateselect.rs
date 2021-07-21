@@ -43,7 +43,11 @@ pub struct DateSelect<'a> {
     pub formatter: DateFormatter<'a>,
 
     /// Collection of validators to apply to the user input.
-    /// Validation errors are displayed to the user one line above the prompt.
+    ///
+    /// Validators are executed in the order they are stored, stopping at and displaying to the user
+    /// only the first validation error that might appear.
+    ///
+    /// The possible error is displayed to the user one line above the prompt.
     pub validators: Vec<DateValidator<'a>>,
 }
 
@@ -55,8 +59,10 @@ impl<'a> DateSelect<'a> {
     /// Default help message.
     pub const DEFAULT_HELP_MESSAGE: Option<&'a str> =
         Some("arrows to move, with ctrl to move months and years, enter to select");
-    /// Default validator.
+
+    /// Default validators added to the [DateSelect] prompt, none.
     pub const DEFAULT_VALIDATORS: Vec<DateValidator<'a>> = vec![];
+
     /// Default week start.
     pub const DEFAULT_WEEK_START: chrono::Weekday = chrono::Weekday::Sun;
     /// Default min date.
@@ -116,12 +122,22 @@ impl<'a> DateSelect<'a> {
     }
 
     /// Adds a validator to the collection of validators.
+    ///
+    /// Validators are executed in the order they are stored, stopping at and displaying to the user
+    /// only the first validation error that might appear.
+    ///
+    /// The possible error is displayed to the user one line above the prompt.
     pub fn with_validator(mut self, validator: DateValidator<'a>) -> Self {
         self.validators.push(validator);
         self
     }
 
-    /// Adds the validators to the collection of validators.
+    /// Adds the validators to the collection of validators in the order they are given.
+    ///
+    /// Validators are executed in the order they are stored, stopping at and displaying to the user
+    /// only the first validation error that might appear.
+    ///
+    /// The possible error is displayed to the user one line above the prompt.
     pub fn with_validators(mut self, validators: &[DateValidator<'a>]) -> Self {
         for validator in validators {
             self.validators.push(validator.clone());
