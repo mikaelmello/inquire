@@ -16,6 +16,9 @@ default = ["builtin_validators"]
 builtin_validators = []
 date = ["chrono"]
 
+[package.metadata.docs.rs]
+features = ["date"]
+
 [dependencies]
 crossterm = "0.20"
 unicode-segmentation = "1"
