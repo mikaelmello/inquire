@@ -74,7 +74,7 @@ impl<'a> DateSelect<'a> {
     /// Default max date.
     pub const DEFAULT_MAX_DATE: Option<NaiveDate> = None;
 
-    /// Creates a [Date] with the provided message and options, along with default configuration values.
+    /// Creates a [DateSelect] with the provided message, along with default configuration values.
     pub fn new(message: &'a str) -> Self {
         Self {
             message,

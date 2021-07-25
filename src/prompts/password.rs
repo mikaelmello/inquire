@@ -9,8 +9,8 @@ use crate::{
 };
 /// Presents a message to the user and retrieves a single line of text input.
 ///
-/// [Password] differs from [Text] by not echoing the user input and having
-/// a smaller set of custom behaviors in comparison.
+/// [Password](crate::Password) differs from [Text](crate::Text) by not
+/// echoing the user input and having a smaller set of custom behaviors in comparison.
 ///
 /// By default, the response is always formatted as "********".
 #[derive(Clone)]

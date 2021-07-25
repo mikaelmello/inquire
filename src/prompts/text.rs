@@ -52,7 +52,7 @@ impl<'a> Text<'a> {
     /// Default page size, equal to the global default page size [config::DEFAULT_PAGE_SIZE]
     pub const DEFAULT_PAGE_SIZE: usize = config::DEFAULT_PAGE_SIZE;
 
-    /// Default validators added to the [Password] prompt, none.
+    /// Default validators added to the [Text] prompt, none.
     pub const DEFAULT_VALIDATORS: Vec<StringValidator<'a>> = vec![];
 
     /// Default help message.
