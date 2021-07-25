@@ -89,19 +89,3 @@ macro_rules! length {
         }
     }};
 }
-
-/// Built-in validator that checks whether the answer is able to be successfully parsed to a primitive type, such as f64.
-#[macro_export]
-#[cfg(feature = "builtin_validators")]
-macro_rules! parse_primitive {
-    ($type:ty) => {
-        $crate::parse_primitive! {$type, format!("Failure when parsing response to type {}", std::any::type_name::<$type>())}
-    };
-
-    ($type:ty, $message:expr) => {{
-        &|a| match a.parse::<$type>() {
-            Ok(_) => Ok(()),
-            Err(err) => Err(String::from($message)),
-        }
-    }};
-}

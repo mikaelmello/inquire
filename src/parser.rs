@@ -1,10 +1,9 @@
-pub type BoolParser<'a> = &'a dyn Fn(&str) -> Result<bool, String>;
+pub type BoolParser<'a> = &'a dyn Fn(&str) -> Result<bool, ()>;
+pub type CustomTypeParser<'a, T> = &'a dyn Fn(&str) -> Result<T, ()>;
 
 pub(in crate) const DEFAULT_BOOL_PARSER: BoolParser = &|ans| {
-    static ERROR_MESSAGE: &str = "Invalid answer, try typing 'y' for yes or 'n' for no";
-
     if ans.len() > 3 {
-        return Err(ERROR_MESSAGE.into());
+        return Err(());
     }
 
     let ans = ans.to_lowercase();
@@ -12,6 +11,18 @@ pub(in crate) const DEFAULT_BOOL_PARSER: BoolParser = &|ans| {
     match ans.as_str() {
         "y" | "yes" => Ok(true),
         "n" | "no" => Ok(false),
-        _ => Err(ERROR_MESSAGE.into()),
+        _ => Err(()),
     }
 };
+
+#[macro_export]
+#[cfg(feature = "builtin_validators")]
+macro_rules! parse_type {
+    ($type:ty) => {
+        $crate::parse_type! {$type, "Invalid input"}
+    };
+
+    ($type:ty,$message:expr) => {{
+        &|a| a.parse::<$type>().map_err(|_| ())
+    }};
+}

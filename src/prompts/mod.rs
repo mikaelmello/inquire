@@ -1,7 +1,7 @@
 mod confirm;
+mod custom_type;
 #[cfg(feature = "date")]
 mod dateselect;
-
 mod multiselect;
 mod password;
 mod select;
@@ -12,6 +12,7 @@ pub use confirm::Confirm;
 #[cfg(feature = "date")]
 pub use dateselect::DateSelect;
 
+pub use custom_type::CustomType;
 pub use multiselect::MultiSelect;
 pub use password::Password;
 pub use select::Select;
