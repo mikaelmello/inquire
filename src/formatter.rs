@@ -88,6 +88,7 @@ pub type OptionFormatter<'a> = &'a dyn Fn(&OptionAnswer) -> String;
 /// assert_eq!(String::from("You selected 2 options"), formatter(&ans));
 /// ```
 pub type MultiOptionFormatter<'a> = &'a dyn Fn(&[OptionAnswer]) -> String;
+pub type CustomTypeFormatter<'a, T> = &'a dyn Fn(T) -> String;
 
 #[cfg(feature = "date")]
 
