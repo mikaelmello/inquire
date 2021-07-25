@@ -24,15 +24,6 @@ fn main() {
         }
     };
 
-let formatter: MultiOptionFormatter = &|opts| {
-    let len = opts.len();
-    let options = match len {
-        1 => "option",
-        _ => "options",
-    };
-    format!("You selected {} {}", len, options)
-};
-
     let default = vec![4, 5, 6];
     let _ans = MultiSelect::new("Select the fruits for your shopping list:", &options)
         .with_help_message("This is a custom help")

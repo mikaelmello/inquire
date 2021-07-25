@@ -26,7 +26,7 @@ pub struct CustomType<'a, T> {
     /// Function that formats the user input and presents it to the user as the final rendering of the prompt.
     pub formatter: CustomTypeFormatter<'a, T>,
 
-    /// Function that parses the user input and returns the result
+    /// Function that parses the user input and returns the result value.
     pub parser: CustomTypeParser<'a, T>,
 
     /// Error message displayed when value could not be parsed from input.
@@ -70,17 +70,14 @@ where
         self
     }
 
-    /// Sets the parser
+    /// Sets the parser.
     pub fn with_parser(mut self, parser: CustomTypeParser<'a, T>) -> Self {
         self.parser = parser;
         self
     }
 
-    /// Sets the parser to the default parser but a custom error message.
-    pub fn with_error_message(mut self, error_message: &'a str) -> Self
-    where
-        T: FromStr,
-    {
+    /// Sets a custom error message displayed when a submission could not be parsed to a value.
+    pub fn with_error_message(mut self, error_message: &'a str) -> Self {
         self.error_message = String::from(error_message);
         self
     }

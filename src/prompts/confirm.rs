@@ -22,13 +22,13 @@ pub struct Confirm<'a> {
     /// Function that formats the user input and presents it to the user as the final rendering of the prompt.
     pub formatter: BoolFormatter<'a>,
 
-    /// Function that parses the user input and returns the result
+    /// Function that parses the user input and returns the result value.
     pub parser: BoolParser<'a>,
 
     /// Function that formats the default value to be presented to the user
     pub default_value_formatter: BoolFormatter<'a>,
 
-    /// Error message displayed when value could not be parsed from input.
+    /// Error message displayed when a value could not be parsed from input.
     pub error_message: String,
 }
 
@@ -81,9 +81,15 @@ impl<'a> Confirm<'a> {
         self
     }
 
-    /// Sets the parser
+    /// Sets the parser.
     pub fn with_parser(mut self, parser: BoolParser<'a>) -> Self {
         self.parser = parser;
+        self
+    }
+
+    /// Sets a custom error message displayed when a submission could not be parsed to a value.
+    pub fn with_error_message(mut self, error_message: &'a str) -> Self {
+        self.error_message = String::from(error_message);
         self
     }
 

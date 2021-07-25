@@ -69,6 +69,8 @@ Custom formatters receive the input as an argument, with varying types such as `
 
 ### Parsing
 
+Parsing features are related to two prompts: `Confirm` and `CustomType`. They return to you a value (of types `bool` or any custom type you might want) parsed from the user's text input. In both cases, you can either use default parsers that are already built-in or provide custom ones adhering to the function signatures.
+
 ### Filtering
 
 ### Error handling

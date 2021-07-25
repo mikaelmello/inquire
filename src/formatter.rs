@@ -4,7 +4,6 @@
 //! Formatters receive the user input to a given prompt and return a formatted
 //! output `String`, which are displayed to the user after the submission
 //! as their answer.
-//!
 
 use crate::answer::OptionAnswer;
 
@@ -88,6 +87,24 @@ pub type OptionFormatter<'a> = &'a dyn Fn(&OptionAnswer) -> String;
 /// assert_eq!(String::from("You selected 2 options"), formatter(&ans));
 /// ```
 pub type MultiOptionFormatter<'a> = &'a dyn Fn(&[OptionAnswer]) -> String;
+
+/// Type alias for formatters used in [CustomType](crate::CustomType) prompts.
+///
+/// Formatters receive the user input and return a [String] to be displayed
+/// to the user as the final answer.
+///
+/// # Examples
+///
+/// ```
+/// use inquire::CustomType;
+/// use inquire::formatter::CustomTypeFormatter;
+///
+/// let formatter: CustomTypeFormatter<f64> = &|i| format!("${:.2}", i);
+///
+/// assert_eq!(String::from("$12.33"), formatter(12.33));
+/// assert_eq!(String::from("$44.91"), formatter(44.9123));
+/// assert_eq!(String::from("$45.00"), formatter(44.998));
+/// ```
 pub type CustomTypeFormatter<'a, T> = &'a dyn Fn(T) -> String;
 
 #[cfg(feature = "date")]
