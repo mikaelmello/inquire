@@ -44,7 +44,7 @@ pub mod error;
 pub mod formatter;
 mod input;
 mod key;
-mod parser;
+pub mod parser;
 mod prompts;
 mod renderer;
 mod terminal;
