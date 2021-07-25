@@ -19,11 +19,6 @@ pub enum InquireError {
     #[error("IO error: {0}")]
     IO(#[from] io::Error),
 
-    /// Invalid state when processing prompt.
-    /// Created to check edge cases but should not happen.
-    #[error("Invalid state: {0}")]
-    InvalidState(String),
-
     /// Returned when the user canceled the operation, probably
     /// by pressing Ctrl+C or ESC.
     #[error("Operation was canceled by the user")]
