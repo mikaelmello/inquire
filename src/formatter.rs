@@ -4,6 +4,7 @@ pub type StringFormatter<'a> = &'a dyn Fn(&str) -> String;
 pub type BoolFormatter<'a> = &'a dyn Fn(bool) -> String;
 pub type OptionFormatter<'a> = &'a dyn Fn(&OptionAnswer) -> String;
 pub type MultiOptionFormatter<'a> = &'a dyn Fn(&[OptionAnswer]) -> String;
+pub type CustomTypeFormatter<'a, T> = &'a dyn Fn(T) -> String;
 
 #[cfg(feature = "date")]
 pub type DateFormatter<'a> = &'a dyn Fn(chrono::NaiveDate) -> String;

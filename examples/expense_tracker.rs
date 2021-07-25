@@ -1,6 +1,4 @@
-use inquire::{
-    error::InquireResult, parse_primitive, required, DateSelect, MultiSelect, Select, Text,
-};
+use inquire::{error::InquireResult, required, CustomType, DateSelect, MultiSelect, Select, Text};
 
 fn main() -> InquireResult<()> {
     let _date = DateSelect::new("Date:").prompt()?;
@@ -14,13 +12,11 @@ fn main() -> InquireResult<()> {
         .with_page_size(5)
         .prompt()?;
 
-    // TODO: Figure out a way to make number prompts easier to write from the user perspective.
-    let _amount = Text::new("Amount:")
-        .with_validator(parse_primitive!(f64, "Please type a valid number"))
+    let _amount: f64 = CustomType::new("Amount:")
         .with_formatter(&|i| format!("${}", i))
+        .with_error_message("Please type a valid number")
         .with_help_message("Type the amount in US dollars using a decimal point as a separator")
-        .prompt()?
-        .parse::<f64>()
+        .prompt()
         .unwrap();
 
     let _description = Text::new("Description:")

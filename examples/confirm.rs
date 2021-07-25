@@ -23,8 +23,9 @@ fn main() {
         parser: &|ans| match ans {
             "si" => Ok(true),
             "no" => Ok(false),
-            _ => Err("Reply with 'si' or 'no'".into()),
+            _ => Err(()),
         },
+        error_message: "Reply with 'si' or 'no'".into(),
         default_value_formatter: &|def| match def {
             true => String::from("si"),
             false => String::from("no"),
