@@ -130,7 +130,7 @@ impl<'a> Text<'a> {
     }
 
     /// Parses the provided behavioral and rendering options and prompts
-    /// the CLI user for input according to them.
+    /// the CLI user for input according to the defined rules.
     pub fn prompt(self) -> InquireResult<String> {
         let terminal = Terminal::new()?;
         let mut renderer = Renderer::new(terminal)?;

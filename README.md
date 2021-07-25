@@ -85,6 +85,15 @@ The default filter function does a naive case-insensitive comparison between the
 
 ### Error handling
 
+Error handling when using `inquire` is pretty simple. Instantiating prompt structs is not fallible by design, in order to avoid requiring chaining of `map` and `and_then` methods to subsequent configuration method calls such as `with_help_message()`. All fallible operations are exposable only when you call `prompt()` on the instantiated prompt struct.
+
+`prompt` calls return a `Result` containing either your expected response value or an `Err` of type 'InquireError`. An `InquireError` has the following variants:
+
+- **NotTTY**: The input device is not a TTY, which means that enabling raw mode on the terminal in order to listen to input events is not possible. I currently do not know if it is possible to make the library work even if that's the case.
+- **InvalidConfiguration(String)**: Some aspects of the prompt configuration were considered to be invalid, with more details given in the value string.
+  - This error is only possible in `Select`, `MultiSelect` and `DateSelect` prompts, where specific settings might be incompatible. All other prompts always have valid configurations by design.
+- **IO(io::Error)**: There was an error when performing IO operations. IO errors are not handled inside `inquire` to keep the library simple.
+- **OperationCanceled**: The user canceled the prompt before submitting a response. The user might cancel the operation by pressing `Ctrl-C` or `ESC`.
 
 ## Prompts
 
