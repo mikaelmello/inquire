@@ -31,10 +31,10 @@ pub struct Confirm<'a> {
 }
 
 impl<'a> Confirm<'a> {
-    /// Default formatter, [true] maps to "Yes" and [false] maps to "No".
+    /// Default formatter, set to [DEFAULT_BOOL_FORMATTER](crate::formatter::DEFAULT_BOOL_FORMATTER)
     pub const DEFAULT_FORMATTER: BoolFormatter<'a> = DEFAULT_BOOL_FORMATTER;
-    /// Default parser, matches ["y"] and ["yes"] to [true], ["n"] and ["no"]
-    /// to [false], and an [Err] otherwise.
+
+    /// Default input parser.
     pub const DEFAULT_PARSER: BoolParser<'a> = DEFAULT_BOOL_PARSER;
 
     /// Default formatter for default values, mapping [true] to ["Y/n"] and
@@ -68,7 +68,7 @@ impl<'a> Confirm<'a> {
         self
     }
 
-    /// Sets the formatter
+    /// Sets the formatter.
     pub fn with_formatter(mut self, formatter: BoolFormatter<'a>) -> Self {
         self.formatter = formatter;
         self

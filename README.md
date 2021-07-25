@@ -57,7 +57,15 @@ The validators are typed as a reference to `dyn Fn`. This allows both functions 
 
 Finally, `inquire` has a feature called `builtin_validators` that is included by default. When the feature is on, several built-in validators are exported at the root-level of the library in the form of macros, check their documentation to see more details.
 
+The docs provide full-featured examples.
+
 ### Formatting
+
+Formatting is the process of transforming the user input into a readable output displayed after the user submits their response. By default, this is in some cases just echoing back the input itself, such as in Text prompts. Other prompts have different formatting rules by default, for example DateSelect which formats the selected date into something like "August 5, 2021".
+
+All prompts provide an API to set custom formatters. By setting a formatter, you can customize how the user's response is displayed to them. For example, you might want to format a selected date into a new format such as "05/08/2021".
+
+Custom formatters receive the input as an argument, with varying types such as `&str`, `chrono::NaiveDate`, and return a `String` containing the output to be displayed to the user. Check the docs for specific examples.
 
 ### Parsing
 

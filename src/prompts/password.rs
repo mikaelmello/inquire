@@ -34,7 +34,7 @@ pub struct Password<'a> {
 }
 
 impl<'a> Password<'a> {
-    /// Default formatter.
+    /// Default formatter, set to always display `"********"` regardless of input length.
     pub const DEFAULT_FORMATTER: StringFormatter<'a> = &|_| String::from("********");
 
     /// Default validators added to the [Password] prompt, none.
@@ -59,13 +59,15 @@ impl<'a> Password<'a> {
         self
     }
 
-    /// Sets the formatter
+    /// Sets the formatter.
     pub fn with_formatter(mut self, formatter: StringFormatter<'a>) -> Self {
         self.formatter = formatter;
         self
     }
 
-    /// Adds a validator to the collection of validators.
+    /// Adds a validator to the collection of validators. You might want to use this feature
+    /// in case you need to limit the user to specific choices, such as requiring
+    /// special characters in the password.
     ///
     /// Validators are executed in the order they are stored, stopping at and displaying to the user
     /// only the first validation error that might appear.

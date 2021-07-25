@@ -46,10 +46,11 @@ pub struct Text<'a> {
 }
 
 impl<'a> Text<'a> {
+    /// Default formatter, set to [DEFAULT_STRING_FORMATTER](crate::formatter::DEFAULT_STRING_FORMATTER)
+    pub const DEFAULT_FORMATTER: StringFormatter<'a> = DEFAULT_STRING_FORMATTER;
+
     /// Default page size, equal to the global default page size [config::DEFAULT_PAGE_SIZE]
     pub const DEFAULT_PAGE_SIZE: usize = config::DEFAULT_PAGE_SIZE;
-    /// Default formatter.
-    pub const DEFAULT_FORMATTER: StringFormatter<'a> = DEFAULT_STRING_FORMATTER;
 
     /// Default validators added to the [Password] prompt, none.
     pub const DEFAULT_VALIDATORS: Vec<StringValidator<'a>> = vec![];
@@ -88,7 +89,7 @@ impl<'a> Text<'a> {
         self
     }
 
-    /// Sets the formatter
+    /// Sets the formatter.
     pub fn with_formatter(mut self, formatter: StringFormatter<'a>) -> Self {
         self.formatter = formatter;
         self
@@ -100,7 +101,9 @@ impl<'a> Text<'a> {
         self
     }
 
-    /// Adds a validator to the collection of validators.
+    /// Adds a validator to the collection of validators. You might want to use this feature
+    /// in case you need to require certain features from the user's answer, such as
+    /// defining a limit of characters.
     ///
     /// Validators are executed in the order they are stored, stopping at and displaying to the user
     /// only the first validation error that might appear.
@@ -112,6 +115,8 @@ impl<'a> Text<'a> {
     }
 
     /// Adds the validators to the collection of validators in the order they are given.
+    /// You might want to use this feature in case you need to require certain features
+    /// from the user's answer, such as defining a limit of characters.
     ///
     /// Validators are executed in the order they are stored, stopping at and displaying to the user
     /// only the first validation error that might appear.

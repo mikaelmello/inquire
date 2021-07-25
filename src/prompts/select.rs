@@ -44,16 +44,21 @@ pub struct Select<'a> {
 }
 
 impl<'a> Select<'a> {
-    /// Default formatter.
+    /// Default formatter, set to [DEFAULT_OPTION_FORMATTER](crate::formatter::DEFAULT_OPTION_FORMATTER)
     pub const DEFAULT_FORMATTER: OptionFormatter<'a> = formatter::DEFAULT_OPTION_FORMATTER;
+
     /// Default filter.
     pub const DEFAULT_FILTER: Filter<'a> = config::DEFAULT_FILTER;
+
     /// Default page size.
     pub const DEFAULT_PAGE_SIZE: usize = config::DEFAULT_PAGE_SIZE;
+
     /// Default value of vim mode.
     pub const DEFAULT_VIM_MODE: bool = config::DEFAULT_VIM_MODE;
+
     /// Default starting cursor index.
     pub const DEFAULT_STARTING_CURSOR: usize = 0;
+
     /// Default help message.
     pub const DEFAULT_HELP_MESSAGE: Option<&'a str> =
         Some("↑↓ to move, space or enter to select, type to filter");

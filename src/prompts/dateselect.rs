@@ -52,10 +52,12 @@ pub struct DateSelect<'a> {
 }
 
 impl<'a> DateSelect<'a> {
-    /// Default formatter.
+    /// Default formatter, set to [DEFAULT_DATE_FORMATTER](crate::formatter::DEFAULT_DATE_FORMATTER)
     pub const DEFAULT_FORMATTER: DateFormatter<'a> = formatter::DEFAULT_DATE_FORMATTER;
+
     /// Default value of vim mode. It is true because there is no typing functionality to be lost here.
     pub const DEFAULT_VIM_MODE: bool = true;
+
     /// Default help message.
     pub const DEFAULT_HELP_MESSAGE: Option<&'a str> =
         Some("arrows to move, with ctrl to move months and years, enter to select");
@@ -65,8 +67,10 @@ impl<'a> DateSelect<'a> {
 
     /// Default week start.
     pub const DEFAULT_WEEK_START: chrono::Weekday = chrono::Weekday::Sun;
+
     /// Default min date.
     pub const DEFAULT_MIN_DATE: Option<NaiveDate> = None;
+
     /// Default max date.
     pub const DEFAULT_MAX_DATE: Option<NaiveDate> = None;
 
@@ -121,7 +125,8 @@ impl<'a> DateSelect<'a> {
         self
     }
 
-    /// Adds a validator to the collection of validators.
+    /// Adds a validator to the collection of validators. You might want to use this feature
+    /// in case you need to limit the user to specific choices, such as not allowing weekends.
     ///
     /// Validators are executed in the order they are stored, stopping at and displaying to the user
     /// only the first validation error that might appear.
@@ -133,6 +138,8 @@ impl<'a> DateSelect<'a> {
     }
 
     /// Adds the validators to the collection of validators in the order they are given.
+    /// You might want to use this feature in case you need to limit the user to specific
+    /// choices, such as not allowing weekends.
     ///
     /// Validators are executed in the order they are stored, stopping at and displaying to the user
     /// only the first validation error that might appear.

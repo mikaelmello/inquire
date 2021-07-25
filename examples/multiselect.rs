@@ -1,4 +1,4 @@
-use inquire::{validator::MultiOptionValidator, MultiSelect};
+use inquire::{formatter::MultiOptionFormatter, validator::MultiOptionValidator, MultiSelect};
 
 fn main() {
     let options = vec![
@@ -23,6 +23,15 @@ fn main() {
             false => Err("Remember to buy pineapples".into()),
         }
     };
+
+let formatter: MultiOptionFormatter = &|opts| {
+    let len = opts.len();
+    let options = match len {
+        1 => "option",
+        _ => "options",
+    };
+    format!("You selected {} {}", len, options)
+};
 
     let default = vec![4, 5, 6];
     let _ans = MultiSelect::new("Select the fruits for your shopping list:", &options)

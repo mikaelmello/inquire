@@ -41,7 +41,7 @@ pub mod config;
 #[cfg(feature = "date")]
 mod date_utils;
 pub mod error;
-mod formatter;
+pub mod formatter;
 mod input;
 mod key;
 mod parser;

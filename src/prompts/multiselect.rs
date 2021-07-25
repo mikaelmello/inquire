@@ -56,19 +56,25 @@ pub struct MultiSelect<'a> {
 }
 
 impl<'a> MultiSelect<'a> {
-    /// Default formatter that maps the collection of options to their string values and joins them using a comma as the separator.
+    /// Default formatter, set to [DEFAULT_MULTI_OPTION_FORMATTER](crate::formatter::DEFAULT_MULTI_OPTION_FORMATTER)
     pub const DEFAULT_FORMATTER: MultiOptionFormatter<'a> =
         formatter::DEFAULT_MULTI_OPTION_FORMATTER;
+
     /// Default filter, equal to the global default filter [config::DEFAULT_FILTER]
     pub const DEFAULT_FILTER: Filter<'a> = config::DEFAULT_FILTER;
+
     /// Default page size, equal to the global default page size [config::DEFAULT_PAGE_SIZE]
     pub const DEFAULT_PAGE_SIZE: usize = config::DEFAULT_PAGE_SIZE;
+
     /// Default value of vim mode, equal to the global default value [config::DEFAULT_PAGE_SIZE]
     pub const DEFAULT_VIM_MODE: bool = config::DEFAULT_VIM_MODE;
+
     /// Default starting cursor index.
     pub const DEFAULT_STARTING_CURSOR: usize = 0;
+
     /// Default behavior of keeping or cleaning the current filter value.
     pub const DEFAULT_KEEP_FILTER: bool = true;
+
     /// Default help message.
     pub const DEFAULT_HELP_MESSAGE: Option<&'a str> =
         Some("↑↓ to move, space to select one, → to all, ← to none, type to filter");
@@ -135,7 +141,9 @@ impl<'a> MultiSelect<'a> {
         self
     }
 
-    /// Sets the validator to apply to the user input.
+    /// Sets the validator to apply to the user input. You might want to use this feature
+    /// in case you need to limit the user to specific choices, such as limiting the number
+    /// of selections.
     ///
     /// In case of error, the message is displayed one line above the prompt.
     pub fn with_validator(mut self, validator: MultiOptionValidator<'a>) -> Self {
