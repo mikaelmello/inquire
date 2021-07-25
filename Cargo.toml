@@ -40,3 +40,7 @@ required-features = ["date"]
 [[example]]
 name = "expense_tracker"
 required-features = ["date"]
+
+[[example]]
+name = "date_complete"
+required-features = ["date"]
