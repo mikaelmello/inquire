@@ -60,7 +60,7 @@ impl<'a> MultiSelect<'a> {
     pub const DEFAULT_FORMATTER: MultiOptionFormatter<'a> =
         formatter::DEFAULT_MULTI_OPTION_FORMATTER;
 
-    /// Default filter, equal to the global default filter [config::DEFAULT_FILTER]
+    /// Default filter, equal to the global default filter [config::DEFAULT_FILTER].
     pub const DEFAULT_FILTER: Filter<'a> = config::DEFAULT_FILTER;
 
     /// Default page size, equal to the global default page size [config::DEFAULT_PAGE_SIZE]

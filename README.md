@@ -71,7 +71,17 @@ Custom formatters receive the input as an argument, with varying types such as `
 
 Parsing features are related to two prompts: `Confirm` and `CustomType`. They return to you a value (of types `bool` or any custom type you might want) parsed from the user's text input. In both cases, you can either use default parsers that are already built-in or provide custom ones adhering to the function signatures.
 
+The default `bool` parser returns `true` if the input is either `"y"` or `"yes"`, in a case-insensitive comparison. Similarly, the parser returns `false` if the input is either `"n"` or `"no"`.
+
+The default parser for `CustomType` prompts calls the `parse::<T>()` method on the input string. This means that if you want to create a `CustomType` with default settings, the wanted return type must implement the `FromStr` trait.
+
 ### Filtering
+
+Filtering is applicable to two prompts: `Select` and `MultiSelect`. They provide the user the ability to filter the options based on their text input. This is specially useful when there are a lot of options for the user to choose from, allowing them to quickly find their expected options.
+
+Filter functions receive three arguments: the current user input, the option string value and the option index. They must return a `bool` value indicating whether the option should be part of the results or not.
+
+The default filter function does a naive case-insensitive comparison between the option string value and the current user input, returning `true` if the option string value contains the user input as a substring.
 
 ### Error handling
 

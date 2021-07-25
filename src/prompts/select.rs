@@ -47,7 +47,7 @@ impl<'a> Select<'a> {
     /// Default formatter, set to [DEFAULT_OPTION_FORMATTER](crate::formatter::DEFAULT_OPTION_FORMATTER)
     pub const DEFAULT_FORMATTER: OptionFormatter<'a> = formatter::DEFAULT_OPTION_FORMATTER;
 
-    /// Default filter.
+    /// Default filter, equal to the global default filter [config::DEFAULT_FILTER].
     pub const DEFAULT_FILTER: Filter<'a> = config::DEFAULT_FILTER;
 
     /// Default page size.
