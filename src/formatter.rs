@@ -1,5 +1,17 @@
 use crate::answer::OptionAnswer;
 
+/// Type alias for formatters that receive a string slice as the input,
+/// such as [Text](crate::Text) and [Password](crate::Password).
+/// 
+/// Formatters receive the user input and return a [String] to be displayed
+/// to the user as the final formatting 
+///
+/// If the input provided by the user is invalid, your validator should return [Ok(())].
+///
+/// If the input is not valid, your validator should return [Err(String)],
+/// where the content of [Err] is a string whose content will be displayed
+/// to the user as an error message. It is recommended that this value gives
+/// a helpful feedback to the user, e.g. "Your password should contain at least 8 characters".
 pub type StringFormatter<'a> = &'a dyn Fn(&str) -> String;
 pub type BoolFormatter<'a> = &'a dyn Fn(bool) -> String;
 pub type OptionFormatter<'a> = &'a dyn Fn(&OptionAnswer) -> String;

@@ -1,47 +1,114 @@
 //! This module contains the type aliases for functions called as validators
 //! of a given input.
 //!
-//! It also provides several built-in validators generated through macros,
+//! Validators receive the user input to a given prompt and decide whether
+//! they are valid, returning `Ok(())` in the process, or invalid, returning
+//! `Err(String)`, where the `String` content is an error message to be
+//! displayed to the end user.
+//!
+//! When creating containers of validators, e.g. when calling `with_validators`
+//! in a prompt, you might need to type hint the container with one of the types
+//! below.
+//!
+//! This module also provides several built-in validators generated through macros,
 //! exported with the `builtin_validators` feature.
 
 use crate::answer::OptionAnswer;
 
 /// Type alias for validators that receive a string slice as the input,
 /// such as [Text](crate::Text) and [Password](crate::Password).
-/// When creating containers of validators, you might need to type hint
-/// them using this type.
 ///
-/// If the input provided by the user is invalid, your validator should return [Ok(())].
+/// If the input provided by the user is valid, your validator should return `Ok(())`.
 ///
-/// If the input is not valid, your validator should return [Err(String)],
-/// where the content of [Err] is a string whose content will be displayed
+/// If the input is not valid, your validator should return `Err(String)`,
+/// where the content of `Err` is a string whose content will be displayed
 /// to the user as an error message. It is recommended that this value gives
-/// a helpful feedback to the user, e.g. "Your password should contain at least 8 characters".
+/// a helpful feedback to the user.
+///
+/// # Examples
+///
+/// ```
+/// use inquire::validator::StringValidator;
+///
+/// let validator: StringValidator = &|input| match input.chars().find(|c| c.is_numeric()) {
+///     Some(_) => Ok(()),
+///     None => Err(String::from(
+///         "Your password should contain at least 1 digit",
+///     )),
+/// };
+///
+/// assert_eq!(Ok(()), validator("hunter2"));
+/// assert_eq!(
+///     Err(String::from("Your password should contain at least 1 digit")),
+///     validator("password")
+/// );
+/// ```
 pub type StringValidator<'a> = &'a dyn Fn(&str) -> Result<(), String>;
 
 /// Type alias for validators used in [DateSelect](crate::DateSelect) prompts.
-/// When creating containers of validators, you might need to type hint
-/// them using this type.
 ///
-/// If the input provided by the user is invalid, your validator should return [Ok(())].
+/// If the input provided by the user is valid, your validator should return `Ok(())`.
 ///
-/// If the input is not valid, your validator should return [Err(String)],
-/// where the content of [Err] is a string whose content will be displayed
+/// If the input is not valid, your validator should return `Err(String)`,
+/// where the content of `Err` is a string whose content will be displayed
 /// to the user as an error message. It is recommended that this value gives
-/// a helpful feedback to the user, e.g. "Setting your appointment on Saturdays is not allowed".
+/// a helpful feedback to the user.
+///
+/// # Examples
+///
+/// ```
+/// use chrono::{Datelike, NaiveDate, Weekday};
+/// use inquire::validator::DateValidator;
+///
+/// let validator: DateValidator = &|input| {
+///     if input.weekday() == Weekday::Sat || input.weekday() == Weekday::Sun {
+///         Err(String::from("Weekends are not allowed"))
+///     } else {
+///         Ok(())
+///     }
+/// };
+///
+/// assert_eq!(Ok(()), validator(NaiveDate::from_ymd(2021, 7, 26)));
+/// assert_eq!(
+///     Err(String::from("Weekends are not allowed")),
+///     validator(NaiveDate::from_ymd(2021, 7, 25))
+/// );
+/// ```
 #[cfg(feature = "date")]
 pub type DateValidator<'a> = &'a dyn Fn(chrono::NaiveDate) -> Result<(), String>;
 
 /// Type alias for validators used in [MultiSelect](crate::MultiSelect) prompts.
-/// When creating containers of validators, you might need to type hint
-/// them using this type.
 ///
-/// If the input provided by the user is invalid, your validator should return [Ok(())].
+/// If the input provided by the user is valid, your validator should return `Ok(())`.
 ///
-/// If the input is not valid, your validator should return [Err(String)],
-/// where the content of [Err] is a string whose content will be displayed
+/// If the input is not valid, your validator should return `Err(String)`,
+/// where the content of `Err` is a string whose content will be displayed
 /// to the user as an error message. It is recommended that this value gives
-/// a helpful feedback to the user, e.g. "You should select at most two options".
+/// a helpful feedback to the user.
+///
+/// # Examples
+///
+/// ```
+/// use inquire::OptionAnswer;
+/// use inquire::validator::MultiOptionValidator;
+///
+/// let validator: MultiOptionValidator = &|input| {
+///     if input.len() <= 2 {
+///         Ok(())
+///     } else {
+///         Err(String::from("You should select at most two options"))
+///     }
+/// };
+///
+/// let mut ans = vec![OptionAnswer::new(0, "a"), OptionAnswer::new(1, "b")];
+/// assert_eq!(Ok(()), validator(&ans));
+///
+/// ans.push(OptionAnswer::new(3, "d"));
+/// assert_eq!(
+///     Err(String::from("You should select at most two options")),
+///     validator(&ans)
+/// );
+/// ```
 pub type MultiOptionValidator<'a> = &'a dyn Fn(&[OptionAnswer]) -> Result<(), String>;
 
 /// Built-in validator that checks whether the answer is not empty.

@@ -12,7 +12,21 @@ pub struct OptionAnswer {
 }
 
 impl OptionAnswer {
-    pub(in crate) fn new(index: usize, value: &str) -> Self {
+    /// Constructor for OptionAnswer.
+    ///
+    /// # Arguments
+    ///
+    /// * `index` - Index of the option.
+    /// * `value` - String value of the option
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use inquire::OptionAnswer;
+    ///
+    /// let answer = OptionAnswer::new(0, "a");
+    /// ```
+    pub fn new(index: usize, value: &str) -> Self {
         Self {
             index,
             value: value.to_string(),
