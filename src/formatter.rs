@@ -5,7 +5,7 @@
 //! output `String`, which are displayed to the user after the submission
 //! as their answer.
 
-use crate::answer::OptionAnswer;
+use crate::option_answer::OptionAnswer;
 
 /// Type alias for formatters that receive a string slice as the input,
 /// such as [Text](crate::Text) and [Password](crate::Password).

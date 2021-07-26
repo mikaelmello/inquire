@@ -36,7 +36,6 @@
 
 #![warn(missing_docs)]
 
-mod answer;
 pub mod config;
 #[cfg(feature = "date")]
 mod date_utils;
@@ -44,6 +43,7 @@ pub mod error;
 pub mod formatter;
 mod input;
 mod key;
+pub mod option_answer;
 pub mod parser;
 mod prompts;
 mod renderer;
@@ -52,4 +52,3 @@ mod utils;
 pub mod validator;
 
 pub use crate::prompts::*;
-pub use answer::OptionAnswer;

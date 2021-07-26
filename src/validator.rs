@@ -13,7 +13,7 @@
 //! This module also provides several built-in validators generated through macros,
 //! exported with the `builtin_validators` feature.
 
-use crate::answer::OptionAnswer;
+use crate::option_answer::OptionAnswer;
 
 /// Type alias for validators that receive a string slice as the input,
 /// such as [Text](crate::Text) and [Password](crate::Password).

@@ -1,12 +1,12 @@
 use std::{collections::HashSet, iter::FromIterator};
 
 use crate::{
-    answer::OptionAnswer,
     config::{self, Filter},
     error::{InquireError, InquireResult},
     formatter::{self, MultiOptionFormatter},
     input::Input,
     key::{Key, KeyModifiers},
+    option_answer::OptionAnswer,
     renderer::Renderer,
     terminal::Terminal,
     utils::paginate,

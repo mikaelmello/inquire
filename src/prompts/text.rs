@@ -1,12 +1,12 @@
 use std::cmp::min;
 
 use crate::{
-    answer::OptionAnswer,
     config::{self, Suggester},
     error::{InquireError, InquireResult},
     formatter::{StringFormatter, DEFAULT_STRING_FORMATTER},
     input::Input,
     key::{Key, KeyModifiers},
+    option_answer::OptionAnswer,
     renderer::Renderer,
     terminal::Terminal,
     utils::paginate,
