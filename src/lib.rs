@@ -8,15 +8,20 @@
 //!   - Select one option among many choices
 //!   - Select many options among many choices
 //!     - The user can filter the options on both selects!
-//!   - Input a line of text (with possible suggestions)
+//!   - Input a line of text
+//!     - You can easily set-up auto-completion.
 //!   - Confirm an action with yes or no responses
-//!   - Input a password without echoing the content
-//!   - and more to come!
+//!   - Input a text and have it automatically validated and parsed to retrieve any type
+//!     - Useful when asking for numerical inputs, or even formatted ids!
+//!   - Input a password
+//!   - Pick a date from an interactive calendar.
 //!
 //! You can customize several aspects of each one of these prompts such as the page
 //! size and the behavior of the filter when selecting options, help and error messages,
 //! validate inputs, format the final output, etc.
 //!
+//! A more complete documentation is present in the `README.md` file of the repository.
+//! Please go there while the proper docs are being updated.
 //!
 //! Example
 //! ```rust no_run
