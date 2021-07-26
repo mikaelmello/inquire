@@ -5,7 +5,7 @@ use std::{
 };
 
 use crate::{
-    date_utils::get_month,
+    date_utils::{get_current_date, get_month},
     error::{InquireError, InquireResult},
     formatter::{self, DateFormatter},
     key::{Key, KeyModifiers},
@@ -78,7 +78,7 @@ impl<'a> DateSelect<'a> {
     pub fn new(message: &'a str) -> Self {
         Self {
             message,
-            starting_date: chrono::Local::now().date().naive_local(),
+            starting_date: get_current_date(),
             min_date: Self::DEFAULT_MIN_DATE,
             max_date: Self::DEFAULT_MAX_DATE,
             help_message: Self::DEFAULT_HELP_MESSAGE,
@@ -316,7 +316,7 @@ impl<'a> DateSelectPrompt<'a> {
             get_month(self.current_date.month()),
             self.current_date.year(),
             self.week_start,
-            chrono::Local::now().date().naive_local(),
+            get_current_date(),
             self.current_date,
             self.min_date,
             self.max_date,
@@ -362,7 +362,7 @@ impl<'a> DateSelectPrompt<'a> {
 
 #[cfg(test)]
 mod test {
-    use crate::{renderer::Renderer, terminal::Terminal, DateSelect};
+    use crate::{date_utils::get_current_date, renderer::Renderer, terminal::Terminal, DateSelect};
     use chrono::NaiveDate;
     use crossterm::event::{KeyCode, KeyEvent};
     use ntest::timeout;
@@ -394,11 +394,7 @@ mod test {
         };
     }
 
-    date_test!(
-        today_date,
-        vec![KeyCode::Enter],
-        chrono::Local::now().date().naive_local()
-    );
+    date_test!(today_date, vec![KeyCode::Enter], get_current_date());
 
     date_test!(
         custom_default_date,
@@ -418,7 +414,7 @@ mod test {
             .collect();
         let mut read = read.iter();
 
-        let today_date = chrono::Local::now().date().naive_local();
+        let today_date = get_current_date();
 
         let validator = |d| {
             if today_date > d {

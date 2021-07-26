@@ -2,6 +2,10 @@ use core::panic;
 
 use chrono::NaiveDate;
 
+pub fn get_current_date() -> NaiveDate {
+    chrono::Local::now().date().naive_local()
+}
+
 pub fn get_start_date(month: chrono::Month, year: i32) -> NaiveDate {
     chrono::NaiveDate::from_ymd(year, month.number_from_month(), 1)
 }
