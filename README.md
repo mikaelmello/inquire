@@ -21,6 +21,14 @@
 ![Animated GIF making a demonstration of a questionnaire created with this library. You can replay this recording in your terminal with asciinema play command - asciinema play ./assets/expense_tracker.cast](assets/expense_tracker.gif)
 [Source](examples/expense_tracker.rs)
 
+## Usage
+
+Put this line in your `Cargo.toml`, under `[dependencies]`.
+
+```
+inquire = "0.0.6"
+```
+
 ## Examples
 
 Examples can be found in the `examples` directory. Run them to see basic behavior:
