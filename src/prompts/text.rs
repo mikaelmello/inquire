@@ -1,12 +1,12 @@
 use std::cmp::min;
 
 use crate::{
-    answer::OptionAnswer,
     config::{self, Suggester},
     error::{InquireError, InquireResult},
     formatter::{StringFormatter, DEFAULT_STRING_FORMATTER},
     input::Input,
     key::{Key, KeyModifiers},
+    option_answer::OptionAnswer,
     renderer::Renderer,
     terminal::Terminal,
     utils::paginate,
@@ -15,7 +15,7 @@ use crate::{
 
 const DEFAULT_HELP_MESSAGE: &str = "↑↓ to move, tab to auto-complete, enter to submit";
 
-/// Presents a message to the user and retrieves a single line of text input.
+/// Prompts the user for a single line of text input.
 #[derive(Clone)]
 pub struct Text<'a> {
     /// Message to be presented to the user.
@@ -31,7 +31,11 @@ pub struct Text<'a> {
     pub formatter: StringFormatter<'a>,
 
     /// Collection of validators to apply to the user input.
-    /// Validation errors are displayed to the user one line above the prompt.
+    ///
+    /// Validators are executed in the order they are stored, stopping at and displaying to the user
+    /// only the first validation error that might appear.
+    ///
+    /// The possible error is displayed to the user one line above the prompt.
     pub validators: Vec<StringValidator<'a>>,
 
     /// Page size of the suggestions displayed to the user, when applicable.
@@ -42,12 +46,15 @@ pub struct Text<'a> {
 }
 
 impl<'a> Text<'a> {
+    /// Default formatter, set to [DEFAULT_STRING_FORMATTER](crate::formatter::DEFAULT_STRING_FORMATTER)
+    pub const DEFAULT_FORMATTER: StringFormatter<'a> = DEFAULT_STRING_FORMATTER;
+
     /// Default page size, equal to the global default page size [config::DEFAULT_PAGE_SIZE]
     pub const DEFAULT_PAGE_SIZE: usize = config::DEFAULT_PAGE_SIZE;
-    /// Default formatter.
-    pub const DEFAULT_FORMATTER: StringFormatter<'a> = DEFAULT_STRING_FORMATTER;
-    /// Default collection of validators.
-    pub const DEFAULT_VALIDATORS: Vec<StringValidator<'a>> = Vec::new();
+
+    /// Default validators added to the [Text] prompt, none.
+    pub const DEFAULT_VALIDATORS: Vec<StringValidator<'a>> = vec![];
+
     /// Default help message.
     pub const DEFAULT_HELP_MESSAGE: Option<&'a str> = None;
 
@@ -82,15 +89,9 @@ impl<'a> Text<'a> {
         self
     }
 
-    /// Sets the formatter
+    /// Sets the formatter.
     pub fn with_formatter(mut self, formatter: StringFormatter<'a>) -> Self {
         self.formatter = formatter;
-        self
-    }
-
-    /// Adds a validator to the collection of validators.
-    pub fn with_validator(mut self, validator: StringValidator<'a>) -> Self {
-        self.validators.push(validator);
         self
     }
 
@@ -100,7 +101,27 @@ impl<'a> Text<'a> {
         self
     }
 
-    /// Adds the validators to the collection of validators.
+    /// Adds a validator to the collection of validators. You might want to use this feature
+    /// in case you need to require certain features from the user's answer, such as
+    /// defining a limit of characters.
+    ///
+    /// Validators are executed in the order they are stored, stopping at and displaying to the user
+    /// only the first validation error that might appear.
+    ///
+    /// The possible error is displayed to the user one line above the prompt.
+    pub fn with_validator(mut self, validator: StringValidator<'a>) -> Self {
+        self.validators.push(validator);
+        self
+    }
+
+    /// Adds the validators to the collection of validators in the order they are given.
+    /// You might want to use this feature in case you need to require certain features
+    /// from the user's answer, such as defining a limit of characters.
+    ///
+    /// Validators are executed in the order they are stored, stopping at and displaying to the user
+    /// only the first validation error that might appear.
+    ///
+    /// The possible error is displayed to the user one line above the prompt.
     pub fn with_validators(mut self, validators: &[StringValidator<'a>]) -> Self {
         for validator in validators {
             self.validators.push(validator.clone());
@@ -109,7 +130,7 @@ impl<'a> Text<'a> {
     }
 
     /// Parses the provided behavioral and rendering options and prompts
-    /// the CLI user for input according to them.
+    /// the CLI user for input according to the defined rules.
     pub fn prompt(self) -> InquireResult<String> {
         let terminal = Terminal::new()?;
         let mut renderer = Renderer::new(terminal)?;
@@ -118,22 +139,6 @@ impl<'a> Text<'a> {
 
     pub(in crate) fn prompt_with_renderer(self, renderer: &mut Renderer) -> InquireResult<String> {
         TextPrompt::from(self).prompt(renderer)
-    }
-}
-
-/// Trait to call prompt on a collection of [Text] instances.
-pub trait PromptMany {
-    /// Calls prompt on a collection of [Text] instances and return their respective
-    /// responses or the first error that appears.
-    fn prompt(self) -> InquireResult<Vec<String>>;
-}
-
-impl<'a, I> PromptMany for I
-where
-    I: Iterator<Item = Text<'a>>,
-{
-    fn prompt(self) -> InquireResult<Vec<String>> {
-        self.map(Text::prompt).collect()
     }
 }
 

@@ -7,7 +7,7 @@ use crate::{
     CustomType,
 };
 
-/// Presents a message to the user and asks them for a yes/no confirmation.
+/// Confirmation prompt, expecting y/n answers and returning a bool value.
 #[derive(Clone)]
 pub struct Confirm<'a> {
     /// Message to be presented to the user.
@@ -22,21 +22,21 @@ pub struct Confirm<'a> {
     /// Function that formats the user input and presents it to the user as the final rendering of the prompt.
     pub formatter: BoolFormatter<'a>,
 
-    /// Function that parses the user input and returns the result
+    /// Function that parses the user input and returns the result value.
     pub parser: BoolParser<'a>,
 
     /// Function that formats the default value to be presented to the user
     pub default_value_formatter: BoolFormatter<'a>,
 
-    /// Error message displayed when value could not be parsed from input.
+    /// Error message displayed when a value could not be parsed from input.
     pub error_message: String,
 }
 
 impl<'a> Confirm<'a> {
-    /// Default formatter, [true] maps to "Yes" and [false] maps to "No".
+    /// Default formatter, set to [DEFAULT_BOOL_FORMATTER](crate::formatter::DEFAULT_BOOL_FORMATTER)
     pub const DEFAULT_FORMATTER: BoolFormatter<'a> = DEFAULT_BOOL_FORMATTER;
-    /// Default parser, matches ["y"] and ["yes"] to [true], ["n"] and ["no"]
-    /// to [false], and an [Err] otherwise.
+
+    /// Default input parser.
     pub const DEFAULT_PARSER: BoolParser<'a> = DEFAULT_BOOL_PARSER;
 
     /// Default formatter for default values, mapping [true] to ["Y/n"] and
@@ -75,15 +75,21 @@ impl<'a> Confirm<'a> {
         self
     }
 
-    /// Sets the formatter
+    /// Sets the formatter.
     pub fn with_formatter(mut self, formatter: BoolFormatter<'a>) -> Self {
         self.formatter = formatter;
         self
     }
 
-    /// Sets the parser
+    /// Sets the parser.
     pub fn with_parser(mut self, parser: BoolParser<'a>) -> Self {
         self.parser = parser;
+        self
+    }
+
+    /// Sets a custom error message displayed when a submission could not be parsed to a value.
+    pub fn with_error_message(mut self, error_message: &'a str) -> Self {
+        self.error_message = String::from(error_message);
         self
     }
 
@@ -94,7 +100,7 @@ impl<'a> Confirm<'a> {
     }
 
     /// Parses the provided behavioral and rendering options and prompts
-    /// the CLI user for input according to them.
+    /// the CLI user for input according to the defined rules.
     pub fn prompt(self) -> InquireResult<bool> {
         let terminal = Terminal::new()?;
         let mut renderer = Renderer::new(terminal)?;

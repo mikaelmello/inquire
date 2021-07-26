@@ -1,5 +1,3 @@
-use std::cmp::min;
-
 use unicode_segmentation::UnicodeSegmentation;
 
 use crate::key::{Key, KeyModifiers};
@@ -30,10 +28,11 @@ impl Input {
         }
     }
 
+    #[cfg(test)]
     pub fn with_content(mut self, content: &str) -> Self {
         self.content = String::from(content);
         self.length = content.graphemes(true).count();
-        self.cursor = min(self.cursor, self.length);
+        self.cursor = std::cmp::min(self.cursor, self.length);
 
         self
     }

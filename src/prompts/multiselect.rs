@@ -1,20 +1,19 @@
 use std::{collections::HashSet, iter::FromIterator};
 
 use crate::{
-    answer::OptionAnswer,
     config::{self, Filter},
     error::{InquireError, InquireResult},
     formatter::{self, MultiOptionFormatter},
     input::Input,
     key::{Key, KeyModifiers},
+    option_answer::OptionAnswer,
     renderer::Renderer,
     terminal::Terminal,
     utils::paginate,
     validator::MultiOptionValidator,
 };
 
-/// Presents a message to the user and a list of options for the user to choose from.
-/// The user is able to choose multiple options.
+/// Selection of any amount of options from an interactive list.
 #[derive(Copy, Clone)]
 pub struct MultiSelect<'a> {
     /// Message to be presented to the user.
@@ -50,26 +49,37 @@ pub struct MultiSelect<'a> {
     pub formatter: MultiOptionFormatter<'a>,
 
     /// Validator to apply to the user input.
+    ///
+    /// In case of error, the message is displayed one line above the prompt.
     pub validator: Option<MultiOptionValidator<'a>>,
 }
 
 impl<'a> MultiSelect<'a> {
-    /// Default formatter that maps the collection of options to their string values and joins them using a comma as the separator.
+    /// Default formatter, set to [DEFAULT_MULTI_OPTION_FORMATTER](crate::formatter::DEFAULT_MULTI_OPTION_FORMATTER)
     pub const DEFAULT_FORMATTER: MultiOptionFormatter<'a> =
         formatter::DEFAULT_MULTI_OPTION_FORMATTER;
-    /// Default filter, equal to the global default filter [config::DEFAULT_FILTER]
+
+    /// Default filter, equal to the global default filter [config::DEFAULT_FILTER].
     pub const DEFAULT_FILTER: Filter<'a> = config::DEFAULT_FILTER;
+
     /// Default page size, equal to the global default page size [config::DEFAULT_PAGE_SIZE]
     pub const DEFAULT_PAGE_SIZE: usize = config::DEFAULT_PAGE_SIZE;
+
     /// Default value of vim mode, equal to the global default value [config::DEFAULT_PAGE_SIZE]
     pub const DEFAULT_VIM_MODE: bool = config::DEFAULT_VIM_MODE;
+
     /// Default starting cursor index.
     pub const DEFAULT_STARTING_CURSOR: usize = 0;
+
     /// Default behavior of keeping or cleaning the current filter value.
     pub const DEFAULT_KEEP_FILTER: bool = true;
+
     /// Default help message.
     pub const DEFAULT_HELP_MESSAGE: Option<&'a str> =
         Some("↑↓ to move, space to select one, → to all, ← to none, type to filter");
+
+    /// Default validator set for the [MultiSelect] prompt, none.
+    pub const DEFAULT_VALIDATOR: Option<MultiOptionValidator<'a>> = None;
 
     /// Creates a [MultiSelect] with the provided message and options, along with default configuration values.
     pub fn new(message: &'a str, options: &'a [&str]) -> Self {
@@ -84,7 +94,7 @@ impl<'a> MultiSelect<'a> {
             keep_filter: Self::DEFAULT_KEEP_FILTER,
             filter: Self::DEFAULT_FILTER,
             formatter: Self::DEFAULT_FORMATTER,
-            validator: None,
+            validator: Self::DEFAULT_VALIDATOR,
         }
     }
 
@@ -130,7 +140,11 @@ impl<'a> MultiSelect<'a> {
         self
     }
 
-    /// Adds a validator to the collection of validators.
+    /// Sets the validator to apply to the user input. You might want to use this feature
+    /// in case you need to limit the user to specific choices, such as limiting the number
+    /// of selections.
+    ///
+    /// In case of error, the message is displayed one line above the prompt.
     pub fn with_validator(mut self, validator: MultiOptionValidator<'a>) -> Self {
         self.validator = Some(validator);
         self
@@ -149,7 +163,7 @@ impl<'a> MultiSelect<'a> {
     }
 
     /// Parses the provided behavioral and rendering options and prompts
-    /// the CLI user for input according to them.
+    /// the CLI user for input according to the defined rules.
     pub fn prompt(self) -> InquireResult<Vec<OptionAnswer>> {
         let terminal = Terminal::new()?;
         let mut renderer = Renderer::new(terminal)?;

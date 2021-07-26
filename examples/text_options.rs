@@ -1,20 +1,13 @@
-use inquire::{required, validator::StringValidator, PromptMany, Text};
+use inquire::{required, Text};
 
 fn main() {
-    let validators: &[StringValidator] = &[required!()];
+    let answer = Text::new("What's your name?")
+        .with_suggester(&suggester)
+        .with_validators(&[required!()])
+        .prompt()
+        .unwrap();
 
-    let answers = vec![
-        Text::new("What's your name?")
-            .with_suggester(&suggester)
-            .with_validators(validators),
-        Text::new("What's your location?")
-            .with_help_message("This data is stored for good reasons"),
-    ]
-    .into_iter()
-    .prompt()
-    .unwrap();
-
-    println!("Hello {} from {}", answers[0], answers[1]);
+    println!("Hello {}", answer);
 
     let _input = Text {
         message: "How are you feeling?",

@@ -1,18 +1,38 @@
+//! Utilities used to wrap user selections in [Select](crate::Select) and
+//! [MultiSelect](crate::MultiSelect) prompts.
+
 use std::fmt;
 
-/// Represents a selection made by the CLI user when prompted to select one or several
+/// Represents a selection made by the user when prompted to select one or several
 /// options among those presented.
+///
+/// It is essentially the return type of the [Select](crate::Select) and [MultiSelect](crate::MultiSelect)
+/// prompts.
 #[derive(Clone, Debug, PartialEq)]
 pub struct OptionAnswer {
-    /// Index in the original collection of the selected option.
+    /// Index of the selected option relative to the original (full) list passed to the prompt.
     pub index: usize,
 
-    /// String value of the select option.
+    /// String value of the selected option.
     pub value: String,
 }
 
 impl OptionAnswer {
-    pub(in crate) fn new(index: usize, value: &str) -> Self {
+    /// Constructor for OptionAnswer.
+    ///
+    /// # Arguments
+    ///
+    /// * `index` - Index of the option.
+    /// * `value` - String value of the option
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use inquire::option_answer::OptionAnswer;
+    ///
+    /// let answer = OptionAnswer::new(0, "a");
+    /// ```
+    pub fn new(index: usize, value: &str) -> Self {
         Self {
             index,
             value: value.to_string(),

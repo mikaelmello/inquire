@@ -5,7 +5,7 @@ use std::{
 };
 
 use crate::{
-    date_utils::get_month,
+    date_utils::{get_current_date, get_month},
     error::{InquireError, InquireResult},
     formatter::{self, DateFormatter},
     key::{Key, KeyModifiers},
@@ -14,7 +14,7 @@ use crate::{
     validator::DateValidator,
 };
 
-/// Presents a message to the user and a date picker for the user to choose from.
+/// Interactive date picker to select simple dates (no time or timezones included).
 #[derive(Clone)]
 pub struct DateSelect<'a> {
     /// Message to be presented to the user.
@@ -43,32 +43,42 @@ pub struct DateSelect<'a> {
     pub formatter: DateFormatter<'a>,
 
     /// Collection of validators to apply to the user input.
-    /// Validation errors are displayed to the user one line above the prompt.
+    ///
+    /// Validators are executed in the order they are stored, stopping at and displaying to the user
+    /// only the first validation error that might appear.
+    ///
+    /// The possible error is displayed to the user one line above the prompt.
     pub validators: Vec<DateValidator<'a>>,
 }
 
 impl<'a> DateSelect<'a> {
-    /// Default formatter.
+    /// Default formatter, set to [DEFAULT_DATE_FORMATTER](crate::formatter::DEFAULT_DATE_FORMATTER)
     pub const DEFAULT_FORMATTER: DateFormatter<'a> = formatter::DEFAULT_DATE_FORMATTER;
+
     /// Default value of vim mode. It is true because there is no typing functionality to be lost here.
     pub const DEFAULT_VIM_MODE: bool = true;
+
     /// Default help message.
     pub const DEFAULT_HELP_MESSAGE: Option<&'a str> =
         Some("arrows to move, with ctrl to move months and years, enter to select");
-    /// Default validator.
+
+    /// Default validators added to the [DateSelect] prompt, none.
     pub const DEFAULT_VALIDATORS: Vec<DateValidator<'a>> = vec![];
+
     /// Default week start.
     pub const DEFAULT_WEEK_START: chrono::Weekday = chrono::Weekday::Sun;
+
     /// Default min date.
     pub const DEFAULT_MIN_DATE: Option<NaiveDate> = None;
+
     /// Default max date.
     pub const DEFAULT_MAX_DATE: Option<NaiveDate> = None;
 
-    /// Creates a [Date] with the provided message and options, along with default configuration values.
+    /// Creates a [DateSelect] with the provided message, along with default configuration values.
     pub fn new(message: &'a str) -> Self {
         Self {
             message,
-            starting_date: chrono::Local::now().date().naive_local(),
+            starting_date: get_current_date(),
             min_date: Self::DEFAULT_MIN_DATE,
             max_date: Self::DEFAULT_MAX_DATE,
             help_message: Self::DEFAULT_HELP_MESSAGE,
@@ -115,13 +125,26 @@ impl<'a> DateSelect<'a> {
         self
     }
 
-    /// Adds a validator to the collection of validators.
+    /// Adds a validator to the collection of validators. You might want to use this feature
+    /// in case you need to limit the user to specific choices, such as not allowing weekends.
+    ///
+    /// Validators are executed in the order they are stored, stopping at and displaying to the user
+    /// only the first validation error that might appear.
+    ///
+    /// The possible error is displayed to the user one line above the prompt.
     pub fn with_validator(mut self, validator: DateValidator<'a>) -> Self {
         self.validators.push(validator);
         self
     }
 
-    /// Adds the validators to the collection of validators.
+    /// Adds the validators to the collection of validators in the order they are given.
+    /// You might want to use this feature in case you need to limit the user to specific
+    /// choices, such as not allowing weekends.
+    ///
+    /// Validators are executed in the order they are stored, stopping at and displaying to the user
+    /// only the first validation error that might appear.
+    ///
+    /// The possible error is displayed to the user one line above the prompt.
     pub fn with_validators(mut self, validators: &[DateValidator<'a>]) -> Self {
         for validator in validators {
             self.validators.push(validator.clone());
@@ -142,7 +165,7 @@ impl<'a> DateSelect<'a> {
     }
 
     /// Parses the provided behavioral and rendering options and prompts
-    /// the CLI user for input according to them.
+    /// the CLI user for input according to the defined rules.
     pub fn prompt(self) -> InquireResult<NaiveDate> {
         let terminal = Terminal::new()?;
         let mut renderer = Renderer::new(terminal)?;
@@ -293,7 +316,7 @@ impl<'a> DateSelectPrompt<'a> {
             get_month(self.current_date.month()),
             self.current_date.year(),
             self.week_start,
-            chrono::Local::now().date().naive_local(),
+            get_current_date(),
             self.current_date,
             self.min_date,
             self.max_date,
@@ -339,7 +362,7 @@ impl<'a> DateSelectPrompt<'a> {
 
 #[cfg(test)]
 mod test {
-    use crate::{renderer::Renderer, terminal::Terminal, DateSelect};
+    use crate::{date_utils::get_current_date, renderer::Renderer, terminal::Terminal, DateSelect};
     use chrono::NaiveDate;
     use crossterm::event::{KeyCode, KeyEvent};
     use ntest::timeout;
@@ -371,11 +394,7 @@ mod test {
         };
     }
 
-    date_test!(
-        today_date,
-        vec![KeyCode::Enter],
-        chrono::Local::now().date().naive_local()
-    );
+    date_test!(today_date, vec![KeyCode::Enter], get_current_date());
 
     date_test!(
         custom_default_date,
@@ -395,7 +414,7 @@ mod test {
             .collect();
         let mut read = read.iter();
 
-        let today_date = chrono::Local::now().date().naive_local();
+        let today_date = get_current_date();
 
         let validator = |d| {
             if today_date > d {

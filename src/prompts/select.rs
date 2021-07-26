@@ -1,19 +1,18 @@
 use std::iter::FromIterator;
 
 use crate::{
-    answer::OptionAnswer,
     config::{self, Filter},
     error::{InquireError, InquireResult},
     formatter::{self, OptionFormatter},
     input::Input,
     key::{Key, KeyModifiers},
+    option_answer::OptionAnswer,
     renderer::Renderer,
     terminal::Terminal,
     utils::paginate,
 };
 
-/// Presents a message to the user and a list of options for the user to choose from.
-/// The user is able to choose only one option.
+/// Selection of one option from an interactive list.
 #[derive(Copy, Clone)]
 pub struct Select<'a> {
     /// Message to be presented to the user.
@@ -44,16 +43,21 @@ pub struct Select<'a> {
 }
 
 impl<'a> Select<'a> {
-    /// Default formatter.
+    /// Default formatter, set to [DEFAULT_OPTION_FORMATTER](crate::formatter::DEFAULT_OPTION_FORMATTER)
     pub const DEFAULT_FORMATTER: OptionFormatter<'a> = formatter::DEFAULT_OPTION_FORMATTER;
-    /// Default filter.
+
+    /// Default filter, equal to the global default filter [config::DEFAULT_FILTER].
     pub const DEFAULT_FILTER: Filter<'a> = config::DEFAULT_FILTER;
+
     /// Default page size.
     pub const DEFAULT_PAGE_SIZE: usize = config::DEFAULT_PAGE_SIZE;
+
     /// Default value of vim mode.
     pub const DEFAULT_VIM_MODE: bool = config::DEFAULT_VIM_MODE;
+
     /// Default starting cursor index.
     pub const DEFAULT_STARTING_CURSOR: usize = 0;
+
     /// Default help message.
     pub const DEFAULT_HELP_MESSAGE: Option<&'a str> =
         Some("↑↓ to move, space or enter to select, type to filter");
@@ -115,7 +119,7 @@ impl<'a> Select<'a> {
     }
 
     /// Parses the provided behavioral and rendering options and prompts
-    /// the CLI user for input according to them.
+    /// the CLI user for input according to the defined rules.
     pub fn prompt(self) -> InquireResult<OptionAnswer> {
         let terminal = Terminal::new()?;
         let mut renderer = Renderer::new(terminal)?;

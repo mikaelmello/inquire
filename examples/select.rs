@@ -15,11 +15,10 @@ fn main() {
         "Pineapple",
     ];
 
-    let ans = Select::new("What's your favorite fruit?", &options)
-        .with_page_size(10)
-        .with_starting_cursor(1)
-        .prompt()
-        .expect("Failed when creating so");
+    let ans = Select::new("What's your favorite fruit?", &options).prompt();
 
-    println!("Final answer was {}", ans);
+    match ans {
+        Ok(choice) => println!("I also love {}!", choice.value),
+        Err(_) => println!("There was an error, please try again"),
+    }
 }

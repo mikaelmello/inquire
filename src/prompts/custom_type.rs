@@ -11,7 +11,7 @@ use crate::{
     terminal::Terminal,
 };
 
-/// Presents a message to the user and parses the response from a text input.
+/// Prompt to retrieve custom types automatically parsed from the user's input.
 #[derive(Clone)]
 pub struct CustomType<'a, T> {
     /// Message to be presented to the user.
@@ -26,7 +26,7 @@ pub struct CustomType<'a, T> {
     /// Function that formats the user input and presents it to the user as the final rendering of the prompt.
     pub formatter: CustomTypeFormatter<'a, T>,
 
-    /// Function that parses the user input and returns the result
+    /// Function that parses the user input and returns the result value.
     pub parser: CustomTypeParser<'a, T>,
 
     /// Error message displayed when value could not be parsed from input.
@@ -70,23 +70,20 @@ where
         self
     }
 
-    /// Sets the parser
+    /// Sets the parser.
     pub fn with_parser(mut self, parser: CustomTypeParser<'a, T>) -> Self {
         self.parser = parser;
         self
     }
 
-    /// Sets the parser to the default parser but a custom error message.
-    pub fn with_error_message(mut self, error_message: &'a str) -> Self
-    where
-        T: FromStr,
-    {
+    /// Sets a custom error message displayed when a submission could not be parsed to a value.
+    pub fn with_error_message(mut self, error_message: &'a str) -> Self {
         self.error_message = String::from(error_message);
         self
     }
 
     /// Parses the provided behavioral and rendering options and prompts
-    /// the CLI user for input according to them.
+    /// the CLI user for input according to the defined rules.
     pub fn prompt(self) -> InquireResult<T> {
         let terminal = Terminal::new()?;
         let mut renderer = Renderer::new(terminal)?;

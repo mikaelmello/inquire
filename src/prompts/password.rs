@@ -7,10 +7,10 @@ use crate::{
     terminal::Terminal,
     validator::StringValidator,
 };
-/// Presents a message to the user and retrieves a single line of text input.
+/// Retrieves a single line of text input without echoing back the user's keypresses.
 ///
-/// [Password] differs from [Text] by not echoing the user input and having
-/// a smaller set of custom behaviors in comparison.
+/// [Password](crate::Password) differs from [Text](crate::Text) by not
+/// echoing the user input and having a smaller set of custom behaviors in comparison.
 ///
 /// By default, the response is always formatted as "********".
 #[derive(Clone)]
@@ -25,15 +25,21 @@ pub struct Password<'a> {
     pub formatter: StringFormatter<'a>,
 
     /// Collection of validators to apply to the user input.
-    /// Validation errors are displayed to the user one line above the prompt.
+    ///
+    /// Validators are executed in the order they are stored, stopping at and displaying to the user
+    /// only the first validation error that might appear.
+    ///
+    /// The possible error is displayed to the user one line above the prompt.
     pub validators: Vec<StringValidator<'a>>,
 }
 
 impl<'a> Password<'a> {
-    /// Default formatter.
+    /// Default formatter, set to always display `"********"` regardless of input length.
     pub const DEFAULT_FORMATTER: StringFormatter<'a> = &|_| String::from("********");
-    /// Default collection of validators.
-    pub const DEFAULT_VALIDATORS: Vec<StringValidator<'a>> = Vec::new();
+
+    /// Default validators added to the [Password] prompt, none.
+    pub const DEFAULT_VALIDATORS: Vec<StringValidator<'a>> = vec![];
+
     /// Default help message.
     pub const DEFAULT_HELP_MESSAGE: Option<&'a str> = None;
 
@@ -53,19 +59,31 @@ impl<'a> Password<'a> {
         self
     }
 
-    /// Sets the formatter
+    /// Sets the formatter.
     pub fn with_formatter(mut self, formatter: StringFormatter<'a>) -> Self {
         self.formatter = formatter;
         self
     }
 
-    /// Adds a validator to the collection of validators.
+    /// Adds a validator to the collection of validators. You might want to use this feature
+    /// in case you need to limit the user to specific choices, such as requiring
+    /// special characters in the password.
+    ///
+    /// Validators are executed in the order they are stored, stopping at and displaying to the user
+    /// only the first validation error that might appear.
+    ///
+    /// The possible error is displayed to the user one line above the prompt.
     pub fn with_validator(mut self, validator: StringValidator<'a>) -> Self {
         self.validators.push(validator);
         self
     }
 
-    /// Adds the validators to the collection of validators.
+    /// Adds the validators to the collection of validators in the order they are given.
+    ///
+    /// Validators are executed in the order they are stored, stopping at and displaying to the user
+    /// only the first validation error that might appear.
+    ///
+    /// The possible error is displayed to the user one line above the prompt.
     pub fn with_validators(mut self, validators: &[StringValidator<'a>]) -> Self {
         for validator in validators {
             self.validators.push(validator.clone());
@@ -74,7 +92,7 @@ impl<'a> Password<'a> {
     }
 
     /// Parses the provided behavioral and rendering options and prompts
-    /// the CLI user for input according to them.
+    /// the CLI user for input according to the defined rules.
     pub fn prompt(self) -> InquireResult<String> {
         let terminal = Terminal::new()?;
         let mut renderer = Renderer::new(terminal)?;
