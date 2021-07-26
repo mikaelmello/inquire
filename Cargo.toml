@@ -1,6 +1,6 @@
 [package]
 name = "inquire"
-version = "0.0.6"
+version = "0.0.7-alpha.0"
 license = "MIT"
 edition = "2018"
 
