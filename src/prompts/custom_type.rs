@@ -11,7 +11,7 @@ use crate::{
     terminal::Terminal,
 };
 
-/// Presents a message to the user and parses the response from a text input.
+/// Prompt to retrieve custom types automatically parsed from the user's input.
 #[derive(Clone)]
 pub struct CustomType<'a, T> {
     /// Message to be presented to the user.

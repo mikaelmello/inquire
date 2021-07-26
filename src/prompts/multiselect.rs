@@ -13,8 +13,7 @@ use crate::{
     validator::MultiOptionValidator,
 };
 
-/// Presents a message to the user and a list of options for the user to choose from.
-/// The user is able to choose multiple options.
+/// Selection of any amount of options from an interactive list.
 #[derive(Copy, Clone)]
 pub struct MultiSelect<'a> {
     /// Message to be presented to the user.

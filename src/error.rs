@@ -1,4 +1,4 @@
-//! Module containing definitions of inquire's error handling
+//! Definitions of inquire's error handling
 
 use std::io;
 

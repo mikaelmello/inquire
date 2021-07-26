@@ -1,4 +1,4 @@
-//! Module containing general type aliases and default values used by multiple prompt types.
+//! General type aliases and default values used by multiple prompts.
 
 /// Type alias to represent the function used to filter options.
 ///

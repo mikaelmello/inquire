@@ -1,4 +1,4 @@
-//! This module contains the type aliases for parsers called in prompts
+//! Type aliases and default implementations for parsers called in prompts
 //! that need to parse user input, such as [Confirm](crate::Confirm) or
 //! [CustomType](crate::CustomType).
 //!

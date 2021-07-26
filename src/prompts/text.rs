@@ -15,7 +15,7 @@ use crate::{
 
 const DEFAULT_HELP_MESSAGE: &str = "↑↓ to move, tab to auto-complete, enter to submit";
 
-/// Presents a message to the user and retrieves a single line of text input.
+/// Prompts the user for a single line of text input.
 #[derive(Clone)]
 pub struct Text<'a> {
     /// Message to be presented to the user.
@@ -139,22 +139,6 @@ impl<'a> Text<'a> {
 
     pub(in crate) fn prompt_with_renderer(self, renderer: &mut Renderer) -> InquireResult<String> {
         TextPrompt::from(self).prompt(renderer)
-    }
-}
-
-/// Trait to call prompt on a collection of [Text] instances.
-pub trait PromptMany {
-    /// Calls prompt on a collection of [Text] instances and return their respective
-    /// responses or the first error that appears.
-    fn prompt(self) -> InquireResult<Vec<String>>;
-}
-
-impl<'a, I> PromptMany for I
-where
-    I: Iterator<Item = Text<'a>>,
-{
-    fn prompt(self) -> InquireResult<Vec<String>> {
-        self.map(Text::prompt).collect()
     }
 }
 

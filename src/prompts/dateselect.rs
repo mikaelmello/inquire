@@ -14,7 +14,7 @@ use crate::{
     validator::DateValidator,
 };
 
-/// Presents a message to the user and a date picker for the user to choose from.
+/// Interactive date picker to select simple dates (no time or timezones included).
 #[derive(Clone)]
 pub struct DateSelect<'a> {
     /// Message to be presented to the user.

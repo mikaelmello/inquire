@@ -1,4 +1,4 @@
-//! This module contains the type aliases for functions called as formatters
+//! Type aliases and default implementations for functions called as formatters
 //! of a given input.
 //!
 //! Formatters receive the user input to a given prompt and return a formatted

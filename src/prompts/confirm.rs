@@ -7,7 +7,7 @@ use crate::{
     CustomType,
 };
 
-/// Presents a message to the user and asks them for a yes/no confirmation.
+/// Confirmation prompt, expecting y/n answers and returning a bool value.
 #[derive(Clone)]
 pub struct Confirm<'a> {
     /// Message to be presented to the user.

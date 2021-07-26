@@ -12,8 +12,7 @@ use crate::{
     utils::paginate,
 };
 
-/// Presents a message to the user and a list of options for the user to choose from.
-/// The user is able to choose only one option.
+/// Selection of one option from an interactive list.
 #[derive(Copy, Clone)]
 pub struct Select<'a> {
     /// Message to be presented to the user.

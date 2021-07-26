@@ -1,5 +1,5 @@
-//! This module contains the type aliases for functions called as validators
-//! of a given input.
+//! Type aliases for functions used by prompts to validate user input before
+//! returning the values to their callers.
 //!
 //! Validators receive the user input to a given prompt and decide whether
 //! they are valid, returning `Ok(())` in the process, or invalid, returning

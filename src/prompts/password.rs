@@ -7,7 +7,7 @@ use crate::{
     terminal::Terminal,
     validator::StringValidator,
 };
-/// Presents a message to the user and retrieves a single line of text input.
+/// Retrieves a single line of text input without echoing back the user's keypresses.
 ///
 /// [Password](crate::Password) differs from [Text](crate::Text) by not
 /// echoing the user input and having a smaller set of custom behaviors in comparison.
