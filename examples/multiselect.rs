@@ -16,6 +16,10 @@ fn main() {
     ];
 
     let validator: MultiOptionValidator = &|a| {
+        if a.len() < 2 {
+            return Err("This list is too small!".into());
+        }
+
         let x = a.iter().any(|o| o.value == "Pineapple");
 
         match x {
@@ -24,13 +28,15 @@ fn main() {
         }
     };
 
-    let default = vec![4, 5, 6];
-    let _ans = MultiSelect::new("Select the fruits for your shopping list:", &options)
-        .with_help_message("This is a custom help")
-        .with_page_size(10)
+    let formatter: MultiOptionFormatter = &|a| format!("{} different fruits", a.len());
+
+    let ans = MultiSelect::new("Select the fruits for your shopping list:", &options)
         .with_validator(validator)
-        .with_default(&default)
-        .with_starting_cursor(1)
-        .prompt()
-        .expect("Failed when creating mso");
+        .with_formatter(formatter)
+        .prompt();
+
+    match ans {
+        Ok(_) => println!("I'll get right on it"),
+        Err(_) => println!("The shopping list could not be processed"),
+    }
 }
