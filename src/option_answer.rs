@@ -28,7 +28,7 @@ impl OptionAnswer {
     /// # Examples
     ///
     /// ```
-    /// use inquire::OptionAnswer;
+    /// use inquire::option_answer::OptionAnswer;
     ///
     /// let answer = OptionAnswer::new(0, "a");
     /// ```

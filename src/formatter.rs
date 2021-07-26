@@ -51,7 +51,7 @@ pub type BoolFormatter<'a> = &'a dyn Fn(bool) -> String;
 /// # Examples
 ///
 /// ```
-/// use inquire::OptionAnswer;
+/// use inquire::option_answer::OptionAnswer;
 /// use inquire::formatter::OptionFormatter;
 ///
 /// let formatter: OptionFormatter = &|i| format!("Option {}: '{}'", i.index + 1, i.value);
@@ -68,7 +68,7 @@ pub type OptionFormatter<'a> = &'a dyn Fn(&OptionAnswer) -> String;
 /// # Examples
 ///
 /// ```
-/// use inquire::OptionAnswer;
+/// use inquire::option_answer::OptionAnswer;
 /// use inquire::formatter::MultiOptionFormatter;
 ///
 /// let formatter: MultiOptionFormatter = &|opts| {
@@ -166,7 +166,7 @@ pub const DEFAULT_BOOL_FORMATTER: BoolFormatter = &|ans| match ans {
 /// # Examples
 ///
 /// ```
-/// use inquire::OptionAnswer;
+/// use inquire::option_answer::OptionAnswer;
 /// use inquire::formatter::DEFAULT_OPTION_FORMATTER;
 ///
 /// let formatter = DEFAULT_OPTION_FORMATTER;
@@ -181,7 +181,7 @@ pub const DEFAULT_OPTION_FORMATTER: OptionFormatter = &|ans| ans.to_string();
 /// # Examples
 ///
 /// ```
-/// use inquire::OptionAnswer;
+/// use inquire::option_answer::OptionAnswer;
 /// use inquire::formatter::DEFAULT_MULTI_OPTION_FORMATTER;
 ///
 /// let formatter = DEFAULT_MULTI_OPTION_FORMATTER;

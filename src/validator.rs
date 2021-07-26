@@ -89,7 +89,7 @@ pub type DateValidator<'a> = &'a dyn Fn(chrono::NaiveDate) -> Result<(), String>
 /// # Examples
 ///
 /// ```
-/// use inquire::OptionAnswer;
+/// use inquire::option_answer::OptionAnswer;
 /// use inquire::validator::MultiOptionValidator;
 ///
 /// let validator: MultiOptionValidator = &|input| {
