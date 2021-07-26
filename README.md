@@ -175,7 +175,9 @@ match date {
 }
 ```
 
-DateSelect prompts allows user to select a date (time not supported) from an interactive calendar. DateSelect prompts provide several options of configuration:
+DateSelect prompts allows user to select a date (time not supported) from an interactive calendar. This prompt is only available when including the `date` feature in the dependency, as it brings an additional module (`chrono`) in your dependency tree.
+
+DateSelect prompts provide several options of configuration:
 
 - **Prompt message**: Required when creating the prompt.
 - **Default value**: Default value selected when the calendar is displayed and the one select if the user submits without any previous actions. Current date by default.
