@@ -244,10 +244,10 @@ impl<'a> SelectPrompt<'a> {
             .map(|i| OptionAnswer::new(i, self.options.get(i).unwrap()))
             .collect::<Vec<OptionAnswer>>();
 
-        let (paginated_opts, rel_sel) = paginate(self.page_size, &choices, self.cursor_index);
+        let page = paginate(self.page_size, &choices, self.cursor_index);
 
-        for (idx, opt) in paginated_opts.iter().enumerate() {
-            renderer.print_option(rel_sel == idx, &opt.value)?;
+        for (idx, opt) in page.content.iter().enumerate() {
+            renderer.print_option(page.selection == idx, &opt.value)?;
         }
 
         if let Some(help_message) = self.help_message {

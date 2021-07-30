@@ -1,45 +1,52 @@
-use crate::option_answer::OptionAnswer;
-
 // sorry for this file
 
-pub fn paginate(
-    page_size: usize,
-    choices: &[OptionAnswer],
-    sel: usize,
-) -> (&[OptionAnswer], usize) {
-    if choices.len() < page_size {
-        return (&choices[0..choices.len()], sel);
+pub struct Page<'a, T> {
+    pub first: bool,
+    pub last: bool,
+    pub content: &'a [T],
+    pub selection: usize,
+}
+
+pub fn paginate<'a, T>(page_size: usize, choices: &[T], sel: usize) -> Page<T> {
+    let (start, end, cursor) = if choices.len() <= page_size {
+        (0, choices.len(), sel)
     } else if sel < page_size / 2 {
         // if we are in the first half page
         let start = 0;
         let end = page_size;
         let cursor = sel;
 
-        return (&choices[start..end], cursor);
+        (start, end, cursor)
     } else if choices.len() - sel - 1 < page_size / 2 {
         // if we are in the last half page
         let start = choices.len() - page_size;
         let end = choices.len();
         let cursor = sel - start;
-        return (&choices[start..end], cursor);
+
+        (start, end, cursor)
     } else {
         // somewhere in the middle
         let above = page_size / 2;
         let below = page_size - above;
 
-        let cursor = page_size / 2;
         let start = sel - above;
         let end = sel + below;
+        let cursor = page_size / 2;
 
-        return (&choices[start..end], cursor);
+        (start, end, cursor)
+    };
+
+    Page {
+        first: start == 0,
+        last: end == choices.len(),
+        content: &choices[start..end],
+        selection: cursor,
     }
 }
 
 #[cfg(test)]
 mod test {
-    use crate::utils::paginate;
-
-    use super::OptionAnswer;
+    use crate::{option_answer::OptionAnswer, utils::paginate};
 
     #[test]
     fn paginate_too_few() {
@@ -48,10 +55,12 @@ mod test {
         let page_size = 4usize;
         let sel = 3usize;
 
-        let (page, idx) = paginate(page_size, &choices, sel);
+        let page = paginate(page_size, &choices, sel);
 
-        assert_eq!(choices[..], page[..]);
-        assert_eq!(3usize, idx);
+        assert_eq!(choices[..], page.content[..]);
+        assert_eq!(3usize, page.selection);
+        assert_eq!(true, page.first);
+        assert_eq!(true, page.last);
     }
 
     #[test]
@@ -61,10 +70,12 @@ mod test {
         let page_size = 4usize;
         let sel = 2usize;
 
-        let (page, idx) = paginate(page_size, &choices, sel);
+        let page = paginate(page_size, &choices, sel);
 
-        assert_eq!(choices[0..4], page[..]);
-        assert_eq!(2usize, idx);
+        assert_eq!(choices[0..4], page.content[..]);
+        assert_eq!(2usize, page.selection);
+        assert_eq!(true, page.first);
+        assert_eq!(false, page.last);
     }
 
     #[test]
@@ -74,10 +85,12 @@ mod test {
         let page_size = 2usize;
         let sel = 3usize;
 
-        let (page, idx) = paginate(page_size, &choices, sel);
+        let page = paginate(page_size, &choices, sel);
 
-        assert_eq!(choices[2..4], page[..]);
-        assert_eq!(1usize, idx);
+        assert_eq!(choices[2..4], page.content[..]);
+        assert_eq!(1usize, page.selection);
+        assert_eq!(false, page.first);
+        assert_eq!(false, page.last);
     }
 
     #[test]
@@ -87,9 +100,11 @@ mod test {
         let page_size = 3usize;
         let sel = 5usize;
 
-        let (page, idx) = paginate(page_size, &choices, sel);
+        let page = paginate(page_size, &choices, sel);
 
-        assert_eq!(choices[3..6], page[..]);
-        assert_eq!(2usize, idx);
+        assert_eq!(choices[3..6], page.content[..]);
+        assert_eq!(2usize, page.selection);
+        assert_eq!(false, page.first);
+        assert_eq!(true, page.last);
     }
 }

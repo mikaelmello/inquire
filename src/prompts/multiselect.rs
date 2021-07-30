@@ -355,11 +355,11 @@ impl<'a> MultiSelectPrompt<'a> {
             .map(|i| OptionAnswer::new(i, self.options.get(i).unwrap()))
             .collect::<Vec<OptionAnswer>>();
 
-        let (paginated_opts, rel_sel) = paginate(self.page_size, &choices, self.cursor_index);
+        let page = paginate(self.page_size, &choices, self.cursor_index);
 
-        for (idx, opt) in paginated_opts.iter().enumerate() {
+        for (idx, opt) in page.content.iter().enumerate() {
             renderer.print_multi_option(
-                rel_sel == idx,
+                page.selection == idx,
                 self.checked.contains(&opt.index),
                 &opt.value,
             )?;

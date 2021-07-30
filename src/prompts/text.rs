@@ -282,10 +282,10 @@ impl<'a> TextPrompt<'a> {
 
         let display_cursor = self.cursor_index > 0;
         let list_index = self.cursor_index.saturating_sub(1);
-        let (paginated_opts, rel_sel) = paginate(self.page_size, &choices, list_index);
+        let page = paginate(self.page_size, &choices, list_index);
 
-        for (idx, opt) in paginated_opts.iter().enumerate() {
-            renderer.print_option(display_cursor && rel_sel == idx, &opt.value)?;
+        for (idx, opt) in page.content.iter().enumerate() {
+            renderer.print_option(display_cursor && page.selection == idx, &opt.value)?;
         }
 
         if let Some(message) = self.help_message {
