@@ -196,9 +196,19 @@ match date {
 }
 ```
 
-DateSelect prompts allows user to select a date (time not supported) from an interactive calendar. This prompt is only available when including the `date` feature in the dependency, as it brings an additional module (`chrono`) in your dependency tree.
+`DateSelect` prompts allows user to select a date (time not supported) from an interactive calendar. This prompt is only available when including the `date` feature in the dependency, as it brings an additional module (`chrono`) in your dependency tree.
 
-DateSelect prompts provide several options of configuration:
+By default, the initial selected date is the current date. The user can navigate through the calendar by pressing the keyboard arrows. If the user also presses the control key along with the arrows, the user will be able to "fast-forward" to previous or next months or years.
+
+More specifically:
+- Left arrow moves to the day previous to the one selected, and to the month previous to the one selected when pressed with `ctrl`.
+- Analogously, right arrow does the same, but moving to the next day or month.
+- Up arrow moves to the day above to the one selected, basically a week before the selected date. When pressed with `ctrl`, it moves to the previous year.
+- Analogously, the down arrow moves to a week later or a year later.
+
+Finally, the user selects a date by pressing the space or enter keys.
+
+`DateSelect` prompts provide several options of configuration:
 
 - **Prompt message**: Required when creating the prompt.
 - **Default value**: Default value selected when the calendar is displayed and the one select if the user submits without any previous actions. Current date by default.
@@ -206,11 +216,8 @@ DateSelect prompts provide several options of configuration:
 - **Formatter**: Custom formatter in case you need to pre-process the user input before showing it as the final answer.
   - Formats to "Month Day, Year" by default.
 - **Validators**: Custom validators to the user's selected date, displaying an error message if the date does not pass the requirements.
-- **Week start**: Which day of the week should be displayed in the first column of the calendar.
-  - Sunday by default.
-- **Min and max date**: Inclusive boundaries of allowed dates in the interactive calendar.
-  - None by default.
-- **Vim mode**: Allows the user to navigate using hjkl keys, off by default.
+- **Week start**: Which day of the week should be displayed in the first column of the calendar, Sunday by default.
+- **Min and max date**: Inclusive boundaries of allowed dates in the interactive calendar. If any boundary is set, the user will not be able to move past them, consequently not being able to select any dates out of the allowed range.
 
 ## Select
 
