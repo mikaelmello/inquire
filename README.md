@@ -231,28 +231,29 @@ let options = vec!["Banana", "Apple", "Strawberry", "Grapes",
 let ans = Select::new("What's your favorite fruit?", &options).prompt();
 
 match ans {
-    Ok(choice) => println!("I also love {}!", choice.value),
+    Ok(choice) => println!("{}! That's mine too!", choice.value),
     Err(_) => println!("There was an error, please try again"),
 }
 ```
 
-The `Select` prompt is created with a prompt message and a non-empty list of options. It is suitable for when you need the user to select one option among many.
+`Select` prompts are suitable for when you need the user to select one option among many.
 
-The `Select` prompt does not support custom validators because of the nature of the prompt. A submission always selects exactly one of the options. If this option was not supposed to be selected or is invalid in some way, it probably should not be included in the options list.
+The user can select and submit the current highlighted option by pressing space or enter.
+
+This prompt requires a prompt message and a **non-empty** list of options to be displayed to the user. If the list is empty, the prompt operation will fail with an `InquireError::InvalidConfiguration` error.
+
+This prompt does not support custom validators because of its nature. A submission always selects exactly one of the options. If this option was not supposed to be selected or is invalid in some way, it probably should not be included in the options list.
 
 The options are paginated in order to provide a smooth experience to the user, with the default page size being 7. The user can move from the options and the pages will be updated accordingly, including moving from the last to the first options (or vice-versa).
-
-The user can submit their choice by pressing either space or enter.
 
 Like all others, this prompt also allows you to customize several aspects of it:
 
 - **Prompt message**: Required when creating the prompt.
-- **Options list**: Options displayed to the user.
-- **Starting cursor**: Index of the cursor when the prompt is first rendered. Default is 0 (first option).
+- **Options list**: Options displayed to the user. Must be **non-empty**.
+- **Starting cursor**: Index of the cursor when the prompt is first rendered. Default is 0 (first option). If the index is out-of-range of the option list, the prompt will fail with an `InquireError::InvalidConfiguration` error.
 - **Help message**: Message displayed at the line below the prompt.
 - **Formatter**: Custom formatter in case you need to pre-process the user input before showing it as the final answer.
   - Prints the selected option string value by default.
-- **Vim mode**: Allows the user to navigate using hjkl keys, off by default.
 - **Page size**: Number of options displayed at once, 7 by default.
 - **Filter function**: Function that defines if an option is displayed or not based on the current filter input.
 
