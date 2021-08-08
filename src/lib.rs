@@ -4,7 +4,7 @@
 //! for information via the CLI. With `inquire`, you can use:
 //!
 //! - [`Text`] to get text input from the user, with _built-in auto-completion support_;
-//! - [`DateSelect`] to get a date input from the user, selected via an _interactive calendar_;
+//! - [`DateSelect`]* to get a date input from the user, selected via an _interactive calendar_;
 //! - [`Select`] to ask the user to select one option from a given list;
 //! - [`MultiSelect`] to ask the user to select an arbitrary number of options from a given list;
 //! - [`Confirm`] for simple yes/no confirmation prompts;
@@ -15,7 +15,7 @@
 //!
 //! - Cross-platform, supporting UNIX and Windows terminals (thanks to [crossterm](https://crates.io/crates/crossterm));
 //! - Several kinds of prompts to suit your needs;
-//! - Standardized error handling (thanks to [thiserror](https://crates.io/crates/thiserror);
+//! - Standardized error handling (thanks to [thiserror](https://crates.io/crates/thiserror));
 //! - Support for fine-grained configuration for each prompt type, allowing you to customize:
 //!   - Default values;
 //!   - Input validators and formatters;
@@ -24,6 +24,8 @@
 //!   - Custom list filters for Select and [`MultiSelect`] prompts;
 //!   - Custom parsers for [`Confirm`] and [`CustomType`] prompts;
 //!   - and many others!
+//!
+//! \* Date-related features are available by enabling the `date` feature.
 //!
 //! # Simple Example
 //!
