@@ -110,7 +110,7 @@ In the [demo](#Demo) you can see this behavior in action with the _amount_ (Cust
 
 ## Filtering
 
-Filtering is applicable to two prompts: `Select` and `MultiSelect`. They provide the user the ability to filter the options based on their text input. This is specially useful when there are a lot of options for the user to choose from, allowing them to quickly find their expected options.
+Filtering is applicable to two prompts: [`Select`] and [`MultiSelect`]. They provide the user the ability to filter the options based on their text input. This is specially useful when there are a lot of options for the user to choose from, allowing them to quickly find their expected options.
 
 Filter functions receive three arguments: the current user input, the option string value and the option index. They must return a `bool` value indicating whether the option should be part of the results or not.
 
@@ -126,7 +126,7 @@ Error handling when using `inquire` is pretty simple. Instantiating prompt struc
 
 - **NotTTY**: The input device is not a TTY, which means that enabling raw mode on the terminal in order to listen to input events is not possible. I currently do not know if it is possible to make the library work even if that's the case.
 - **InvalidConfiguration(String)**: Some aspects of the prompt configuration were considered to be invalid, with more details given in the value string.
-  - This error is only possible in `Select`, `MultiSelect` and `DateSelect` prompts, where specific settings might be incompatible. All other prompts always have valid configurations by design.
+  - This error is only possible in [`Select`], [`MultiSelect`] and [`DateSelect`] prompts, where specific settings might be incompatible. All other prompts always have valid configurations by design.
 - **IO(io::Error)**: There was an error when performing IO operations. IO errors are not handled inside `inquire` to keep the library simple.
 - **OperationCanceled**: The user canceled the prompt before submitting a response. The user might cancel the operation by pressing `Ctrl-C` or `ESC`.
 
