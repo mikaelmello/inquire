@@ -156,6 +156,7 @@ With `Text`, you can customize several aspects:
 - **Default value**: Default value returned when the user submits an empty response.
 - **Validators**: Custom validators to the user's input, displaying an error message if the input does not pass the requirements.
 - **Formatter**: Custom formatter in case you need to pre-process the user input before showing it as the final answer.
+- **Suggester**: Custom function that returns a list of input suggestions based on the current text input. See more on "Autocomplete" below.
 
 ### Autocomplete
 

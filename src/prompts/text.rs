@@ -15,7 +15,50 @@ use crate::{
 
 const DEFAULT_HELP_MESSAGE: &str = "↑↓ to move, tab to auto-complete, enter to submit";
 
-/// Prompts the user for a single line of text input.
+/// Standard text prompt that returns the user string input.
+///
+/// This is the standard the standard kind of prompt you would expect from a library like this one. It displays a message to the user, prompting them to type something back. The user's input is then stored in a `String` and returned to the prompt caller.
+///
+///
+/// ## Configuration options
+///
+/// - **Prompt message**: Main message when prompting the user for input, `"What is your name?"` in the example below.
+/// - **Help message**: Message displayed at the line below the prompt.
+/// - **Default value**: Default value returned when the user submits an empty response.
+/// - **Validators**: Custom validators to the user's input, displaying an error message if the input does not pass the requirements.
+/// - **Formatter**: Custom formatter in case you need to pre-process the user input before showing it as the final answer.
+/// - **Suggester**: Custom function that returns a list of input suggestions based on the current text input. See more on "Autocomplete" below.
+///
+/// ## Default behaviors
+///
+/// Default behaviors for each one of `Text` configuration options:
+///
+/// - The input formatter just echoes back the given input.
+/// - No validators are called, accepting any sort of input including empty ones.
+/// - No default values or help messages.
+/// - No auto-completion features set-up.
+/// - Prompt messages are always required when instantiating via `new()`.
+///
+/// ## Autocomplete
+///
+/// With `Text` inputs, it is also possible to set-up an auto-completion system to provide a better UX when necessary.
+///
+/// You can set-up a custom [`Suggester`](crate::config::Suggester) function, which receives the current input as the only argument and should return a vector of strings, the suggested values.
+///
+/// The user is then able to select one of them by moving up and down the list, possibly further modifying a selected suggestion.
+///
+/// # Example
+///
+/// ```no_run
+/// use inquire::Text;
+///
+/// let name = Text::new("What is your name?").prompt();
+///
+/// match name {
+///     Ok(name) => println!("Hello {}", name),
+///     Err(_) => println!("An error happened when asking for your name, try again later."),
+/// }
+/// ```
 #[derive(Clone)]
 pub struct Text<'a> {
     /// Message to be presented to the user.
