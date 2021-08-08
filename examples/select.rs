@@ -18,7 +18,7 @@ fn main() {
     let ans = Select::new("What's your favorite fruit?", &options).prompt();
 
     match ans {
-        Ok(choice) => println!("I also love {}!", choice.value),
+        Ok(choice) => println!("{}! That's mine too!", choice.value),
         Err(_) => println!("There was an error, please try again"),
     }
 }

@@ -1,15 +1,16 @@
 [package]
 name = "inquire"
 version = "0.0.7-alpha.0"
-license = "MIT"
-edition = "2018"
-
 description = "inquire is a library for building interactive prompts on terminals"
 repository = "https://github.com/mikaelmello/inquire"
+license = "MIT"
+edition = "2018"
+readme = "./CRATE_README.md"
 homepage = "https://github.com/mikaelmello/inquire"
 authors = ["Mikael Mello <git@mikaelmello.com>"]
 keywords = ["cli", "ask", "prompt", "question", "interactive"]
 categories = ["command-line-interface", "value-formatting"]
+include = ["/examples", "/src", "/LICENSE"]
 
 [features]
 default = ["builtin_validators"]
@@ -17,7 +18,8 @@ builtin_validators = []
 date = ["chrono"]
 
 [package.metadata.docs.rs]
-features = ["date"]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 crossterm = "0.20"

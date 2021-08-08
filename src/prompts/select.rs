@@ -12,7 +12,45 @@ use crate::{
     utils::paginate,
 };
 
-/// Selection of one option from an interactive list.
+/// Prompt suitable for when you need the user to select one option among many.
+///
+/// The user can select and submit the current highlighted option by pressing space or enter.
+///
+/// This prompt requires a prompt message and a **non-empty** list of options to be displayed to the user. If the list is empty, the prompt operation will fail with an [`InquireError::InvalidConfiguration`] error.
+///
+/// This prompt does not support custom validators because of its nature. A submission always selects exactly one of the options. If this option was not supposed to be selected or is invalid in some way, it probably should not be included in the options list.
+///
+/// The options are paginated in order to provide a smooth experience to the user, with the default page size being 7. The user can move from the options and the pages will be updated accordingly, including moving from the last to the first options (or vice-versa).
+///
+/// Like all others, this prompt also allows you to customize several aspects of it:
+///
+/// - **Prompt message**: Required when creating the prompt.
+/// - **Options list**: Options displayed to the user. Must be **non-empty**.
+/// - **Starting cursor**: Index of the cursor when the prompt is first rendered. Default is 0 (first option). If the index is out-of-range of the option list, the prompt will fail with an [`InquireError::InvalidConfiguration`] error.
+/// - **Help message**: Message displayed at the line below the prompt.
+/// - **Formatter**: Custom formatter in case you need to pre-process the user input before showing it as the final answer.
+///   - Prints the selected option string value by default.
+/// - **Page size**: Number of options displayed at once, 7 by default.
+/// - **Filter function**: Function that defines if an option is displayed or not based on the current filter input.
+///
+/// # Example
+///
+/// ```no_run
+/// use inquire::Select;
+///
+/// let options = vec!["Banana", "Apple", "Strawberry", "Grapes",
+///     "Lemon", "Tangerine", "Watermelon", "Orange", "Pear", "Avocado", "Pineapple",
+/// ];
+///
+/// let ans = Select::new("What's your favorite fruit?", &options).prompt();
+///
+/// match ans {
+///     Ok(choice) => println!("{}! That's mine too!", choice.value),
+///     Err(_) => println!("There was an error, please try again"),
+/// }
+/// ```
+///
+/// [`InquireError::InvalidConfiguration`]: crate::error::InquireError::InvalidConfiguration
 #[derive(Copy, Clone)]
 pub struct Select<'a> {
     /// Message to be presented to the user.

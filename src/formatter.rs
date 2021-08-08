@@ -2,13 +2,54 @@
 //! of a given input.
 //!
 //! Formatters receive the user input to a given prompt and return a formatted
-//! output `String`, which are displayed to the user after the submission
-//! as their answer.
+//! output `String`, which is displayed to the user as the submitted value.
+//!
+//! # Example
+//!
+//! **Prompt code**
+//!
+//! ```no_run
+//! use inquire::formatter::StringFormatter;
+//! use inquire::Text;
+//!
+//! let formatter: StringFormatter = &|s| {
+//!     let mut c = s.chars();
+//!     match c.next() {
+//!         None => String::from("No name given"),
+//!         Some(f) => {
+//!             String::from("My name is ")
+//!                 + f.to_uppercase().collect::<String>().as_str()
+//!                 + c.as_str()
+//!         }
+//!     }
+//! };
+//!
+//! let name = Text::new("What's your name?")
+//!     .with_formatter(formatter)
+//!     .prompt();
+//!
+//! match name {
+//!     Ok(_) => {}
+//!     Err(err) => println!("Error: {}", err),
+//! }
+//! ```
+//!
+//! **Before submission (pressing Enter)**
+//!
+//! ```text
+//! ? What's your name? mikael
+//! ```
+//!
+//! **After submission**
+//!
+//! ```text
+//! ? What's your name? My name is Mikael
+//! ```
 
 use crate::option_answer::OptionAnswer;
 
 /// Type alias for formatters that receive a string slice as the input,
-/// such as [Text](crate::Text) and [Password](crate::Password).
+/// required by [Text](crate::Text) and [Password](crate::Password) for example.
 ///
 /// Formatters receive the user input and return a [String] to be displayed
 /// to the user as the final answer.

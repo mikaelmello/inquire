@@ -13,7 +13,34 @@ use crate::{
     validator::MultiOptionValidator,
 };
 
-/// Selection of any amount of options from an interactive list.
+/// Prompt suitable for when you need the user to select many options (including none if applicable) among a list of them.
+///
+/// The user can select (or deselect) the current highlighted option by pressing space, clean all selections by pressing the left arrow and select all options by pressing the right arrow.
+///
+/// This prompt requires a prompt message and a **non-empty** list of options to be displayed to the user. If the list is empty, the prompt operation will fail with an [`InquireError::InvalidConfiguration`] error.
+///
+/// The options are paginated in order to provide a smooth experience to the user, with the default page size being 7. The user can move from the options and the pages will be updated accordingly, including moving from the last to the first options (or vice-versa).
+///
+/// Customizable options:
+///
+/// - **Prompt message**: Required when creating the prompt.
+/// - **Options list**: Options displayed to the user. Must be **non-empty**.
+/// - **Default selections**: Options that are selected by default when the prompt is first rendered. The user can unselect them. If any of the indices is out-of-range of the option list, the prompt will fail with an [`InquireError::InvalidConfiguration`] error.
+/// - **Starting cursor**: Index of the cursor when the prompt is first rendered. Default is 0 (first option). If the index is out-of-range of the option list, the prompt will fail with an [`InquireError::InvalidConfiguration`] error.
+/// - **Help message**: Message displayed at the line below the prompt.
+/// - **Formatter**: Custom formatter in case you need to pre-process the user input before showing it as the final answer.
+///   - Prints the selected options string value, joined using a comma as the separator, by default.
+/// - **Validator**: Custom validator to make sure a given submitted input pass the specified requirements, e.g. not allowing 0 selected options or limiting the number of options that the user is allowed to select.
+///   - No validators are on by default.
+/// - **Page size**: Number of options displayed at once, 7 by default.
+/// - **Filter function**: Function that defines if an option is displayed or not based on the current filter input.
+/// - **Keep filter flag**: Whether the current filter input should be cleared or not after a selection is made. Defaults to true.
+///
+/// # Example
+///
+/// For a full-featured example, check the [GitHub repository](https://github.com/mikaelmello/inquire/blob/main/examples/multiselect.rs).
+///
+/// [`InquireError::InvalidConfiguration`]: crate::error::InquireError::InvalidConfiguration
 #[derive(Copy, Clone)]
 pub struct MultiSelect<'a> {
     /// Message to be presented to the user.

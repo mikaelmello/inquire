@@ -1,10 +1,10 @@
-//! Definitions of inquire's error handling
+//! Definitions of `inquire`'s error handling
 
 use std::io;
 
 use thiserror::Error;
 
-/// Inquire errors
+/// Possible errors returned by `inquire` prompts.
 #[derive(Error, Debug)]
 pub enum InquireError {
     /// The input device is not a TTY, which means that enabling raw mode
@@ -17,7 +17,7 @@ pub enum InquireError {
     #[error("The prompt configuration is invalid: {0}")]
     InvalidConfiguration(String),
 
-    /// Error when executing IO operations.
+    /// Error while executing IO operations.
     #[error("IO error: {0}")]
     IO(#[from] io::Error),
 
@@ -26,5 +26,5 @@ pub enum InquireError {
     OperationCanceled,
 }
 
-/// Result type where errors are from type InquireError
+/// Result type where errors are of type [InquireError](crate::error::InquireError)
 pub type InquireResult<T> = Result<T, InquireError>;
