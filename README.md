@@ -14,6 +14,15 @@
   <code>inquire</code> is a library for building interactive prompts on terminals.
 </p>
 
+It provides several different prompts in order to interactively ask the user for information via the CLI. With `inquire`, you can use:
+- [`Text`] to get text input from the user, with _built-in auto-completion support_;
+- [`DateSelect`]* to get a date input from the user, selected via an _interactive calendar_;
+- [`Select`] to ask the user to select one option from a given list;
+- [`MultiSelect`] to ask the user to select an arbitrary number of options from a given list;
+- [`Confirm`] for simple yes/no confirmation prompts;
+- [`CustomType`] for text prompts that you would like to parse to a custom type, such as numbers or UUIDs;
+- [`Password`] for secretive text prompts.
+
 ---
 
 ## Demo
@@ -29,7 +38,7 @@ Put this line in your `Cargo.toml`, under `[dependencies]`.
 inquire = "0.0.6"
 ```
 
-If you'd like to use the date-related features, enable the `date` feature:
+\* If you'd like to use the date-related features, enable the `date` feature:
 
 ```
 inquire = { version = "0.0.6", features = ["date"] }
@@ -45,19 +54,17 @@ $ cargo run --example expense_tracker --features date
 
 ## Features
 
-- Cross-platform, supporting UNIX and Windows terminals (thanks to [crossterm](https://github.com/crossterm-rs/crossterm)).
-- Five (5) kinds of prompts and their own custom features (to see the full list of features check the full documentation below):
-  - Text input, with auto-completion support.
-  - Date picker, with support to limit allowed date ranges.
-  - Selection inputs, with support for single and multiple selections, as well as custom filtering based on user input.
-  - Confirm prompt, with support for custom parsing of input.
-  - Password prompt, where user input is not echoed back to the terminal.
-- Standardized error handling (thanks to [thiserror](https://github.com/dtolnay/thiserror))
-- Support for customized help messages.
-- Support for default values.
-- Support for validation of user input.
-- Support for custom formatting of user input after it is submitted and echoed back to the terminal.
-- Fine-grained configuration, e.g. page size of option list, vim mode for navigation, etc.
+- Cross-platform, supporting UNIX and Windows terminals (thanks to [crossterm](https://crates.io/crates/crossterm));
+- Several kinds of prompts to suit your needs;
+- Standardized error handling (thanks to [thiserror](https://crates.io/crates/thiserror));
+- Support for fine-grained configuration for each prompt type, allowing you to customize:
+  - Default values;
+  - Input validators and formatters;
+  - Help messages;
+  - Auto-completion for [`Text`] prompts;
+  - Custom list filters for Select and [`MultiSelect`] prompts;
+  - Custom parsers for [`Confirm`] and [`CustomType`] prompts;
+  - and many others!
 
 # Cross-cutting concerns
 
@@ -79,7 +86,7 @@ Finally, `inquire` has a feature called `builtin_validators` that is included by
 
 The docs provide full-featured examples.
 
-In the demo on the top of this README, you can see the behavior of an input not passing the requirements in the _amount_ prompt, when the error message "Please type a valid number" is displayed. _Full disclosure, this error message was displayed due to a parsing, not validation, error, but the user experience is the same for both cases._
+In the [demo](#Demo) you can see the behavior of an input not passing the requirements in the _amount_ prompt, when the error message "Please type a valid number" is displayed. _Full disclosure, this error message was displayed due to a parsing, not validation, error, but the user experience is the same for both cases._
 
 ## Formatting
 
@@ -89,17 +96,17 @@ All prompts provide an API to set custom formatters. By setting a formatter, you
 
 Custom formatters receive the input as an argument, with varying types such as `&str`, `chrono::NaiveDate`, and return a `String` containing the output to be displayed to the user. Check the docs for specific examples.
 
-In the demo on the top of this README, you can see this behavior in action with the _amount_ (CustomType) prompt, where a custom formatter adds a '$' character preffix to the input.
+In the [demo](#Demo) you can see this behavior in action with the _amount_ (CustomType) prompt, where a custom formatter adds a '$' character preffix to the input.
 
 ## Parsing
 
-Parsing features are related to two prompts: `Confirm` and `CustomType`. They return to you a value (of types `bool` or any custom type you might want) parsed from the user's text input. In both cases, you can either use default parsers that are already built-in or provide custom ones adhering to the function signatures.
+Parsing features are related to two prompts: [`Confirm`] and [`CustomType`]. They return to you a value (of types `bool` or any custom type you might want) parsed from the user's text input. In both cases, you can either use default parsers that are already built-in or provide custom ones adhering to the function signatures.
 
 The default `bool` parser returns `true` if the input is either `"y"` or `"yes"`, in a case-insensitive comparison. Similarly, the parser returns `false` if the input is either `"n"` or `"no"`.
 
-The default parser for `CustomType` prompts calls the `parse::<T>()` method on the input string. This means that if you want to create a `CustomType` with default settings, the wanted return type must implement the `FromStr` trait.
+The default parser for [`CustomType`] prompts calls the `parse::<T>()` method on the input string. This means that if you want to create a [`CustomType`] with default settings, the wanted return type must implement the `FromStr` trait.
 
-In the demo on the top of this README, you can see this behavior in action with the _amount_ (CustomType) prompt.
+In the [demo](#Demo) you can see this behavior in action with the _amount_ (CustomType) prompt.
 
 ## Filtering
 
@@ -109,13 +116,13 @@ Filter functions receive three arguments: the current user input, the option str
 
 The default filter function does a naive case-insensitive comparison between the option string value and the current user input, returning `true` if the option string value contains the user input as a substring.
 
-In the demo on the top of this README, you can see this behavior in action with the *account* (Select) and *tags* (MultiSelect) prompts. 
+In the [demo](#Demo) you can see this behavior in action with the *account* (Select) and *tags* (MultiSelect) prompts. 
 
 ## Error handling
 
 Error handling when using `inquire` is pretty simple. Instantiating prompt structs is not fallible by design, in order to avoid requiring chaining of `map` and `and_then` methods to subsequent configuration method calls such as `with_help_message()`. All fallible operations are exposable only when you call `prompt()` on the instantiated prompt struct.
 
-`prompt` calls return a `Result` containing either your expected response value or an `Err` of type 'InquireError`. An `InquireError` has the following variants:
+`prompt` calls return a `Result` containing either your expected response value or an `Err` of type `InquireError`. An `InquireError` has the following variants:
 
 - **NotTTY**: The input device is not a TTY, which means that enabling raw mode on the terminal in order to listen to input events is not possible. I currently do not know if it is possible to make the library work even if that's the case.
 - **InvalidConfiguration(String)**: Some aspects of the prompt configuration were considered to be invalid, with more details given in the value string.
@@ -129,7 +136,7 @@ Currently, there are 5 different prompt types supported.
 
 ## Text
 
-Text is the standard kind of prompt you would expect from a library like this one. It displays a message to the user, prompting them to type something back. The user's input is then stored in a `String` and returned to the prompt caller.
+`Text` is the standard kind of prompt you would expect from a library like this one. It displays a message to the user, prompting them to type something back. The user's input is then stored in a `String` and returned to the prompt caller.
 
 ```rust
 let name = Text::new("What is your name?").prompt();
@@ -142,7 +149,7 @@ match name {
 
 ![Animated GIF making a demonstration of a simple prompt with Text created with this library. You can replay this recording in your terminal with asciinema play command using the file ./assets/text_simple.cast](./assets/text_simple.gif)
 
-With Text, you can customize several aspects:
+With `Text`, you can customize several aspects:
 
 - **Prompt message**: Main message when prompting the user for input, `"What is your name?"` in the example above.
 - **Help message**: Message displayed at the line below the prompt.
@@ -222,9 +229,9 @@ match ans {
 }
 ```
 
-The Select prompt is created with a prompt message and a non-empty list of options. It is suitable for when you need the user to select one option among many.
+The `Select` prompt is created with a prompt message and a non-empty list of options. It is suitable for when you need the user to select one option among many.
 
-The Select prompt does not support custom validators because of the nature of the prompt. A submission always selects exactly one of the options. If this option was not supposed to be selected or is invalid in some way, it probably should not be included in the options list.
+The `Select` prompt does not support custom validators because of the nature of the prompt. A submission always selects exactly one of the options. If this option was not supposed to be selected or is invalid in some way, it probably should not be included in the options list.
 
 The options are paginated in order to provide a smooth experience to the user, with the default page size being 7. The user can move from the options and the pages will be updated accordingly, including moving from the last to the first options (or vice-versa).
 
@@ -248,7 +255,7 @@ Like all others, this prompt also allows you to customize several aspects of it:
 
 The source is too long, find it [here](./examples/multiselect.rs).
 
-The MultiSelect prompt is created with a prompt message and a non-empty list of options. It is suitable for when you need the user to select many options (including none if applicable) among a list of them.
+The `MultiSelect` prompt is created with a prompt message and a non-empty list of options. It is suitable for when you need the user to select many options (including none if applicable) among a list of them.
 
 The options are paginated in order to provide a smooth experience to the user, with the default page size being 7. The user can move from the options and the pages will be updated accordingly, including moving from the last to the first options (or vice-versa).
 
@@ -283,7 +290,7 @@ match name {
 }
 ```
 
-Password prompts are basically a less-featured version of Text prompts. Differences being:
+`Password` prompts are basically a less-featured version of Text prompts. Differences being:
 
 - User input is not echoed back to the terminal while typing.
 - User input is formatted to "\*\*\*\*\*\*\*\*" (eight star characters) by default.
@@ -309,7 +316,7 @@ match amount {
 }
 ```
 
-[`CustomType`] prompts are generic prompts suitable for when you need to parse the user input into a specific type, for example an `f64` or a `rust_decimal`, maybe even an `uuid`.
+`CustomType` prompts are generic prompts suitable for when you need to parse the user input into a specific type, for example an `f64` or a `rust_decimal`, maybe even an `uuid`.
 
 This prompt has all of the validation, parsing and error handling features built-in to reduce as much boilerplaste as possible from your prompts. Its defaults are necessarily very simple in order to cover a large range of generic cases, for example a "Invalid input" error message.
 
@@ -358,14 +365,14 @@ match ans {
 }
 ```
 
-[`Confirm`] is a prompt to ask the user for simple yes/no questions, commonly known by asking the user displaying the `(y/n)` text.
+`Confirm` is a prompt to ask the user for simple yes/no questions, commonly known by asking the user displaying the `(y/n)` text.
 
-This prompt is basically a wrapper around the behavior of `CustomType` prompts, providing a sensible set of defaults to ask for simple `true/false` questions, such as confirming an action.
+This prompt is basically a wrapper around the behavior of [`CustomType`] prompts, providing a sensible set of defaults to ask for simple `true/false` questions, such as confirming an action.
 
 Default values are formatted with the given value in uppercase, e.g. `(Y/n)` or `(y/N)`. The `bool` parser accepts by default only the following inputs (case-insensitive): `y`, `n`, `yes` and `no`. If the user input does not match any of them, the following error message is displayed by default:
 - `# Invalid answer, try typing 'y' for yes or 'n' for no`.
 
-Finally, once the answer is submitted, [`Confirm`] prompts display the bool value formatted as either "Yes", if a `true` value was parsed, or "No" otherwise.
+Finally, once the answer is submitted, `Confirm` prompts display the bool value formatted as either "Yes", if a `true` value was parsed, or "No" otherwise.
 
 The Confirm prompt does not support custom validators because of the nature of the prompt. The user input is always parsed to true or false. If one of the two alternatives is invalid, a Confirm prompt that only allows yes or no answers does not make a lot of sense to me, but if someone provides a clear use-case I will reconsider.
 
@@ -383,10 +390,10 @@ Confirm prompts provide several options of configuration:
 - **Error message**: Error message to display when a value could not be parsed from the input.
   - Set to "Invalid answer, try typing 'y' for yes or 'n' for no" by default.
 
-[`Text`]: https://docs.rs/inquire/*/inquire/prompts/text/struct.Text.html
-[`DateSelect`]: https://docs.rs/inquire/*/inquire/prompts/dateselect/struct.DateSelect.html
-[`Select`]: https://docs.rs/inquire/*/inquire/prompts/select/struct.Select.html
-[`MultiSelect`]: https://docs.rs/inquire/*/inquire/prompts/multiselect/struct.MultiSelect.html
-[`Confirm`]: https://docs.rs/inquire/*/inquire/prompts/confirm/struct.Confirm.html
-[`CustomType`]: https://docs.rs/inquire/*/inquire/prompts/customtype/struct.CustomType.html
-[`Password`]: https://docs.rs/inquire/*/inquire/prompts/password/struct.Password.html
+[`Text`]: #Text
+[`DateSelect`]: #DateSelect
+[`Select`]: #Select
+[`MultiSelect`]: #MultiSelect
+[`Confirm`]: #Confirm
+[`CustomType`]: #CustomType
+[`Password`]: #Password
