@@ -29,6 +29,12 @@ Put this line in your `Cargo.toml`, under `[dependencies]`.
 inquire = "0.0.6"
 ```
 
+If you'd like to use the date-related features, enable the `date` feature:
+
+```
+inquire = { version = "0.0.6", features = ["date"] }
+```
+
 ## Examples
 
 Examples can be found in the `examples` directory. Run them to see basic behavior:
