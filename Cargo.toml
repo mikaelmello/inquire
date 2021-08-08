@@ -10,6 +10,7 @@ homepage = "https://github.com/mikaelmello/inquire"
 authors = ["Mikael Mello <git@mikaelmello.com>"]
 keywords = ["cli", "ask", "prompt", "question", "interactive"]
 categories = ["command-line-interface", "value-formatting"]
+exclude = ["/.github", "/.vscode", "/.idea", "/assets", "/release.sh"]
 
 [features]
 default = ["builtin_validators"]
