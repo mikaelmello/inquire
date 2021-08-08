@@ -9,7 +9,7 @@
 ---
 
 <p align="center">
-  <img width="460" src="assets/inquire.png">
+  <img width="460" src="./assets/inquire.png">
   <br>
   <code>inquire</code> is a library for building interactive prompts on terminals.
 </p>
@@ -18,8 +18,8 @@
 
 ## Demo
 
-![Animated GIF making a demonstration of a questionnaire created with this library. You can replay this recording in your terminal with asciinema play command - asciinema play ./assets/expense_tracker.cast](assets/expense_tracker.gif)
-[Source](examples/expense_tracker.rs)
+![Animated GIF making a demonstration of a questionnaire created with this library. You can replay this recording in your terminal with asciinema play command - asciinema play ./assets/expense_tracker.cast](./assets/expense_tracker.gif)
+[Source](./examples/expense_tracker.rs)
 
 ## Usage
 
@@ -134,7 +134,7 @@ match name {
 }
 ```
 
-![Animated GIF making a demonstration of a simple prompt with Text created with this library. You can replay this recording in your terminal with asciinema play command using the file ./assets/text_simple.cast](assets/text_simple.gif)
+![Animated GIF making a demonstration of a simple prompt with Text created with this library. You can replay this recording in your terminal with asciinema play command using the file ./assets/text_simple.cast](./assets/text_simple.gif)
 
 With Text, you can customize several aspects:
 
@@ -166,7 +166,7 @@ Default behaviors for each one of `Text` configuration options:
 
 ## DateSelect
 
-![Animated GIF making a demonstration of a DateSelect prompt created with this library. You can replay this recording in your terminal with asciinema play command using the file ./assets/date_complete.cast](assets/date_complete.gif)
+![Animated GIF making a demonstration of a DateSelect prompt created with this library. You can replay this recording in your terminal with asciinema play command using the file ./assets/date_complete.cast](./assets/date_complete.gif)
 
 ```rust
 let date = DateSelect::new("When do you want to travel?")
@@ -201,7 +201,7 @@ DateSelect prompts provide several options of configuration:
 
 ## Select
 
-![Animated GIF making a demonstration of a simple Select prompt created with this library. You can replay this recording in your terminal with asciinema play command using the file ./assets/select.cast](assets/select.gif)
+![Animated GIF making a demonstration of a simple Select prompt created with this library. You can replay this recording in your terminal with asciinema play command using the file ./assets/select.cast](./assets/select.gif)
 
 ```rust
 let options = vec!["Banana", "Apple", "Strawberry", "Grapes",
@@ -238,9 +238,9 @@ Like all others, this prompt also allows you to customize several aspects of it:
 
 ## MultiSelect
 
-![Animated GIF making a demonstration of a simple MultiSelect prompt created with this library. You can replay this recording in your terminal with asciinema play command using the file ./assets/multiselect.cast](assets/multiselect.gif)
+![Animated GIF making a demonstration of a simple MultiSelect prompt created with this library. You can replay this recording in your terminal with asciinema play command using the file ./assets/multiselect.cast](./assets/multiselect.gif)
 
-The source is too long, find it [here](examples/multiselect.rs).
+The source is too long, find it [here](./examples/multiselect.rs).
 
 The MultiSelect prompt is created with a prompt message and a non-empty list of options. It is suitable for when you need the user to select many options (including none if applicable) among a list of them.
 
@@ -266,7 +266,7 @@ Like all others, this prompt also allows you to customize several aspects of it:
 
 ## Password
 
-![Animated GIF making a demonstration of a simple Password prompt created with this library. You can replay this recording in your terminal with asciinema play command using the file ./assets/password_simple.cast](assets/password_simple.gif)
+![Animated GIF making a demonstration of a simple Password prompt created with this library. You can replay this recording in your terminal with asciinema play command using the file ./assets/password_simple.cast](./assets/password_simple.gif)
 
 ```rust
 let name = Password::new("Encryption key:").prompt();
@@ -288,7 +288,7 @@ However, it is still possible to customize error messages, formatters and valida
 
 ## CustomType
 
-![Animated GIF making a demonstration of a simple CustomType prompt created with this library. You can replay this recording in your terminal with asciinema play command using the file ./assets/custom_type.cast](assets/custom_type.gif)
+![Animated GIF making a demonstration of a simple CustomType prompt created with this library. You can replay this recording in your terminal with asciinema play command using the file ./assets/custom_type.cast](./assets/custom_type.gif)
 
 ```rust
 let amount = CustomType::<f64>::new("How much do you want to donate?")
@@ -333,7 +333,7 @@ let amount_prompt: CustomType<chrono::NaiveDate> = CustomType {
 
 ## Confirm
 
-![Animated GIF making a demonstration of a simple Confirm prompt created with this library. You can replay this recording in your terminal with asciinema play command using the file ./assets/confirm_simple.cast](assets/confirm_simple.gif)
+![Animated GIF making a demonstration of a simple Confirm prompt created with this library. You can replay this recording in your terminal with asciinema play command using the file ./assets/confirm_simple.cast](./assets/confirm_simple.gif)
 
 ```rust
 let ans = Confirm::new("Do you live in Brazil?")
