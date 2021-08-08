@@ -348,7 +348,14 @@ match ans {
 }
 ```
 
-The Confirm is basically a wrapper around the behavior of `CustomType` prompts, providing a sensible set of defaults to ask for simple `true/false` questions, such as confirming an action.
+[`Confirm`] is a prompt to ask the user for simple yes/no questions, commonly known by asking the user displaying the `(y/n)` text.
+
+This prompt is basically a wrapper around the behavior of `CustomType` prompts, providing a sensible set of defaults to ask for simple `true/false` questions, such as confirming an action.
+
+Default values are formatted with the given value in uppercase, e.g. `(Y/n)` or `(y/N)`. The `bool` parser accepts by default only the following inputs (case-insensitive): `y`, `n`, `yes` and `no`. If the user input does not match any of them, the following error message is displayed by default:
+- `# Invalid answer, try typing 'y' for yes or 'n' for no`.
+
+Finally, once the answer is submitted, [`Confirm`] prompts display the bool value formatted as either "Yes", if a `true` value was parsed, or "No" otherwise.
 
 The Confirm prompt does not support custom validators because of the nature of the prompt. The user input is always parsed to true or false. If one of the two alternatives is invalid, a Confirm prompt that only allows yes or no answers does not make a lot of sense to me, but if someone provides a clear use-case I will reconsider.
 
@@ -359,11 +366,17 @@ Confirm prompts provide several options of configuration:
 - **Help message**: Message displayed at the line below the prompt.
 - **Formatter**: Custom formatter in case you need to pre-process the user input before showing it as the final answer.
   - Formats `true` to "Yes" and `false` to "No", by default.
-  - Useful to set in case you might want to internationalize your prompts.
 - **Parser**: Custom parser for user inputs.
   - The default `bool` parser returns `true` if the input is either `"y"` or `"yes"`, in a case-insensitive comparison. Similarly, the parser returns `false` if the input is either `"n"` or `"no"`.
-  - Useful to set in case you might want to internationalize your prompts, allowing different responses besides yes and no.
 - **Default value formatter**: Function that formats how the default value is displayed to the user.
   - By default, displays "y/n" with the default value capitalized, e.g. "y/N".
 - **Error message**: Error message to display when a value could not be parsed from the input.
   - Set to "Invalid answer, try typing 'y' for yes or 'n' for no" by default.
+
+[`Text`]: https://docs.rs/inquire/*/inquire/prompts/text/struct.Text.html
+[`DateSelect`]: https://docs.rs/inquire/*/inquire/prompts/dateselect/struct.DateSelect.html
+[`Select`]: https://docs.rs/inquire/*/inquire/prompts/select/struct.Select.html
+[`MultiSelect`]: https://docs.rs/inquire/*/inquire/prompts/multiselect/struct.MultiSelect.html
+[`Confirm`]: https://docs.rs/inquire/*/inquire/prompts/confirm/struct.Confirm.html
+[`CustomType`]: https://docs.rs/inquire/*/inquire/prompts/customtype/struct.CustomType.html
+[`Password`]: https://docs.rs/inquire/*/inquire/prompts/password/struct.Password.html
