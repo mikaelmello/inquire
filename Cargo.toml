@@ -18,7 +18,8 @@ builtin_validators = []
 date = ["chrono"]
 
 [package.metadata.docs.rs]
-features = ["date"]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 crossterm = "0.20"
