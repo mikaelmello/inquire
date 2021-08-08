@@ -30,16 +30,15 @@ use crate::{
 /// If your type `T` does not satisfy these constraints, you can always manually instantiate the entire struct yourself like this:
 ///
 /// ```no_run
-/// use chrono::NaiveDate;
 /// use inquire::CustomType;
 ///
-/// let amount_prompt: CustomType<NaiveDate> = CustomType {
-///     message: "When will you travel?",
-///     formatter: &|val| val.format("%d/%m/%Y").to_string(),
+/// let amount_prompt: CustomType<f64> = CustomType {
+///     message: "How much is your travel going to cost?",
+///     formatter: &|i| format!("${:.2}", i),
 ///     default: None,
-///     error_message: "Please type a valid date in the expected format.".into(),
-///     help_message: "The date should be in the dd/mm/yyyy format.".into(),
-///     parser: &|i| match NaiveDate::parse_from_str(i, "%d/%m/%Y") {
+///     error_message: "Please type a valid number.".into(),
+///     help_message: "Do not use currency and the number should use dots as the decimal separator.".into(),
+///     parser: &|i| match i.parse::<f64>() {
 ///         Ok(val) => Ok(val),
 ///         Err(_) => Err(()),
 ///     },
