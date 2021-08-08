@@ -6,6 +6,7 @@ repository = "https://github.com/mikaelmello/inquire"
 license = "MIT"
 edition = "2018"
 readme = "./CRATE_README.md"
+documentation = "https://docs.rs/inquire"
 homepage = "https://github.com/mikaelmello/inquire"
 authors = ["Mikael Mello <git@mikaelmello.com>"]
 keywords = ["cli", "ask", "prompt", "question", "interactive"]

@@ -30,28 +30,6 @@ It provides several different prompts in order to interactively ask the user for
 ![Animated GIF making a demonstration of a questionnaire created with this library. You can replay this recording in your terminal with asciinema play command - asciinema play ./assets/expense_tracker.cast](./assets/expense_tracker.gif)
 [Source](./examples/expense_tracker.rs)
 
-## Usage
-
-Put this line in your `Cargo.toml`, under `[dependencies]`.
-
-```
-inquire = "0.0.6"
-```
-
-\* If you'd like to use the date-related features, enable the `date` feature:
-
-```
-inquire = { version = "0.0.6", features = ["date"] }
-```
-
-## Examples
-
-Examples can be found in the `examples` directory. Run them to see basic behavior:
-
-```
-$ cargo run --example expense_tracker --features date
-```
-
 ## Features
 
 - Cross-platform, supporting UNIX and Windows terminals (thanks to [crossterm](https://crates.io/crates/crossterm));
@@ -65,6 +43,20 @@ $ cargo run --example expense_tracker --features date
   - Custom list filters for Select and [`MultiSelect`] prompts;
   - Custom parsers for [`Confirm`] and [`CustomType`] prompts;
   - and many others!
+
+## Usage
+
+Put this line in your `Cargo.toml`, under `[dependencies]`.
+
+```
+inquire = "0.0.6"
+```
+
+\* If you'd like to use the date-related features, enable the `date` feature:
+
+```
+inquire = { version = "0.0.6", features = ["date"] }
+```
 
 [`Text`]: https://docs.rs/inquire/*/inquire/prompts/text/struct.Text.html
 [`DateSelect`]: https://docs.rs/inquire/*/inquire/prompts/dateselect/struct.DateSelect.html
