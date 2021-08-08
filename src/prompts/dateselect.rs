@@ -14,7 +14,7 @@ use crate::{
     validator::DateValidator,
 };
 
-/// `DateSelect` prompts allows user to select a date (time not supported) from an interactive calendar. This prompt is only available when including the `date` feature in the dependency, as it brings an additional module (`chrono`) in your dependency tree.
+/// Prompt that allows user to select a date (time not supported) from an interactive calendar. Available via the `date` feature.
 ///
 /// By default, the initial selected date is the current date. The user can navigate through the calendar by pressing the keyboard arrows. If the user also presses the control key along with the arrows, the user will be able to "fast-forward" to previous or next months or years.
 ///

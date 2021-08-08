@@ -7,7 +7,7 @@ use crate::{
     CustomType,
 };
 
-/// [`Confirm`] is a prompt to ask the user for simple yes/no questions, commonly known by asking the user displaying the `(y/n)` text.
+/// Prompt to ask the user for simple yes/no questions, commonly known by asking the user displaying the `(y/n)` text.
 ///
 /// This prompt is basically a wrapper around the behavior of `CustomType` prompts, providing a sensible set of defaults to ask for simple `true/false` questions, such as confirming an action.
 ///

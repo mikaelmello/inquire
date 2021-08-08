@@ -13,7 +13,7 @@ use crate::{
     validator::MultiOptionValidator,
 };
 
-/// `MultiSelect` prompts are suitable for when you need the user to select many options (including none if applicable) among a list of them.
+/// Prompt suitable for when you need the user to select many options (including none if applicable) among a list of them.
 ///
 /// The user can select (or deselect) the current highlighted option by pressing space, clean all selections by pressing the left arrow and select all options by pressing the right arrow.
 ///
