@@ -298,14 +298,15 @@ match name {
 }
 ```
 
-`Password` prompts are basically a less-featured version of Text prompts. Differences being:
+`Password` prompts are meant for secretive text inputs.
 
-- User input is not echoed back to the terminal while typing.
-- User input is formatted to "\*\*\*\*\*\*\*\*" (eight star characters) by default.
-- No support for default values.
-- No support for auto-completion, obviously.
+It is a simple text prompt where the user's input is captured and not echoed back to the terminal.
 
-However, it is still possible to customize error messages, formatters and validators.
+This prompt is meant to be as simple and raw as possible, not supporting features such as default values or auto-completion.
+
+By default, the user submission is formatted as "\*\*\*\*\*\*\*\*" (eight star characters).
+
+This prompt still allows the caller to customize standard properties: validators, input formatter, error and help messages.
 
 ## CustomType
 

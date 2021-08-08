@@ -7,12 +7,29 @@ use crate::{
     terminal::Terminal,
     validator::StringValidator,
 };
-/// Retrieves a single line of text input without echoing back the user's keypresses.
+
+/// Prompt meant for secretive text inputs.
 ///
-/// [Password](crate::Password) differs from [Text](crate::Text) by not
-/// echoing the user input and having a smaller set of custom behaviors in comparison.
+/// It is a simple text prompt where the user's input is captured and not echoed back to the terminal.
 ///
-/// By default, the response is always formatted as "********".
+/// This prompt is meant to be as simple and raw as possible, not supporting features such as default values or auto-completion.
+///
+/// By default, the user submission is formatted as "\*\*\*\*\*\*\*\*" (eight star characters).
+///
+/// This prompt still allows the caller to customize standard properties: validators, input formatter, error and help messages.
+///
+/// # Example
+///
+/// ```no_run
+/// use inquire::Password;
+///
+/// let name = Password::new("Encryption key:").prompt();
+///
+/// match name {
+///     Ok(_) => println!("This doesn't look like a key."),
+///     Err(_) => println!("An error happened when asking for your key, try again later."),
+/// }
+/// ```
 #[derive(Clone)]
 pub struct Password<'a> {
     /// Message to be presented to the user.
