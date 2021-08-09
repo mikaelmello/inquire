@@ -1,87 +1,13 @@
-use crossterm::style::Color;
-
+use super::{key::Key, terminal::Terminal};
 use crate::{
     error::{InquireError, InquireResult},
     input::Input,
-};
-
-use super::{
-    key::Key,
-    terminal::{Style, Terminal},
+    ui::style::{Attributes, Color, Styled},
 };
 
 pub struct Renderer<'a> {
     cur_line: usize,
     terminal: Terminal<'a>,
-}
-
-pub struct Token<'a> {
-    pub content: &'a str,
-    pub fg: Option<Color>,
-    pub bg: Option<Color>,
-    pub style: Option<Style>,
-}
-
-impl<'a> Token<'a> {
-    pub fn new(content: &'a str) -> Self {
-        Self {
-            content,
-            fg: None,
-            bg: None,
-            style: None,
-        }
-    }
-
-    #[allow(unused)]
-    pub fn empty() -> Self {
-        Self::new("")
-    }
-
-    pub fn with_fg(mut self, fg: Color) -> Self {
-        self.fg = Some(fg);
-        self
-    }
-
-    #[allow(unused)]
-    pub fn with_bg(mut self, bg: Color) -> Self {
-        self.bg = Some(bg);
-        self
-    }
-
-    pub fn with_style(mut self, style: Style) -> Self {
-        self.style = Some(style);
-        self
-    }
-
-    pub fn print(&self, terminal: &mut Terminal) -> InquireResult<()> {
-        if self.content.is_empty() {
-            return Ok(());
-        }
-
-        if let Some(color) = self.fg {
-            terminal.set_fg_color(color)?;
-        }
-        if let Some(color) = self.bg {
-            terminal.set_bg_color(color)?;
-        }
-        if let Some(style) = &self.style {
-            terminal.set_style(*style)?;
-        }
-
-        terminal.write(self.content)?;
-
-        if let Some(_) = self.fg.as_ref() {
-            terminal.reset_fg_color()?;
-        }
-        if let Some(_) = self.bg.as_ref() {
-            terminal.reset_bg_color()?;
-        }
-        if let Some(_) = &self.style {
-            terminal.reset_style()?;
-        }
-
-        Ok(())
-    }
 }
 
 impl<'a> Renderer<'a> {
@@ -107,30 +33,24 @@ impl<'a> Renderer<'a> {
         Ok(())
     }
 
-    pub fn print_tokens(&mut self, tokens: &[Token]) -> InquireResult<()> {
-        for t in tokens {
-            t.print(&mut self.terminal)?;
-        }
-
-        Ok(())
-    }
-
     pub fn print_error_message(&mut self, message: &str) -> InquireResult<()> {
-        Token::new(&format!("# {}", message))
-            .with_fg(Color::Red)
-            .print(&mut self.terminal)?;
+        self.terminal
+            .write_styled(Styled::new(format!("# {}", message)).with_fg(Color::Red))?;
 
         self.new_line()?;
 
         Ok(())
     }
 
-    pub fn print_prompt_answer(&mut self, prompt: &str, answer: &str) -> InquireResult<()> {
-        self.print_tokens(&vec![
-            Token::new("? ").with_fg(Color::Green),
-            Token::new(prompt),
-            Token::new(&format!(" {}", answer)).with_fg(Color::Cyan),
-        ])?;
+    fn print_prompt_answer(&mut self, prompt: &str, answer: &str) -> InquireResult<()> {
+        self.terminal
+            .write_styled(Styled::new("? ").with_fg(Color::Green))?;
+
+        self.terminal.write(prompt)?;
+
+        self.terminal
+            .write_styled(Styled::new(format!(" {}", answer)).with_fg(Color::Cyan))?;
+
         self.new_line()?;
 
         Ok(())
@@ -142,19 +62,19 @@ impl<'a> Renderer<'a> {
         default: Option<&str>,
         content: Option<&str>,
     ) -> InquireResult<()> {
-        Token::new("? ")
-            .with_fg(Color::Green)
-            .print(&mut self.terminal)?;
-        Token::new(prompt).print(&mut self.terminal)?;
+        self.terminal
+            .write_styled(Styled::new("? ").with_fg(Color::Green))?;
+
+        self.terminal.write(prompt)?;
 
         if let Some(default) = default {
-            Token::new(&format!(" ({})", default)).print(&mut self.terminal)?;
+            self.terminal.write(format!(" ({})", default))?;
         }
 
         match content {
-            Some(content) if !content.is_empty() => Token::new(&format!(" {}", content))
-                .with_style(Style::Bold)
-                .print(&mut self.terminal)?,
+            Some(content) if !content.is_empty() => self
+                .terminal
+                .write_styled(Styled::new(format!(" {}", content)).with_attr(Attributes::BOLD))?,
             _ => {}
         }
 
@@ -169,13 +89,13 @@ impl<'a> Renderer<'a> {
         default: Option<&str>,
         content: &Input,
     ) -> InquireResult<()> {
-        Token::new("? ")
-            .with_fg(Color::Green)
-            .print(&mut self.terminal)?;
-        Token::new(prompt).print(&mut self.terminal)?;
+        self.terminal
+            .write_styled(Styled::new("? ").with_fg(Color::Green))?;
+
+        self.terminal.write(prompt)?;
 
         if let Some(default) = default {
-            Token::new(&format!(" ({})", default)).print(&mut self.terminal)?;
+            self.terminal.write(format!(" ({})", default))?;
         }
 
         let (before, mut at, after) = content.split();
@@ -184,12 +104,11 @@ impl<'a> Renderer<'a> {
             at.push(' ');
         }
 
-        self.print_tokens(&[
-            Token::new(" "),
-            Token::new(&before),
-            Token::new(&at).with_bg(Color::Grey).with_fg(Color::Black),
-            Token::new(&after),
-        ])?;
+        self.terminal.write(" ")?;
+        self.terminal.write(before)?;
+        self.terminal
+            .write_styled(Styled::new(at).with_bg(Color::Grey).with_fg(Color::Black))?;
+        self.terminal.write(after)?;
 
         self.new_line()?;
 
@@ -197,21 +116,21 @@ impl<'a> Renderer<'a> {
     }
 
     pub fn print_help(&mut self, message: &str) -> InquireResult<()> {
-        Token::new(&format!("[{}]", message))
-            .with_fg(Color::Cyan)
-            .print(&mut self.terminal)?;
+        self.terminal
+            .write_styled(Styled::new(format!("[{}]", message)).with_fg(Color::Cyan))?;
+
         self.new_line()?;
 
         Ok(())
     }
 
     pub fn print_option(&mut self, cursor: bool, content: &str) -> InquireResult<()> {
-        match cursor {
-            true => Token::new(&format!("> {}", content))
-                .with_fg(Color::Cyan)
-                .print(&mut self.terminal),
-            false => Token::new(&format!("  {}", content)).print(&mut self.terminal),
-        }?;
+        let token = match cursor {
+            true => Styled::new(format!("> {}", content)).with_fg(Color::Cyan),
+            false => Styled::new(format!("  {}", content)),
+        };
+
+        self.terminal.write_styled(token)?;
 
         self.new_line()?;
 
@@ -224,17 +143,19 @@ impl<'a> Renderer<'a> {
         checked: bool,
         content: &str,
     ) -> InquireResult<()> {
-        self.print_tokens(&vec![
-            match cursor {
-                true => Token::new("> ").with_fg(Color::Cyan),
-                false => Token::new("  "),
-            },
-            match checked {
-                true => Token::new("[x] ").with_fg(Color::Green),
-                false => Token::new("[ ] "),
-            },
-            Token::new(content),
-        ])?;
+        let cursor = match cursor {
+            true => Styled::new("> ").with_fg(Color::Cyan),
+            false => Styled::new("  "),
+        };
+
+        let checked = match checked {
+            true => Styled::new("[x] ").with_fg(Color::Green),
+            false => Styled::new("[ ] "),
+        };
+
+        self.terminal.write_styled(cursor)?;
+        self.terminal.write_styled(checked)?;
+        self.terminal.write(content)?;
 
         self.new_line()?;
 
@@ -259,10 +180,11 @@ impl<'a> Renderer<'a> {
         // print header (month year)
         let header = format!("{} {}", month.name().to_lowercase(), year);
 
-        self.print_tokens(&vec![
-            Token::new("> ").with_fg(Color::Green),
-            Token::new(&format!("{:^20}", header)),
-        ])?;
+        self.terminal
+            .write_styled(Styled::new("> ").with_fg(Color::Green))?;
+
+        self.terminal.write(format!("{:^20}", header))?;
+
         self.new_line()?;
 
         // print week header
@@ -278,10 +200,10 @@ impl<'a> Renderer<'a> {
         }
         let week_days = week_days.join(" ");
 
-        Token::new("> ")
-            .with_fg(Color::Green)
-            .print(&mut self.terminal)?;
-        self.terminal.write(&week_days)?;
+        self.terminal
+            .write_styled(Styled::new("> ").with_fg(Color::Green))?;
+
+        self.terminal.write(week_days)?;
         self.new_line()?;
 
         // print dates
@@ -296,9 +218,8 @@ impl<'a> Renderer<'a> {
         }
 
         for _ in 0..6 {
-            Token::new("> ")
-                .with_fg(Color::Green)
-                .print(&mut self.terminal)?;
+            self.terminal
+                .write_styled(Styled::new("> ").with_fg(Color::Green))?;
 
             for i in 0..7 {
                 if i > 0 {
@@ -307,7 +228,7 @@ impl<'a> Renderer<'a> {
 
                 let date = format!("{:2}", date_it.day());
 
-                let mut token = Token::new(&date);
+                let mut token = Styled::new(date);
 
                 if date_it == selected_date {
                     token = token.with_bg(Color::Grey).with_fg(Color::Black);
@@ -329,7 +250,7 @@ impl<'a> Renderer<'a> {
                     }
                 }
 
-                token.print(&mut self.terminal)?;
+                self.terminal.write_styled(token)?;
 
                 date_it = date_it.succ();
             }

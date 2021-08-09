@@ -1,12 +1,19 @@
-use std::io::{stdout, Error, Stdout, Write};
-
-use crate::error::{InquireError, InquireResult};
+use crate::{
+    error::{InquireError, InquireResult},
+    ui::style::Attributes,
+};
 use crossterm::{
     event::KeyEvent,
     queue,
-    style::Attribute,
+    style::{Attribute, Print},
     terminal::{self, ClearType},
 };
+use std::{
+    fmt::Display,
+    io::{stdout, Error, Stdout, Write},
+};
+
+use super::style::Styled;
 
 #[derive(Default, Clone, Copy, PartialEq)]
 pub struct Size {
@@ -28,13 +35,6 @@ pub enum IO<'a> {
 pub struct Terminal<'a> {
     io: IO<'a>,
     dull: bool,
-}
-
-#[derive(Copy, Clone)]
-pub enum Style {
-    Bold,
-    #[allow(unused)]
-    Italic,
 }
 
 impl<'a> Terminal<'a> {
@@ -114,8 +114,34 @@ impl<'a> Terminal<'a> {
         }
     }
 
-    pub fn write(&mut self, val: &str) -> Result<(), std::io::Error> {
-        write!(self.get_writer(), "{}", val)
+    pub fn write<T: Display>(&mut self, val: T) -> Result<(), std::io::Error> {
+        queue!(&mut self.get_writer(), Print(val))
+    }
+
+    pub fn write_styled<T: Display>(&mut self, val: Styled<T>) -> Result<(), std::io::Error> {
+        if let Some(color) = val.fg {
+            self.set_fg_color(color)?;
+        }
+        if let Some(color) = val.bg {
+            self.set_bg_color(color)?;
+        }
+        if !val.att.is_empty() {
+            self.set_attributes(val.att)?;
+        }
+
+        self.write(val.content)?;
+
+        if let Some(_) = val.fg.as_ref() {
+            self.reset_fg_color()?;
+        }
+        if let Some(_) = val.bg.as_ref() {
+            self.reset_bg_color()?;
+        }
+        if !val.att.is_empty() {
+            self.reset_attributes()?;
+        }
+
+        Ok(())
     }
 
     pub fn cursor_hide(&mut self) -> Result<(), std::io::Error> {
@@ -133,27 +159,29 @@ impl<'a> Terminal<'a> {
         )
     }
 
-    pub fn set_style(&mut self, style: Style) -> Result<(), std::io::Error> {
+    pub fn set_attributes(&mut self, attributes: Attributes) -> Result<(), std::io::Error> {
         if self.dull {
             return Ok(());
         }
 
-        match style {
-            Style::Bold => queue!(
+        if attributes.contains(Attributes::BOLD) {
+            queue!(
                 &mut self.get_writer(),
                 crossterm::style::SetAttribute(Attribute::Bold)
-            ),
-            Style::Italic => {
-                queue!(
-                    &mut self.get_writer(),
-                    crossterm::style::SetAttribute(Attribute::Italic)
-                )
-            }
+            )?;
         }
+        if attributes.contains(Attributes::ITALIC) {
+            queue!(
+                &mut self.get_writer(),
+                crossterm::style::SetAttribute(Attribute::Italic)
+            )?;
+        }
+
+        Ok(())
     }
 
     #[allow(unused)]
-    pub fn reset_style(&mut self) -> Result<(), std::io::Error> {
+    pub fn reset_attributes(&mut self) -> Result<(), std::io::Error> {
         if self.dull {
             return Ok(());
         }
@@ -228,7 +256,7 @@ impl<'a> Drop for Terminal<'a> {
 
 #[cfg(test)]
 mod test {
-    use super::Style;
+    use super::Attributes;
     use super::Terminal;
 
     #[test]
@@ -262,15 +290,37 @@ mod test {
         {
             let mut terminal = Terminal::new_with_io(&mut write, &mut read);
 
-            terminal.set_style(Style::Bold).unwrap();
-            terminal.set_style(Style::Italic).unwrap();
-            terminal.set_style(Style::Bold).unwrap();
-            terminal.reset_style().unwrap();
+            terminal.set_attributes(Attributes::BOLD).unwrap();
+            terminal.set_attributes(Attributes::ITALIC).unwrap();
+            terminal.set_attributes(Attributes::BOLD).unwrap();
+            terminal.reset_attributes().unwrap();
         }
 
         #[cfg(unix)]
         assert_eq!(
             "\x1B[1m\x1B[3m\x1B[1m\x1B[0m\x1B[?25h",
+            std::str::from_utf8(&write).unwrap()
+        );
+    }
+
+    #[test]
+    fn style_management_with_flags() {
+        let mut write: Vec<u8> = Vec::new();
+        let read = Vec::new();
+        let mut read = read.iter();
+
+        {
+            let mut terminal = Terminal::new_with_io(&mut write, &mut read);
+
+            terminal
+                .set_attributes(Attributes::BOLD | Attributes::ITALIC | Attributes::BOLD)
+                .unwrap();
+            terminal.reset_attributes().unwrap();
+        }
+
+        #[cfg(unix)]
+        assert_eq!(
+            "\x1B[1m\x1B[3m\x1B[0m\x1B[?25h",
             std::str::from_utf8(&write).unwrap()
         );
     }
@@ -336,10 +386,10 @@ mod test {
         {
             let mut terminal = Terminal::new_with_io(&mut write, &mut read).dull();
 
-            terminal.set_style(Style::Bold).unwrap();
-            terminal.set_style(Style::Italic).unwrap();
-            terminal.set_style(Style::Bold).unwrap();
-            terminal.reset_style().unwrap();
+            terminal
+                .set_attributes(Attributes::BOLD | Attributes::ITALIC)
+                .unwrap();
+            terminal.reset_attributes().unwrap();
             terminal.set_bg_color(crossterm::style::Color::Red).unwrap();
             terminal.reset_bg_color().unwrap();
             terminal
