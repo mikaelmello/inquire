@@ -4,11 +4,11 @@ use crate::{
     error::{InquireError, InquireResult},
     formatter::CustomTypeFormatter,
     input::Input,
-    key::Key,
     parse_type,
     parser::CustomTypeParser,
     renderer::Renderer,
     terminal::Terminal,
+    ui::key::Key,
 };
 
 /// Generic prompt suitable for when you need to parse the user input into a specific type, for example an `f64` or a `rust_decimal`, maybe even an `uuid`.

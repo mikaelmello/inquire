@@ -3,8 +3,8 @@ use crossterm::style::Color;
 use crate::{
     error::{InquireError, InquireResult},
     input::Input,
-    key::Key,
     terminal::{Style, Terminal},
+    ui::key::Key,
 };
 
 pub struct Renderer<'a> {

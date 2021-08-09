@@ -2,9 +2,9 @@ use crate::{
     error::{InquireError, InquireResult},
     formatter::StringFormatter,
     input::Input,
-    key::Key,
     renderer::Renderer,
     terminal::Terminal,
+    ui::key::Key,
     validator::StringValidator,
 };
 

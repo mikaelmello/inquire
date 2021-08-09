@@ -62,12 +62,12 @@ mod date_utils;
 pub mod error;
 pub mod formatter;
 mod input;
-mod key;
 pub mod option_answer;
 pub mod parser;
 mod prompts;
 mod renderer;
 mod terminal;
+mod ui;
 mod utils;
 pub mod validator;
 

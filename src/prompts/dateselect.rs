@@ -8,9 +8,9 @@ use crate::{
     date_utils::{get_current_date, get_month},
     error::{InquireError, InquireResult},
     formatter::{self, DateFormatter},
-    key::{Key, KeyModifiers},
     renderer::Renderer,
     terminal::Terminal,
+    ui::key::{Key, KeyModifiers},
     validator::DateValidator,
 };
 
