@@ -2,7 +2,10 @@ use super::{key::Key, terminal::Terminal};
 use crate::{
     error::{InquireError, InquireResult},
     input::Input,
-    ui::style::{Attributes, Color, Styled},
+    ui::{
+        color::Color,
+        style::{Attributes, Styled},
+    },
 };
 
 pub struct Renderer<'a> {

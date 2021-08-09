@@ -1,14 +1,13 @@
 use bitflags::bitflags;
 
+use super::color::Color;
+
 bitflags! {
     pub struct Attributes: u8 {
-        const BOLD              = 0b01;
-        const ITALIC            = 0b10;
+        const BOLD   = 0b01;
+        const ITALIC = 0b10;
     }
 }
-
-/// Re-export of Crossterm API
-pub type Color = crossterm::style::Color;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct StyleSheet {
