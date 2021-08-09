@@ -6,9 +6,11 @@ use crate::{
     formatter::{StringFormatter, DEFAULT_STRING_FORMATTER},
     input::Input,
     option_answer::OptionAnswer,
-    renderer::Renderer,
-    terminal::Terminal,
-    ui::key::{Key, KeyModifiers},
+    ui::{
+        key::{Key, KeyModifiers},
+        renderer::Renderer,
+        terminal::Terminal,
+    },
     utils::paginate,
     validator::StringValidator,
 };
@@ -371,12 +373,10 @@ impl<'a> TextPrompt<'a> {
 
 #[cfg(test)]
 mod test {
+    use super::Text;
+    use crate::ui::{renderer::Renderer, terminal::Terminal};
     use crossterm::event::{KeyCode, KeyEvent};
     use ntest::timeout;
-
-    use crate::{renderer::Renderer, terminal::Terminal};
-
-    use super::Text;
 
     fn default<'a>() -> Text<'a> {
         Text::new("Question?")

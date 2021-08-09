@@ -6,9 +6,11 @@ use crate::{
     formatter::{self, OptionFormatter},
     input::Input,
     option_answer::OptionAnswer,
-    renderer::Renderer,
-    terminal::Terminal,
-    ui::key::{Key, KeyModifiers},
+    ui::{
+        key::{Key, KeyModifiers},
+        renderer::Renderer,
+        terminal::Terminal,
+    },
     utils::paginate,
 };
 

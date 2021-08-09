@@ -228,9 +228,7 @@ impl<'a> Drop for Terminal<'a> {
 
 #[cfg(test)]
 mod test {
-
-    use crate::terminal::Style;
-
+    use super::Style;
     use super::Terminal;
 
     #[test]
