@@ -2,8 +2,7 @@ use crate::{
     error::InquireResult,
     formatter::{BoolFormatter, DEFAULT_BOOL_FORMATTER},
     parser::{BoolParser, DEFAULT_BOOL_PARSER},
-    renderer::Renderer,
-    terminal::Terminal,
+    ui::{renderer::Renderer, terminal::Terminal},
     CustomType,
 };
 

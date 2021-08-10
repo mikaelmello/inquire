@@ -8,9 +8,11 @@ use crate::{
     date_utils::{get_current_date, get_month},
     error::{InquireError, InquireResult},
     formatter::{self, DateFormatter},
-    key::{Key, KeyModifiers},
-    renderer::Renderer,
-    terminal::Terminal,
+    ui::{
+        key::{Key, KeyModifiers},
+        renderer::Renderer,
+        terminal::Terminal,
+    },
     validator::DateValidator,
 };
 
@@ -403,7 +405,11 @@ impl<'a> DateSelectPrompt<'a> {
 
 #[cfg(test)]
 mod test {
-    use crate::{date_utils::get_current_date, renderer::Renderer, terminal::Terminal, DateSelect};
+    use crate::{
+        date_utils::get_current_date,
+        ui::{renderer::Renderer, terminal::Terminal},
+        DateSelect,
+    };
     use chrono::NaiveDate;
     use crossterm::event::{KeyCode, KeyEvent};
     use ntest::timeout;

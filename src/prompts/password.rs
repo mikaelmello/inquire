@@ -2,9 +2,7 @@ use crate::{
     error::{InquireError, InquireResult},
     formatter::StringFormatter,
     input::Input,
-    key::Key,
-    renderer::Renderer,
-    terminal::Terminal,
+    ui::{key::Key, renderer::Renderer, terminal::Terminal},
     validator::StringValidator,
 };
 
@@ -215,7 +213,7 @@ impl<'a> PasswordPrompt<'a> {
 #[cfg(test)]
 mod test {
     use super::Password;
-    use crate::{renderer::Renderer, terminal::Terminal};
+    use crate::ui::{renderer::Renderer, terminal::Terminal};
     use crossterm::event::{KeyCode, KeyEvent};
     use ntest::timeout;
 

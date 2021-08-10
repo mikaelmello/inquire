@@ -5,10 +5,12 @@ use crate::{
     error::{InquireError, InquireResult},
     formatter::{self, OptionFormatter},
     input::Input,
-    key::{Key, KeyModifiers},
     option_answer::OptionAnswer,
-    renderer::Renderer,
-    terminal::Terminal,
+    ui::{
+        key::{Key, KeyModifiers},
+        renderer::Renderer,
+        terminal::Terminal,
+    },
     utils::paginate,
 };
 
