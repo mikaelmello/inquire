@@ -33,7 +33,7 @@ bitflags! {
 /// # Example
 ///
 /// ```
-//. use inquire::ui::{StyleSheet, Color, Attributes};
+/// use inquire::ui::{Attributes, Color, StyleSheet};
 ///
 /// let style_sheet = StyleSheet::default();
 ///
@@ -91,7 +91,7 @@ impl StyleSheet {
     /// # Example
     ///
     /// ```
-    /// use inquire::ui::{StyleSheet, Attributes};
+    /// use inquire::ui::{Attributes, Color, StyleSheet};
     ///
     /// let style_sheet = StyleSheet::default().with_attr(Attributes::BOLD);
     /// assert_eq!(true,  style_sheet.att.contains(Attributes::BOLD));
@@ -124,20 +124,6 @@ impl Default for StyleSheet {
 /// The struct does not require that `T` implements [Display], however
 /// the only mapped use for this struct, printing in on [Terminal] requires
 /// `T` to implement it.
-///
-/// # Example
-///
-/// ```
-/// use inquire::ui::{Styled, Color, Attributes};
-///
-/// let answer = 42;
-/// let token = Styled::new(42)
-///     .with_fg(Color::Cyan)
-///     .with_bg(Color::Black)
-///     .with_attr(Attributes::BOLD | Attributes::ITALIC);
-///
-/// assert_eq!(false, token.style.is_empty());
-/// ```
 pub struct Styled<T> {
     /// Content to be rendered.
     pub content: T,
@@ -156,7 +142,8 @@ impl<T> Styled<T> {
         }
     }
 
-    /// Sets
+    /// Sets the style sheet to the styled struct.
+    #[allow(unused)]
     pub fn with_style_sheet(mut self, style_sheet: StyleSheet) -> Self {
         self.style = style_sheet;
         self
@@ -179,26 +166,6 @@ impl<T> Styled<T> {
     /// Warning: this does not keep the previously applied attributes. If you want
     /// to just set a new attribute and keep the others, you need to apply the OR
     /// operation yourself.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use inquire::ui::{StyleSheet, Attributes, Styled};
-    ///
-    /// let answer = 42;
-    /// let token = Styled::new(42).with_attr(Attributes::BOLD);
-    /// assert_eq!(true,  token.style.att.contains(Attributes::BOLD));
-    /// assert_eq!(false, token.style.att.contains(Attributes::ITALIC));
-    ///
-    /// let token = token.with_attr(Attributes::ITALIC);
-    /// assert_eq!(false, token.style.att.contains(Attributes::BOLD));
-    /// assert_eq!(true,  token.style.att.contains(Attributes::ITALIC));
-    ///
-    /// let new_att = token.style.att | Attributes::BOLD;
-    /// let token = token.with_attr(new_att);
-    /// assert_eq!(true, token.style.att.contains(Attributes::BOLD));
-    /// assert_eq!(true, token.style.att.contains(Attributes::ITALIC));
-    /// ```
     pub fn with_attr(mut self, attributes: Attributes) -> Self {
         self.style.att = attributes;
         self

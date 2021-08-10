@@ -8,11 +8,7 @@ use crate::{
     date_utils::{get_current_date, get_month},
     error::{InquireError, InquireResult},
     formatter::{self, DateFormatter},
-    ui::{
-        key::{Key, KeyModifiers},
-        renderer::Renderer,
-        terminal::Terminal,
-    },
+    ui::{Key, KeyModifiers, Renderer, Terminal},
     validator::DateValidator,
 };
 
@@ -407,7 +403,7 @@ impl<'a> DateSelectPrompt<'a> {
 mod test {
     use crate::{
         date_utils::get_current_date,
-        ui::{renderer::Renderer, terminal::Terminal},
+        ui::{Renderer, Terminal},
         DateSelect,
     };
     use chrono::NaiveDate;
