@@ -1,3 +1,5 @@
+//! Contains definitions to apply style to rendered contents.
+
 use bitflags::bitflags;
 
 use super::Color;
@@ -80,7 +82,7 @@ impl StyleSheet {
         self
     }
 
-    /// Applies the defined attributes to the style sheet.
+    /// Copies the style sheet to a new one with the specified attributes.
     ///
     /// Warning: this does not keep the previously applied attributes. If you want
     /// to just set a new attribute and keep the others, you need to apply the OR
@@ -116,12 +118,37 @@ impl Default for StyleSheet {
     }
 }
 
+/// Represents a content that when rendered must have the associated style
+/// applied to it.
+///
+/// The struct does not require that `T` implements [Display], however
+/// the only mapped use for this struct, printing in on [Terminal] requires
+/// `T` to implement it.
+///
+/// # Example
+///
+/// ```
+/// use inquire::ui::{Styled, Color, Attributes};
+///
+/// let answer = 42;
+/// let token = Styled::new(42)
+///     .with_fg(Color::Cyan)
+///     .with_bg(Color::Black)
+///     .with_attr(Attributes::BOLD | Attributes::ITALIC);
+///
+/// assert_eq!(false, token.style.is_empty());
+/// ```
 pub struct Styled<T> {
+    /// Content to be rendered.
     pub content: T,
+
+    /// Style sheet to be applied to content when rendered.
     pub style: StyleSheet,
 }
 
 impl<T> Styled<T> {
+    /// Creates a new `Styled` object with the specified content
+    /// and a default (empty) style sheet.
     pub fn new(content: T) -> Self {
         Self {
             content,
@@ -129,22 +156,49 @@ impl<T> Styled<T> {
         }
     }
 
+    /// Sets
     pub fn with_style_sheet(mut self, style_sheet: StyleSheet) -> Self {
         self.style = style_sheet;
         self
     }
 
+    /// Sets the styled content to have the defined foreground [Color].
     pub fn with_fg(mut self, fg: Color) -> Self {
         self.style.fg = Some(fg);
         self
     }
 
-    #[allow(unused)]
+    /// Sets the styled content to have the defined foreground [Color].
     pub fn with_bg(mut self, bg: Color) -> Self {
         self.style.bg = Some(bg);
         self
     }
 
+    /// Sets the styled content to have the defined attributes.
+    ///
+    /// Warning: this does not keep the previously applied attributes. If you want
+    /// to just set a new attribute and keep the others, you need to apply the OR
+    /// operation yourself.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use inquire::ui::{StyleSheet, Attributes, Styled};
+    ///
+    /// let answer = 42;
+    /// let token = Styled::new(42).with_attr(Attributes::BOLD);
+    /// assert_eq!(true,  token.style.att.contains(Attributes::BOLD));
+    /// assert_eq!(false, token.style.att.contains(Attributes::ITALIC));
+    ///
+    /// let token = token.with_attr(Attributes::ITALIC);
+    /// assert_eq!(false, token.style.att.contains(Attributes::BOLD));
+    /// assert_eq!(true,  token.style.att.contains(Attributes::ITALIC));
+    ///
+    /// let new_att = token.style.att | Attributes::BOLD;
+    /// let token = token.with_attr(new_att);
+    /// assert_eq!(true, token.style.att.contains(Attributes::BOLD));
+    /// assert_eq!(true, token.style.att.contains(Attributes::ITALIC));
+    /// ```
     pub fn with_attr(mut self, attributes: Attributes) -> Self {
         self.style.att = attributes;
         self

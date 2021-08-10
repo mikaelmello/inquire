@@ -1,3 +1,5 @@
+//! UI-related definitions for rendered content.
+
 mod color;
 mod color_theme;
 pub(in crate) mod key;
