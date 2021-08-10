@@ -1,6 +1,6 @@
 use crate::{
     error::{InquireError, InquireResult},
-    ui::style::Attributes,
+    ui::Attributes,
 };
 use crossterm::{
     event::KeyEvent,
@@ -119,25 +119,25 @@ impl<'a> Terminal<'a> {
     }
 
     pub fn write_styled<T: Display>(&mut self, val: Styled<T>) -> Result<(), std::io::Error> {
-        if let Some(color) = val.fg {
+        if let Some(color) = val.style.fg {
             self.set_fg_color(color)?;
         }
-        if let Some(color) = val.bg {
+        if let Some(color) = val.style.bg {
             self.set_bg_color(color)?;
         }
-        if !val.att.is_empty() {
-            self.set_attributes(val.att)?;
+        if !val.style.att.is_empty() {
+            self.set_attributes(val.style.att)?;
         }
 
         self.write(val.content)?;
 
-        if let Some(_) = val.fg.as_ref() {
+        if let Some(_) = val.style.fg.as_ref() {
             self.reset_fg_color()?;
         }
-        if let Some(_) = val.bg.as_ref() {
+        if let Some(_) = val.style.bg.as_ref() {
             self.reset_bg_color()?;
         }
-        if !val.att.is_empty() {
+        if !val.style.att.is_empty() {
             self.reset_attributes()?;
         }
 
@@ -192,14 +192,17 @@ impl<'a> Terminal<'a> {
         )
     }
 
-    pub fn set_bg_color(&mut self, color: crossterm::style::Color) -> Result<(), std::io::Error> {
+    pub fn set_bg_color<T: Into<crossterm::style::Color>>(
+        &mut self,
+        color: T,
+    ) -> Result<(), std::io::Error> {
         if self.dull {
             return Ok(());
         }
 
         queue!(
             &mut self.get_writer(),
-            crossterm::style::SetBackgroundColor(color)
+            crossterm::style::SetBackgroundColor(color.into())
         )
     }
 
@@ -215,14 +218,17 @@ impl<'a> Terminal<'a> {
         )
     }
 
-    pub fn set_fg_color(&mut self, color: crossterm::style::Color) -> Result<(), std::io::Error> {
+    pub fn set_fg_color<T: Into<crossterm::style::Color>>(
+        &mut self,
+        color: T,
+    ) -> Result<(), std::io::Error> {
         if self.dull {
             return Ok(());
         }
 
         queue!(
             &mut self.get_writer(),
-            crossterm::style::SetForegroundColor(color)
+            crossterm::style::SetForegroundColor(color.into())
         )
     }
 

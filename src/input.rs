@@ -1,6 +1,6 @@
 use unicode_segmentation::UnicodeSegmentation;
 
-use crate::ui::key::{Key, KeyModifiers};
+use crate::ui::{Key, KeyModifiers};
 
 #[derive(Clone, Debug)]
 pub struct Input {
@@ -254,7 +254,7 @@ impl Input {
 #[cfg(test)]
 mod test {
     use super::Input;
-    use crate::ui::key::{Key, KeyModifiers};
+    use crate::ui::{Key, KeyModifiers};
 
     #[test]
     fn move_previous_word() {

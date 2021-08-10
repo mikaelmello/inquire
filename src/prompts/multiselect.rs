@@ -6,11 +6,7 @@ use crate::{
     formatter::{self, MultiOptionFormatter},
     input::Input,
     option_answer::OptionAnswer,
-    ui::{
-        key::{Key, KeyModifiers},
-        renderer::Renderer,
-        terminal::Terminal,
-    },
+    ui::{Key, KeyModifiers, Renderer, Terminal},
     utils::paginate,
     validator::MultiOptionValidator,
 };

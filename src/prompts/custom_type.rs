@@ -6,7 +6,7 @@ use crate::{
     input::Input,
     parse_type,
     parser::CustomTypeParser,
-    ui::{key::Key, renderer::Renderer, terminal::Terminal},
+    ui::{Key, Renderer, Terminal},
 };
 
 /// Generic prompt suitable for when you need to parse the user input into a specific type, for example an `f64` or a `rust_decimal`, maybe even an `uuid`.
