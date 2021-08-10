@@ -119,25 +119,25 @@ impl<'a> Terminal<'a> {
     }
 
     pub fn write_styled<T: Display>(&mut self, val: Styled<T>) -> Result<(), std::io::Error> {
-        if let Some(color) = val.fg {
+        if let Some(color) = val.style.fg {
             self.set_fg_color(color)?;
         }
-        if let Some(color) = val.bg {
+        if let Some(color) = val.style.bg {
             self.set_bg_color(color)?;
         }
-        if !val.att.is_empty() {
-            self.set_attributes(val.att)?;
+        if !val.style.att.is_empty() {
+            self.set_attributes(val.style.att)?;
         }
 
         self.write(val.content)?;
 
-        if let Some(_) = val.fg.as_ref() {
+        if let Some(_) = val.style.fg.as_ref() {
             self.reset_fg_color()?;
         }
-        if let Some(_) = val.bg.as_ref() {
+        if let Some(_) = val.style.bg.as_ref() {
             self.reset_bg_color()?;
         }
-        if !val.att.is_empty() {
+        if !val.style.att.is_empty() {
             self.reset_attributes()?;
         }
 

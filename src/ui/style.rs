@@ -118,46 +118,35 @@ impl Default for StyleSheet {
 
 pub struct Styled<T> {
     pub content: T,
-    pub fg: Option<Color>,
-    pub bg: Option<Color>,
-    pub att: Attributes,
+    pub style: StyleSheet,
 }
 
 impl<T> Styled<T> {
     pub fn new(content: T) -> Self {
         Self {
             content,
-            fg: None,
-            bg: None,
-            att: Attributes::empty(),
+            style: StyleSheet::default(),
         }
     }
 
-    pub fn with_style_sheet(mut self, stylesheet: StyleSheet) -> Self {
-        self.fg = stylesheet.fg;
-        self.bg = stylesheet.bg;
-        self.att = stylesheet.att;
+    pub fn with_style_sheet(mut self, style_sheet: StyleSheet) -> Self {
+        self.style = style_sheet;
         self
     }
 
     pub fn with_fg(mut self, fg: Color) -> Self {
-        self.fg = Some(fg);
+        self.style.fg = Some(fg);
         self
     }
 
     #[allow(unused)]
     pub fn with_bg(mut self, bg: Color) -> Self {
-        self.bg = Some(bg);
+        self.style.bg = Some(bg);
         self
     }
 
     pub fn with_attr(mut self, attributes: Attributes) -> Self {
-        self.att = self.att | attributes;
-        self
-    }
-
-    pub fn reset_attr(mut self) -> Self {
-        self.att = Attributes::empty();
+        self.style.att = attributes;
         self
     }
 }
