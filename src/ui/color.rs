@@ -1,9 +1,12 @@
-// Re-export of crossterm::style::Color for API purposes
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Ord, PartialOrd, Hash)]
+/// Represents a color to be used for text styling purposes.
+///
+/// Currently a clone of [crossterm::style::Color]. Check their documentation
+/// for detailed documentation.
+///
+/// In summary, the 16 defined colors are supported by almost all terminals.
+/// The Rgb and AnsiValue variants are supported in more modern ones.
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Color {
-    /// Resets the terminal color.
-    Reset,
-
     /// Black color.
     Black,
 
@@ -56,7 +59,16 @@ pub enum Color {
     ///
     /// Most UNIX terminals and Windows 10 supported only.
     /// See [Platform-specific notes](enum.Color.html#platform-specific-notes) for more info.
-    Rgb { r: u8, g: u8, b: u8 },
+    Rgb {
+        /// red value of RGB.
+        r: u8,
+
+        /// green value of RGB.
+        g: u8,
+
+        /// blue value of RGB.
+        b: u8,
+    },
 
     /// An ANSI color. See [256 colors - cheat sheet](https://jonasjacek.github.io/colors/) for more info.
     ///
@@ -68,7 +80,6 @@ pub enum Color {
 impl From<Color> for crossterm::style::Color {
     fn from(c: Color) -> Self {
         match c {
-            Color::Reset => crossterm::style::Color::Reset,
             Color::Black => crossterm::style::Color::Black,
             Color::DarkGrey => crossterm::style::Color::DarkGrey,
             Color::Red => crossterm::style::Color::Red,
