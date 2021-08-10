@@ -1,6 +1,6 @@
 use bitflags::bitflags;
 
-use super::color::Color;
+use super::Color;
 
 bitflags! {
     pub struct Attributes: u8 {

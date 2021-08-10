@@ -1,2 +1,2 @@
 #[derive(Copy, Clone, Debug, PartialEq)]
-struct ColorTheme {}
+pub struct ColorTheme {}

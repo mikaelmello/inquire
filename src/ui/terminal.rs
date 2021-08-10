@@ -1,6 +1,6 @@
 use crate::{
     error::{InquireError, InquireResult},
-    ui::style::Attributes,
+    ui::Attributes,
 };
 use crossterm::{
     event::KeyEvent,
