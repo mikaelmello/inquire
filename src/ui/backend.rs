@@ -108,10 +108,16 @@ pub mod crossterm {
 
         fn read_key(&mut self) -> Result<Key> {
             loop {
-                match crossterm::event::read()? {
-                    crossterm::event::Event::Key(key_event) => return Ok(key_event.into()),
-                    crossterm::event::Event::Mouse(_) => {}
-                    crossterm::event::Event::Resize(_, _) => {}
+                match &mut self.io {
+                    IO::Std { w: _ } => match crossterm::event::read()? {
+                        crossterm::event::Event::Key(key_event) => return Ok(key_event.into()),
+                        crossterm::event::Event::Mouse(_) => {}
+                        crossterm::event::Event::Resize(_, _) => {}
+                    },
+                    IO::Custom { r, w: _ } => {
+                        let key = r.next().expect("Custom stream of characters has ended");
+                        return Ok((*key).into());
+                    }
                 }
             }
         }
