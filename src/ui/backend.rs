@@ -26,7 +26,7 @@ pub trait Backend {
     fn reset_bg_color(&mut self) -> Result<()>;
 }
 
-mod crossterm {
+pub mod crossterm {
     use std::io::{stdout, Result, Stdout, Write};
 
     use crossterm::{

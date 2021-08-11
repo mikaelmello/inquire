@@ -2,7 +2,7 @@ use crate::{
     error::{InquireError, InquireResult},
     formatter::StringFormatter,
     input::Input,
-    ui::{Key, OldTerminal, Renderer},
+    ui::{crossterm::CrosstermBackend, Backend, Key, Renderer},
     validator::StringValidator,
 };
 
@@ -109,12 +109,15 @@ impl<'a> Password<'a> {
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to the defined rules.
     pub fn prompt(self) -> InquireResult<String> {
-        let terminal = OldTerminal::new()?;
-        let mut renderer = Renderer::new(terminal)?;
+        let backend = CrosstermBackend::new()?;
+        let mut renderer = Renderer::new(backend)?;
         self.prompt_with_renderer(&mut renderer)
     }
 
-    pub(in crate) fn prompt_with_renderer(self, renderer: &mut Renderer) -> InquireResult<String> {
+    pub(in crate) fn prompt_with_renderer<B: Backend>(
+        self,
+        renderer: &mut Renderer<B>,
+    ) -> InquireResult<String> {
         PasswordPrompt::from(self).prompt(renderer)
     }
 }
@@ -163,7 +166,7 @@ impl<'a> PasswordPrompt<'a> {
         Ok(self.input.content().into())
     }
 
-    fn render(&mut self, renderer: &mut Renderer) -> InquireResult<()> {
+    fn render<B: Backend>(&mut self, renderer: &mut Renderer<B>) -> InquireResult<()> {
         let prompt = &self.message;
 
         renderer.reset_prompt()?;
@@ -183,7 +186,7 @@ impl<'a> PasswordPrompt<'a> {
         Ok(())
     }
 
-    fn prompt(mut self, renderer: &mut Renderer) -> InquireResult<String> {
+    fn prompt<B: Backend>(mut self, renderer: &mut Renderer<B>) -> InquireResult<String> {
         let final_answer: String;
 
         loop {
@@ -213,7 +216,7 @@ impl<'a> PasswordPrompt<'a> {
 #[cfg(test)]
 mod test {
     use super::Password;
-    use crate::ui::{OldTerminal, Renderer};
+    use crate::ui::{crossterm::CrosstermBackend, Renderer};
     use crossterm::event::{KeyCode, KeyEvent};
     use ntest::timeout;
 
@@ -240,8 +243,8 @@ mod test {
                 let mut read = read.iter();
 
                 let mut write: Vec<u8> = Vec::new();
-                let terminal = OldTerminal::new_with_io(&mut write, &mut read);
-                let mut renderer = Renderer::new(terminal).unwrap();
+                let backend = CrosstermBackend::new_with_io(&mut write, &mut read);
+                let mut renderer = Renderer::new(backend).unwrap();
 
                 let ans = $prompt.prompt_with_renderer(&mut renderer).unwrap();
 
