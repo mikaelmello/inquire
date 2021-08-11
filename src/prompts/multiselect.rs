@@ -6,7 +6,7 @@ use crate::{
     formatter::{self, MultiOptionFormatter},
     input::Input,
     option_answer::OptionAnswer,
-    ui::{Key, KeyModifiers, Renderer, Terminal},
+    ui::{Key, KeyModifiers, OldTerminal, Renderer},
     utils::paginate,
     validator::MultiOptionValidator,
 };
@@ -190,7 +190,7 @@ impl<'a> MultiSelect<'a> {
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to the defined rules.
     pub fn prompt(self) -> InquireResult<Vec<OptionAnswer>> {
-        let terminal = Terminal::new()?;
+        let terminal = OldTerminal::new()?;
         let mut renderer = Renderer::new(terminal)?;
         self.prompt_with_renderer(&mut renderer)
     }

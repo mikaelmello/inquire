@@ -1,4 +1,4 @@
-use super::{key::Key, terminal::Terminal};
+use super::{key::Key, old_terminal::OldTerminal};
 use crate::{
     error::{InquireError, InquireResult},
     input::Input,
@@ -7,11 +7,11 @@ use crate::{
 
 pub struct Renderer<'a> {
     cur_line: usize,
-    terminal: Terminal<'a>,
+    terminal: OldTerminal<'a>,
 }
 
 impl<'a> Renderer<'a> {
-    pub fn new(terminal: Terminal<'a>) -> InquireResult<Self> {
+    pub fn new(terminal: OldTerminal<'a>) -> InquireResult<Self> {
         let mut renderer = Self {
             cur_line: 0,
             terminal,

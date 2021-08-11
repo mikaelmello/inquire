@@ -32,12 +32,12 @@ pub enum IO<'a> {
     },
 }
 
-pub struct Terminal<'a> {
+pub struct OldTerminal<'a> {
     io: IO<'a>,
     dull: bool,
 }
 
-impl<'a> Terminal<'a> {
+impl<'a> OldTerminal<'a> {
     /// # Errors
     ///
     /// Will return `std::io::Error` if it fails to get terminal size
@@ -252,7 +252,7 @@ impl<'a> Terminal<'a> {
     }
 }
 
-impl<'a> Drop for Terminal<'a> {
+impl<'a> Drop for OldTerminal<'a> {
     fn drop(&mut self) {
         let _ = self.cursor_show();
         let _ = self.flush();
@@ -263,7 +263,7 @@ impl<'a> Drop for Terminal<'a> {
 #[cfg(test)]
 mod test {
     use super::Attributes;
-    use super::Terminal;
+    use super::OldTerminal;
 
     #[test]
     fn writer() {
@@ -272,7 +272,7 @@ mod test {
         let mut read = read.iter();
 
         {
-            let mut terminal = Terminal::new_with_io(&mut write, &mut read);
+            let mut terminal = OldTerminal::new_with_io(&mut write, &mut read);
 
             terminal.write("testing ").unwrap();
             terminal.write("writing ").unwrap();
@@ -294,7 +294,7 @@ mod test {
         let mut read = read.iter();
 
         {
-            let mut terminal = Terminal::new_with_io(&mut write, &mut read);
+            let mut terminal = OldTerminal::new_with_io(&mut write, &mut read);
 
             terminal.set_attributes(Attributes::BOLD).unwrap();
             terminal.set_attributes(Attributes::ITALIC).unwrap();
@@ -316,7 +316,7 @@ mod test {
         let mut read = read.iter();
 
         {
-            let mut terminal = Terminal::new_with_io(&mut write, &mut read);
+            let mut terminal = OldTerminal::new_with_io(&mut write, &mut read);
 
             terminal
                 .set_attributes(Attributes::BOLD | Attributes::ITALIC | Attributes::BOLD)
@@ -338,7 +338,7 @@ mod test {
         let mut read = read.iter();
 
         {
-            let mut terminal = Terminal::new_with_io(&mut write, &mut read);
+            let mut terminal = OldTerminal::new_with_io(&mut write, &mut read);
 
             terminal.set_fg_color(crossterm::style::Color::Red).unwrap();
             terminal.reset_fg_color().unwrap();
@@ -364,7 +364,7 @@ mod test {
         let mut read = read.iter();
 
         {
-            let mut terminal = Terminal::new_with_io(&mut write, &mut read);
+            let mut terminal = OldTerminal::new_with_io(&mut write, &mut read);
 
             terminal.set_bg_color(crossterm::style::Color::Red).unwrap();
             terminal.reset_bg_color().unwrap();
@@ -390,7 +390,7 @@ mod test {
         let mut read = read.iter();
 
         {
-            let mut terminal = Terminal::new_with_io(&mut write, &mut read).dull();
+            let mut terminal = OldTerminal::new_with_io(&mut write, &mut read).dull();
 
             terminal
                 .set_attributes(Attributes::BOLD | Attributes::ITALIC)

@@ -8,7 +8,7 @@ use crate::{
     date_utils::{get_current_date, get_month},
     error::{InquireError, InquireResult},
     formatter::{self, DateFormatter},
-    ui::{Key, KeyModifiers, Renderer, Terminal},
+    ui::{Key, KeyModifiers, OldTerminal, Renderer},
     validator::DateValidator,
 };
 
@@ -206,7 +206,7 @@ impl<'a> DateSelect<'a> {
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to the defined rules.
     pub fn prompt(self) -> InquireResult<NaiveDate> {
-        let terminal = Terminal::new()?;
+        let terminal = OldTerminal::new()?;
         let mut renderer = Renderer::new(terminal)?;
         self.prompt_with_renderer(&mut renderer)
     }
@@ -403,7 +403,7 @@ impl<'a> DateSelectPrompt<'a> {
 mod test {
     use crate::{
         date_utils::get_current_date,
-        ui::{Renderer, Terminal},
+        ui::{OldTerminal, Renderer},
         DateSelect,
     };
     use chrono::NaiveDate;
@@ -427,7 +427,7 @@ mod test {
                 let mut read = read.iter();
 
                 let mut write: Vec<u8> = Vec::new();
-                let terminal = Terminal::new_with_io(&mut write, &mut read);
+                let terminal = OldTerminal::new_with_io(&mut write, &mut read);
                 let mut renderer = Renderer::new(terminal).unwrap();
 
                 let ans = $prompt.prompt_with_renderer(&mut renderer).unwrap();
@@ -468,7 +468,7 @@ mod test {
         };
 
         let mut write: Vec<u8> = Vec::new();
-        let terminal = Terminal::new_with_io(&mut write, &mut read);
+        let terminal = OldTerminal::new_with_io(&mut write, &mut read);
         let mut renderer = Renderer::new(terminal).unwrap();
 
         let ans = DateSelect::new("Question")

@@ -2,7 +2,7 @@ use crate::{
     error::{InquireError, InquireResult},
     formatter::StringFormatter,
     input::Input,
-    ui::{Key, Renderer, Terminal},
+    ui::{Key, OldTerminal, Renderer},
     validator::StringValidator,
 };
 
@@ -109,7 +109,7 @@ impl<'a> Password<'a> {
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to the defined rules.
     pub fn prompt(self) -> InquireResult<String> {
-        let terminal = Terminal::new()?;
+        let terminal = OldTerminal::new()?;
         let mut renderer = Renderer::new(terminal)?;
         self.prompt_with_renderer(&mut renderer)
     }
@@ -213,7 +213,7 @@ impl<'a> PasswordPrompt<'a> {
 #[cfg(test)]
 mod test {
     use super::Password;
-    use crate::ui::{Renderer, Terminal};
+    use crate::ui::{OldTerminal, Renderer};
     use crossterm::event::{KeyCode, KeyEvent};
     use ntest::timeout;
 
@@ -240,7 +240,7 @@ mod test {
                 let mut read = read.iter();
 
                 let mut write: Vec<u8> = Vec::new();
-                let terminal = Terminal::new_with_io(&mut write, &mut read);
+                let terminal = OldTerminal::new_with_io(&mut write, &mut read);
                 let mut renderer = Renderer::new(terminal).unwrap();
 
                 let ans = $prompt.prompt_with_renderer(&mut renderer).unwrap();

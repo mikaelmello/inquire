@@ -6,7 +6,7 @@ use crate::{
     input::Input,
     parse_type,
     parser::CustomTypeParser,
-    ui::{Key, Renderer, Terminal},
+    ui::{Key, OldTerminal, Renderer},
 };
 
 /// Generic prompt suitable for when you need to parse the user input into a specific type, for example an `f64` or a `rust_decimal`, maybe even an `uuid`.
@@ -134,7 +134,7 @@ where
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to the defined rules.
     pub fn prompt(self) -> InquireResult<T> {
-        let terminal = Terminal::new()?;
+        let terminal = OldTerminal::new()?;
         let mut renderer = Renderer::new(terminal)?;
         self.prompt_with_renderer(&mut renderer)
     }
