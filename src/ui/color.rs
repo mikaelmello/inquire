@@ -76,28 +76,3 @@ pub enum Color {
     /// See [Platform-specific notes](enum.Color.html#platform-specific-notes) for more info.
     AnsiValue(u8),
 }
-
-impl From<Color> for crossterm::style::Color {
-    fn from(c: Color) -> Self {
-        match c {
-            Color::Black => crossterm::style::Color::Black,
-            Color::DarkGrey => crossterm::style::Color::DarkGrey,
-            Color::Red => crossterm::style::Color::Red,
-            Color::DarkRed => crossterm::style::Color::DarkRed,
-            Color::Green => crossterm::style::Color::Green,
-            Color::DarkGreen => crossterm::style::Color::DarkGreen,
-            Color::Yellow => crossterm::style::Color::Yellow,
-            Color::DarkYellow => crossterm::style::Color::DarkYellow,
-            Color::Blue => crossterm::style::Color::Blue,
-            Color::DarkBlue => crossterm::style::Color::DarkBlue,
-            Color::Magenta => crossterm::style::Color::Magenta,
-            Color::DarkMagenta => crossterm::style::Color::DarkMagenta,
-            Color::Cyan => crossterm::style::Color::Cyan,
-            Color::DarkCyan => crossterm::style::Color::DarkCyan,
-            Color::White => crossterm::style::Color::White,
-            Color::Grey => crossterm::style::Color::Grey,
-            Color::Rgb { r, g, b } => crossterm::style::Color::Rgb { r, g, b },
-            Color::AnsiValue(b) => crossterm::style::Color::AnsiValue(b),
-        }
-    }
-}
