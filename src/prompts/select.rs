@@ -6,7 +6,7 @@ use crate::{
     formatter::{self, OptionFormatter},
     input::Input,
     option_answer::OptionAnswer,
-    ui::{crossterm::CrosstermTerminal, Backend, Key, KeyModifiers, Terminal},
+    ui::{crossterm::CrosstermTerminal, Backend, Key, KeyModifiers, SelectBackend},
     utils::paginate,
 };
 
@@ -162,9 +162,9 @@ impl<'a> Select<'a> {
         self.prompt_with_backend(&mut backend)
     }
 
-    pub(in crate) fn prompt_with_backend<T: Terminal>(
+    pub(in crate) fn prompt_with_backend<B: SelectBackend>(
         self,
-        backend: &mut Backend<T>,
+        backend: &mut B,
     ) -> InquireResult<OptionAnswer> {
         SelectPrompt::new(self)?.prompt(backend)
     }
@@ -266,12 +266,12 @@ impl<'a> SelectPrompt<'a> {
             .and_then(|i| self.options.get(*i).map(|opt| OptionAnswer::new(*i, opt)))
     }
 
-    fn render<T: Terminal>(&mut self, backend: &mut Backend<T>) -> InquireResult<()> {
+    fn render<B: SelectBackend>(&mut self, backend: &mut B) -> InquireResult<()> {
         let prompt = &self.message;
 
-        backend.reset_prompt()?;
+        backend.frame_setup()?;
 
-        backend.print_prompt_input(&prompt, None, &self.input)?;
+        backend.render_select_prompt(&prompt, &self.input)?;
 
         let choices = self
             .filtered_options
@@ -283,19 +283,19 @@ impl<'a> SelectPrompt<'a> {
         let page = paginate(self.page_size, &choices, self.cursor_index);
 
         for (idx, opt) in page.content.iter().enumerate() {
-            backend.print_option(page.selection == idx, &opt.value)?;
+            backend.render_option(&opt.value, page.selection == idx)?;
         }
 
         if let Some(help_message) = self.help_message {
-            backend.print_help(help_message)?;
+            backend.render_help_message(help_message)?;
         }
 
-        backend.flush()?;
+        backend.frame_finish()?;
 
         Ok(())
     }
 
-    fn prompt<T: Terminal>(mut self, backend: &mut Backend<T>) -> InquireResult<OptionAnswer> {
+    fn prompt<B: SelectBackend>(mut self, backend: &mut B) -> InquireResult<OptionAnswer> {
         let final_answer: OptionAnswer;
 
         loop {
@@ -318,7 +318,7 @@ impl<'a> SelectPrompt<'a> {
 
         let formatted = (self.formatter)(&final_answer);
 
-        backend.cleanup(&self.message, &formatted)?;
+        backend.finish_prompt(&self.message, &formatted)?;
 
         Ok(final_answer)
     }

@@ -329,7 +329,7 @@ impl<'a> TextPrompt<'a> {
         let page = paginate(self.page_size, &choices, list_index);
 
         for (idx, opt) in page.content.iter().enumerate() {
-            backend.print_option(display_cursor && page.selection == idx, &opt.value)?;
+            backend.print_option(&opt.value, display_cursor && page.selection == idx)?;
         }
 
         if let Some(message) = self.help_message {

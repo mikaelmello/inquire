@@ -19,6 +19,11 @@ pub trait CommonBackend {
     fn render_help_message(&mut self, help: &str) -> InquireResult<()>;
 }
 
+pub trait SelectBackend: CommonBackend {
+    fn render_select_prompt(&mut self, prompt: &str, cur_input: &Input) -> InquireResult<()>;
+    fn render_option<T: Display>(&mut self, content: T, focused: bool) -> InquireResult<()>;
+}
+
 pub trait MultiSelectBackend: CommonBackend {
     fn render_multiselect_prompt(&mut self, prompt: &str, cur_input: &Input) -> InquireResult<()>;
     fn render_option<T: Display>(
@@ -173,8 +178,8 @@ where
         Ok(())
     }
 
-    pub fn print_option(&mut self, cursor: bool, content: &str) -> InquireResult<()> {
-        let token = match cursor {
+    pub fn print_option<D: Display>(&mut self, content: D, focused: bool) -> InquireResult<()> {
+        let token = match focused {
             true => Styled::new(format!("> {}", content)).with_fg(Color::Cyan),
             false => Styled::new(format!("  {}", content)),
         };
@@ -241,6 +246,19 @@ where
 
     fn render_help_message(&mut self, help: &str) -> InquireResult<()> {
         self.print_help(help)
+    }
+}
+
+impl<T> SelectBackend for Backend<T>
+where
+    T: Terminal,
+{
+    fn render_select_prompt(&mut self, prompt: &str, cur_input: &Input) -> InquireResult<()> {
+        self.print_prompt_input(prompt, None, cur_input)
+    }
+
+    fn render_option<D: Display>(&mut self, content: D, focused: bool) -> InquireResult<()> {
+        self.print_option(content, focused)
     }
 }
 
