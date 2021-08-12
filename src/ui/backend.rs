@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use super::{key::Key, Terminal};
 use crate::{
     error::{InquireError, InquireResult},
@@ -15,6 +17,16 @@ pub trait CommonBackend {
 
     fn render_error_message(&mut self, error: &str) -> InquireResult<()>;
     fn render_help_message(&mut self, help: &str) -> InquireResult<()>;
+}
+
+pub trait MultiSelectBackend: CommonBackend {
+    fn render_multiselect_prompt(&mut self, prompt: &str, cur_input: &Input) -> InquireResult<()>;
+    fn render_option<T: Display>(
+        &mut self,
+        content: T,
+        focused: bool,
+        checked: bool,
+    ) -> InquireResult<()>;
 }
 
 #[cfg(feature = "date")]
@@ -174,31 +186,6 @@ where
         Ok(())
     }
 
-    pub fn print_multi_option(
-        &mut self,
-        cursor: bool,
-        checked: bool,
-        content: &str,
-    ) -> InquireResult<()> {
-        let cursor = match cursor {
-            true => Styled::new("> ").with_fg(Color::Cyan),
-            false => Styled::new("  "),
-        };
-
-        let checked = match checked {
-            true => Styled::new("[x] ").with_fg(Color::Green),
-            false => Styled::new("[ ] "),
-        };
-
-        self.terminal.write_styled(cursor)?;
-        self.terminal.write_styled(checked)?;
-        self.terminal.write(content)?;
-
-        self.new_line()?;
-
-        Ok(())
-    }
-
     pub fn cleanup(&mut self, message: &str, answer: &str) -> InquireResult<()> {
         self.reset_prompt()?;
         self.print_prompt_answer(message, answer)?;
@@ -254,6 +241,40 @@ where
 
     fn render_help_message(&mut self, help: &str) -> InquireResult<()> {
         self.print_help(help)
+    }
+}
+
+impl<T> MultiSelectBackend for Backend<T>
+where
+    T: Terminal,
+{
+    fn render_multiselect_prompt(&mut self, prompt: &str, cur_input: &Input) -> InquireResult<()> {
+        self.print_prompt_input(prompt, None, cur_input)
+    }
+
+    fn render_option<D: Display>(
+        &mut self,
+        content: D,
+        focused: bool,
+        checked: bool,
+    ) -> InquireResult<()> {
+        let cursor = match focused {
+            true => Styled::new("> ").with_fg(Color::Cyan),
+            false => Styled::new("  "),
+        };
+
+        let checkbox = match checked {
+            true => Styled::new("[x] ").with_fg(Color::Green),
+            false => Styled::new("[ ] "),
+        };
+
+        self.terminal.write_styled(cursor)?;
+        self.terminal.write_styled(checkbox)?;
+        self.terminal.write(content)?;
+
+        self.new_line()?;
+
+        Ok(())
     }
 }
 
