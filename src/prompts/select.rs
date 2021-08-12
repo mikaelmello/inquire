@@ -6,7 +6,7 @@ use crate::{
     formatter::{self, OptionFormatter},
     input::Input,
     option_answer::OptionAnswer,
-    ui::{Key, KeyModifiers, Renderer, Terminal},
+    ui::{crossterm::CrosstermBackend, Backend, Key, KeyModifiers, Renderer},
     utils::paginate,
 };
 
@@ -157,14 +157,14 @@ impl<'a> Select<'a> {
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to the defined rules.
     pub fn prompt(self) -> InquireResult<OptionAnswer> {
-        let terminal = Terminal::new()?;
-        let mut renderer = Renderer::new(terminal)?;
+        let backend = CrosstermBackend::new()?;
+        let mut renderer = Renderer::new(backend)?;
         self.prompt_with_renderer(&mut renderer)
     }
 
-    pub(in crate) fn prompt_with_renderer(
+    pub(in crate) fn prompt_with_renderer<B: Backend>(
         self,
-        renderer: &mut Renderer,
+        renderer: &mut Renderer<B>,
     ) -> InquireResult<OptionAnswer> {
         SelectPrompt::new(self)?.prompt(renderer)
     }
@@ -266,7 +266,7 @@ impl<'a> SelectPrompt<'a> {
             .and_then(|i| self.options.get(*i).map(|opt| OptionAnswer::new(*i, opt)))
     }
 
-    fn render(&mut self, renderer: &mut Renderer) -> InquireResult<()> {
+    fn render<B: Backend>(&mut self, renderer: &mut Renderer<B>) -> InquireResult<()> {
         let prompt = &self.message;
 
         renderer.reset_prompt()?;
@@ -295,7 +295,7 @@ impl<'a> SelectPrompt<'a> {
         Ok(())
     }
 
-    fn prompt(mut self, renderer: &mut Renderer) -> InquireResult<OptionAnswer> {
+    fn prompt<B: Backend>(mut self, renderer: &mut Renderer<B>) -> InquireResult<OptionAnswer> {
         let final_answer: OptionAnswer;
 
         loop {

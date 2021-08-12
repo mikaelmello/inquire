@@ -2,7 +2,7 @@ use crate::{
     error::InquireResult,
     formatter::{BoolFormatter, DEFAULT_BOOL_FORMATTER},
     parser::{BoolParser, DEFAULT_BOOL_PARSER},
-    ui::{Renderer, Terminal},
+    ui::{crossterm::CrosstermBackend, Backend, Renderer},
     CustomType,
 };
 
@@ -143,12 +143,15 @@ impl<'a> Confirm<'a> {
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to the defined rules.
     pub fn prompt(self) -> InquireResult<bool> {
-        let terminal = Terminal::new()?;
-        let mut renderer = Renderer::new(terminal)?;
+        let backend = CrosstermBackend::new()?;
+        let mut renderer = Renderer::new(backend)?;
         self.prompt_with_renderer(&mut renderer)
     }
 
-    pub(in crate) fn prompt_with_renderer(self, renderer: &mut Renderer) -> InquireResult<bool> {
+    pub(in crate) fn prompt_with_renderer<B: Backend>(
+        self,
+        renderer: &mut Renderer<B>,
+    ) -> InquireResult<bool> {
         CustomType::from(self).prompt_with_renderer(renderer)
     }
 }

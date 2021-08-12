@@ -6,7 +6,7 @@ use crate::{
     formatter::{self, MultiOptionFormatter},
     input::Input,
     option_answer::OptionAnswer,
-    ui::{Key, KeyModifiers, Renderer, Terminal},
+    ui::{crossterm::CrosstermBackend, Backend, Key, KeyModifiers, Renderer},
     utils::paginate,
     validator::MultiOptionValidator,
 };
@@ -190,14 +190,14 @@ impl<'a> MultiSelect<'a> {
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to the defined rules.
     pub fn prompt(self) -> InquireResult<Vec<OptionAnswer>> {
-        let terminal = Terminal::new()?;
-        let mut renderer = Renderer::new(terminal)?;
+        let backend = CrosstermBackend::new()?;
+        let mut renderer = Renderer::new(backend)?;
         self.prompt_with_renderer(&mut renderer)
     }
 
-    pub(in crate) fn prompt_with_renderer(
+    pub(in crate) fn prompt_with_renderer<B: Backend>(
         self,
-        renderer: &mut Renderer,
+        renderer: &mut Renderer<B>,
     ) -> InquireResult<Vec<OptionAnswer>> {
         MultiSelectPrompt::new(self)?.prompt(renderer)
     }
@@ -362,7 +362,7 @@ impl<'a> MultiSelectPrompt<'a> {
         return Ok(selected_options);
     }
 
-    fn render(&mut self, renderer: &mut Renderer) -> InquireResult<()> {
+    fn render<B: Backend>(&mut self, renderer: &mut Renderer<B>) -> InquireResult<()> {
         let prompt = &self.message;
 
         renderer.reset_prompt()?;
@@ -399,7 +399,10 @@ impl<'a> MultiSelectPrompt<'a> {
         Ok(())
     }
 
-    fn prompt(mut self, renderer: &mut Renderer) -> InquireResult<Vec<OptionAnswer>> {
+    fn prompt<B: Backend>(
+        mut self,
+        renderer: &mut Renderer<B>,
+    ) -> InquireResult<Vec<OptionAnswer>> {
         let final_answer: Vec<OptionAnswer>;
 
         loop {
