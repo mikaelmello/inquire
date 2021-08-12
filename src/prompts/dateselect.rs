@@ -8,7 +8,7 @@ use crate::{
     date_utils::{get_current_date, get_month},
     error::{InquireError, InquireResult},
     formatter::{self, DateFormatter},
-    ui::{crossterm::CrosstermTerminal, Backend, Key, KeyModifiers, Terminal},
+    ui::{crossterm::CrosstermTerminal, Backend, DateSelectBackend, Key, KeyModifiers, Terminal},
     validator::DateValidator,
 };
 
@@ -340,18 +340,18 @@ impl<'a> DateSelectPrompt<'a> {
         Ok(self.current_date)
     }
 
-    fn render<T: Terminal>(&mut self, backend: &mut Backend<T>) -> InquireResult<()> {
+    fn render<B: DateSelectBackend>(&mut self, backend: &mut B) -> InquireResult<()> {
         let prompt = &self.message;
 
-        backend.reset_prompt()?;
+        backend.frame_setup()?;
 
         if let Some(err) = &self.error {
-            backend.print_error_message(err)?;
+            backend.render_error_message(err)?;
         }
 
-        backend.print_prompt(&prompt, None, None)?;
+        backend.render_calendar_prompt(&prompt)?;
 
-        backend.print_calendar_month(
+        backend.render_calendar(
             get_month(self.current_date.month()),
             self.current_date.year(),
             self.week_start,
@@ -362,15 +362,15 @@ impl<'a> DateSelectPrompt<'a> {
         )?;
 
         if let Some(help_message) = self.help_message {
-            backend.print_help(help_message)?;
+            backend.render_help_message(help_message)?;
         }
 
-        backend.flush()?;
+        backend.frame_finish()?;
 
         Ok(())
     }
 
-    fn prompt<T: Terminal>(mut self, backend: &mut Backend<T>) -> InquireResult<NaiveDate> {
+    fn prompt<B: DateSelectBackend>(mut self, backend: &mut B) -> InquireResult<NaiveDate> {
         let final_answer: NaiveDate;
 
         loop {
@@ -393,7 +393,7 @@ impl<'a> DateSelectPrompt<'a> {
 
         let formatted = (self.formatter)(final_answer);
 
-        backend.cleanup(&self.message, &formatted)?;
+        backend.finish_prompt(&self.message, &formatted)?;
 
         Ok(final_answer)
     }

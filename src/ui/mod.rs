@@ -7,7 +7,7 @@ mod key;
 mod style;
 mod terminal;
 
-pub(in crate) use backend::Backend;
+pub(in crate) use backend::*;
 pub(in crate) use key::{Key, KeyModifiers};
 pub(in crate) use style::Styled;
 pub(in crate) use terminal::*;

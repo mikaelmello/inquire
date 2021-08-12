@@ -5,6 +5,33 @@ use crate::{
     ui::{Attributes, Color, Styled},
 };
 
+pub trait CommonBackend {
+    fn read_key(&mut self) -> InquireResult<Key>;
+
+    fn frame_setup(&mut self) -> InquireResult<()>;
+    fn frame_finish(&mut self) -> InquireResult<()>;
+
+    fn finish_prompt(&mut self, prompt: &str, answer: &str) -> InquireResult<()>;
+
+    fn render_error_message(&mut self, error: &str) -> InquireResult<()>;
+    fn render_help_message(&mut self, help: &str) -> InquireResult<()>;
+}
+
+#[cfg(feature = "date")]
+pub trait DateSelectBackend: CommonBackend {
+    fn render_calendar_prompt(&mut self, prompt: &str) -> InquireResult<()>;
+    fn render_calendar(
+        &mut self,
+        month: chrono::Month,
+        year: i32,
+        week_start: chrono::Weekday,
+        today: chrono::NaiveDate,
+        selected_date: chrono::NaiveDate,
+        min_date: Option<chrono::NaiveDate>,
+        max_date: Option<chrono::NaiveDate>,
+    ) -> InquireResult<()>;
+}
+
 pub struct Backend<T>
 where
     T: Terminal,
@@ -168,8 +195,74 @@ where
         Ok(())
     }
 
-    #[cfg(feature = "date")]
-    pub fn print_calendar_month(
+    pub fn cleanup(&mut self, message: &str, answer: &str) -> InquireResult<()> {
+        self.reset_prompt()?;
+        self.print_prompt_answer(message, answer)?;
+
+        Ok(())
+    }
+
+    pub fn flush(&mut self) -> InquireResult<()> {
+        self.terminal.flush()?;
+
+        Ok(())
+    }
+
+    pub fn read_key(&mut self) -> InquireResult<Key> {
+        self.terminal
+            .read_key()
+            .map(Key::from)
+            .map_err(InquireError::from)
+    }
+
+    fn new_line(&mut self) -> InquireResult<()> {
+        self.terminal.cursor_move_to_column(0)?;
+        self.terminal.write("\n")?;
+        self.cur_line = self.cur_line.saturating_add(1);
+
+        Ok(())
+    }
+}
+
+impl<T> CommonBackend for Backend<T>
+where
+    T: Terminal,
+{
+    fn frame_setup(&mut self) -> InquireResult<()> {
+        self.reset_prompt()
+    }
+
+    fn frame_finish(&mut self) -> InquireResult<()> {
+        self.flush()
+    }
+
+    fn finish_prompt(&mut self, prompt: &str, answer: &str) -> InquireResult<()> {
+        self.cleanup(prompt, answer)
+    }
+
+    fn read_key(&mut self) -> InquireResult<Key> {
+        self.read_key()
+    }
+
+    fn render_error_message(&mut self, error: &str) -> InquireResult<()> {
+        self.print_error_message(error)
+    }
+
+    fn render_help_message(&mut self, help: &str) -> InquireResult<()> {
+        self.print_help(help)
+    }
+}
+
+#[cfg(feature = "date")]
+impl<T> DateSelectBackend for Backend<T>
+where
+    T: Terminal,
+{
+    fn render_calendar_prompt(&mut self, prompt: &str) -> InquireResult<()> {
+        self.print_prompt(prompt, None, None)
+    }
+
+    fn render_calendar(
         &mut self,
         month: chrono::Month,
         year: i32,
@@ -263,34 +356,6 @@ where
 
             self.new_line()?;
         }
-
-        Ok(())
-    }
-
-    pub fn cleanup(&mut self, message: &str, answer: &str) -> InquireResult<()> {
-        self.reset_prompt()?;
-        self.print_prompt_answer(message, answer)?;
-
-        Ok(())
-    }
-
-    pub fn flush(&mut self) -> InquireResult<()> {
-        self.terminal.flush()?;
-
-        Ok(())
-    }
-
-    pub fn read_key(&mut self) -> InquireResult<Key> {
-        self.terminal
-            .read_key()
-            .map(Key::from)
-            .map_err(InquireError::from)
-    }
-
-    fn new_line(&mut self) -> InquireResult<()> {
-        self.terminal.cursor_move_to_column(0)?;
-        self.terminal.write("\n")?;
-        self.cur_line = self.cur_line.saturating_add(1);
 
         Ok(())
     }
