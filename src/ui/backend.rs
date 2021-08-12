@@ -32,6 +32,10 @@ pub trait DateSelectBackend: CommonBackend {
     ) -> InquireResult<()>;
 }
 
+pub trait PasswordBackend: CommonBackend {
+    fn render_password_prompt(&mut self, prompt: &str) -> InquireResult<()>;
+}
+
 pub struct Backend<T>
 where
     T: Terminal,
@@ -358,6 +362,15 @@ where
         }
 
         Ok(())
+    }
+}
+
+impl<T> PasswordBackend for Backend<T>
+where
+    T: Terminal,
+{
+    fn render_password_prompt(&mut self, prompt: &str) -> InquireResult<()> {
+        self.print_prompt(prompt, None, None)
     }
 }
 

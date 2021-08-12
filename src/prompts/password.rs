@@ -2,7 +2,7 @@ use crate::{
     error::{InquireError, InquireResult},
     formatter::StringFormatter,
     input::Input,
-    ui::{crossterm::CrosstermTerminal, Backend, Key, Terminal},
+    ui::{crossterm::CrosstermTerminal, Backend, Key, PasswordBackend},
     validator::StringValidator,
 };
 
@@ -114,9 +114,9 @@ impl<'a> Password<'a> {
         self.prompt_with_backend(&mut backend)
     }
 
-    pub(in crate) fn prompt_with_backend<T: Terminal>(
+    pub(in crate) fn prompt_with_backend<B: PasswordBackend>(
         self,
-        backend: &mut Backend<T>,
+        backend: &mut B,
     ) -> InquireResult<String> {
         PasswordPrompt::from(self).prompt(backend)
     }
@@ -166,27 +166,27 @@ impl<'a> PasswordPrompt<'a> {
         Ok(self.input.content().into())
     }
 
-    fn render<T: Terminal>(&mut self, backend: &mut Backend<T>) -> InquireResult<()> {
+    fn render<B: PasswordBackend>(&mut self, backend: &mut B) -> InquireResult<()> {
         let prompt = &self.message;
 
-        backend.reset_prompt()?;
+        backend.frame_setup()?;
 
         if let Some(err) = &self.error {
-            backend.print_error_message(err)?;
+            backend.render_error_message(err)?;
         }
 
-        backend.print_prompt(&prompt, None, None)?;
+        backend.render_password_prompt(&prompt)?;
 
         if let Some(message) = self.help_message {
-            backend.print_help(message)?;
+            backend.render_help_message(message)?;
         }
 
-        backend.flush()?;
+        backend.frame_finish()?;
 
         Ok(())
     }
 
-    fn prompt<T: Terminal>(mut self, backend: &mut Backend<T>) -> InquireResult<String> {
+    fn prompt<B: PasswordBackend>(mut self, backend: &mut B) -> InquireResult<String> {
         let final_answer: String;
 
         loop {
@@ -207,7 +207,7 @@ impl<'a> PasswordPrompt<'a> {
             }
         }
 
-        backend.cleanup(&self.message, &(self.formatter)(&final_answer))?;
+        backend.finish_prompt(&self.message, &(self.formatter)(&final_answer))?;
 
         Ok(final_answer)
     }
