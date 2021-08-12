@@ -6,7 +6,7 @@ use crate::{
     formatter::{self, OptionFormatter},
     input::Input,
     option_answer::OptionAnswer,
-    ui::{crossterm::CrosstermTerminal, Key, KeyModifiers, Renderer, Terminal},
+    ui::{crossterm::CrosstermTerminal, Backend, Key, KeyModifiers, Terminal},
     utils::paginate,
 };
 
@@ -158,15 +158,15 @@ impl<'a> Select<'a> {
     /// the CLI user for input according to the defined rules.
     pub fn prompt(self) -> InquireResult<OptionAnswer> {
         let terminal = CrosstermTerminal::new()?;
-        let mut renderer = Renderer::new(terminal)?;
-        self.prompt_with_renderer(&mut renderer)
+        let mut backend = Backend::new(terminal)?;
+        self.prompt_with_backend(&mut backend)
     }
 
-    pub(in crate) fn prompt_with_renderer<T: Terminal>(
+    pub(in crate) fn prompt_with_backend<T: Terminal>(
         self,
-        renderer: &mut Renderer<T>,
+        backend: &mut Backend<T>,
     ) -> InquireResult<OptionAnswer> {
-        SelectPrompt::new(self)?.prompt(renderer)
+        SelectPrompt::new(self)?.prompt(backend)
     }
 }
 
@@ -266,12 +266,12 @@ impl<'a> SelectPrompt<'a> {
             .and_then(|i| self.options.get(*i).map(|opt| OptionAnswer::new(*i, opt)))
     }
 
-    fn render<T: Terminal>(&mut self, renderer: &mut Renderer<T>) -> InquireResult<()> {
+    fn render<T: Terminal>(&mut self, backend: &mut Backend<T>) -> InquireResult<()> {
         let prompt = &self.message;
 
-        renderer.reset_prompt()?;
+        backend.reset_prompt()?;
 
-        renderer.print_prompt_input(&prompt, None, &self.input)?;
+        backend.print_prompt_input(&prompt, None, &self.input)?;
 
         let choices = self
             .filtered_options
@@ -283,25 +283,25 @@ impl<'a> SelectPrompt<'a> {
         let page = paginate(self.page_size, &choices, self.cursor_index);
 
         for (idx, opt) in page.content.iter().enumerate() {
-            renderer.print_option(page.selection == idx, &opt.value)?;
+            backend.print_option(page.selection == idx, &opt.value)?;
         }
 
         if let Some(help_message) = self.help_message {
-            renderer.print_help(help_message)?;
+            backend.print_help(help_message)?;
         }
 
-        renderer.flush()?;
+        backend.flush()?;
 
         Ok(())
     }
 
-    fn prompt<T: Terminal>(mut self, renderer: &mut Renderer<T>) -> InquireResult<OptionAnswer> {
+    fn prompt<T: Terminal>(mut self, backend: &mut Backend<T>) -> InquireResult<OptionAnswer> {
         let final_answer: OptionAnswer;
 
         loop {
-            self.render(renderer)?;
+            self.render(backend)?;
 
-            let key = renderer.read_key()?;
+            let key = backend.read_key()?;
 
             match key {
                 Key::Cancel => return Err(InquireError::OperationCanceled),
@@ -318,7 +318,7 @@ impl<'a> SelectPrompt<'a> {
 
         let formatted = (self.formatter)(&final_answer);
 
-        renderer.cleanup(&self.message, &formatted)?;
+        backend.cleanup(&self.message, &formatted)?;
 
         Ok(final_answer)
     }

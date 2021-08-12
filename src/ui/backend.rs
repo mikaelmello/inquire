@@ -5,7 +5,7 @@ use crate::{
     ui::{Attributes, Color, Styled},
 };
 
-pub struct Renderer<T>
+pub struct Backend<T>
 where
     T: Terminal,
 {
@@ -13,19 +13,19 @@ where
     terminal: T,
 }
 
-impl<T> Renderer<T>
+impl<T> Backend<T>
 where
     T: Terminal,
 {
     pub fn new(terminal: T) -> InquireResult<Self> {
-        let mut renderer = Self {
+        let mut backend = Self {
             cur_line: 0,
             terminal,
         };
 
-        renderer.terminal.cursor_hide()?;
+        backend.terminal.cursor_hide()?;
 
-        Ok(renderer)
+        Ok(backend)
     }
 
     pub fn reset_prompt(&mut self) -> InquireResult<()> {
@@ -296,7 +296,7 @@ where
     }
 }
 
-impl<T> Drop for Renderer<T>
+impl<T> Drop for Backend<T>
 where
     T: Terminal,
 {

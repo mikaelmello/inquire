@@ -6,7 +6,7 @@ use crate::{
     formatter::{StringFormatter, DEFAULT_STRING_FORMATTER},
     input::Input,
     option_answer::OptionAnswer,
-    ui::{crossterm::CrosstermTerminal, Key, KeyModifiers, Renderer, Terminal},
+    ui::{crossterm::CrosstermTerminal, Backend, Key, KeyModifiers, Terminal},
     utils::paginate,
     validator::StringValidator,
 };
@@ -174,15 +174,15 @@ impl<'a> Text<'a> {
     /// the CLI user for input according to the defined rules.
     pub fn prompt(self) -> InquireResult<String> {
         let terminal = CrosstermTerminal::new()?;
-        let mut renderer = Renderer::new(terminal)?;
-        self.prompt_with_renderer(&mut renderer)
+        let mut backend = Backend::new(terminal)?;
+        self.prompt_with_backend(&mut backend)
     }
 
-    pub(in crate) fn prompt_with_renderer<T: Terminal>(
+    pub(in crate) fn prompt_with_backend<T: Terminal>(
         self,
-        renderer: &mut Renderer<T>,
+        backend: &mut Backend<T>,
     ) -> InquireResult<String> {
-        TextPrompt::from(self).prompt(renderer)
+        TextPrompt::from(self).prompt(backend)
     }
 }
 
@@ -306,16 +306,16 @@ impl<'a> TextPrompt<'a> {
         Ok(self.input.content().into())
     }
 
-    fn render<T: Terminal>(&mut self, renderer: &mut Renderer<T>) -> InquireResult<()> {
+    fn render<T: Terminal>(&mut self, backend: &mut Backend<T>) -> InquireResult<()> {
         let prompt = &self.message;
 
-        renderer.reset_prompt()?;
+        backend.reset_prompt()?;
 
         if let Some(err) = &self.error {
-            renderer.print_error_message(err)?;
+            backend.print_error_message(err)?;
         }
 
-        renderer.print_prompt_input(&prompt, self.default, &self.input)?;
+        backend.print_prompt_input(&prompt, self.default, &self.input)?;
 
         let choices = self
             .suggested_options
@@ -329,27 +329,27 @@ impl<'a> TextPrompt<'a> {
         let page = paginate(self.page_size, &choices, list_index);
 
         for (idx, opt) in page.content.iter().enumerate() {
-            renderer.print_option(display_cursor && page.selection == idx, &opt.value)?;
+            backend.print_option(display_cursor && page.selection == idx, &opt.value)?;
         }
 
         if let Some(message) = self.help_message {
-            renderer.print_help(message)?;
+            backend.print_help(message)?;
         } else if !choices.is_empty() {
-            renderer.print_help(DEFAULT_HELP_MESSAGE)?;
+            backend.print_help(DEFAULT_HELP_MESSAGE)?;
         }
 
-        renderer.flush()?;
+        backend.flush()?;
 
         Ok(())
     }
 
-    fn prompt<T: Terminal>(mut self, renderer: &mut Renderer<T>) -> InquireResult<String> {
+    fn prompt<T: Terminal>(mut self, backend: &mut Backend<T>) -> InquireResult<String> {
         let final_answer: String;
 
         loop {
-            self.render(renderer)?;
+            self.render(backend)?;
 
-            let key = renderer.read_key()?;
+            let key = backend.read_key()?;
 
             match key {
                 Key::Cancel => return Err(InquireError::OperationCanceled),
@@ -364,7 +364,7 @@ impl<'a> TextPrompt<'a> {
             }
         }
 
-        renderer.cleanup(&self.message, &(self.formatter)(&final_answer))?;
+        backend.cleanup(&self.message, &(self.formatter)(&final_answer))?;
 
         Ok(final_answer)
     }
@@ -373,7 +373,7 @@ impl<'a> TextPrompt<'a> {
 #[cfg(test)]
 mod test {
     use super::Text;
-    use crate::ui::{crossterm::CrosstermTerminal, Renderer};
+    use crate::ui::{crossterm::CrosstermTerminal, Backend};
     use crossterm::event::{KeyCode, KeyEvent};
     use ntest::timeout;
 
@@ -401,9 +401,9 @@ mod test {
 
                 let mut write: Vec<u8> = Vec::new();
                 let terminal = CrosstermTerminal::new_with_io(&mut write, &mut read);
-                let mut renderer = Renderer::new(terminal).unwrap();
+                let mut backend = Backend::new(terminal).unwrap();
 
-                let ans = $prompt.prompt_with_renderer(&mut renderer).unwrap();
+                let ans = $prompt.prompt_with_backend(&mut backend).unwrap();
 
                 assert_eq!($output, ans);
             }

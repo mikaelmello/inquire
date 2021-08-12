@@ -2,7 +2,7 @@ use crate::{
     error::{InquireError, InquireResult},
     formatter::StringFormatter,
     input::Input,
-    ui::{crossterm::CrosstermTerminal, Key, Renderer, Terminal},
+    ui::{crossterm::CrosstermTerminal, Backend, Key, Terminal},
     validator::StringValidator,
 };
 
@@ -110,15 +110,15 @@ impl<'a> Password<'a> {
     /// the CLI user for input according to the defined rules.
     pub fn prompt(self) -> InquireResult<String> {
         let terminal = CrosstermTerminal::new()?;
-        let mut renderer = Renderer::new(terminal)?;
-        self.prompt_with_renderer(&mut renderer)
+        let mut backend = Backend::new(terminal)?;
+        self.prompt_with_backend(&mut backend)
     }
 
-    pub(in crate) fn prompt_with_renderer<T: Terminal>(
+    pub(in crate) fn prompt_with_backend<T: Terminal>(
         self,
-        renderer: &mut Renderer<T>,
+        backend: &mut Backend<T>,
     ) -> InquireResult<String> {
-        PasswordPrompt::from(self).prompt(renderer)
+        PasswordPrompt::from(self).prompt(backend)
     }
 }
 
@@ -166,33 +166,33 @@ impl<'a> PasswordPrompt<'a> {
         Ok(self.input.content().into())
     }
 
-    fn render<T: Terminal>(&mut self, renderer: &mut Renderer<T>) -> InquireResult<()> {
+    fn render<T: Terminal>(&mut self, backend: &mut Backend<T>) -> InquireResult<()> {
         let prompt = &self.message;
 
-        renderer.reset_prompt()?;
+        backend.reset_prompt()?;
 
         if let Some(err) = &self.error {
-            renderer.print_error_message(err)?;
+            backend.print_error_message(err)?;
         }
 
-        renderer.print_prompt(&prompt, None, None)?;
+        backend.print_prompt(&prompt, None, None)?;
 
         if let Some(message) = self.help_message {
-            renderer.print_help(message)?;
+            backend.print_help(message)?;
         }
 
-        renderer.flush()?;
+        backend.flush()?;
 
         Ok(())
     }
 
-    fn prompt<T: Terminal>(mut self, renderer: &mut Renderer<T>) -> InquireResult<String> {
+    fn prompt<T: Terminal>(mut self, backend: &mut Backend<T>) -> InquireResult<String> {
         let final_answer: String;
 
         loop {
-            self.render(renderer)?;
+            self.render(backend)?;
 
-            let key = renderer.read_key()?;
+            let key = backend.read_key()?;
 
             match key {
                 Key::Cancel => return Err(InquireError::OperationCanceled),
@@ -207,7 +207,7 @@ impl<'a> PasswordPrompt<'a> {
             }
         }
 
-        renderer.cleanup(&self.message, &(self.formatter)(&final_answer))?;
+        backend.cleanup(&self.message, &(self.formatter)(&final_answer))?;
 
         Ok(final_answer)
     }
@@ -216,7 +216,7 @@ impl<'a> PasswordPrompt<'a> {
 #[cfg(test)]
 mod test {
     use super::Password;
-    use crate::ui::{crossterm::CrosstermTerminal, Renderer};
+    use crate::ui::{crossterm::CrosstermTerminal, Backend};
     use crossterm::event::{KeyCode, KeyEvent};
     use ntest::timeout;
 
@@ -244,9 +244,9 @@ mod test {
 
                 let mut write: Vec<u8> = Vec::new();
                 let terminal = CrosstermTerminal::new_with_io(&mut write, &mut read);
-                let mut renderer = Renderer::new(terminal).unwrap();
+                let mut backend = Backend::new(terminal).unwrap();
 
-                let ans = $prompt.prompt_with_renderer(&mut renderer).unwrap();
+                let ans = $prompt.prompt_with_backend(&mut backend).unwrap();
 
                 assert_eq!($output, ans);
             }
