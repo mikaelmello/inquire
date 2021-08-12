@@ -6,7 +6,7 @@ use crate::{
     input::Input,
     parse_type,
     parser::CustomTypeParser,
-    ui::{crossterm::CrosstermBackend, Backend, Key, Renderer},
+    ui::{crossterm::CrosstermTerminal, Key, Renderer, Terminal},
 };
 
 /// Generic prompt suitable for when you need to parse the user input into a specific type, for example an `f64` or a `rust_decimal`, maybe even an `uuid`.
@@ -134,14 +134,14 @@ where
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to the defined rules.
     pub fn prompt(self) -> InquireResult<T> {
-        let backend = CrosstermBackend::new()?;
-        let mut renderer = Renderer::new(backend)?;
+        let terminal = CrosstermTerminal::new()?;
+        let mut renderer = Renderer::new(terminal)?;
         self.prompt_with_renderer(&mut renderer)
     }
 
-    pub(in crate) fn prompt_with_renderer<B: Backend>(
+    pub(in crate) fn prompt_with_renderer<TT: Terminal>(
         self,
-        renderer: &mut Renderer<B>,
+        renderer: &mut Renderer<TT>,
     ) -> InquireResult<T> {
         CustomTypePrompt::from(self).prompt(renderer)
     }
@@ -196,7 +196,7 @@ where
         }
     }
 
-    fn render<B: Backend>(&mut self, renderer: &mut Renderer<B>) -> InquireResult<()> {
+    fn render<TT: Terminal>(&mut self, renderer: &mut Renderer<TT>) -> InquireResult<()> {
         let prompt = &self.message;
 
         renderer.reset_prompt()?;
@@ -221,7 +221,7 @@ where
         Ok(())
     }
 
-    fn prompt<B: Backend>(mut self, renderer: &mut Renderer<B>) -> InquireResult<T> {
+    fn prompt<TT: Terminal>(mut self, renderer: &mut Renderer<TT>) -> InquireResult<T> {
         let final_answer: T;
 
         loop {

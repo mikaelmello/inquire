@@ -2,7 +2,7 @@ use std::{fmt::Display, io::Result};
 
 use super::{Attributes, Color, Key, Styled};
 
-pub trait Backend {
+pub trait Terminal {
     fn cursor_up(&mut self) -> Result<()>;
     fn cursor_move_to_column(&mut self, idx: u16) -> Result<()>;
     fn read_key(&mut self) -> Result<Key>;
@@ -41,7 +41,7 @@ pub mod crossterm {
         ui::{Attributes, Color, Key, Styled},
     };
 
-    use super::Backend;
+    use super::Terminal;
 
     enum IO<'a> {
         Std {
@@ -54,11 +54,11 @@ pub mod crossterm {
         },
     }
 
-    pub struct CrosstermBackend<'a> {
+    pub struct CrosstermTerminal<'a> {
         io: IO<'a>,
     }
 
-    impl<'a> CrosstermBackend<'a> {
+    impl<'a> CrosstermTerminal<'a> {
         pub fn new() -> InquireResult<Self> {
             enable_raw_mode().map_err(|e| {
                 if e.raw_os_error() == Some(25i32) {
@@ -97,7 +97,7 @@ pub mod crossterm {
         }
     }
 
-    impl<'a> Backend for CrosstermBackend<'a> {
+    impl<'a> Terminal for CrosstermTerminal<'a> {
         fn cursor_up(&mut self) -> Result<()> {
             queue!(&mut self.get_writer(), crossterm::cursor::MoveUp(1))
         }
@@ -224,7 +224,7 @@ pub mod crossterm {
         }
     }
 
-    impl<'a> Drop for CrosstermBackend<'a> {
+    impl<'a> Drop for CrosstermTerminal<'a> {
         fn drop(&mut self) {
             let _ = self.flush();
             let _ = match self.io {
@@ -261,11 +261,11 @@ pub mod crossterm {
 
     #[cfg(test)]
     mod test {
-        use crate::ui::Backend;
         use crate::ui::Color;
+        use crate::ui::Terminal;
 
         use super::Attributes;
-        use super::CrosstermBackend;
+        use super::CrosstermTerminal;
 
         #[test]
         fn writer() {
@@ -274,12 +274,12 @@ pub mod crossterm {
             let mut read = read.iter();
 
             {
-                let mut backend = CrosstermBackend::new_with_io(&mut write, &mut read);
+                let mut terminal = CrosstermTerminal::new_with_io(&mut write, &mut read);
 
-                backend.write("testing ").unwrap();
-                backend.write("writing ").unwrap();
-                backend.flush().unwrap();
-                backend.write("wow").unwrap();
+                terminal.write("testing ").unwrap();
+                terminal.write("writing ").unwrap();
+                terminal.flush().unwrap();
+                terminal.write("wow").unwrap();
             }
 
             #[cfg(unix)]
@@ -293,12 +293,12 @@ pub mod crossterm {
             let mut read = read.iter();
 
             {
-                let mut backend = CrosstermBackend::new_with_io(&mut write, &mut read);
+                let mut terminal = CrosstermTerminal::new_with_io(&mut write, &mut read);
 
-                backend.set_attributes(Attributes::BOLD).unwrap();
-                backend.set_attributes(Attributes::ITALIC).unwrap();
-                backend.set_attributes(Attributes::BOLD).unwrap();
-                backend.reset_attributes().unwrap();
+                terminal.set_attributes(Attributes::BOLD).unwrap();
+                terminal.set_attributes(Attributes::ITALIC).unwrap();
+                terminal.set_attributes(Attributes::BOLD).unwrap();
+                terminal.reset_attributes().unwrap();
             }
 
             #[cfg(unix)]
@@ -315,12 +315,12 @@ pub mod crossterm {
             let mut read = read.iter();
 
             {
-                let mut backend = CrosstermBackend::new_with_io(&mut write, &mut read);
+                let mut terminal = CrosstermTerminal::new_with_io(&mut write, &mut read);
 
-                backend
+                terminal
                     .set_attributes(Attributes::BOLD | Attributes::ITALIC | Attributes::BOLD)
                     .unwrap();
-                backend.reset_attributes().unwrap();
+                terminal.reset_attributes().unwrap();
             }
 
             #[cfg(unix)]
@@ -337,12 +337,12 @@ pub mod crossterm {
             let mut read = read.iter();
 
             {
-                let mut backend = CrosstermBackend::new_with_io(&mut write, &mut read);
+                let mut terminal = CrosstermTerminal::new_with_io(&mut write, &mut read);
 
-                backend.set_fg_color(Color::Red).unwrap();
-                backend.reset_fg_color().unwrap();
-                backend.set_fg_color(Color::Black).unwrap();
-                backend.set_fg_color(Color::Green).unwrap();
+                terminal.set_fg_color(Color::Red).unwrap();
+                terminal.reset_fg_color().unwrap();
+                terminal.set_fg_color(Color::Black).unwrap();
+                terminal.set_fg_color(Color::Green).unwrap();
             }
 
             #[cfg(unix)]
@@ -359,12 +359,12 @@ pub mod crossterm {
             let mut read = read.iter();
 
             {
-                let mut backend = CrosstermBackend::new_with_io(&mut write, &mut read);
+                let mut terminal = CrosstermTerminal::new_with_io(&mut write, &mut read);
 
-                backend.set_bg_color(Color::Red).unwrap();
-                backend.reset_bg_color().unwrap();
-                backend.set_bg_color(Color::Black).unwrap();
-                backend.set_bg_color(Color::Green).unwrap();
+                terminal.set_bg_color(Color::Red).unwrap();
+                terminal.reset_bg_color().unwrap();
+                terminal.set_bg_color(Color::Black).unwrap();
+                terminal.set_bg_color(Color::Green).unwrap();
             }
 
             #[cfg(unix)]

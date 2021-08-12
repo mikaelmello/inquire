@@ -1,38 +1,38 @@
-use super::{key::Key, Backend};
+use super::{key::Key, Terminal};
 use crate::{
     error::{InquireError, InquireResult},
     input::Input,
     ui::{Attributes, Color, Styled},
 };
 
-pub struct Renderer<B>
+pub struct Renderer<T>
 where
-    B: Backend,
+    T: Terminal,
 {
     cur_line: usize,
-    backend: B,
+    terminal: T,
 }
 
-impl<B> Renderer<B>
+impl<T> Renderer<T>
 where
-    B: Backend,
+    T: Terminal,
 {
-    pub fn new(backend: B) -> InquireResult<Self> {
+    pub fn new(terminal: T) -> InquireResult<Self> {
         let mut renderer = Self {
             cur_line: 0,
-            backend,
+            terminal,
         };
 
-        renderer.backend.cursor_hide()?;
+        renderer.terminal.cursor_hide()?;
 
         Ok(renderer)
     }
 
     pub fn reset_prompt(&mut self) -> InquireResult<()> {
         for _ in 0..self.cur_line {
-            self.backend.cursor_up()?;
-            self.backend.cursor_move_to_column(0)?;
-            self.backend.clear_current_line()?;
+            self.terminal.cursor_up()?;
+            self.terminal.cursor_move_to_column(0)?;
+            self.terminal.clear_current_line()?;
         }
 
         self.cur_line = 0;
@@ -40,7 +40,7 @@ where
     }
 
     pub fn print_error_message(&mut self, message: &str) -> InquireResult<()> {
-        self.backend
+        self.terminal
             .write_styled(Styled::new(format!("# {}", message)).with_fg(Color::Red))?;
 
         self.new_line()?;
@@ -49,12 +49,12 @@ where
     }
 
     fn print_prompt_answer(&mut self, prompt: &str, answer: &str) -> InquireResult<()> {
-        self.backend
+        self.terminal
             .write_styled(Styled::new("? ").with_fg(Color::Green))?;
 
-        self.backend.write(prompt)?;
+        self.terminal.write(prompt)?;
 
-        self.backend
+        self.terminal
             .write_styled(Styled::new(format!(" {}", answer)).with_fg(Color::Cyan))?;
 
         self.new_line()?;
@@ -68,18 +68,18 @@ where
         default: Option<&str>,
         content: Option<&str>,
     ) -> InquireResult<()> {
-        self.backend
+        self.terminal
             .write_styled(Styled::new("? ").with_fg(Color::Green))?;
 
-        self.backend.write(prompt)?;
+        self.terminal.write(prompt)?;
 
         if let Some(default) = default {
-            self.backend.write(format!(" ({})", default))?;
+            self.terminal.write(format!(" ({})", default))?;
         }
 
         match content {
             Some(content) if !content.is_empty() => self
-                .backend
+                .terminal
                 .write_styled(Styled::new(format!(" {}", content)).with_attr(Attributes::BOLD))?,
             _ => {}
         }
@@ -95,13 +95,13 @@ where
         default: Option<&str>,
         content: &Input,
     ) -> InquireResult<()> {
-        self.backend
+        self.terminal
             .write_styled(Styled::new("? ").with_fg(Color::Green))?;
 
-        self.backend.write(prompt)?;
+        self.terminal.write(prompt)?;
 
         if let Some(default) = default {
-            self.backend.write(format!(" ({})", default))?;
+            self.terminal.write(format!(" ({})", default))?;
         }
 
         let (before, mut at, after) = content.split();
@@ -110,11 +110,11 @@ where
             at.push(' ');
         }
 
-        self.backend.write(" ")?;
-        self.backend.write(before)?;
-        self.backend
+        self.terminal.write(" ")?;
+        self.terminal.write(before)?;
+        self.terminal
             .write_styled(Styled::new(at).with_bg(Color::Grey).with_fg(Color::Black))?;
-        self.backend.write(after)?;
+        self.terminal.write(after)?;
 
         self.new_line()?;
 
@@ -122,7 +122,7 @@ where
     }
 
     pub fn print_help(&mut self, message: &str) -> InquireResult<()> {
-        self.backend
+        self.terminal
             .write_styled(Styled::new(format!("[{}]", message)).with_fg(Color::Cyan))?;
 
         self.new_line()?;
@@ -136,7 +136,7 @@ where
             false => Styled::new(format!("  {}", content)),
         };
 
-        self.backend.write_styled(token)?;
+        self.terminal.write_styled(token)?;
 
         self.new_line()?;
 
@@ -159,9 +159,9 @@ where
             false => Styled::new("[ ] "),
         };
 
-        self.backend.write_styled(cursor)?;
-        self.backend.write_styled(checked)?;
-        self.backend.write(content)?;
+        self.terminal.write_styled(cursor)?;
+        self.terminal.write_styled(checked)?;
+        self.terminal.write(content)?;
 
         self.new_line()?;
 
@@ -186,10 +186,10 @@ where
         // print header (month year)
         let header = format!("{} {}", month.name().to_lowercase(), year);
 
-        self.backend
+        self.terminal
             .write_styled(Styled::new("> ").with_fg(Color::Green))?;
 
-        self.backend.write(format!("{:^20}", header))?;
+        self.terminal.write(format!("{:^20}", header))?;
 
         self.new_line()?;
 
@@ -206,10 +206,10 @@ where
         }
         let week_days = week_days.join(" ");
 
-        self.backend
+        self.terminal
             .write_styled(Styled::new("> ").with_fg(Color::Green))?;
 
-        self.backend.write(week_days)?;
+        self.terminal.write(week_days)?;
         self.new_line()?;
 
         // print dates
@@ -224,12 +224,12 @@ where
         }
 
         for _ in 0..6 {
-            self.backend
+            self.terminal
                 .write_styled(Styled::new("> ").with_fg(Color::Green))?;
 
             for i in 0..7 {
                 if i > 0 {
-                    self.backend.write(" ")?;
+                    self.terminal.write(" ")?;
                 }
 
                 let date = format!("{:2}", date_it.day());
@@ -256,7 +256,7 @@ where
                     }
                 }
 
-                self.backend.write_styled(token)?;
+                self.terminal.write_styled(token)?;
 
                 date_it = date_it.succ();
             }
@@ -275,32 +275,32 @@ where
     }
 
     pub fn flush(&mut self) -> InquireResult<()> {
-        self.backend.flush()?;
+        self.terminal.flush()?;
 
         Ok(())
     }
 
     pub fn read_key(&mut self) -> InquireResult<Key> {
-        self.backend
+        self.terminal
             .read_key()
             .map(Key::from)
             .map_err(InquireError::from)
     }
 
     fn new_line(&mut self) -> InquireResult<()> {
-        self.backend.cursor_move_to_column(0)?;
-        self.backend.write("\n")?;
+        self.terminal.cursor_move_to_column(0)?;
+        self.terminal.write("\n")?;
         self.cur_line = self.cur_line.saturating_add(1);
 
         Ok(())
     }
 }
 
-impl<B> Drop for Renderer<B>
+impl<T> Drop for Renderer<T>
 where
-    B: Backend,
+    T: Terminal,
 {
     fn drop(&mut self) {
-        let _ = self.backend.cursor_show();
+        let _ = self.terminal.cursor_show();
     }
 }
