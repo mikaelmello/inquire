@@ -87,15 +87,6 @@ where
         Ok(())
     }
 
-    pub fn print_error_message(&mut self, message: &str) -> InquireResult<()> {
-        self.terminal
-            .write_styled(Styled::new(format!("# {}", message)).with_fg(Color::Red))?;
-
-        self.new_line()?;
-
-        Ok(())
-    }
-
     fn print_prompt_answer(&mut self, prompt: &str, answer: &str) -> InquireResult<()> {
         self.terminal
             .write_styled(Styled::new("? ").with_fg(Color::Green))?;
@@ -169,15 +160,6 @@ where
         Ok(())
     }
 
-    pub fn print_help(&mut self, message: &str) -> InquireResult<()> {
-        self.terminal
-            .write_styled(Styled::new(format!("[{}]", message)).with_fg(Color::Cyan))?;
-
-        self.new_line()?;
-
-        Ok(())
-    }
-
     pub fn print_option<D: Display>(&mut self, content: D, focused: bool) -> InquireResult<()> {
         let token = match focused {
             true => Styled::new(format!("> {}", content)).with_fg(Color::Cyan),
@@ -191,24 +173,10 @@ where
         Ok(())
     }
 
-    pub fn cleanup(&mut self, message: &str, answer: &str) -> InquireResult<()> {
-        self.reset_prompt()?;
-        self.print_prompt_answer(message, answer)?;
-
-        Ok(())
-    }
-
     pub fn flush(&mut self) -> InquireResult<()> {
         self.terminal.flush()?;
 
         Ok(())
-    }
-
-    pub fn read_key(&mut self) -> InquireResult<Key> {
-        self.terminal
-            .read_key()
-            .map(Key::from)
-            .map_err(InquireError::from)
     }
 
     fn new_line(&mut self) -> InquireResult<()> {
@@ -233,19 +201,38 @@ where
     }
 
     fn finish_prompt(&mut self, prompt: &str, answer: &str) -> InquireResult<()> {
-        self.cleanup(prompt, answer)
+        self.reset_prompt()?;
+        self.print_prompt_answer(prompt, answer)?;
+
+        Ok(())
     }
 
     fn read_key(&mut self) -> InquireResult<Key> {
-        self.read_key()
+        self.terminal
+            .read_key()
+            .map(Key::from)
+            .map_err(InquireError::from)
     }
 
     fn render_error_message(&mut self, error: &str) -> InquireResult<()> {
-        self.print_error_message(error)
+        self.terminal
+            .write_styled(Styled::new(format!("# {}", error)).with_fg(Color::Red))?;
+
+        self.new_line()?;
+
+        Ok(())
     }
 
     fn render_help_message(&mut self, help: &str) -> InquireResult<()> {
-        self.print_help(help)
+        self.terminal
+            .write_styled(Styled::new(format!("[{}]", help)).with_fg(Color::Cyan))?;
+
+        self.new_line()?;
+
+        Ok(())
+    }
+}
+
     }
 }
 
