@@ -6,7 +6,7 @@ use crate::{
     input::Input,
     parse_type,
     parser::CustomTypeParser,
-    ui::{crossterm::CrosstermBackend, Backend, Key, Renderer},
+    ui::{crossterm::CrosstermTerminal, Backend, CustomTypeBackend, Key},
 };
 
 /// Generic prompt suitable for when you need to parse the user input into a specific type, for example an `f64` or a `rust_decimal`, maybe even an `uuid`.
@@ -134,16 +134,16 @@ where
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to the defined rules.
     pub fn prompt(self) -> InquireResult<T> {
-        let backend = CrosstermBackend::new()?;
-        let mut renderer = Renderer::new(backend)?;
-        self.prompt_with_renderer(&mut renderer)
+        let terminal = CrosstermTerminal::new()?;
+        let mut backend = Backend::new(terminal)?;
+        self.prompt_with_backend(&mut backend)
     }
 
-    pub(in crate) fn prompt_with_renderer<B: Backend>(
+    pub(in crate) fn prompt_with_backend<B: CustomTypeBackend>(
         self,
-        renderer: &mut Renderer<B>,
+        backend: &mut B,
     ) -> InquireResult<T> {
-        CustomTypePrompt::from(self).prompt(renderer)
+        CustomTypePrompt::from(self).prompt(backend)
     }
 }
 
@@ -196,13 +196,13 @@ where
         }
     }
 
-    fn render<B: Backend>(&mut self, renderer: &mut Renderer<B>) -> InquireResult<()> {
+    fn render<B: CustomTypeBackend>(&mut self, backend: &mut B) -> InquireResult<()> {
         let prompt = &self.message;
 
-        renderer.reset_prompt()?;
+        backend.frame_setup()?;
 
         if let Some(error_message) = &self.error {
-            renderer.print_error_message(error_message)?;
+            backend.render_error_message(error_message)?;
         }
 
         let default_message = self
@@ -210,24 +210,24 @@ where
             .as_ref()
             .map(|(val, formatter)| formatter(val.clone()));
 
-        renderer.print_prompt_input(&prompt, default_message.as_deref(), &self.input)?;
+        backend.render_prompt(&prompt, default_message.as_deref(), &self.input)?;
 
         if let Some(message) = self.help_message {
-            renderer.print_help(message)?;
+            backend.render_help_message(message)?;
         }
 
-        renderer.flush()?;
+        backend.frame_finish()?;
 
         Ok(())
     }
 
-    fn prompt<B: Backend>(mut self, renderer: &mut Renderer<B>) -> InquireResult<T> {
+    fn prompt<B: CustomTypeBackend>(mut self, backend: &mut B) -> InquireResult<T> {
         let final_answer: T;
 
         loop {
-            self.render(renderer)?;
+            self.render(backend)?;
 
-            let key = renderer.read_key()?;
+            let key = backend.read_key()?;
 
             match key {
                 Key::Cancel => return Err(InquireError::OperationCanceled),
@@ -247,7 +247,7 @@ where
 
         let formatted = (self.formatter)(final_answer.clone());
 
-        renderer.cleanup(&self.message, &formatted)?;
+        backend.finish_prompt(&self.message, &formatted)?;
 
         Ok(final_answer)
     }

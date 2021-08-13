@@ -1,377 +1,458 @@
-use std::{fmt::Display, io::Result};
+use std::fmt::Display;
 
-use super::{Attributes, Color, Key, Styled};
+use super::{key::Key, Terminal};
+use crate::{
+    error::{InquireError, InquireResult},
+    input::Input,
+    ui::{Attributes, Color, Styled},
+};
 
-pub trait Backend {
-    fn cursor_up(&mut self) -> Result<()>;
-    fn cursor_move_to_column(&mut self, idx: u16) -> Result<()>;
-    fn read_key(&mut self) -> Result<Key>;
-    fn flush(&mut self) -> Result<()>;
+pub trait CommonBackend {
+    fn read_key(&mut self) -> InquireResult<Key>;
 
-    fn write<T: Display>(&mut self, val: T) -> Result<()>;
-    fn write_styled<T: Display>(&mut self, val: Styled<T>) -> Result<()>;
+    fn frame_setup(&mut self) -> InquireResult<()>;
+    fn frame_finish(&mut self) -> InquireResult<()>;
 
-    fn clear_current_line(&mut self) -> Result<()>;
+    fn finish_prompt(&mut self, prompt: &str, answer: &str) -> InquireResult<()>;
 
-    fn cursor_hide(&mut self) -> Result<()>;
-    fn cursor_show(&mut self) -> Result<()>;
-
-    fn set_attributes(&mut self, attributes: Attributes) -> Result<()>;
-    fn reset_attributes(&mut self) -> Result<()>;
-
-    fn set_fg_color(&mut self, color: Color) -> Result<()>;
-    fn reset_fg_color(&mut self) -> Result<()>;
-
-    fn set_bg_color(&mut self, color: Color) -> Result<()>;
-    fn reset_bg_color(&mut self) -> Result<()>;
+    fn render_error_message(&mut self, error: &str) -> InquireResult<()>;
+    fn render_help_message(&mut self, help: &str) -> InquireResult<()>;
 }
 
-pub mod crossterm {
-    use std::io::{stdout, Result, Stdout, Write};
+pub trait TextBackend: CommonBackend {
+    fn render_prompt(
+        &mut self,
+        prompt: &str,
+        default: Option<&str>,
+        cur_input: &Input,
+    ) -> InquireResult<()>;
+    fn render_suggestion<T: Display>(&mut self, content: T, focused: bool) -> InquireResult<()>;
+}
 
-    use crossterm::{
-        event::KeyEvent,
-        queue,
-        style::{Attribute, Print},
-        terminal::{enable_raw_mode, ClearType},
-    };
+pub trait SelectBackend: CommonBackend {
+    fn render_select_prompt(&mut self, prompt: &str, cur_input: &Input) -> InquireResult<()>;
+    fn render_option<T: Display>(&mut self, content: T, focused: bool) -> InquireResult<()>;
+}
 
-    use crate::{
-        error::{InquireError, InquireResult},
-        ui::{Attributes, Color, Key, Styled},
-    };
+pub trait MultiSelectBackend: CommonBackend {
+    fn render_multiselect_prompt(&mut self, prompt: &str, cur_input: &Input) -> InquireResult<()>;
+    fn render_option<T: Display>(
+        &mut self,
+        content: T,
+        focused: bool,
+        checked: bool,
+    ) -> InquireResult<()>;
+}
 
-    use super::Backend;
+#[cfg(feature = "date")]
+pub trait DateSelectBackend: CommonBackend {
+    fn render_calendar_prompt(&mut self, prompt: &str) -> InquireResult<()>;
+    fn render_calendar(
+        &mut self,
+        month: chrono::Month,
+        year: i32,
+        week_start: chrono::Weekday,
+        today: chrono::NaiveDate,
+        selected_date: chrono::NaiveDate,
+        min_date: Option<chrono::NaiveDate>,
+        max_date: Option<chrono::NaiveDate>,
+    ) -> InquireResult<()>;
+}
 
-    enum IO<'a> {
-        Std {
-            w: Stdout,
-        },
-        #[allow(unused)]
-        Custom {
-            r: &'a mut dyn Iterator<Item = &'a KeyEvent>,
-            w: &'a mut (dyn Write),
-        },
+pub trait CustomTypeBackend: CommonBackend {
+    fn render_prompt(
+        &mut self,
+        prompt: &str,
+        default: Option<&str>,
+        cur_input: &Input,
+    ) -> InquireResult<()>;
+}
+
+pub trait PasswordBackend: CommonBackend {
+    fn render_password_prompt(&mut self, prompt: &str) -> InquireResult<()>;
+}
+
+pub struct Backend<T>
+where
+    T: Terminal,
+{
+    cur_line: usize,
+    terminal: T,
+}
+
+impl<T> Backend<T>
+where
+    T: Terminal,
+{
+    pub fn new(terminal: T) -> InquireResult<Self> {
+        let mut backend = Self {
+            cur_line: 0,
+            terminal,
+        };
+
+        backend.terminal.cursor_hide()?;
+
+        Ok(backend)
     }
 
-    pub struct CrosstermBackend<'a> {
-        io: IO<'a>,
+    pub fn reset_prompt(&mut self) -> InquireResult<()> {
+        for _ in 0..self.cur_line {
+            self.terminal.cursor_up()?;
+            self.terminal.cursor_move_to_column(0)?;
+            self.terminal.clear_current_line()?;
+        }
+
+        self.cur_line = 0;
+        Ok(())
     }
 
-    impl<'a> CrosstermBackend<'a> {
-        pub fn new() -> InquireResult<Self> {
-            enable_raw_mode().map_err(|e| {
-                if e.raw_os_error() == Some(25i32) {
-                    InquireError::NotTTY
-                } else {
-                    InquireError::from(e)
+    fn print_prompt_answer(&mut self, prompt: &str, answer: &str) -> InquireResult<()> {
+        self.terminal
+            .write_styled(Styled::new("? ").with_fg(Color::Green))?;
+
+        self.terminal.write(prompt)?;
+
+        self.terminal
+            .write_styled(Styled::new(format!(" {}", answer)).with_fg(Color::Cyan))?;
+
+        self.new_line()?;
+
+        Ok(())
+    }
+
+    pub fn print_prompt(
+        &mut self,
+        prompt: &str,
+        default: Option<&str>,
+        content: Option<&str>,
+    ) -> InquireResult<()> {
+        self.terminal
+            .write_styled(Styled::new("? ").with_fg(Color::Green))?;
+
+        self.terminal.write(prompt)?;
+
+        if let Some(default) = default {
+            self.terminal.write(format!(" ({})", default))?;
+        }
+
+        match content {
+            Some(content) if !content.is_empty() => self
+                .terminal
+                .write_styled(Styled::new(format!(" {}", content)).with_attr(Attributes::BOLD))?,
+            _ => {}
+        }
+
+        self.new_line()?;
+
+        Ok(())
+    }
+
+    pub fn print_prompt_input(
+        &mut self,
+        prompt: &str,
+        default: Option<&str>,
+        content: &Input,
+    ) -> InquireResult<()> {
+        self.terminal
+            .write_styled(Styled::new("? ").with_fg(Color::Green))?;
+
+        self.terminal.write(prompt)?;
+
+        if let Some(default) = default {
+            self.terminal.write(format!(" ({})", default))?;
+        }
+
+        let (before, mut at, after) = content.split();
+
+        if at.is_empty() {
+            at.push(' ');
+        }
+
+        self.terminal.write(" ")?;
+        self.terminal.write(before)?;
+        self.terminal
+            .write_styled(Styled::new(at).with_bg(Color::Grey).with_fg(Color::Black))?;
+        self.terminal.write(after)?;
+
+        self.new_line()?;
+
+        Ok(())
+    }
+
+    pub fn print_option<D: Display>(&mut self, content: D, focused: bool) -> InquireResult<()> {
+        let token = match focused {
+            true => Styled::new(format!("> {}", content)).with_fg(Color::Cyan),
+            false => Styled::new(format!("  {}", content)),
+        };
+
+        self.terminal.write_styled(token)?;
+
+        self.new_line()?;
+
+        Ok(())
+    }
+
+    pub fn flush(&mut self) -> InquireResult<()> {
+        self.terminal.flush()?;
+
+        Ok(())
+    }
+
+    fn new_line(&mut self) -> InquireResult<()> {
+        self.terminal.cursor_move_to_column(0)?;
+        self.terminal.write("\n")?;
+        self.cur_line = self.cur_line.saturating_add(1);
+
+        Ok(())
+    }
+}
+
+impl<T> CommonBackend for Backend<T>
+where
+    T: Terminal,
+{
+    fn frame_setup(&mut self) -> InquireResult<()> {
+        self.reset_prompt()
+    }
+
+    fn frame_finish(&mut self) -> InquireResult<()> {
+        self.flush()
+    }
+
+    fn finish_prompt(&mut self, prompt: &str, answer: &str) -> InquireResult<()> {
+        self.reset_prompt()?;
+        self.print_prompt_answer(prompt, answer)?;
+
+        Ok(())
+    }
+
+    fn read_key(&mut self) -> InquireResult<Key> {
+        self.terminal
+            .read_key()
+            .map(Key::from)
+            .map_err(InquireError::from)
+    }
+
+    fn render_error_message(&mut self, error: &str) -> InquireResult<()> {
+        self.terminal
+            .write_styled(Styled::new(format!("# {}", error)).with_fg(Color::Red))?;
+
+        self.new_line()?;
+
+        Ok(())
+    }
+
+    fn render_help_message(&mut self, help: &str) -> InquireResult<()> {
+        self.terminal
+            .write_styled(Styled::new(format!("[{}]", help)).with_fg(Color::Cyan))?;
+
+        self.new_line()?;
+
+        Ok(())
+    }
+}
+
+impl<T> TextBackend for Backend<T>
+where
+    T: Terminal,
+{
+    fn render_prompt(
+        &mut self,
+        prompt: &str,
+        default: Option<&str>,
+        cur_input: &Input,
+    ) -> InquireResult<()> {
+        self.print_prompt_input(prompt, default, cur_input)
+    }
+
+    fn render_suggestion<D: Display>(&mut self, content: D, focused: bool) -> InquireResult<()> {
+        self.print_option(content, focused)
+    }
+}
+
+impl<T> SelectBackend for Backend<T>
+where
+    T: Terminal,
+{
+    fn render_select_prompt(&mut self, prompt: &str, cur_input: &Input) -> InquireResult<()> {
+        self.print_prompt_input(prompt, None, cur_input)
+    }
+
+    fn render_option<D: Display>(&mut self, content: D, focused: bool) -> InquireResult<()> {
+        self.print_option(content, focused)
+    }
+}
+
+impl<T> MultiSelectBackend for Backend<T>
+where
+    T: Terminal,
+{
+    fn render_multiselect_prompt(&mut self, prompt: &str, cur_input: &Input) -> InquireResult<()> {
+        self.print_prompt_input(prompt, None, cur_input)
+    }
+
+    fn render_option<D: Display>(
+        &mut self,
+        content: D,
+        focused: bool,
+        checked: bool,
+    ) -> InquireResult<()> {
+        let cursor = match focused {
+            true => Styled::new("> ").with_fg(Color::Cyan),
+            false => Styled::new("  "),
+        };
+
+        let checkbox = match checked {
+            true => Styled::new("[x] ").with_fg(Color::Green),
+            false => Styled::new("[ ] "),
+        };
+
+        self.terminal.write_styled(cursor)?;
+        self.terminal.write_styled(checkbox)?;
+        self.terminal.write(content)?;
+
+        self.new_line()?;
+
+        Ok(())
+    }
+}
+
+#[cfg(feature = "date")]
+impl<T> DateSelectBackend for Backend<T>
+where
+    T: Terminal,
+{
+    fn render_calendar_prompt(&mut self, prompt: &str) -> InquireResult<()> {
+        self.print_prompt(prompt, None, None)
+    }
+
+    fn render_calendar(
+        &mut self,
+        month: chrono::Month,
+        year: i32,
+        week_start: chrono::Weekday,
+        today: chrono::NaiveDate,
+        selected_date: chrono::NaiveDate,
+        min_date: Option<chrono::NaiveDate>,
+        max_date: Option<chrono::NaiveDate>,
+    ) -> InquireResult<()> {
+        use crate::date_utils::get_start_date;
+        use chrono::{Datelike, Duration};
+        use std::ops::Sub;
+
+        // print header (month year)
+        let header = format!("{} {}", month.name().to_lowercase(), year);
+
+        self.terminal
+            .write_styled(Styled::new("> ").with_fg(Color::Green))?;
+
+        self.terminal.write(format!("{:^20}", header))?;
+
+        self.new_line()?;
+
+        // print week header
+        let mut current_weekday = week_start;
+        let mut week_days: Vec<String> = vec![];
+        for _ in 0..7 {
+            let mut formatted = format!("{}", current_weekday);
+            formatted.make_ascii_lowercase();
+            formatted.pop();
+            week_days.push(formatted);
+
+            current_weekday = current_weekday.succ();
+        }
+        let week_days = week_days.join(" ");
+
+        self.terminal
+            .write_styled(Styled::new("> ").with_fg(Color::Green))?;
+
+        self.terminal.write(week_days)?;
+        self.new_line()?;
+
+        // print dates
+        let mut date_it = get_start_date(month, year);
+        // first date of week-line is possibly in the previous month
+        if date_it.weekday() == week_start {
+            date_it = date_it.sub(Duration::weeks(1));
+        } else {
+            while date_it.weekday() != week_start {
+                date_it = date_it.pred();
+            }
+        }
+
+        for _ in 0..6 {
+            self.terminal
+                .write_styled(Styled::new("> ").with_fg(Color::Green))?;
+
+            for i in 0..7 {
+                if i > 0 {
+                    self.terminal.write(" ")?;
                 }
-            })?;
 
-            Ok(Self {
-                io: IO::Std { w: stdout() },
-            })
-        }
+                let date = format!("{:2}", date_it.day());
 
-        /// # Errors
-        ///
-        /// Will return `std::io::Error` if it fails to get terminal size
-        #[cfg(test)]
-        pub fn new_with_io<W: 'a + Write>(
-            writer: &'a mut W,
-            reader: &'a mut dyn Iterator<Item = &'a KeyEvent>,
-        ) -> Self {
-            Self {
-                io: IO::Custom {
-                    r: reader,
-                    w: writer,
-                },
-            }
-        }
+                let mut token = Styled::new(date);
 
-        fn get_writer(&mut self) -> &mut dyn Write {
-            match &mut self.io {
-                IO::Std { w } => w,
-                IO::Custom { r: _, w } => w,
-            }
-        }
-    }
+                if date_it == selected_date {
+                    token = token.with_bg(Color::Grey).with_fg(Color::Black);
+                } else if date_it == today {
+                    token = token.with_fg(Color::Green);
+                } else if date_it.month() != month.number_from_month() {
+                    token = token.with_fg(Color::DarkGrey);
+                }
 
-    impl<'a> Backend for CrosstermBackend<'a> {
-        fn cursor_up(&mut self) -> Result<()> {
-            queue!(&mut self.get_writer(), crossterm::cursor::MoveUp(1))
-        }
-
-        fn cursor_move_to_column(&mut self, idx: u16) -> Result<()> {
-            queue!(&mut self.get_writer(), crossterm::cursor::MoveToColumn(idx))
-        }
-
-        fn read_key(&mut self) -> Result<Key> {
-            loop {
-                match &mut self.io {
-                    IO::Std { w: _ } => match crossterm::event::read()? {
-                        crossterm::event::Event::Key(key_event) => return Ok(key_event.into()),
-                        crossterm::event::Event::Mouse(_) => {}
-                        crossterm::event::Event::Resize(_, _) => {}
-                    },
-                    IO::Custom { r, w: _ } => {
-                        let key = r.next().expect("Custom stream of characters has ended");
-                        return Ok((*key).into());
+                if let Some(min_date) = min_date {
+                    if date_it < min_date {
+                        token = token.with_fg(Color::DarkGrey);
                     }
                 }
-            }
-        }
 
-        fn flush(&mut self) -> Result<()> {
-            self.get_writer().flush()
-        }
+                if let Some(max_date) = max_date {
+                    if date_it > max_date {
+                        token = token.with_fg(Color::DarkGrey);
+                    }
+                }
 
-        fn write<T: std::fmt::Display>(&mut self, val: T) -> Result<()> {
-            queue!(&mut self.get_writer(), Print(val))
-        }
+                self.terminal.write_styled(token)?;
 
-        fn write_styled<T: std::fmt::Display>(&mut self, val: Styled<T>) -> Result<()> {
-            if let Some(color) = val.style.fg {
-                self.set_fg_color(color)?;
-            }
-            if let Some(color) = val.style.bg {
-                self.set_bg_color(color)?;
-            }
-            if !val.style.att.is_empty() {
-                self.set_attributes(val.style.att)?;
+                date_it = date_it.succ();
             }
 
-            self.write(val.content)?;
-
-            if let Some(_) = val.style.fg.as_ref() {
-                self.reset_fg_color()?;
-            }
-            if let Some(_) = val.style.bg.as_ref() {
-                self.reset_bg_color()?;
-            }
-            if !val.style.att.is_empty() {
-                self.reset_attributes()?;
-            }
-
-            Ok(())
+            self.new_line()?;
         }
 
-        fn clear_current_line(&mut self) -> Result<()> {
-            queue!(
-                &mut self.get_writer(),
-                crossterm::terminal::Clear(ClearType::CurrentLine)
-            )
-        }
-
-        fn cursor_hide(&mut self) -> Result<()> {
-            queue!(&mut self.get_writer(), crossterm::cursor::Hide)
-        }
-
-        fn cursor_show(&mut self) -> Result<()> {
-            queue!(&mut self.get_writer(), crossterm::cursor::Show)
-        }
-
-        fn set_attributes(&mut self, attributes: Attributes) -> Result<()> {
-            if attributes.contains(Attributes::BOLD) {
-                queue!(
-                    &mut self.get_writer(),
-                    crossterm::style::SetAttribute(Attribute::Bold)
-                )?;
-            }
-            if attributes.contains(Attributes::ITALIC) {
-                queue!(
-                    &mut self.get_writer(),
-                    crossterm::style::SetAttribute(Attribute::Italic)
-                )?;
-            }
-
-            Ok(())
-        }
-
-        fn reset_attributes(&mut self) -> Result<()> {
-            queue!(
-                &mut self.get_writer(),
-                crossterm::style::SetAttribute(Attribute::Reset)
-            )
-        }
-
-        fn set_fg_color(&mut self, color: Color) -> Result<()> {
-            queue!(
-                &mut self.get_writer(),
-                crossterm::style::SetForegroundColor(color.into())
-            )
-        }
-
-        fn reset_fg_color(&mut self) -> Result<()> {
-            queue!(
-                &mut self.get_writer(),
-                crossterm::style::SetForegroundColor(crossterm::style::Color::Reset)
-            )
-        }
-
-        fn set_bg_color(&mut self, color: Color) -> Result<()> {
-            queue!(
-                &mut self.get_writer(),
-                crossterm::style::SetBackgroundColor(color.into())
-            )
-        }
-
-        fn reset_bg_color(&mut self) -> Result<()> {
-            queue!(
-                &mut self.get_writer(),
-                crossterm::style::SetBackgroundColor(crossterm::style::Color::Reset)
-            )
-        }
+        Ok(())
     }
+}
 
-    impl<'a> Drop for CrosstermBackend<'a> {
-        fn drop(&mut self) {
-            let _ = self.flush();
-            let _ = match self.io {
-                IO::Std { w: _ } => crossterm::terminal::disable_raw_mode(),
-                IO::Custom { r: _, w: _ } => Ok(()),
-            };
-        }
+impl<T> CustomTypeBackend for Backend<T>
+where
+    T: Terminal,
+{
+    fn render_prompt(
+        &mut self,
+        prompt: &str,
+        default: Option<&str>,
+        cur_input: &Input,
+    ) -> InquireResult<()> {
+        self.print_prompt_input(prompt, default, cur_input)
     }
+}
 
-    impl From<Color> for crossterm::style::Color {
-        fn from(c: Color) -> Self {
-            match c {
-                Color::Black => crossterm::style::Color::Black,
-                Color::DarkGrey => crossterm::style::Color::DarkGrey,
-                Color::Red => crossterm::style::Color::Red,
-                Color::DarkRed => crossterm::style::Color::DarkRed,
-                Color::Green => crossterm::style::Color::Green,
-                Color::DarkGreen => crossterm::style::Color::DarkGreen,
-                Color::Yellow => crossterm::style::Color::Yellow,
-                Color::DarkYellow => crossterm::style::Color::DarkYellow,
-                Color::Blue => crossterm::style::Color::Blue,
-                Color::DarkBlue => crossterm::style::Color::DarkBlue,
-                Color::Magenta => crossterm::style::Color::Magenta,
-                Color::DarkMagenta => crossterm::style::Color::DarkMagenta,
-                Color::Cyan => crossterm::style::Color::Cyan,
-                Color::DarkCyan => crossterm::style::Color::DarkCyan,
-                Color::White => crossterm::style::Color::White,
-                Color::Grey => crossterm::style::Color::Grey,
-                Color::Rgb { r, g, b } => crossterm::style::Color::Rgb { r, g, b },
-                Color::AnsiValue(b) => crossterm::style::Color::AnsiValue(b),
-            }
-        }
+impl<T> PasswordBackend for Backend<T>
+where
+    T: Terminal,
+{
+    fn render_password_prompt(&mut self, prompt: &str) -> InquireResult<()> {
+        self.print_prompt(prompt, None, None)
     }
+}
 
-    #[cfg(test)]
-    mod test {
-        use crate::ui::Backend;
-        use crate::ui::Color;
-
-        use super::Attributes;
-        use super::CrosstermBackend;
-
-        #[test]
-        fn writer() {
-            let mut write: Vec<u8> = Vec::new();
-            let read = Vec::new();
-            let mut read = read.iter();
-
-            {
-                let mut backend = CrosstermBackend::new_with_io(&mut write, &mut read);
-
-                backend.write("testing ").unwrap();
-                backend.write("writing ").unwrap();
-                backend.flush().unwrap();
-                backend.write("wow").unwrap();
-            }
-
-            #[cfg(unix)]
-            assert_eq!("testing writing wow", std::str::from_utf8(&write).unwrap());
-        }
-
-        #[test]
-        fn style_management() {
-            let mut write: Vec<u8> = Vec::new();
-            let read = Vec::new();
-            let mut read = read.iter();
-
-            {
-                let mut backend = CrosstermBackend::new_with_io(&mut write, &mut read);
-
-                backend.set_attributes(Attributes::BOLD).unwrap();
-                backend.set_attributes(Attributes::ITALIC).unwrap();
-                backend.set_attributes(Attributes::BOLD).unwrap();
-                backend.reset_attributes().unwrap();
-            }
-
-            #[cfg(unix)]
-            assert_eq!(
-                "\x1B[1m\x1B[3m\x1B[1m\x1B[0m",
-                std::str::from_utf8(&write).unwrap()
-            );
-        }
-
-        #[test]
-        fn style_management_with_flags() {
-            let mut write: Vec<u8> = Vec::new();
-            let read = Vec::new();
-            let mut read = read.iter();
-
-            {
-                let mut backend = CrosstermBackend::new_with_io(&mut write, &mut read);
-
-                backend
-                    .set_attributes(Attributes::BOLD | Attributes::ITALIC | Attributes::BOLD)
-                    .unwrap();
-                backend.reset_attributes().unwrap();
-            }
-
-            #[cfg(unix)]
-            assert_eq!(
-                "\x1B[1m\x1B[3m\x1B[0m",
-                std::str::from_utf8(&write).unwrap()
-            );
-        }
-
-        #[test]
-        fn fg_color_management() {
-            let mut write: Vec<u8> = Vec::new();
-            let read = Vec::new();
-            let mut read = read.iter();
-
-            {
-                let mut backend = CrosstermBackend::new_with_io(&mut write, &mut read);
-
-                backend.set_fg_color(Color::Red).unwrap();
-                backend.reset_fg_color().unwrap();
-                backend.set_fg_color(Color::Black).unwrap();
-                backend.set_fg_color(Color::Green).unwrap();
-            }
-
-            #[cfg(unix)]
-            assert_eq!(
-                "\x1B[38;5;9m\x1B[39m\x1B[38;5;0m\x1B[38;5;10m",
-                std::str::from_utf8(&write).unwrap()
-            );
-        }
-
-        #[test]
-        fn bg_color_management() {
-            let mut write: Vec<u8> = Vec::new();
-            let read = Vec::new();
-            let mut read = read.iter();
-
-            {
-                let mut backend = CrosstermBackend::new_with_io(&mut write, &mut read);
-
-                backend.set_bg_color(Color::Red).unwrap();
-                backend.reset_bg_color().unwrap();
-                backend.set_bg_color(Color::Black).unwrap();
-                backend.set_bg_color(Color::Green).unwrap();
-            }
-
-            #[cfg(unix)]
-            assert_eq!(
-                "\x1B[48;5;9m\x1B[49m\x1B[48;5;0m\x1B[48;5;10m",
-                std::str::from_utf8(&write).unwrap()
-            );
-        }
+impl<T> Drop for Backend<T>
+where
+    T: Terminal,
+{
+    fn drop(&mut self) {
+        let _ = self.terminal.cursor_show();
     }
 }

@@ -6,7 +6,7 @@ use crate::{
     formatter::{self, MultiOptionFormatter},
     input::Input,
     option_answer::OptionAnswer,
-    ui::{crossterm::CrosstermBackend, Backend, Key, KeyModifiers, Renderer},
+    ui::{crossterm::CrosstermTerminal, Backend, Key, KeyModifiers, MultiSelectBackend},
     utils::paginate,
     validator::MultiOptionValidator,
 };
@@ -190,16 +190,16 @@ impl<'a> MultiSelect<'a> {
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to the defined rules.
     pub fn prompt(self) -> InquireResult<Vec<OptionAnswer>> {
-        let backend = CrosstermBackend::new()?;
-        let mut renderer = Renderer::new(backend)?;
-        self.prompt_with_renderer(&mut renderer)
+        let terminal = CrosstermTerminal::new()?;
+        let mut backend = Backend::new(terminal)?;
+        self.prompt_with_backend(&mut backend)
     }
 
-    pub(in crate) fn prompt_with_renderer<B: Backend>(
+    pub(in crate) fn prompt_with_backend<B: MultiSelectBackend>(
         self,
-        renderer: &mut Renderer<B>,
+        backend: &mut B,
     ) -> InquireResult<Vec<OptionAnswer>> {
-        MultiSelectPrompt::new(self)?.prompt(renderer)
+        MultiSelectPrompt::new(self)?.prompt(backend)
     }
 }
 
@@ -362,16 +362,16 @@ impl<'a> MultiSelectPrompt<'a> {
         return Ok(selected_options);
     }
 
-    fn render<B: Backend>(&mut self, renderer: &mut Renderer<B>) -> InquireResult<()> {
+    fn render<B: MultiSelectBackend>(&mut self, backend: &mut B) -> InquireResult<()> {
         let prompt = &self.message;
 
-        renderer.reset_prompt()?;
+        backend.frame_setup()?;
 
         if let Some(err) = &self.error {
-            renderer.print_error_message(err)?;
+            backend.render_error_message(err)?;
         }
 
-        renderer.print_prompt_input(&prompt, None, &self.input)?;
+        backend.render_multiselect_prompt(&prompt, &self.input)?;
 
         let choices = self
             .filtered_options
@@ -383,32 +383,32 @@ impl<'a> MultiSelectPrompt<'a> {
         let page = paginate(self.page_size, &choices, self.cursor_index);
 
         for (idx, opt) in page.content.iter().enumerate() {
-            renderer.print_multi_option(
+            backend.render_option(
+                &opt.value,
                 page.selection == idx,
                 self.checked.contains(&opt.index),
-                &opt.value,
             )?;
         }
 
         if let Some(help_message) = self.help_message {
-            renderer.print_help(help_message)?;
+            backend.render_help_message(help_message)?;
         }
 
-        renderer.flush()?;
+        backend.frame_finish()?;
 
         Ok(())
     }
 
-    fn prompt<B: Backend>(
+    fn prompt<B: MultiSelectBackend>(
         mut self,
-        renderer: &mut Renderer<B>,
+        backend: &mut B,
     ) -> InquireResult<Vec<OptionAnswer>> {
         let final_answer: Vec<OptionAnswer>;
 
         loop {
-            self.render(renderer)?;
+            self.render(backend)?;
 
-            let key = renderer.read_key()?;
+            let key = backend.read_key()?;
 
             match key {
                 Key::Cancel => return Err(InquireError::OperationCanceled),
@@ -425,7 +425,7 @@ impl<'a> MultiSelectPrompt<'a> {
 
         let formatted = (self.formatter)(&final_answer);
 
-        renderer.cleanup(&self.message, &formatted)?;
+        backend.finish_prompt(&self.message, &formatted)?;
 
         Ok(final_answer)
     }

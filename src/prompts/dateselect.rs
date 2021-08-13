@@ -8,7 +8,7 @@ use crate::{
     date_utils::{get_current_date, get_month},
     error::{InquireError, InquireResult},
     formatter::{self, DateFormatter},
-    ui::{crossterm::CrosstermBackend, Backend, Key, KeyModifiers, Renderer},
+    ui::{crossterm::CrosstermTerminal, Backend, DateSelectBackend, Key, KeyModifiers, Terminal},
     validator::DateValidator,
 };
 
@@ -206,16 +206,16 @@ impl<'a> DateSelect<'a> {
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to the defined rules.
     pub fn prompt(self) -> InquireResult<NaiveDate> {
-        let backend = CrosstermBackend::new()?;
-        let mut renderer = Renderer::new(backend)?;
-        self.prompt_with_renderer(&mut renderer)
+        let terminal = CrosstermTerminal::new()?;
+        let mut backend = Backend::new(terminal)?;
+        self.prompt_with_backend(&mut backend)
     }
 
-    pub(in crate) fn prompt_with_renderer<B: Backend>(
+    pub(in crate) fn prompt_with_backend<T: Terminal>(
         self,
-        renderer: &mut Renderer<B>,
+        backend: &mut Backend<T>,
     ) -> InquireResult<NaiveDate> {
-        DateSelectPrompt::new(self)?.prompt(renderer)
+        DateSelectPrompt::new(self)?.prompt(backend)
     }
 }
 
@@ -340,18 +340,18 @@ impl<'a> DateSelectPrompt<'a> {
         Ok(self.current_date)
     }
 
-    fn render<B: Backend>(&mut self, renderer: &mut Renderer<B>) -> InquireResult<()> {
+    fn render<B: DateSelectBackend>(&mut self, backend: &mut B) -> InquireResult<()> {
         let prompt = &self.message;
 
-        renderer.reset_prompt()?;
+        backend.frame_setup()?;
 
         if let Some(err) = &self.error {
-            renderer.print_error_message(err)?;
+            backend.render_error_message(err)?;
         }
 
-        renderer.print_prompt(&prompt, None, None)?;
+        backend.render_calendar_prompt(&prompt)?;
 
-        renderer.print_calendar_month(
+        backend.render_calendar(
             get_month(self.current_date.month()),
             self.current_date.year(),
             self.week_start,
@@ -362,21 +362,21 @@ impl<'a> DateSelectPrompt<'a> {
         )?;
 
         if let Some(help_message) = self.help_message {
-            renderer.print_help(help_message)?;
+            backend.render_help_message(help_message)?;
         }
 
-        renderer.flush()?;
+        backend.frame_finish()?;
 
         Ok(())
     }
 
-    fn prompt<B: Backend>(mut self, renderer: &mut Renderer<B>) -> InquireResult<NaiveDate> {
+    fn prompt<B: DateSelectBackend>(mut self, backend: &mut B) -> InquireResult<NaiveDate> {
         let final_answer: NaiveDate;
 
         loop {
-            self.render(renderer)?;
+            self.render(backend)?;
 
-            let key = renderer.read_key()?;
+            let key = backend.read_key()?;
 
             match key {
                 Key::Cancel => return Err(InquireError::OperationCanceled),
@@ -393,7 +393,7 @@ impl<'a> DateSelectPrompt<'a> {
 
         let formatted = (self.formatter)(final_answer);
 
-        renderer.cleanup(&self.message, &formatted)?;
+        backend.finish_prompt(&self.message, &formatted)?;
 
         Ok(final_answer)
     }
@@ -403,7 +403,7 @@ impl<'a> DateSelectPrompt<'a> {
 mod test {
     use crate::{
         date_utils::get_current_date,
-        ui::{crossterm::CrosstermBackend, Renderer},
+        ui::{crossterm::CrosstermTerminal, Backend},
         DateSelect,
     };
     use chrono::NaiveDate;
@@ -427,10 +427,10 @@ mod test {
                 let mut read = read.iter();
 
                 let mut write: Vec<u8> = Vec::new();
-                let backend = CrosstermBackend::new_with_io(&mut write, &mut read);
-                let mut renderer = Renderer::new(backend).unwrap();
+                let terminal = CrosstermTerminal::new_with_io(&mut write, &mut read);
+                let mut backend = Backend::new(terminal).unwrap();
 
-                let ans = $prompt.prompt_with_renderer(&mut renderer).unwrap();
+                let ans = $prompt.prompt_with_backend(&mut backend).unwrap();
 
                 assert_eq!($output, ans);
             }
@@ -468,12 +468,12 @@ mod test {
         };
 
         let mut write: Vec<u8> = Vec::new();
-        let backend = CrosstermBackend::new_with_io(&mut write, &mut read);
-        let mut renderer = Renderer::new(backend).unwrap();
+        let terminal = CrosstermTerminal::new_with_io(&mut write, &mut read);
+        let mut backend = Backend::new(terminal).unwrap();
 
         let ans = DateSelect::new("Question")
             .with_validator(&validator)
-            .prompt_with_renderer(&mut renderer)
+            .prompt_with_backend(&mut backend)
             .unwrap();
 
         assert_eq!(today_date.pred(), ans);
