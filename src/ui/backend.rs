@@ -59,6 +59,15 @@ pub trait DateSelectBackend: CommonBackend {
     ) -> InquireResult<()>;
 }
 
+pub trait CustomTypeBackend: CommonBackend {
+    fn render_prompt(
+        &mut self,
+        prompt: &str,
+        default: Option<&str>,
+        cur_input: &Input,
+    ) -> InquireResult<()>;
+}
+
 pub trait PasswordBackend: CommonBackend {
     fn render_password_prompt(&mut self, prompt: &str) -> InquireResult<()>;
 }
@@ -413,6 +422,20 @@ where
         }
 
         Ok(())
+    }
+}
+
+impl<T> CustomTypeBackend for Backend<T>
+where
+    T: Terminal,
+{
+    fn render_prompt(
+        &mut self,
+        prompt: &str,
+        default: Option<&str>,
+        cur_input: &Input,
+    ) -> InquireResult<()> {
+        self.print_prompt_input(prompt, default, cur_input)
     }
 }
 

@@ -6,7 +6,7 @@ use crate::{
     input::Input,
     parse_type,
     parser::CustomTypeParser,
-    ui::{crossterm::CrosstermTerminal, Backend, Key, Terminal},
+    ui::{crossterm::CrosstermTerminal, Backend, CustomTypeBackend, Key},
 };
 
 /// Generic prompt suitable for when you need to parse the user input into a specific type, for example an `f64` or a `rust_decimal`, maybe even an `uuid`.
@@ -139,9 +139,9 @@ where
         self.prompt_with_backend(&mut backend)
     }
 
-    pub(in crate) fn prompt_with_backend<TT: Terminal>(
+    pub(in crate) fn prompt_with_backend<B: CustomTypeBackend>(
         self,
-        backend: &mut Backend<TT>,
+        backend: &mut B,
     ) -> InquireResult<T> {
         CustomTypePrompt::from(self).prompt(backend)
     }
@@ -196,13 +196,13 @@ where
         }
     }
 
-    fn render<TT: Terminal>(&mut self, backend: &mut Backend<TT>) -> InquireResult<()> {
+    fn render<B: CustomTypeBackend>(&mut self, backend: &mut B) -> InquireResult<()> {
         let prompt = &self.message;
 
-        backend.reset_prompt()?;
+        backend.frame_setup()?;
 
         if let Some(error_message) = &self.error {
-            backend.print_error_message(error_message)?;
+            backend.render_error_message(error_message)?;
         }
 
         let default_message = self
@@ -210,18 +210,18 @@ where
             .as_ref()
             .map(|(val, formatter)| formatter(val.clone()));
 
-        backend.print_prompt_input(&prompt, default_message.as_deref(), &self.input)?;
+        backend.render_prompt(&prompt, default_message.as_deref(), &self.input)?;
 
         if let Some(message) = self.help_message {
-            backend.print_help(message)?;
+            backend.render_help_message(message)?;
         }
 
-        backend.flush()?;
+        backend.frame_finish()?;
 
         Ok(())
     }
 
-    fn prompt<TT: Terminal>(mut self, backend: &mut Backend<TT>) -> InquireResult<T> {
+    fn prompt<B: CustomTypeBackend>(mut self, backend: &mut B) -> InquireResult<T> {
         let final_answer: T;
 
         loop {
@@ -247,7 +247,7 @@ where
 
         let formatted = (self.formatter)(final_answer.clone());
 
-        backend.cleanup(&self.message, &formatted)?;
+        backend.finish_prompt(&self.message, &formatted)?;
 
         Ok(final_answer)
     }
