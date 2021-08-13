@@ -19,6 +19,16 @@ pub trait CommonBackend {
     fn render_help_message(&mut self, help: &str) -> InquireResult<()>;
 }
 
+pub trait TextBackend: CommonBackend {
+    fn render_prompt(
+        &mut self,
+        prompt: &str,
+        default: Option<&str>,
+        cur_input: &Input,
+    ) -> InquireResult<()>;
+    fn render_suggestion<T: Display>(&mut self, content: T, focused: bool) -> InquireResult<()>;
+}
+
 pub trait SelectBackend: CommonBackend {
     fn render_select_prompt(&mut self, prompt: &str, cur_input: &Input) -> InquireResult<()>;
     fn render_option<T: Display>(&mut self, content: T, focused: bool) -> InquireResult<()>;
@@ -233,6 +243,21 @@ where
     }
 }
 
+impl<T> TextBackend for Backend<T>
+where
+    T: Terminal,
+{
+    fn render_prompt(
+        &mut self,
+        prompt: &str,
+        default: Option<&str>,
+        cur_input: &Input,
+    ) -> InquireResult<()> {
+        self.print_prompt_input(prompt, default, cur_input)
+    }
+
+    fn render_suggestion<D: Display>(&mut self, content: D, focused: bool) -> InquireResult<()> {
+        self.print_option(content, focused)
     }
 }
 

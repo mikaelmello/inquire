@@ -6,7 +6,7 @@ use crate::{
     formatter::{StringFormatter, DEFAULT_STRING_FORMATTER},
     input::Input,
     option_answer::OptionAnswer,
-    ui::{crossterm::CrosstermTerminal, Backend, Key, KeyModifiers, Terminal},
+    ui::{crossterm::CrosstermTerminal, Backend, Key, KeyModifiers, TextBackend},
     utils::paginate,
     validator::StringValidator,
 };
@@ -178,9 +178,9 @@ impl<'a> Text<'a> {
         self.prompt_with_backend(&mut backend)
     }
 
-    pub(in crate) fn prompt_with_backend<T: Terminal>(
+    pub(in crate) fn prompt_with_backend<B: TextBackend>(
         self,
-        backend: &mut Backend<T>,
+        backend: &mut B,
     ) -> InquireResult<String> {
         TextPrompt::from(self).prompt(backend)
     }
@@ -306,16 +306,16 @@ impl<'a> TextPrompt<'a> {
         Ok(self.input.content().into())
     }
 
-    fn render<T: Terminal>(&mut self, backend: &mut Backend<T>) -> InquireResult<()> {
+    fn render<B: TextBackend>(&mut self, backend: &mut B) -> InquireResult<()> {
         let prompt = &self.message;
 
-        backend.reset_prompt()?;
+        backend.frame_setup()?;
 
         if let Some(err) = &self.error {
-            backend.print_error_message(err)?;
+            backend.render_error_message(err)?;
         }
 
-        backend.print_prompt_input(&prompt, self.default, &self.input)?;
+        backend.render_prompt(&prompt, self.default, &self.input)?;
 
         let choices = self
             .suggested_options
@@ -329,21 +329,21 @@ impl<'a> TextPrompt<'a> {
         let page = paginate(self.page_size, &choices, list_index);
 
         for (idx, opt) in page.content.iter().enumerate() {
-            backend.print_option(&opt.value, display_cursor && page.selection == idx)?;
+            backend.render_suggestion(&opt.value, display_cursor && page.selection == idx)?;
         }
 
         if let Some(message) = self.help_message {
-            backend.print_help(message)?;
+            backend.render_help_message(message)?;
         } else if !choices.is_empty() {
-            backend.print_help(DEFAULT_HELP_MESSAGE)?;
+            backend.render_help_message(DEFAULT_HELP_MESSAGE)?;
         }
 
-        backend.flush()?;
+        backend.frame_finish()?;
 
         Ok(())
     }
 
-    fn prompt<T: Terminal>(mut self, backend: &mut Backend<T>) -> InquireResult<String> {
+    fn prompt<B: TextBackend>(mut self, backend: &mut B) -> InquireResult<String> {
         let final_answer: String;
 
         loop {
@@ -364,7 +364,7 @@ impl<'a> TextPrompt<'a> {
             }
         }
 
-        backend.cleanup(&self.message, &(self.formatter)(&final_answer))?;
+        backend.finish_prompt(&self.message, &(self.formatter)(&final_answer))?;
 
         Ok(final_answer)
     }
