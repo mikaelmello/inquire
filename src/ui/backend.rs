@@ -128,8 +128,10 @@ where
 
         self.print_prompt_token(prompt)?;
 
-        self.terminal
-            .write_styled(&Styled::new(format!(" {}", answer)).with_fg(Color::Cyan))?;
+        self.terminal.write(' ')?;
+
+        let token = Styled::new(answer).with_style_sheet(self.render_config.answer);
+        self.terminal.write_styled(&token)?;
 
         self.new_line()?;
 

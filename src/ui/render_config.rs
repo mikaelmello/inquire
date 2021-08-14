@@ -26,6 +26,12 @@ pub struct RenderConfig {
     /// Note: a non-styled space character is added before the text input as
     /// a separator from the prompt message (or default value display).
     pub text_input: InputRenderConfig,
+
+    /// Render configuration of final prompt answers (submissions).
+    ///
+    /// Note: a non-styled space character is added before the answer as
+    /// a separator from the prompt message (or default value display).
+    pub answer: StyleSheet,
 }
 
 impl RenderConfig {
@@ -36,6 +42,7 @@ impl RenderConfig {
             prompt: StyleSheet::empty(),
             default_value: StyleSheet::empty(),
             text_input: InputRenderConfig::empty(),
+            answer: StyleSheet::empty(),
         }
     }
 
@@ -89,6 +96,7 @@ impl Default for RenderConfig {
             prompt: StyleSheet::empty(),
             default_value: StyleSheet::empty(),
             text_input: InputRenderConfig::default(),
+            answer: StyleSheet::empty().with_fg(Color::Cyan),
         }
     }
 }
