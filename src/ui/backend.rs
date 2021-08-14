@@ -111,7 +111,6 @@ where
     fn print_prompt_prefix(&mut self) -> InquireResult<()> {
         self.terminal
             .write_styled(&self.render_config.prompt_prefix)?;
-        self.terminal.write(' ')?;
         Ok(())
     }
 
@@ -131,6 +130,8 @@ where
     fn print_prompt_answer(&mut self, prompt: &str, answer: &str) -> InquireResult<()> {
         self.print_prompt_prefix()?;
 
+        self.terminal.write(' ')?;
+
         self.print_prompt_token(prompt)?;
 
         self.terminal
@@ -148,6 +149,8 @@ where
         content: Option<&str>,
     ) -> InquireResult<()> {
         self.print_prompt_prefix()?;
+
+        self.terminal.write(' ')?;
 
         self.print_prompt_token(prompt)?;
 
@@ -175,6 +178,8 @@ where
         content: &Input,
     ) -> InquireResult<()> {
         self.print_prompt_prefix()?;
+
+        self.terminal.write(' ')?;
 
         self.print_prompt_token(prompt)?;
 
