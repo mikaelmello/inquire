@@ -40,6 +40,32 @@ pub struct RenderConfig {
 
     /// Render configuration for error messages.
     pub error_message: ErrorMessageRenderConfig,
+
+    /// Prefix for options.
+    ///
+    /// Note: a space character will be added to separate the prefix
+    /// and the option value or the checkbox.
+    pub option_prefix: Styled<&'static str>,
+
+    /// Selected checkbox in multi-select options.
+    ///
+    /// Note: a space character will be added to separate the checkbox
+    /// from a possible prefix, and to separate the checkbox from the
+    /// option value to the right.
+    pub selected_checkbox: Styled<&'static str>,
+
+    /// Unselected checkbox in multi-select options.
+    ///
+    /// Note: a space character will be added to separate the checkbox
+    /// from a possible prefix, and to separate the checkbox from the
+    /// option value to the right.
+    pub unselected_checkbox: Styled<&'static str>,
+
+    /// Style sheet for options.
+    ///
+    /// Note: a non-styled space character is added before the option value as
+    /// a separator from the prefix.
+    pub option: StyleSheet,
 }
 
 impl RenderConfig {
@@ -53,6 +79,10 @@ impl RenderConfig {
             text_input: InputRenderConfig::empty(),
             error_message: ErrorMessageRenderConfig::empty(),
             answer: StyleSheet::empty(),
+            option_prefix: Styled::new(">"),
+            selected_checkbox: Styled::new("[x]"),
+            unselected_checkbox: Styled::new("[ ]"),
+            option: StyleSheet::empty(),
         }
     }
 
@@ -109,6 +139,30 @@ impl RenderConfig {
         self.error_message = error_message;
         self
     }
+
+    /// Sets the styled component for option prefixes.
+    pub fn with_option_prefix(mut self, option_prefix: Styled<&'static str>) -> Self {
+        self.option_prefix = option_prefix;
+        self
+    }
+
+    /// Sets the styled component for selected checkboxes.
+    pub fn with_selected_checkbox(mut self, selected_checkbox: Styled<&'static str>) -> Self {
+        self.selected_checkbox = selected_checkbox;
+        self
+    }
+
+    /// Sets the styled component for unselected checkboxes.
+    pub fn with_unselected_checkbox(mut self, unselected_checkbox: Styled<&'static str>) -> Self {
+        self.unselected_checkbox = unselected_checkbox;
+        self
+    }
+
+    /// Sets the style sheet for option values.
+    pub fn with_option(mut self, option: StyleSheet) -> Self {
+        self.option = option;
+        self
+    }
 }
 
 impl Default for RenderConfig {
@@ -121,6 +175,10 @@ impl Default for RenderConfig {
             text_input: InputRenderConfig::default(),
             error_message: ErrorMessageRenderConfig::default(),
             answer: StyleSheet::empty().with_fg(Color::Cyan),
+            option_prefix: Styled::new(">").with_fg(Color::Cyan),
+            selected_checkbox: Styled::new("[x]").with_fg(Color::Green),
+            unselected_checkbox: Styled::new("[ ]"),
+            option: StyleSheet::empty(),
         }
     }
 }

@@ -271,12 +271,17 @@ where
     }
 
     fn render_suggestion<D: Display>(&mut self, content: D, focused: bool) -> Result<()> {
-        let token = match focused {
-            true => Styled::new(format!("> {}", content)).with_fg(Color::Cyan),
-            false => Styled::new(format!("  {}", content)),
-        };
+        match focused {
+            true => self
+                .terminal
+                .write_styled(&self.render_config.option_prefix)?,
+            false => self.terminal.write(' ')?,
+        }
 
-        self.terminal.write_styled(&token)?;
+        self.terminal.write(' ')?;
+
+        self.terminal
+            .write_styled(&Styled::new(content).with_style_sheet(self.render_config.option))?;
 
         self.new_line()?;
 
@@ -293,12 +298,17 @@ where
     }
 
     fn render_option<D: Display>(&mut self, content: D, focused: bool) -> Result<()> {
-        let token = match focused {
-            true => Styled::new(format!("> {}", content)).with_fg(Color::Cyan),
-            false => Styled::new(format!("  {}", content)),
-        };
+        match focused {
+            true => self
+                .terminal
+                .write_styled(&self.render_config.option_prefix)?,
+            false => self.terminal.write(' ')?,
+        }
 
-        self.terminal.write_styled(&token)?;
+        self.terminal.write(' ')?;
+
+        self.terminal
+            .write_styled(&Styled::new(content).with_style_sheet(self.render_config.option))?;
 
         self.new_line()?;
 
@@ -320,19 +330,28 @@ where
         focused: bool,
         checked: bool,
     ) -> Result<()> {
-        let cursor = match focused {
-            true => Styled::new("> ").with_fg(Color::Cyan),
-            false => Styled::new("  "),
-        };
+        match focused {
+            true => self
+                .terminal
+                .write_styled(&self.render_config.option_prefix)?,
+            false => self.terminal.write(' ')?,
+        }
 
-        let checkbox = match checked {
-            true => Styled::new("[x] ").with_fg(Color::Green),
-            false => Styled::new("[ ] "),
-        };
+        self.terminal.write(' ')?;
 
-        self.terminal.write_styled(&cursor)?;
-        self.terminal.write_styled(&checkbox)?;
-        self.terminal.write(content)?;
+        match checked {
+            true => self
+                .terminal
+                .write_styled(&self.render_config.selected_checkbox)?,
+            false => self
+                .terminal
+                .write_styled(&self.render_config.unselected_checkbox)?,
+        }
+
+        self.terminal.write(' ')?;
+
+        self.terminal
+            .write_styled(&Styled::new(content).with_style_sheet(self.render_config.option))?;
 
         self.new_line()?;
 
