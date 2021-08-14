@@ -3,7 +3,7 @@ use std::{fmt::Display, io::Result};
 use super::{key::Key, RenderConfig, Terminal};
 use crate::{
     input::Input,
-    ui::{Color, Styled},
+    ui::{StyleSheet, Styled},
 };
 
 pub trait CommonBackend {
@@ -384,13 +384,22 @@ where
         use chrono::{Datelike, Duration};
         use std::ops::Sub;
 
+        macro_rules! write_prefix {
+            () => {{
+                self.terminal
+                    .write_styled(&self.render_config.calendar.prefix)?;
+                self.terminal.write(' ')
+            }};
+        }
+
         // print header (month year)
         let header = format!("{} {}", month.name().to_lowercase(), year);
+        let header = format!("{:^20}", header);
+        let header = Styled::new(header).with_style_sheet(self.render_config.calendar.header);
 
-        self.terminal
-            .write_styled(&Styled::new("> ").with_fg(Color::Green))?;
+        write_prefix!()?;
 
-        self.terminal.write(format!("{:^20}", header))?;
+        self.terminal.write_styled(&header)?;
 
         self.new_line()?;
 
@@ -405,12 +414,13 @@ where
 
             current_weekday = current_weekday.succ();
         }
-        let week_days = week_days.join(" ");
 
-        self.terminal
-            .write_styled(&Styled::new("> ").with_fg(Color::Green))?;
+        let week_days = Styled::new(week_days.join(" "))
+            .with_style_sheet(self.render_config.calendar.week_header);
 
-        self.terminal.write(week_days)?;
+        write_prefix!()?;
+
+        self.terminal.write_styled(&week_days)?;
         self.new_line()?;
 
         // print dates
@@ -425,38 +435,38 @@ where
         }
 
         for _ in 0..6 {
-            self.terminal
-                .write_styled(&Styled::new("> ").with_fg(Color::Green))?;
+            write_prefix!()?;
 
             for i in 0..7 {
                 if i > 0 {
-                    self.terminal.write(" ")?;
+                    self.terminal.write(' ')?;
                 }
 
                 let date = format!("{:2}", date_it.day());
 
-                let mut token = Styled::new(date);
+                let mut style_sheet = StyleSheet::empty();
 
                 if date_it == selected_date {
-                    token = token.with_bg(Color::Grey).with_fg(Color::Black);
+                    style_sheet = self.render_config.calendar.selected_date;
                 } else if date_it == today {
-                    token = token.with_fg(Color::Green);
+                    style_sheet = self.render_config.calendar.today_date;
                 } else if date_it.month() != month.number_from_month() {
-                    token = token.with_fg(Color::DarkGrey);
+                    style_sheet = self.render_config.calendar.different_month_date;
                 }
 
                 if let Some(min_date) = min_date {
                     if date_it < min_date {
-                        token = token.with_fg(Color::DarkGrey);
+                        style_sheet = self.render_config.calendar.unavailable_date;
                     }
                 }
 
                 if let Some(max_date) = max_date {
                     if date_it > max_date {
-                        token = token.with_fg(Color::DarkGrey);
+                        style_sheet = self.render_config.calendar.unavailable_date;
                     }
                 }
 
+                let token = Styled::new(date).with_style_sheet(style_sheet);
                 self.terminal.write_styled(&token)?;
 
                 date_it = date_it.succ();

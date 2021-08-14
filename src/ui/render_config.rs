@@ -66,6 +66,11 @@ pub struct RenderConfig {
     /// Note: a non-styled space character is added before the option value as
     /// a separator from the prefix.
     pub option: StyleSheet,
+
+    /// Render configuration for calendar
+
+    #[cfg(feature = "date")]
+    pub calendar: calendar::CalendarRenderConfig,
 }
 
 impl RenderConfig {
@@ -83,6 +88,9 @@ impl RenderConfig {
             selected_checkbox: Styled::new("[x]"),
             unselected_checkbox: Styled::new("[ ]"),
             option: StyleSheet::empty(),
+
+            #[cfg(feature = "date")]
+            calendar: calendar::CalendarRenderConfig::empty(),
         }
     }
 
@@ -163,6 +171,13 @@ impl RenderConfig {
         self.option = option;
         self
     }
+
+    #[cfg(feature = "date")]
+    /// Sets the render configuration for calendars.
+    pub fn with_calendar_config(mut self, calendar: calendar::CalendarRenderConfig) -> Self {
+        self.calendar = calendar;
+        self
+    }
 }
 
 impl Default for RenderConfig {
@@ -179,6 +194,9 @@ impl Default for RenderConfig {
             selected_checkbox: Styled::new("[x]").with_fg(Color::Green),
             unselected_checkbox: Styled::new("[ ]"),
             option: StyleSheet::empty(),
+
+            #[cfg(feature = "date")]
+            calendar: calendar::CalendarRenderConfig::default(),
         }
     }
 }
@@ -285,6 +303,75 @@ impl Default for ErrorMessageRenderConfig {
             prefix: Styled::new("#").with_fg(Color::Red),
             separator: StyleSheet::empty(),
             message: StyleSheet::empty().with_fg(Color::Red),
+        }
+    }
+}
+
+#[cfg(feature = "date")]
+mod calendar {
+    use super::{Color, StyleSheet, Styled};
+
+    /// Calendar configuration for error messages.
+    #[derive(Clone, Debug)]
+    pub struct CalendarRenderConfig {
+        /// Prefix style.
+        pub prefix: Styled<&'static str>,
+
+        /// Style sheet for the calendar header, e.g. january 2021.
+        pub header: StyleSheet,
+
+        /// Style sheet for the calendar week header, e.g. su mo tu we th fr sa.
+        pub week_header: StyleSheet,
+
+        /// Style sheet for the currently selected date.
+        pub selected_date: StyleSheet,
+
+        /// Style sheet for today's date, just for hinting purposes.
+        pub today_date: StyleSheet,
+
+        /// Style sheet for dates that are from the previous or next month
+        /// displayed in the calendar.
+        pub different_month_date: StyleSheet,
+
+        /// Style sheet for dates that can not be selected due to the
+        /// min/max settings.
+        pub unavailable_date: StyleSheet,
+    }
+
+    impl CalendarRenderConfig {
+        /// Render configuration in which no colors or attributes are applied.
+        pub fn empty() -> Self {
+            Self {
+                prefix: Styled::new(">"),
+                header: StyleSheet::empty(),
+                week_header: StyleSheet::empty(),
+                selected_date: StyleSheet::empty(),
+                today_date: StyleSheet::empty(),
+                different_month_date: StyleSheet::empty(),
+                unavailable_date: StyleSheet::empty(),
+            }
+        }
+
+        /// Sets the prefix.
+        pub fn with_prefix(mut self, prefix: Styled<&'static str>) -> Self {
+            self.prefix = prefix;
+            self
+        }
+    }
+
+    impl Default for CalendarRenderConfig {
+        fn default() -> Self {
+            Self {
+                prefix: Styled::new(">").with_fg(Color::Green),
+                header: StyleSheet::empty(),
+                week_header: StyleSheet::empty(),
+                selected_date: StyleSheet::empty()
+                    .with_fg(Color::Black)
+                    .with_bg(Color::Grey),
+                today_date: StyleSheet::empty().with_fg(Color::Green),
+                different_month_date: StyleSheet::empty().with_fg(Color::DarkGrey),
+                unavailable_date: StyleSheet::empty().with_fg(Color::DarkGrey),
+            }
         }
     }
 }
