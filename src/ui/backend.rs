@@ -121,6 +121,13 @@ where
         Ok(())
     }
 
+    fn print_default_value(&mut self, value: &str) -> InquireResult<()> {
+        let content = format!("({})", value);
+        let token = Styled::new(content).with_style_sheet(self.render_config.default_value);
+        self.terminal.write_styled(&token)?;
+        Ok(())
+    }
+
     fn print_prompt_answer(&mut self, prompt: &str, answer: &str) -> InquireResult<()> {
         self.print_prompt_prefix()?;
 
@@ -145,7 +152,8 @@ where
         self.print_prompt_token(prompt)?;
 
         if let Some(default) = default {
-            self.terminal.write(format!(" ({})", default))?;
+            self.terminal.write(' ')?;
+            self.print_default_value(default)?;
         }
 
         match content {
@@ -171,7 +179,8 @@ where
         self.print_prompt_token(prompt)?;
 
         if let Some(default) = default {
-            self.terminal.write(format!(" ({})", default))?;
+            self.terminal.write(' ')?;
+            self.print_default_value(default)?;
         }
 
         let (before, mut at, after) = content.split();

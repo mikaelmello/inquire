@@ -14,7 +14,17 @@ pub struct RenderConfig {
     /// Style of the prompt message, applicable to all prompt types.
     pub prompt: StyleSheet,
 
+    /// Render configuration of default values.
+    ///
+    /// Note: default values are displayed wrapped in parenthesis, e.g. (yes).
+    /// Non-styled space characters is added before the default value display
+    /// and after the default value, as separators.
+    pub default_value: StyleSheet,
+
     /// Render configuration of text inputs.
+    ///
+    /// Note: a non-styled space character is added before the text input as
+    /// a separator from the prompt message (or default value display).
     pub text_input: InputRenderConfig,
 }
 
@@ -24,6 +34,7 @@ impl RenderConfig {
         Self {
             prompt_prefix: Styled::new("?"),
             prompt: StyleSheet::empty(),
+            default_value: StyleSheet::empty(),
             text_input: InputRenderConfig::empty(),
         }
     }
@@ -76,6 +87,7 @@ impl Default for RenderConfig {
         Self {
             prompt_prefix: Styled::new("?").with_fg(Color::Green),
             prompt: StyleSheet::empty(),
+            default_value: StyleSheet::empty(),
             text_input: InputRenderConfig::default(),
         }
     }
