@@ -115,10 +115,16 @@ where
         Ok(())
     }
 
+    fn print_prompt_token(&mut self, prompt: &str) -> InquireResult<()> {
+        let token = Styled::new(prompt).with_style_sheet(self.render_config.prompt);
+        self.terminal.write_styled(&token)?;
+        Ok(())
+    }
+
     fn print_prompt_answer(&mut self, prompt: &str, answer: &str) -> InquireResult<()> {
         self.print_prompt_prefix()?;
 
-        self.terminal.write(prompt)?;
+        self.print_prompt_token(prompt)?;
 
         self.terminal
             .write_styled(&Styled::new(format!(" {}", answer)).with_fg(Color::Cyan))?;
@@ -136,7 +142,7 @@ where
     ) -> InquireResult<()> {
         self.print_prompt_prefix()?;
 
-        self.terminal.write(prompt)?;
+        self.print_prompt_token(prompt)?;
 
         if let Some(default) = default {
             self.terminal.write(format!(" ({})", default))?;
@@ -162,7 +168,7 @@ where
     ) -> InquireResult<()> {
         self.print_prompt_prefix()?;
 
-        self.terminal.write(prompt)?;
+        self.print_prompt_token(prompt)?;
 
         if let Some(default) = default {
             self.terminal.write(format!(" ({})", default))?;

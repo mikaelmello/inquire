@@ -11,6 +11,9 @@ pub struct RenderConfig {
     /// and the prompt message.
     pub prompt_prefix: Styled<&'static str>,
 
+    /// Style of the prompt message, applicable to all prompt types.
+    pub prompt: StyleSheet,
+
     /// Cursor in text inputs.
     pub cursor: StyleSheet,
 }
@@ -20,6 +23,7 @@ impl RenderConfig {
     pub fn empty() -> Self {
         Self {
             prompt_prefix: Styled::new("?"),
+            prompt: StyleSheet::empty(),
             cursor: StyleSheet::empty(),
         }
     }
@@ -53,6 +57,7 @@ impl Default for RenderConfig {
     fn default() -> Self {
         Self {
             prompt_prefix: Styled::new("?").with_fg(Color::Green),
+            prompt: StyleSheet::empty(),
             cursor: StyleSheet::empty()
                 .with_bg(Color::Grey)
                 .with_fg(Color::Black),
