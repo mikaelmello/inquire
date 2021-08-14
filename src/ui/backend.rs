@@ -110,12 +110,12 @@ where
 
     fn print_prompt_answer(&mut self, prompt: &str, answer: &str) -> InquireResult<()> {
         self.terminal
-            .write_styled(Styled::new("? ").with_fg(Color::Green))?;
+            .write_styled(&Styled::new("? ").with_fg(Color::Green))?;
 
         self.terminal.write(prompt)?;
 
         self.terminal
-            .write_styled(Styled::new(format!(" {}", answer)).with_fg(Color::Cyan))?;
+            .write_styled(&Styled::new(format!(" {}", answer)).with_fg(Color::Cyan))?;
 
         self.new_line()?;
 
@@ -129,7 +129,7 @@ where
         content: Option<&str>,
     ) -> InquireResult<()> {
         self.terminal
-            .write_styled(Styled::new("? ").with_fg(Color::Green))?;
+            .write_styled(&Styled::new("? ").with_fg(Color::Green))?;
 
         self.terminal.write(prompt)?;
 
@@ -140,7 +140,7 @@ where
         match content {
             Some(content) if !content.is_empty() => self
                 .terminal
-                .write_styled(Styled::new(format!(" {}", content)).with_attr(Attributes::BOLD))?,
+                .write_styled(&Styled::new(format!(" {}", content)).with_attr(Attributes::BOLD))?,
             _ => {}
         }
 
@@ -156,7 +156,7 @@ where
         content: &Input,
     ) -> InquireResult<()> {
         self.terminal
-            .write_styled(Styled::new("? ").with_fg(Color::Green))?;
+            .write_styled(&Styled::new("? ").with_fg(Color::Green))?;
 
         self.terminal.write(prompt)?;
 
@@ -173,7 +173,7 @@ where
         self.terminal.write(" ")?;
         self.terminal.write(before)?;
         self.terminal
-            .write_styled(Styled::new(at).with_style_sheet(self.render_config.cursor))?;
+            .write_styled(&Styled::new(at).with_style_sheet(self.render_config.cursor))?;
         self.terminal.write(after)?;
 
         self.new_line()?;
@@ -187,7 +187,7 @@ where
             false => Styled::new(format!("  {}", content)),
         };
 
-        self.terminal.write_styled(token)?;
+        self.terminal.write_styled(&token)?;
 
         self.new_line()?;
 
@@ -237,7 +237,7 @@ where
 
     fn render_error_message(&mut self, error: &str) -> InquireResult<()> {
         self.terminal
-            .write_styled(Styled::new(format!("# {}", error)).with_fg(Color::Red))?;
+            .write_styled(&Styled::new(format!("# {}", error)).with_fg(Color::Red))?;
 
         self.new_line()?;
 
@@ -246,7 +246,7 @@ where
 
     fn render_help_message(&mut self, help: &str) -> InquireResult<()> {
         self.terminal
-            .write_styled(Styled::new(format!("[{}]", help)).with_fg(Color::Cyan))?;
+            .write_styled(&Styled::new(format!("[{}]", help)).with_fg(Color::Cyan))?;
 
         self.new_line()?;
 
@@ -309,8 +309,8 @@ where
             false => Styled::new("[ ] "),
         };
 
-        self.terminal.write_styled(cursor)?;
-        self.terminal.write_styled(checkbox)?;
+        self.terminal.write_styled(&cursor)?;
+        self.terminal.write_styled(&checkbox)?;
         self.terminal.write(content)?;
 
         self.new_line()?;
@@ -346,7 +346,7 @@ where
         let header = format!("{} {}", month.name().to_lowercase(), year);
 
         self.terminal
-            .write_styled(Styled::new("> ").with_fg(Color::Green))?;
+            .write_styled(&Styled::new("> ").with_fg(Color::Green))?;
 
         self.terminal.write(format!("{:^20}", header))?;
 
@@ -366,7 +366,7 @@ where
         let week_days = week_days.join(" ");
 
         self.terminal
-            .write_styled(Styled::new("> ").with_fg(Color::Green))?;
+            .write_styled(&Styled::new("> ").with_fg(Color::Green))?;
 
         self.terminal.write(week_days)?;
         self.new_line()?;
@@ -384,7 +384,7 @@ where
 
         for _ in 0..6 {
             self.terminal
-                .write_styled(Styled::new("> ").with_fg(Color::Green))?;
+                .write_styled(&Styled::new("> ").with_fg(Color::Green))?;
 
             for i in 0..7 {
                 if i > 0 {
@@ -415,7 +415,7 @@ where
                     }
                 }
 
-                self.terminal.write_styled(token)?;
+                self.terminal.write_styled(&token)?;
 
                 date_it = date_it.succ();
             }

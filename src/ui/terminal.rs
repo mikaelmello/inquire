@@ -9,7 +9,7 @@ pub trait Terminal {
     fn flush(&mut self) -> Result<()>;
 
     fn write<T: Display>(&mut self, val: T) -> Result<()>;
-    fn write_styled<T: Display>(&mut self, val: Styled<T>) -> Result<()>;
+    fn write_styled<'s, T: Display>(&mut self, val: &'s Styled<T>) -> Result<()>;
 
     fn clear_current_line(&mut self) -> Result<()>;
 
@@ -130,7 +130,7 @@ pub mod crossterm {
             queue!(&mut self.get_writer(), Print(val))
         }
 
-        fn write_styled<T: std::fmt::Display>(&mut self, val: Styled<T>) -> Result<()> {
+        fn write_styled<'s, T: std::fmt::Display>(&mut self, val: &'s Styled<T>) -> Result<()> {
             if let Some(color) = val.style.fg {
                 self.set_fg_color(color)?;
             }
@@ -141,7 +141,7 @@ pub mod crossterm {
                 self.set_attributes(val.style.att)?;
             }
 
-            self.write(val.content)?;
+            self.write(&val.content)?;
 
             if let Some(_) = val.style.fg.as_ref() {
                 self.reset_fg_color()?;
