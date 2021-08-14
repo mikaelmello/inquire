@@ -74,37 +74,37 @@ impl RenderConfig {
         &EMPTY_RENDER_CONFIG
     }
 
-    /// Sets the prompt prefix.
+    /// Sets the prompt prefix and its style sheet.
     pub fn with_prompt_prefix(mut self, prompt_prefix: Styled<&'static str>) -> Self {
         self.prompt_prefix = prompt_prefix;
         self
     }
 
-    /// Sets the prompt prefix.
+    /// Sets the text input render configuration.
     pub fn with_text_input(mut self, text_input: InputRenderConfig) -> Self {
         self.text_input = text_input;
         self
     }
 
-    /// Sets the prompt prefix.
+    /// Sets the style sheet for default values.
     pub fn with_default_value(mut self, default_value: StyleSheet) -> Self {
         self.default_value = default_value;
         self
     }
 
-    /// Sets the help message style sheet.
+    /// Sets the style sheet for help messages.
     pub fn with_help_message(mut self, help_message: StyleSheet) -> Self {
         self.help_message = help_message;
         self
     }
 
-    /// Sets the prompt prefix.
+    /// Sets the style sheet for answers.
     pub fn with_answer(mut self, answer: StyleSheet) -> Self {
         self.answer = answer;
         self
     }
 
-    /// Sets the error_message render configuration.
+    /// Sets the render configuration for error messages.
     pub fn with_error_message(mut self, error_message: ErrorMessageRenderConfig) -> Self {
         self.error_message = error_message;
         self
