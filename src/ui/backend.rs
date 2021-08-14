@@ -226,7 +226,15 @@ where
 
     fn render_error_message(&mut self, error: &str) -> Result<()> {
         self.terminal
-            .write_styled(&Styled::new(format!("# {}", error)).with_fg(Color::Red))?;
+            .write_styled(&self.render_config.error_message.prefix)?;
+
+        self.terminal.write_styled(
+            &Styled::new(' ').with_style_sheet(self.render_config.error_message.separator),
+        )?;
+
+        self.terminal.write_styled(
+            &Styled::new(error).with_style_sheet(self.render_config.error_message.message),
+        )?;
 
         self.new_line()?;
 

@@ -32,6 +32,9 @@ pub struct RenderConfig {
     /// Note: a non-styled space character is added before the answer as
     /// a separator from the prompt message (or default value display).
     pub answer: StyleSheet,
+
+    /// Render configuration for error messages.
+    pub error_message: ErrorMessageRenderConfig,
 }
 
 impl RenderConfig {
@@ -42,6 +45,7 @@ impl RenderConfig {
             prompt: StyleSheet::empty(),
             default_value: StyleSheet::empty(),
             text_input: InputRenderConfig::empty(),
+            error_message: ErrorMessageRenderConfig::empty(),
             answer: StyleSheet::empty(),
         }
     }
@@ -77,18 +81,6 @@ impl RenderConfig {
     }
 
     /// Sets the prompt prefix.
-    pub fn with_text(mut self, text: StyleSheet) -> Self {
-        self.text_input = self.text_input.with_text(text);
-        self
-    }
-
-    /// Sets the prompt prefix.
-    pub fn with_cursor(mut self, cursor: StyleSheet) -> Self {
-        self.text_input = self.text_input.with_cursor(cursor);
-        self
-    }
-
-    /// Sets the prompt prefix.
     pub fn with_default_value(mut self, default_value: StyleSheet) -> Self {
         self.default_value = default_value;
         self
@@ -97,6 +89,12 @@ impl RenderConfig {
     /// Sets the prompt prefix.
     pub fn with_answer(mut self, answer: StyleSheet) -> Self {
         self.answer = answer;
+        self
+    }
+
+    /// Sets the error_message render configuration.
+    pub fn with_error_message(mut self, error_message: ErrorMessageRenderConfig) -> Self {
+        self.error_message = error_message;
         self
     }
 }
@@ -108,6 +106,7 @@ impl Default for RenderConfig {
             prompt: StyleSheet::empty(),
             default_value: StyleSheet::empty(),
             text_input: InputRenderConfig::default(),
+            error_message: ErrorMessageRenderConfig::default(),
             answer: StyleSheet::empty().with_fg(Color::Cyan),
         }
     }
@@ -157,6 +156,64 @@ impl Default for InputRenderConfig {
             cursor: StyleSheet::empty()
                 .with_bg(Color::Grey)
                 .with_fg(Color::Black),
+        }
+    }
+}
+
+/// Render configuration for error messages.
+#[derive(Clone, Debug)]
+pub struct ErrorMessageRenderConfig {
+    /// Prefix style.
+    pub prefix: Styled<&'static str>,
+
+    /// Separator style.
+    ///
+    /// Note: This separator is a space character. It might be useful to
+    /// style it if you want to set a background color for error messages.
+    pub separator: StyleSheet,
+
+    /// Message style.
+    pub message: StyleSheet,
+}
+
+impl ErrorMessageRenderConfig {
+    /// Render configuration in which no colors or attributes are applied.
+    pub fn empty() -> Self {
+        Self {
+            prefix: Styled::new("#"),
+            separator: StyleSheet::empty(),
+            message: StyleSheet::empty(),
+        }
+    }
+
+    /// Sets the prefix.
+    pub fn with_prefix(mut self, prefix: Styled<&'static str>) -> Self {
+        self.prefix = prefix;
+        self
+    }
+
+    /// Sets the separator stylesheet.
+    ///
+    /// Note: This separator is a space character. It might be useful to
+    /// style it if you want to set a background color for error messages.
+    pub fn with_separator(mut self, separator: StyleSheet) -> Self {
+        self.separator = separator;
+        self
+    }
+
+    /// Sets the message stylesheet.
+    pub fn with_message(mut self, message: StyleSheet) -> Self {
+        self.message = message;
+        self
+    }
+}
+
+impl Default for ErrorMessageRenderConfig {
+    fn default() -> Self {
+        Self {
+            prefix: Styled::new("#").with_fg(Color::Red),
+            separator: StyleSheet::empty(),
+            message: StyleSheet::empty().with_fg(Color::Red),
         }
     }
 }
