@@ -56,6 +56,11 @@ pub struct StyleSheet {
 }
 
 impl StyleSheet {
+    /// Creates a style sheet with no colors and no attributes
+    pub fn new() -> Self {
+        Self::empty()
+    }
+
     /// A stylesheet with no colors and no attributes.
     pub fn empty() -> Self {
         Self {
