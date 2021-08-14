@@ -40,7 +40,7 @@ use crate::{
 ///         Ok(val) => Ok(val),
 ///         Err(_) => Err(()),
 ///     },
-///     render_config: RenderConfig::default(),
+///     render_config: RenderConfig::default_static_ref(),
 /// };
 /// ```
 ///
@@ -83,7 +83,7 @@ pub struct CustomType<'a, T> {
     pub error_message: String,
 
     /// RenderConfig to apply to the rendered interface.
-    pub render_config: RenderConfig,
+    pub render_config: &'a RenderConfig,
 }
 
 impl<'a, T> CustomType<'a, T>
@@ -102,7 +102,7 @@ where
             formatter: &|val| val.to_string(),
             parser: parse_type!(T),
             error_message: "Invalid input".into(),
-            render_config: RenderConfig::default(),
+            render_config: RenderConfig::default_static_ref(),
         }
     }
 
@@ -137,7 +137,7 @@ where
     }
 
     /// Sets the provided color theme to this prompt.
-    pub fn with_render_config(mut self, render_config: RenderConfig) -> Self {
+    pub fn with_render_config(mut self, render_config: &'a RenderConfig) -> Self {
         self.render_config = render_config;
         self
     }

@@ -72,20 +72,20 @@ pub trait PasswordBackend: CommonBackend {
     fn render_password_prompt(&mut self, prompt: &str) -> InquireResult<()>;
 }
 
-pub struct Backend<T>
+pub struct Backend<'a, T>
 where
     T: Terminal,
 {
     cur_line: usize,
     terminal: T,
-    render_config: RenderConfig,
+    render_config: &'a RenderConfig,
 }
 
-impl<T> Backend<T>
+impl<'a, T> Backend<'a, T>
 where
     T: Terminal,
 {
-    pub fn new(terminal: T, render_config: RenderConfig) -> InquireResult<Self> {
+    pub fn new(terminal: T, render_config: &'a RenderConfig) -> InquireResult<Self> {
         let mut backend = Self {
             cur_line: 0,
             terminal,
@@ -209,7 +209,7 @@ where
     }
 }
 
-impl<T> CommonBackend for Backend<T>
+impl<'a, T> CommonBackend for Backend<'a, T>
 where
     T: Terminal,
 {
@@ -254,7 +254,7 @@ where
     }
 }
 
-impl<T> TextBackend for Backend<T>
+impl<'a, T> TextBackend for Backend<'a, T>
 where
     T: Terminal,
 {
@@ -272,7 +272,7 @@ where
     }
 }
 
-impl<T> SelectBackend for Backend<T>
+impl<'a, T> SelectBackend for Backend<'a, T>
 where
     T: Terminal,
 {
@@ -285,7 +285,7 @@ where
     }
 }
 
-impl<T> MultiSelectBackend for Backend<T>
+impl<'a, T> MultiSelectBackend for Backend<'a, T>
 where
     T: Terminal,
 {
@@ -320,7 +320,7 @@ where
 }
 
 #[cfg(feature = "date")]
-impl<T> DateSelectBackend for Backend<T>
+impl<'a, T> DateSelectBackend for Backend<'a, T>
 where
     T: Terminal,
 {
@@ -427,7 +427,7 @@ where
     }
 }
 
-impl<T> CustomTypeBackend for Backend<T>
+impl<'a, T> CustomTypeBackend for Backend<'a, T>
 where
     T: Terminal,
 {
@@ -441,7 +441,7 @@ where
     }
 }
 
-impl<T> PasswordBackend for Backend<T>
+impl<'a, T> PasswordBackend for Backend<'a, T>
 where
     T: Terminal,
 {
@@ -450,7 +450,7 @@ where
     }
 }
 
-impl<T> Drop for Backend<T>
+impl<'a, T> Drop for Backend<'a, T>
 where
     T: Terminal,
 {

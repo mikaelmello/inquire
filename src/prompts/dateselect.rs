@@ -93,7 +93,7 @@ pub struct DateSelect<'a> {
     pub validators: Vec<DateValidator<'a>>,
 
     /// RenderConfig to apply to the rendered interface.
-    pub render_config: RenderConfig,
+    pub render_config: &'a RenderConfig,
 }
 
 impl<'a> DateSelect<'a> {
@@ -131,7 +131,7 @@ impl<'a> DateSelect<'a> {
             formatter: Self::DEFAULT_FORMATTER,
             validators: Self::DEFAULT_VALIDATORS,
             week_start: Self::DEFAULT_WEEK_START,
-            render_config: RenderConfig::default(),
+            render_config: RenderConfig::default_static_ref(),
         }
     }
 
@@ -211,7 +211,7 @@ impl<'a> DateSelect<'a> {
     }
 
     /// Sets the provided color theme to this prompt.
-    pub fn with_render_config(mut self, render_config: RenderConfig) -> Self {
+    pub fn with_render_config(mut self, render_config: &'a RenderConfig) -> Self {
         self.render_config = render_config;
         self
     }
@@ -441,7 +441,8 @@ mod test {
 
                 let mut write: Vec<u8> = Vec::new();
                 let terminal = CrosstermTerminal::new_with_io(&mut write, &mut read);
-                let mut backend = Backend::new(terminal, RenderConfig::default()).unwrap();
+                let mut backend =
+                    Backend::new(terminal, RenderConfig::default_static_ref()).unwrap();
 
                 let ans = $prompt.prompt_with_backend(&mut backend).unwrap();
 
@@ -482,7 +483,7 @@ mod test {
 
         let mut write: Vec<u8> = Vec::new();
         let terminal = CrosstermTerminal::new_with_io(&mut write, &mut read);
-        let mut backend = Backend::new(terminal, RenderConfig::default()).unwrap();
+        let mut backend = Backend::new(terminal, RenderConfig::default_static_ref()).unwrap();
 
         let ans = DateSelect::new("Question")
             .with_validator(&validator)

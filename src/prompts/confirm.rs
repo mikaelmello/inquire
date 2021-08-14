@@ -73,7 +73,7 @@ pub struct Confirm<'a> {
     pub error_message: String,
 
     /// RenderConfig to apply to the rendered interface.
-    pub render_config: RenderConfig,
+    pub render_config: &'a RenderConfig,
 }
 
 impl<'a> Confirm<'a> {
@@ -104,7 +104,7 @@ impl<'a> Confirm<'a> {
             parser: Self::DEFAULT_PARSER,
             default_value_formatter: Self::DEFAULT_DEFAULT_VALUE_FORMATTER,
             error_message: String::from(Self::DEFAULT_ERROR_MESSAGE),
-            render_config: RenderConfig::default(),
+            render_config: RenderConfig::default_static_ref(),
         }
     }
 
@@ -145,7 +145,7 @@ impl<'a> Confirm<'a> {
     }
 
     /// Sets the provided color theme to this prompt.
-    pub fn with_render_config(mut self, render_config: RenderConfig) -> Self {
+    pub fn with_render_config(mut self, render_config: &'a RenderConfig) -> Self {
         self.render_config = render_config;
         self
     }

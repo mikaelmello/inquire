@@ -81,7 +81,7 @@ pub struct MultiSelect<'a> {
     pub validator: Option<MultiOptionValidator<'a>>,
 
     /// RenderConfig to apply to the rendered interface.
-    pub render_config: RenderConfig,
+    pub render_config: &'a RenderConfig,
 }
 
 impl<'a> MultiSelect<'a> {
@@ -125,7 +125,7 @@ impl<'a> MultiSelect<'a> {
             filter: Self::DEFAULT_FILTER,
             formatter: Self::DEFAULT_FORMATTER,
             validator: Self::DEFAULT_VALIDATOR,
-            render_config: RenderConfig::default(),
+            render_config: RenderConfig::default_static_ref(),
         }
     }
 
@@ -194,7 +194,7 @@ impl<'a> MultiSelect<'a> {
     }
 
     /// Sets the provided color theme to this prompt.
-    pub fn with_render_config(mut self, render_config: RenderConfig) -> Self {
+    pub fn with_render_config(mut self, render_config: &'a RenderConfig) -> Self {
         self.render_config = render_config;
         self
     }

@@ -78,7 +78,7 @@ pub struct Select<'a> {
     pub formatter: OptionFormatter<'a>,
 
     /// RenderConfig to apply to the rendered interface.
-    pub render_config: RenderConfig,
+    pub render_config: &'a RenderConfig,
 }
 
 impl<'a> Select<'a> {
@@ -112,7 +112,7 @@ impl<'a> Select<'a> {
             starting_cursor: Self::DEFAULT_STARTING_CURSOR,
             filter: Self::DEFAULT_FILTER,
             formatter: Self::DEFAULT_FORMATTER,
-            render_config: RenderConfig::default(),
+            render_config: RenderConfig::default_static_ref(),
         }
     }
 
@@ -159,7 +159,7 @@ impl<'a> Select<'a> {
     }
 
     /// Sets the provided color theme to this prompt.
-    pub fn with_render_config(mut self, render_config: RenderConfig) -> Self {
+    pub fn with_render_config(mut self, render_config: &'a RenderConfig) -> Self {
         self.render_config = render_config;
         self
     }
