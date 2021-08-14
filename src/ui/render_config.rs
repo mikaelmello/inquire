@@ -14,8 +14,8 @@ pub struct RenderConfig {
     /// Style of the prompt message, applicable to all prompt types.
     pub prompt: StyleSheet,
 
-    /// Cursor in text inputs.
-    pub cursor: StyleSheet,
+    /// Render configuration of text inputs.
+    pub text_input: InputRenderConfig,
 }
 
 impl RenderConfig {
@@ -24,7 +24,7 @@ impl RenderConfig {
         Self {
             prompt_prefix: Styled::new("?"),
             prompt: StyleSheet::empty(),
-            cursor: StyleSheet::empty(),
+            text_input: InputRenderConfig::empty(),
         }
     }
 
@@ -51,6 +51,24 @@ impl RenderConfig {
         self.prompt_prefix = prompt_prefix;
         self
     }
+
+    /// Sets the prompt prefix.
+    pub fn with_text_input(mut self, text_input: InputRenderConfig) -> Self {
+        self.text_input = text_input;
+        self
+    }
+
+    /// Sets the prompt prefix.
+    pub fn with_text(mut self, text: StyleSheet) -> Self {
+        self.text_input = self.text_input.with_text(text);
+        self
+    }
+
+    /// Sets the prompt prefix.
+    pub fn with_cursor(mut self, cursor: StyleSheet) -> Self {
+        self.text_input = self.text_input.with_cursor(cursor);
+        self
+    }
 }
 
 impl Default for RenderConfig {
@@ -58,6 +76,52 @@ impl Default for RenderConfig {
         Self {
             prompt_prefix: Styled::new("?").with_fg(Color::Green),
             prompt: StyleSheet::empty(),
+            text_input: InputRenderConfig::default(),
+        }
+    }
+}
+
+/// Render configuration for text inputs.
+///
+/// All text will be rendered with the `text`
+/// style sheet applied, except for the one character
+/// behind the cursor, which will have the `cursor`
+/// style sheet applied.
+#[derive(Clone, Debug)]
+pub struct InputRenderConfig {
+    /// Text style.
+    pub text: StyleSheet,
+
+    /// Cursor style.
+    pub cursor: StyleSheet,
+}
+
+impl InputRenderConfig {
+    /// Render configuration in which no colors or attributes are applied.
+    pub fn empty() -> Self {
+        Self {
+            text: StyleSheet::empty(),
+            cursor: StyleSheet::empty(),
+        }
+    }
+
+    /// Sets the text stylesheet.
+    pub fn with_text(mut self, text: StyleSheet) -> Self {
+        self.text = text;
+        self
+    }
+
+    /// Sets the cursor stylesheet.
+    pub fn with_cursor(mut self, cursor: StyleSheet) -> Self {
+        self.cursor = cursor;
+        self
+    }
+}
+
+impl Default for InputRenderConfig {
+    fn default() -> Self {
+        Self {
+            text: StyleSheet::empty(),
             cursor: StyleSheet::empty()
                 .with_bg(Color::Grey)
                 .with_fg(Color::Black),

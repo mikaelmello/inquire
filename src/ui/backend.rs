@@ -180,11 +180,17 @@ where
             at.push(' ');
         }
 
-        self.terminal.write(" ")?;
-        self.terminal.write(before)?;
-        self.terminal
-            .write_styled(&Styled::new(at).with_style_sheet(self.render_config.cursor))?;
-        self.terminal.write(after)?;
+        self.terminal.write(' ')?;
+
+        self.terminal.write_styled(
+            &Styled::new(before).with_style_sheet(self.render_config.text_input.text),
+        )?;
+        self.terminal.write_styled(
+            &Styled::new(at).with_style_sheet(self.render_config.text_input.cursor),
+        )?;
+        self.terminal.write_styled(
+            &Styled::new(after).with_style_sheet(self.render_config.text_input.text),
+        )?;
 
         self.new_line()?;
 

@@ -13,5 +13,5 @@ pub(in crate) use style::Styled;
 pub(in crate) use terminal::*;
 
 pub use color::Color;
-pub use render_config::RenderConfig;
+pub use render_config::*;
 pub use style::{Attributes, StyleSheet};
