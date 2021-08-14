@@ -87,6 +87,18 @@ impl RenderConfig {
         self.text_input = self.text_input.with_cursor(cursor);
         self
     }
+
+    /// Sets the prompt prefix.
+    pub fn with_default_value(mut self, default_value: StyleSheet) -> Self {
+        self.default_value = default_value;
+        self
+    }
+
+    /// Sets the prompt prefix.
+    pub fn with_answer(mut self, answer: StyleSheet) -> Self {
+        self.answer = answer;
+        self
+    }
 }
 
 impl Default for RenderConfig {
