@@ -21,6 +21,11 @@ pub struct RenderConfig {
     /// and after the default value, as separators.
     pub default_value: StyleSheet,
 
+    /// Render configuration of help messages.
+    ///
+    /// Note: help messages are displayed wrapped in brackets, e.g. [Be careful!].
+    pub help_message: StyleSheet,
+
     /// Render configuration of text inputs.
     ///
     /// Note: a non-styled space character is added before the text input as
@@ -44,6 +49,7 @@ impl RenderConfig {
             prompt_prefix: Styled::new("?"),
             prompt: StyleSheet::empty(),
             default_value: StyleSheet::empty(),
+            help_message: StyleSheet::empty(),
             text_input: InputRenderConfig::empty(),
             error_message: ErrorMessageRenderConfig::empty(),
             answer: StyleSheet::empty(),
@@ -86,6 +92,12 @@ impl RenderConfig {
         self
     }
 
+    /// Sets the help message style sheet.
+    pub fn with_help_message(mut self, help_message: StyleSheet) -> Self {
+        self.help_message = help_message;
+        self
+    }
+
     /// Sets the prompt prefix.
     pub fn with_answer(mut self, answer: StyleSheet) -> Self {
         self.answer = answer;
@@ -105,6 +117,7 @@ impl Default for RenderConfig {
             prompt_prefix: Styled::new("?").with_fg(Color::Green),
             prompt: StyleSheet::empty(),
             default_value: StyleSheet::empty(),
+            help_message: StyleSheet::empty().with_fg(Color::Cyan),
             text_input: InputRenderConfig::default(),
             error_message: ErrorMessageRenderConfig::default(),
             answer: StyleSheet::empty().with_fg(Color::Cyan),
