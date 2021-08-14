@@ -2,8 +2,8 @@
 
 mod backend;
 mod color;
-mod color_theme;
 mod key;
+mod render_config;
 mod style;
 mod terminal;
 
@@ -13,5 +13,5 @@ pub(in crate) use style::Styled;
 pub(in crate) use terminal::*;
 
 pub use color::Color;
-pub use color_theme::ColorTheme;
+pub use render_config::RenderConfig;
 pub use style::{Attributes, StyleSheet};

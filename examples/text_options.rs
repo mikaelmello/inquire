@@ -1,4 +1,4 @@
-use inquire::{required, Text};
+use inquire::{required, ui::RenderConfig, Text};
 
 fn main() {
     let answer = Text::new("What's your name?")
@@ -17,6 +17,7 @@ fn main() {
         validators: Vec::new(),
         page_size: Text::DEFAULT_PAGE_SIZE,
         suggester: None,
+        render_config: RenderConfig::default(),
     }
     .prompt()
     .unwrap();

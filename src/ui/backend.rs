@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use super::{key::Key, Terminal};
+use super::{key::Key, RenderConfig, Terminal};
 use crate::{
     error::{InquireError, InquireResult},
     input::Input,
@@ -78,16 +78,18 @@ where
 {
     cur_line: usize,
     terminal: T,
+    render_config: RenderConfig,
 }
 
 impl<T> Backend<T>
 where
     T: Terminal,
 {
-    pub fn new(terminal: T) -> InquireResult<Self> {
+    pub fn new(terminal: T, render_config: RenderConfig) -> InquireResult<Self> {
         let mut backend = Self {
             cur_line: 0,
             terminal,
+            render_config,
         };
 
         backend.terminal.cursor_hide()?;
@@ -171,7 +173,7 @@ where
         self.terminal.write(" ")?;
         self.terminal.write(before)?;
         self.terminal
-            .write_styled(Styled::new(at).with_bg(Color::Grey).with_fg(Color::Black))?;
+            .write_styled(Styled::new(at).with_style_sheet(self.render_config.cursor))?;
         self.terminal.write(after)?;
 
         self.new_line()?;

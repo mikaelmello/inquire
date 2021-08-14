@@ -2,7 +2,7 @@ use crate::{
     error::{InquireError, InquireResult},
     formatter::StringFormatter,
     input::Input,
-    ui::{crossterm::CrosstermTerminal, Backend, Key, PasswordBackend},
+    ui::{crossterm::CrosstermTerminal, Backend, Key, PasswordBackend, RenderConfig},
     validator::StringValidator,
 };
 
@@ -46,6 +46,9 @@ pub struct Password<'a> {
     ///
     /// The possible error is displayed to the user one line above the prompt.
     pub validators: Vec<StringValidator<'a>>,
+
+    /// RenderConfig to apply to the rendered interface.
+    pub render_config: RenderConfig,
 }
 
 impl<'a> Password<'a> {
@@ -65,6 +68,7 @@ impl<'a> Password<'a> {
             help_message: Self::DEFAULT_HELP_MESSAGE,
             formatter: Self::DEFAULT_FORMATTER,
             validators: Self::DEFAULT_VALIDATORS,
+            render_config: RenderConfig::default(),
         }
     }
 
@@ -106,11 +110,17 @@ impl<'a> Password<'a> {
         self
     }
 
+    /// Sets the provided color theme to this prompt.
+    pub fn with_render_config(mut self, render_config: RenderConfig) -> Self {
+        self.render_config = render_config;
+        self
+    }
+
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to the defined rules.
     pub fn prompt(self) -> InquireResult<String> {
         let terminal = CrosstermTerminal::new()?;
-        let mut backend = Backend::new(terminal)?;
+        let mut backend = Backend::new(terminal, self.render_config)?;
         self.prompt_with_backend(&mut backend)
     }
 
@@ -216,7 +226,7 @@ impl<'a> PasswordPrompt<'a> {
 #[cfg(test)]
 mod test {
     use super::Password;
-    use crate::ui::{crossterm::CrosstermTerminal, Backend};
+    use crate::ui::{crossterm::CrosstermTerminal, Backend, RenderConfig};
     use crossterm::event::{KeyCode, KeyEvent};
     use ntest::timeout;
 
@@ -244,7 +254,7 @@ mod test {
 
                 let mut write: Vec<u8> = Vec::new();
                 let terminal = CrosstermTerminal::new_with_io(&mut write, &mut read);
-                let mut backend = Backend::new(terminal).unwrap();
+                let mut backend = Backend::new(terminal, RenderConfig::default()).unwrap();
 
                 let ans = $prompt.prompt_with_backend(&mut backend).unwrap();
 
