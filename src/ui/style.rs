@@ -124,6 +124,7 @@ impl Default for StyleSheet {
 /// The struct does not require that `T` implements [Display], however
 /// the only mapped use for this struct, printing in on [Terminal] requires
 /// `T` to implement it.
+#[derive(Clone, Debug)]
 pub struct Styled<T> {
     /// Content to be rendered.
     pub content: T,

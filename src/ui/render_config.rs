@@ -1,10 +1,16 @@
 use lazy_static::lazy_static;
 
-use super::{Color, StyleSheet};
+use super::{Color, StyleSheet, Styled};
 
 /// Color theme that can be applied to a prompt.
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct RenderConfig {
+    /// Prefix added before prompts.
+    ///
+    /// Note: a space character will be added to separate the prefix
+    /// and the prompt message.
+    pub prompt_prefix: Styled<&'static str>,
+
     /// Cursor in text inputs.
     pub cursor: StyleSheet,
 }
@@ -13,6 +19,7 @@ impl RenderConfig {
     /// RenderConfig in which no colors or attributes are applied.
     pub fn empty() -> Self {
         Self {
+            prompt_prefix: Styled::new("?"),
             cursor: StyleSheet::empty(),
         }
     }
@@ -34,11 +41,18 @@ impl RenderConfig {
 
         &EMPTY_RENDER_CONFIG
     }
+
+    /// Sets the prompt prefix.
+    pub fn with_prompt_prefix(mut self, prompt_prefix: Styled<&'static str>) -> Self {
+        self.prompt_prefix = prompt_prefix;
+        self
+    }
 }
 
 impl Default for RenderConfig {
     fn default() -> Self {
         Self {
+            prompt_prefix: Styled::new("?").with_fg(Color::Green),
             cursor: StyleSheet::empty()
                 .with_bg(Color::Grey)
                 .with_fg(Color::Black),

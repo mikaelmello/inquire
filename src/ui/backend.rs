@@ -108,9 +108,15 @@ where
         Ok(())
     }
 
-    fn print_prompt_answer(&mut self, prompt: &str, answer: &str) -> InquireResult<()> {
+    fn print_prompt_prefix(&mut self) -> InquireResult<()> {
         self.terminal
-            .write_styled(&Styled::new("? ").with_fg(Color::Green))?;
+            .write_styled(&self.render_config.prompt_prefix)?;
+        self.terminal.write(' ')?;
+        Ok(())
+    }
+
+    fn print_prompt_answer(&mut self, prompt: &str, answer: &str) -> InquireResult<()> {
+        self.print_prompt_prefix()?;
 
         self.terminal.write(prompt)?;
 
@@ -128,8 +134,7 @@ where
         default: Option<&str>,
         content: Option<&str>,
     ) -> InquireResult<()> {
-        self.terminal
-            .write_styled(&Styled::new("? ").with_fg(Color::Green))?;
+        self.print_prompt_prefix()?;
 
         self.terminal.write(prompt)?;
 
@@ -155,8 +160,7 @@ where
         default: Option<&str>,
         content: &Input,
     ) -> InquireResult<()> {
-        self.terminal
-            .write_styled(&Styled::new("? ").with_fg(Color::Green))?;
+        self.print_prompt_prefix()?;
 
         self.terminal.write(prompt)?;
 
