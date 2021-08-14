@@ -186,19 +186,6 @@ where
         Ok(())
     }
 
-    fn print_option<D: Display>(&mut self, content: D, focused: bool) -> Result<()> {
-        let token = match focused {
-            true => Styled::new(format!("> {}", content)).with_fg(Color::Cyan),
-            false => Styled::new(format!("  {}", content)),
-        };
-
-        self.terminal.write_styled(&token)?;
-
-        self.new_line()?;
-
-        Ok(())
-    }
-
     fn flush(&mut self) -> Result<()> {
         self.terminal.flush()?;
 
@@ -270,7 +257,16 @@ where
     }
 
     fn render_suggestion<D: Display>(&mut self, content: D, focused: bool) -> Result<()> {
-        self.print_option(content, focused)
+        let token = match focused {
+            true => Styled::new(format!("> {}", content)).with_fg(Color::Cyan),
+            false => Styled::new(format!("  {}", content)),
+        };
+
+        self.terminal.write_styled(&token)?;
+
+        self.new_line()?;
+
+        Ok(())
     }
 }
 
@@ -283,7 +279,16 @@ where
     }
 
     fn render_option<D: Display>(&mut self, content: D, focused: bool) -> Result<()> {
-        self.print_option(content, focused)
+        let token = match focused {
+            true => Styled::new(format!("> {}", content)).with_fg(Color::Cyan),
+            false => Styled::new(format!("  {}", content)),
+        };
+
+        self.terminal.write_styled(&token)?;
+
+        self.new_line()?;
+
+        Ok(())
     }
 }
 
