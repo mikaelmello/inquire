@@ -3,7 +3,7 @@ use std::{fmt::Display, io::Result};
 use super::{key::Key, RenderConfig, Terminal};
 use crate::{
     input::Input,
-    ui::{Attributes, Color, Styled},
+    ui::{Color, Styled},
 };
 
 pub trait CommonBackend {
@@ -92,7 +92,7 @@ where
         Ok(backend)
     }
 
-    pub fn reset_prompt(&mut self) -> Result<()> {
+    fn reset_prompt(&mut self) -> Result<()> {
         for _ in 0..self.cur_line {
             self.terminal.cursor_up()?;
             self.terminal.cursor_move_to_column(0)?;
@@ -121,12 +121,18 @@ where
         self.terminal.write_styled(&token)
     }
 
-    fn print_prompt_answer(&mut self, prompt: &str, answer: &str) -> Result<()> {
+    fn print_prompt(&mut self, prompt: &str) -> Result<()> {
         self.print_prompt_prefix()?;
 
         self.terminal.write(' ')?;
 
         self.print_prompt_token(prompt)?;
+
+        Ok(())
+    }
+
+    fn print_prompt_with_answer(&mut self, prompt: &str, answer: &str) -> Result<()> {
+        self.print_prompt(prompt)?;
 
         self.terminal.write(' ')?;
 
@@ -138,53 +144,8 @@ where
         Ok(())
     }
 
-    pub fn print_prompt(
-        &mut self,
-        prompt: &str,
-        default: Option<&str>,
-        content: Option<&str>,
-    ) -> Result<()> {
-        self.print_prompt_prefix()?;
-
-        self.terminal.write(' ')?;
-
-        self.print_prompt_token(prompt)?;
-
-        if let Some(default) = default {
-            self.terminal.write(' ')?;
-            self.print_default_value(default)?;
-        }
-
-        match content {
-            Some(content) if !content.is_empty() => self
-                .terminal
-                .write_styled(&Styled::new(format!(" {}", content)).with_attr(Attributes::BOLD))?,
-            _ => {}
-        }
-
-        self.new_line()?;
-
-        Ok(())
-    }
-
-    pub fn print_prompt_input(
-        &mut self,
-        prompt: &str,
-        default: Option<&str>,
-        content: &Input,
-    ) -> Result<()> {
-        self.print_prompt_prefix()?;
-
-        self.terminal.write(' ')?;
-
-        self.print_prompt_token(prompt)?;
-
-        if let Some(default) = default {
-            self.terminal.write(' ')?;
-            self.print_default_value(default)?;
-        }
-
-        let (before, mut at, after) = content.split();
+    fn print_input(&mut self, input: &Input) -> Result<()> {
+        let (before, mut at, after) = input.split();
 
         if at.is_empty() {
             at.push(' ');
@@ -202,12 +163,30 @@ where
             &Styled::new(after).with_style_sheet(self.render_config.text_input.text),
         )?;
 
+        Ok(())
+    }
+
+    fn print_prompt_with_input(
+        &mut self,
+        prompt: &str,
+        default: Option<&str>,
+        input: &Input,
+    ) -> Result<()> {
+        self.print_prompt(prompt)?;
+
+        if let Some(default) = default {
+            self.terminal.write(' ')?;
+            self.print_default_value(default)?;
+        }
+
+        self.print_input(input)?;
+
         self.new_line()?;
 
         Ok(())
     }
 
-    pub fn print_option<D: Display>(&mut self, content: D, focused: bool) -> Result<()> {
+    fn print_option<D: Display>(&mut self, content: D, focused: bool) -> Result<()> {
         let token = match focused {
             true => Styled::new(format!("> {}", content)).with_fg(Color::Cyan),
             false => Styled::new(format!("  {}", content)),
@@ -220,7 +199,7 @@ where
         Ok(())
     }
 
-    pub fn flush(&mut self) -> Result<()> {
+    fn flush(&mut self) -> Result<()> {
         self.terminal.flush()?;
 
         Ok(())
@@ -249,7 +228,7 @@ where
 
     fn finish_prompt(&mut self, prompt: &str, answer: &str) -> Result<()> {
         self.reset_prompt()?;
-        self.print_prompt_answer(prompt, answer)?;
+        self.print_prompt_with_answer(prompt, answer)?;
 
         Ok(())
     }
@@ -287,7 +266,7 @@ where
         default: Option<&str>,
         cur_input: &Input,
     ) -> Result<()> {
-        self.print_prompt_input(prompt, default, cur_input)
+        self.print_prompt_with_input(prompt, default, cur_input)
     }
 
     fn render_suggestion<D: Display>(&mut self, content: D, focused: bool) -> Result<()> {
@@ -300,7 +279,7 @@ where
     T: Terminal,
 {
     fn render_select_prompt(&mut self, prompt: &str, cur_input: &Input) -> Result<()> {
-        self.print_prompt_input(prompt, None, cur_input)
+        self.print_prompt_with_input(prompt, None, cur_input)
     }
 
     fn render_option<D: Display>(&mut self, content: D, focused: bool) -> Result<()> {
@@ -313,7 +292,7 @@ where
     T: Terminal,
 {
     fn render_multiselect_prompt(&mut self, prompt: &str, cur_input: &Input) -> Result<()> {
-        self.print_prompt_input(prompt, None, cur_input)
+        self.print_prompt_with_input(prompt, None, cur_input)
     }
 
     fn render_option<D: Display>(
@@ -348,7 +327,9 @@ where
     T: Terminal,
 {
     fn render_calendar_prompt(&mut self, prompt: &str) -> Result<()> {
-        self.print_prompt(prompt, None, None)
+        self.print_prompt(prompt)?;
+        self.new_line()?;
+        Ok(())
     }
 
     fn render_calendar(
@@ -460,7 +441,7 @@ where
         default: Option<&str>,
         cur_input: &Input,
     ) -> Result<()> {
-        self.print_prompt_input(prompt, default, cur_input)
+        self.print_prompt_with_input(prompt, default, cur_input)
     }
 }
 
@@ -469,7 +450,9 @@ where
     T: Terminal,
 {
     fn render_password_prompt(&mut self, prompt: &str) -> Result<()> {
-        self.print_prompt(prompt, None, None)
+        self.print_prompt(prompt)?;
+        self.new_line()?;
+        Ok(())
     }
 }
 
