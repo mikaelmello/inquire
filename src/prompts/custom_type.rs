@@ -6,7 +6,7 @@ use crate::{
     input::Input,
     parse_type,
     parser::CustomTypeParser,
-    ui::{crossterm::CrosstermTerminal, Backend, CustomTypeBackend, Key},
+    ui::{crossterm::CrosstermTerminal, Backend, CustomTypeBackend, Key, RenderConfig},
 };
 
 /// Generic prompt suitable for when you need to parse the user input into a specific type, for example an `f64` or a `rust_decimal`, maybe even an `uuid`.
@@ -28,7 +28,7 @@ use crate::{
 /// If your type `T` does not satisfy these constraints, you can always manually instantiate the entire struct yourself like this:
 ///
 /// ```no_run
-/// use inquire::CustomType;
+/// use inquire::{CustomType, ui::RenderConfig};
 ///
 /// let amount_prompt: CustomType<f64> = CustomType {
 ///     message: "How much is your travel going to cost?",
@@ -40,6 +40,7 @@ use crate::{
 ///         Ok(val) => Ok(val),
 ///         Err(_) => Err(()),
 ///     },
+///     render_config: RenderConfig::default_static_ref(),
 /// };
 /// ```
 ///
@@ -80,6 +81,9 @@ pub struct CustomType<'a, T> {
 
     /// Error message displayed when value could not be parsed from input.
     pub error_message: String,
+
+    /// RenderConfig to apply to the rendered interface.
+    pub render_config: &'a RenderConfig,
 }
 
 impl<'a, T> CustomType<'a, T>
@@ -98,6 +102,7 @@ where
             formatter: &|val| val.to_string(),
             parser: parse_type!(T),
             error_message: "Invalid input".into(),
+            render_config: RenderConfig::default_static_ref(),
         }
     }
 
@@ -131,11 +136,17 @@ where
         self
     }
 
+    /// Sets the provided color theme to this prompt.
+    pub fn with_render_config(mut self, render_config: &'a RenderConfig) -> Self {
+        self.render_config = render_config;
+        self
+    }
+
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to the defined rules.
     pub fn prompt(self) -> InquireResult<T> {
         let terminal = CrosstermTerminal::new()?;
-        let mut backend = Backend::new(terminal)?;
+        let mut backend = Backend::new(terminal, self.render_config)?;
         self.prompt_with_backend(&mut backend)
     }
 

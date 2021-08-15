@@ -1,4 +1,4 @@
-use inquire::Confirm;
+use inquire::{ui::RenderConfig, Confirm};
 
 fn main() {
     let ans = Confirm::new("Do you live in Brazil?")
@@ -30,6 +30,7 @@ fn main() {
             true => String::from("si"),
             false => String::from("no"),
         },
+        render_config: RenderConfig::default_static_ref(),
     }
     .prompt()
     .unwrap();

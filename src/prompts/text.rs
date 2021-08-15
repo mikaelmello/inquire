@@ -6,7 +6,7 @@ use crate::{
     formatter::{StringFormatter, DEFAULT_STRING_FORMATTER},
     input::Input,
     option_answer::OptionAnswer,
-    ui::{crossterm::CrosstermTerminal, Backend, Key, KeyModifiers, TextBackend},
+    ui::{crossterm::CrosstermTerminal, Backend, Key, KeyModifiers, RenderConfig, TextBackend},
     utils::paginate,
     validator::StringValidator,
 };
@@ -84,6 +84,9 @@ pub struct Text<'a> {
 
     /// Function that provides a list of suggestions to the user based on the current input.
     pub suggester: Option<Suggester<'a>>,
+
+    /// RenderConfig to apply to the rendered interface.
+    pub render_config: &'a RenderConfig,
 }
 
 impl<'a> Text<'a> {
@@ -109,6 +112,7 @@ impl<'a> Text<'a> {
             formatter: Self::DEFAULT_FORMATTER,
             page_size: Self::DEFAULT_PAGE_SIZE,
             suggester: None,
+            render_config: RenderConfig::default_static_ref(),
         }
     }
 
@@ -170,11 +174,17 @@ impl<'a> Text<'a> {
         self
     }
 
+    /// Sets the provided color theme to this prompt.
+    pub fn with_render_config(mut self, render_config: &'a RenderConfig) -> Self {
+        self.render_config = render_config;
+        self
+    }
+
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to the defined rules.
     pub fn prompt(self) -> InquireResult<String> {
         let terminal = CrosstermTerminal::new()?;
-        let mut backend = Backend::new(terminal)?;
+        let mut backend = Backend::new(terminal, self.render_config)?;
         self.prompt_with_backend(&mut backend)
     }
 
@@ -373,7 +383,7 @@ impl<'a> TextPrompt<'a> {
 #[cfg(test)]
 mod test {
     use super::Text;
-    use crate::ui::{crossterm::CrosstermTerminal, Backend};
+    use crate::ui::{crossterm::CrosstermTerminal, Backend, RenderConfig};
     use crossterm::event::{KeyCode, KeyEvent};
     use ntest::timeout;
 
@@ -400,8 +410,10 @@ mod test {
                 let mut read = read.iter();
 
                 let mut write: Vec<u8> = Vec::new();
+
                 let terminal = CrosstermTerminal::new_with_io(&mut write, &mut read);
-                let mut backend = Backend::new(terminal).unwrap();
+                let mut backend =
+                    Backend::new(terminal, RenderConfig::default_static_ref()).unwrap();
 
                 let ans = $prompt.prompt_with_backend(&mut backend).unwrap();
 

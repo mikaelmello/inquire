@@ -8,7 +8,10 @@ use crate::{
     date_utils::{get_current_date, get_month},
     error::{InquireError, InquireResult},
     formatter::{self, DateFormatter},
-    ui::{crossterm::CrosstermTerminal, Backend, DateSelectBackend, Key, KeyModifiers, Terminal},
+    ui::{
+        crossterm::CrosstermTerminal, Backend, DateSelectBackend, Key, KeyModifiers, RenderConfig,
+        Terminal,
+    },
     validator::DateValidator,
 };
 
@@ -88,6 +91,9 @@ pub struct DateSelect<'a> {
     ///
     /// The possible error is displayed to the user one line above the prompt.
     pub validators: Vec<DateValidator<'a>>,
+
+    /// RenderConfig to apply to the rendered interface.
+    pub render_config: &'a RenderConfig,
 }
 
 impl<'a> DateSelect<'a> {
@@ -125,6 +131,7 @@ impl<'a> DateSelect<'a> {
             formatter: Self::DEFAULT_FORMATTER,
             validators: Self::DEFAULT_VALIDATORS,
             week_start: Self::DEFAULT_WEEK_START,
+            render_config: RenderConfig::default_static_ref(),
         }
     }
 
@@ -203,11 +210,17 @@ impl<'a> DateSelect<'a> {
         self
     }
 
+    /// Sets the provided color theme to this prompt.
+    pub fn with_render_config(mut self, render_config: &'a RenderConfig) -> Self {
+        self.render_config = render_config;
+        self
+    }
+
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to the defined rules.
     pub fn prompt(self) -> InquireResult<NaiveDate> {
         let terminal = CrosstermTerminal::new()?;
-        let mut backend = Backend::new(terminal)?;
+        let mut backend = Backend::new(terminal, self.render_config)?;
         self.prompt_with_backend(&mut backend)
     }
 
@@ -403,7 +416,7 @@ impl<'a> DateSelectPrompt<'a> {
 mod test {
     use crate::{
         date_utils::get_current_date,
-        ui::{crossterm::CrosstermTerminal, Backend},
+        ui::{crossterm::CrosstermTerminal, Backend, RenderConfig},
         DateSelect,
     };
     use chrono::NaiveDate;
@@ -428,7 +441,8 @@ mod test {
 
                 let mut write: Vec<u8> = Vec::new();
                 let terminal = CrosstermTerminal::new_with_io(&mut write, &mut read);
-                let mut backend = Backend::new(terminal).unwrap();
+                let mut backend =
+                    Backend::new(terminal, RenderConfig::default_static_ref()).unwrap();
 
                 let ans = $prompt.prompt_with_backend(&mut backend).unwrap();
 
@@ -469,7 +483,7 @@ mod test {
 
         let mut write: Vec<u8> = Vec::new();
         let terminal = CrosstermTerminal::new_with_io(&mut write, &mut read);
-        let mut backend = Backend::new(terminal).unwrap();
+        let mut backend = Backend::new(terminal, RenderConfig::default_static_ref()).unwrap();
 
         let ans = DateSelect::new("Question")
             .with_validator(&validator)

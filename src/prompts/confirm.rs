@@ -2,7 +2,7 @@ use crate::{
     error::InquireResult,
     formatter::{BoolFormatter, DEFAULT_BOOL_FORMATTER},
     parser::{BoolParser, DEFAULT_BOOL_PARSER},
-    ui::{crossterm::CrosstermTerminal, Backend, Terminal},
+    ui::{crossterm::CrosstermTerminal, Backend, RenderConfig, Terminal},
     CustomType,
 };
 
@@ -71,6 +71,9 @@ pub struct Confirm<'a> {
 
     /// Error message displayed when a value could not be parsed from input.
     pub error_message: String,
+
+    /// RenderConfig to apply to the rendered interface.
+    pub render_config: &'a RenderConfig,
 }
 
 impl<'a> Confirm<'a> {
@@ -101,6 +104,7 @@ impl<'a> Confirm<'a> {
             parser: Self::DEFAULT_PARSER,
             default_value_formatter: Self::DEFAULT_DEFAULT_VALUE_FORMATTER,
             error_message: String::from(Self::DEFAULT_ERROR_MESSAGE),
+            render_config: RenderConfig::default_static_ref(),
         }
     }
 
@@ -140,11 +144,17 @@ impl<'a> Confirm<'a> {
         self
     }
 
+    /// Sets the provided color theme to this prompt.
+    pub fn with_render_config(mut self, render_config: &'a RenderConfig) -> Self {
+        self.render_config = render_config;
+        self
+    }
+
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to the defined rules.
     pub fn prompt(self) -> InquireResult<bool> {
         let terminal = CrosstermTerminal::new()?;
-        let mut backend = Backend::new(terminal)?;
+        let mut backend = Backend::new(terminal, self.render_config)?;
         self.prompt_with_backend(&mut backend)
     }
 
@@ -174,6 +184,7 @@ impl<'a> From<Confirm<'a>> for CustomType<'a, bool> {
             formatter: co.formatter,
             parser: co.parser,
             error_message: co.error_message,
+            render_config: co.render_config,
         }
     }
 }

@@ -1,22 +1,21 @@
-use std::fmt::Display;
+use std::{fmt::Display, io::Result};
 
-use super::{key::Key, Terminal};
+use super::{key::Key, RenderConfig, Terminal};
 use crate::{
-    error::{InquireError, InquireResult},
     input::Input,
-    ui::{Attributes, Color, Styled},
+    ui::{StyleSheet, Styled},
 };
 
 pub trait CommonBackend {
-    fn read_key(&mut self) -> InquireResult<Key>;
+    fn read_key(&mut self) -> Result<Key>;
 
-    fn frame_setup(&mut self) -> InquireResult<()>;
-    fn frame_finish(&mut self) -> InquireResult<()>;
+    fn frame_setup(&mut self) -> Result<()>;
+    fn frame_finish(&mut self) -> Result<()>;
 
-    fn finish_prompt(&mut self, prompt: &str, answer: &str) -> InquireResult<()>;
+    fn finish_prompt(&mut self, prompt: &str, answer: &str) -> Result<()>;
 
-    fn render_error_message(&mut self, error: &str) -> InquireResult<()>;
-    fn render_help_message(&mut self, help: &str) -> InquireResult<()>;
+    fn render_error_message(&mut self, error: &str) -> Result<()>;
+    fn render_help_message(&mut self, help: &str) -> Result<()>;
 }
 
 pub trait TextBackend: CommonBackend {
@@ -25,28 +24,24 @@ pub trait TextBackend: CommonBackend {
         prompt: &str,
         default: Option<&str>,
         cur_input: &Input,
-    ) -> InquireResult<()>;
-    fn render_suggestion<T: Display>(&mut self, content: T, focused: bool) -> InquireResult<()>;
+    ) -> Result<()>;
+    fn render_suggestion<T: Display>(&mut self, content: T, focused: bool) -> Result<()>;
 }
 
 pub trait SelectBackend: CommonBackend {
-    fn render_select_prompt(&mut self, prompt: &str, cur_input: &Input) -> InquireResult<()>;
-    fn render_option<T: Display>(&mut self, content: T, focused: bool) -> InquireResult<()>;
+    fn render_select_prompt(&mut self, prompt: &str, cur_input: &Input) -> Result<()>;
+    fn render_option<T: Display>(&mut self, content: T, focused: bool) -> Result<()>;
 }
 
 pub trait MultiSelectBackend: CommonBackend {
-    fn render_multiselect_prompt(&mut self, prompt: &str, cur_input: &Input) -> InquireResult<()>;
-    fn render_option<T: Display>(
-        &mut self,
-        content: T,
-        focused: bool,
-        checked: bool,
-    ) -> InquireResult<()>;
+    fn render_multiselect_prompt(&mut self, prompt: &str, cur_input: &Input) -> Result<()>;
+    fn render_option<T: Display>(&mut self, content: T, focused: bool, checked: bool)
+        -> Result<()>;
 }
 
 #[cfg(feature = "date")]
 pub trait DateSelectBackend: CommonBackend {
-    fn render_calendar_prompt(&mut self, prompt: &str) -> InquireResult<()>;
+    fn render_calendar_prompt(&mut self, prompt: &str) -> Result<()>;
     fn render_calendar(
         &mut self,
         month: chrono::Month,
@@ -56,7 +51,7 @@ pub trait DateSelectBackend: CommonBackend {
         selected_date: chrono::NaiveDate,
         min_date: Option<chrono::NaiveDate>,
         max_date: Option<chrono::NaiveDate>,
-    ) -> InquireResult<()>;
+    ) -> Result<()>;
 }
 
 pub trait CustomTypeBackend: CommonBackend {
@@ -65,29 +60,31 @@ pub trait CustomTypeBackend: CommonBackend {
         prompt: &str,
         default: Option<&str>,
         cur_input: &Input,
-    ) -> InquireResult<()>;
+    ) -> Result<()>;
 }
 
 pub trait PasswordBackend: CommonBackend {
-    fn render_password_prompt(&mut self, prompt: &str) -> InquireResult<()>;
+    fn render_password_prompt(&mut self, prompt: &str) -> Result<()>;
 }
 
-pub struct Backend<T>
+pub struct Backend<'a, T>
 where
     T: Terminal,
 {
     cur_line: usize,
     terminal: T,
+    render_config: &'a RenderConfig,
 }
 
-impl<T> Backend<T>
+impl<'a, T> Backend<'a, T>
 where
     T: Terminal,
 {
-    pub fn new(terminal: T) -> InquireResult<Self> {
+    pub fn new(terminal: T, render_config: &'a RenderConfig) -> Result<Self> {
         let mut backend = Self {
             cur_line: 0,
             terminal,
+            render_config,
         };
 
         backend.terminal.cursor_hide()?;
@@ -95,7 +92,7 @@ where
         Ok(backend)
     }
 
-    pub fn reset_prompt(&mut self) -> InquireResult<()> {
+    fn reset_prompt(&mut self) -> Result<()> {
         for _ in 0..self.cur_line {
             self.terminal.cursor_up()?;
             self.terminal.cursor_move_to_column(0)?;
@@ -106,99 +103,96 @@ where
         Ok(())
     }
 
-    fn print_prompt_answer(&mut self, prompt: &str, answer: &str) -> InquireResult<()> {
+    fn print_prompt_prefix(&mut self) -> Result<()> {
         self.terminal
-            .write_styled(Styled::new("? ").with_fg(Color::Green))?;
+            .write_styled(&self.render_config.prompt_prefix)
+    }
 
-        self.terminal.write(prompt)?;
+    fn print_prompt_token(&mut self, prompt: &str) -> Result<()> {
+        let token = Styled::new(prompt).with_style_sheet(self.render_config.prompt);
 
-        self.terminal
-            .write_styled(Styled::new(format!(" {}", answer)).with_fg(Color::Cyan))?;
+        self.terminal.write_styled(&token)
+    }
+
+    fn print_default_value(&mut self, value: &str) -> Result<()> {
+        let content = format!("({})", value);
+        let token = Styled::new(content).with_style_sheet(self.render_config.default_value);
+
+        self.terminal.write_styled(&token)
+    }
+
+    fn print_prompt(&mut self, prompt: &str) -> Result<()> {
+        self.print_prompt_prefix()?;
+
+        self.terminal.write(' ')?;
+
+        self.print_prompt_token(prompt)?;
+
+        Ok(())
+    }
+
+    fn print_prompt_with_answer(&mut self, prompt: &str, answer: &str) -> Result<()> {
+        self.print_prompt(prompt)?;
+
+        self.terminal.write(' ')?;
+
+        let token = Styled::new(answer).with_style_sheet(self.render_config.answer);
+        self.terminal.write_styled(&token)?;
 
         self.new_line()?;
 
         Ok(())
     }
 
-    pub fn print_prompt(
-        &mut self,
-        prompt: &str,
-        default: Option<&str>,
-        content: Option<&str>,
-    ) -> InquireResult<()> {
-        self.terminal
-            .write_styled(Styled::new("? ").with_fg(Color::Green))?;
-
-        self.terminal.write(prompt)?;
-
-        if let Some(default) = default {
-            self.terminal.write(format!(" ({})", default))?;
-        }
-
-        match content {
-            Some(content) if !content.is_empty() => self
-                .terminal
-                .write_styled(Styled::new(format!(" {}", content)).with_attr(Attributes::BOLD))?,
-            _ => {}
-        }
-
-        self.new_line()?;
-
-        Ok(())
-    }
-
-    pub fn print_prompt_input(
-        &mut self,
-        prompt: &str,
-        default: Option<&str>,
-        content: &Input,
-    ) -> InquireResult<()> {
-        self.terminal
-            .write_styled(Styled::new("? ").with_fg(Color::Green))?;
-
-        self.terminal.write(prompt)?;
-
-        if let Some(default) = default {
-            self.terminal.write(format!(" ({})", default))?;
-        }
-
-        let (before, mut at, after) = content.split();
+    fn print_input(&mut self, input: &Input) -> Result<()> {
+        let (before, mut at, after) = input.split();
 
         if at.is_empty() {
             at.push(' ');
         }
 
-        self.terminal.write(" ")?;
-        self.terminal.write(before)?;
-        self.terminal
-            .write_styled(Styled::new(at).with_bg(Color::Grey).with_fg(Color::Black))?;
-        self.terminal.write(after)?;
+        self.terminal.write(' ')?;
+
+        self.terminal.write_styled(
+            &Styled::new(before).with_style_sheet(self.render_config.text_input.text),
+        )?;
+        self.terminal.write_styled(
+            &Styled::new(at).with_style_sheet(self.render_config.text_input.cursor),
+        )?;
+        self.terminal.write_styled(
+            &Styled::new(after).with_style_sheet(self.render_config.text_input.text),
+        )?;
+
+        Ok(())
+    }
+
+    fn print_prompt_with_input(
+        &mut self,
+        prompt: &str,
+        default: Option<&str>,
+        input: &Input,
+    ) -> Result<()> {
+        self.print_prompt(prompt)?;
+
+        if let Some(default) = default {
+            self.terminal.write(' ')?;
+            self.print_default_value(default)?;
+        }
+
+        self.print_input(input)?;
 
         self.new_line()?;
 
         Ok(())
     }
 
-    pub fn print_option<D: Display>(&mut self, content: D, focused: bool) -> InquireResult<()> {
-        let token = match focused {
-            true => Styled::new(format!("> {}", content)).with_fg(Color::Cyan),
-            false => Styled::new(format!("  {}", content)),
-        };
-
-        self.terminal.write_styled(token)?;
-
-        self.new_line()?;
-
-        Ok(())
-    }
-
-    pub fn flush(&mut self) -> InquireResult<()> {
+    fn flush(&mut self) -> Result<()> {
         self.terminal.flush()?;
 
         Ok(())
     }
 
-    fn new_line(&mut self) -> InquireResult<()> {
+    fn new_line(&mut self) -> Result<()> {
         self.terminal.cursor_move_to_column(0)?;
         self.terminal.write("\n")?;
         self.cur_line = self.cur_line.saturating_add(1);
@@ -207,44 +201,55 @@ where
     }
 }
 
-impl<T> CommonBackend for Backend<T>
+impl<'a, T> CommonBackend for Backend<'a, T>
 where
     T: Terminal,
 {
-    fn frame_setup(&mut self) -> InquireResult<()> {
+    fn frame_setup(&mut self) -> Result<()> {
         self.reset_prompt()
     }
 
-    fn frame_finish(&mut self) -> InquireResult<()> {
+    fn frame_finish(&mut self) -> Result<()> {
         self.flush()
     }
 
-    fn finish_prompt(&mut self, prompt: &str, answer: &str) -> InquireResult<()> {
+    fn finish_prompt(&mut self, prompt: &str, answer: &str) -> Result<()> {
         self.reset_prompt()?;
-        self.print_prompt_answer(prompt, answer)?;
+        self.print_prompt_with_answer(prompt, answer)?;
 
         Ok(())
     }
 
-    fn read_key(&mut self) -> InquireResult<Key> {
-        self.terminal
-            .read_key()
-            .map(Key::from)
-            .map_err(InquireError::from)
+    fn read_key(&mut self) -> Result<Key> {
+        self.terminal.read_key().map(Key::from)
     }
 
-    fn render_error_message(&mut self, error: &str) -> InquireResult<()> {
+    fn render_error_message(&mut self, error: &str) -> Result<()> {
         self.terminal
-            .write_styled(Styled::new(format!("# {}", error)).with_fg(Color::Red))?;
+            .write_styled(&self.render_config.error_message.prefix)?;
+
+        self.terminal.write_styled(
+            &Styled::new(' ').with_style_sheet(self.render_config.error_message.separator),
+        )?;
+
+        self.terminal.write_styled(
+            &Styled::new(error).with_style_sheet(self.render_config.error_message.message),
+        )?;
 
         self.new_line()?;
 
         Ok(())
     }
 
-    fn render_help_message(&mut self, help: &str) -> InquireResult<()> {
+    fn render_help_message(&mut self, help: &str) -> Result<()> {
         self.terminal
-            .write_styled(Styled::new(format!("[{}]", help)).with_fg(Color::Cyan))?;
+            .write_styled(&Styled::new('[').with_style_sheet(self.render_config.help_message))?;
+
+        self.terminal
+            .write_styled(&Styled::new(help).with_style_sheet(self.render_config.help_message))?;
+
+        self.terminal
+            .write_styled(&Styled::new(']').with_style_sheet(self.render_config.help_message))?;
 
         self.new_line()?;
 
@@ -252,7 +257,7 @@ where
     }
 }
 
-impl<T> TextBackend for Backend<T>
+impl<'a, T> TextBackend for Backend<'a, T>
 where
     T: Terminal,
 {
@@ -261,34 +266,62 @@ where
         prompt: &str,
         default: Option<&str>,
         cur_input: &Input,
-    ) -> InquireResult<()> {
-        self.print_prompt_input(prompt, default, cur_input)
+    ) -> Result<()> {
+        self.print_prompt_with_input(prompt, default, cur_input)
     }
 
-    fn render_suggestion<D: Display>(&mut self, content: D, focused: bool) -> InquireResult<()> {
-        self.print_option(content, focused)
+    fn render_suggestion<D: Display>(&mut self, content: D, focused: bool) -> Result<()> {
+        match focused {
+            true => self
+                .terminal
+                .write_styled(&self.render_config.option_prefix)?,
+            false => self.terminal.write(' ')?,
+        }
+
+        self.terminal.write(' ')?;
+
+        self.terminal
+            .write_styled(&Styled::new(content).with_style_sheet(self.render_config.option))?;
+
+        self.new_line()?;
+
+        Ok(())
     }
 }
 
-impl<T> SelectBackend for Backend<T>
+impl<'a, T> SelectBackend for Backend<'a, T>
 where
     T: Terminal,
 {
-    fn render_select_prompt(&mut self, prompt: &str, cur_input: &Input) -> InquireResult<()> {
-        self.print_prompt_input(prompt, None, cur_input)
+    fn render_select_prompt(&mut self, prompt: &str, cur_input: &Input) -> Result<()> {
+        self.print_prompt_with_input(prompt, None, cur_input)
     }
 
-    fn render_option<D: Display>(&mut self, content: D, focused: bool) -> InquireResult<()> {
-        self.print_option(content, focused)
+    fn render_option<D: Display>(&mut self, content: D, focused: bool) -> Result<()> {
+        match focused {
+            true => self
+                .terminal
+                .write_styled(&self.render_config.option_prefix)?,
+            false => self.terminal.write(' ')?,
+        }
+
+        self.terminal.write(' ')?;
+
+        self.terminal
+            .write_styled(&Styled::new(content).with_style_sheet(self.render_config.option))?;
+
+        self.new_line()?;
+
+        Ok(())
     }
 }
 
-impl<T> MultiSelectBackend for Backend<T>
+impl<'a, T> MultiSelectBackend for Backend<'a, T>
 where
     T: Terminal,
 {
-    fn render_multiselect_prompt(&mut self, prompt: &str, cur_input: &Input) -> InquireResult<()> {
-        self.print_prompt_input(prompt, None, cur_input)
+    fn render_multiselect_prompt(&mut self, prompt: &str, cur_input: &Input) -> Result<()> {
+        self.print_prompt_with_input(prompt, None, cur_input)
     }
 
     fn render_option<D: Display>(
@@ -296,20 +329,29 @@ where
         content: D,
         focused: bool,
         checked: bool,
-    ) -> InquireResult<()> {
-        let cursor = match focused {
-            true => Styled::new("> ").with_fg(Color::Cyan),
-            false => Styled::new("  "),
-        };
+    ) -> Result<()> {
+        match focused {
+            true => self
+                .terminal
+                .write_styled(&self.render_config.option_prefix)?,
+            false => self.terminal.write(' ')?,
+        }
 
-        let checkbox = match checked {
-            true => Styled::new("[x] ").with_fg(Color::Green),
-            false => Styled::new("[ ] "),
-        };
+        self.terminal.write(' ')?;
 
-        self.terminal.write_styled(cursor)?;
-        self.terminal.write_styled(checkbox)?;
-        self.terminal.write(content)?;
+        match checked {
+            true => self
+                .terminal
+                .write_styled(&self.render_config.selected_checkbox)?,
+            false => self
+                .terminal
+                .write_styled(&self.render_config.unselected_checkbox)?,
+        }
+
+        self.terminal.write(' ')?;
+
+        self.terminal
+            .write_styled(&Styled::new(content).with_style_sheet(self.render_config.option))?;
 
         self.new_line()?;
 
@@ -318,12 +360,14 @@ where
 }
 
 #[cfg(feature = "date")]
-impl<T> DateSelectBackend for Backend<T>
+impl<'a, T> DateSelectBackend for Backend<'a, T>
 where
     T: Terminal,
 {
-    fn render_calendar_prompt(&mut self, prompt: &str) -> InquireResult<()> {
-        self.print_prompt(prompt, None, None)
+    fn render_calendar_prompt(&mut self, prompt: &str) -> Result<()> {
+        self.print_prompt(prompt)?;
+        self.new_line()?;
+        Ok(())
     }
 
     fn render_calendar(
@@ -335,18 +379,27 @@ where
         selected_date: chrono::NaiveDate,
         min_date: Option<chrono::NaiveDate>,
         max_date: Option<chrono::NaiveDate>,
-    ) -> InquireResult<()> {
+    ) -> Result<()> {
         use crate::date_utils::get_start_date;
         use chrono::{Datelike, Duration};
         use std::ops::Sub;
 
+        macro_rules! write_prefix {
+            () => {{
+                self.terminal
+                    .write_styled(&self.render_config.calendar.prefix)?;
+                self.terminal.write(' ')
+            }};
+        }
+
         // print header (month year)
         let header = format!("{} {}", month.name().to_lowercase(), year);
+        let header = format!("{:^20}", header);
+        let header = Styled::new(header).with_style_sheet(self.render_config.calendar.header);
 
-        self.terminal
-            .write_styled(Styled::new("> ").with_fg(Color::Green))?;
+        write_prefix!()?;
 
-        self.terminal.write(format!("{:^20}", header))?;
+        self.terminal.write_styled(&header)?;
 
         self.new_line()?;
 
@@ -361,12 +414,13 @@ where
 
             current_weekday = current_weekday.succ();
         }
-        let week_days = week_days.join(" ");
 
-        self.terminal
-            .write_styled(Styled::new("> ").with_fg(Color::Green))?;
+        let week_days = Styled::new(week_days.join(" "))
+            .with_style_sheet(self.render_config.calendar.week_header);
 
-        self.terminal.write(week_days)?;
+        write_prefix!()?;
+
+        self.terminal.write_styled(&week_days)?;
         self.new_line()?;
 
         // print dates
@@ -381,39 +435,39 @@ where
         }
 
         for _ in 0..6 {
-            self.terminal
-                .write_styled(Styled::new("> ").with_fg(Color::Green))?;
+            write_prefix!()?;
 
             for i in 0..7 {
                 if i > 0 {
-                    self.terminal.write(" ")?;
+                    self.terminal.write(' ')?;
                 }
 
                 let date = format!("{:2}", date_it.day());
 
-                let mut token = Styled::new(date);
+                let mut style_sheet = StyleSheet::empty();
 
                 if date_it == selected_date {
-                    token = token.with_bg(Color::Grey).with_fg(Color::Black);
+                    style_sheet = self.render_config.calendar.selected_date;
                 } else if date_it == today {
-                    token = token.with_fg(Color::Green);
+                    style_sheet = self.render_config.calendar.today_date;
                 } else if date_it.month() != month.number_from_month() {
-                    token = token.with_fg(Color::DarkGrey);
+                    style_sheet = self.render_config.calendar.different_month_date;
                 }
 
                 if let Some(min_date) = min_date {
                     if date_it < min_date {
-                        token = token.with_fg(Color::DarkGrey);
+                        style_sheet = self.render_config.calendar.unavailable_date;
                     }
                 }
 
                 if let Some(max_date) = max_date {
                     if date_it > max_date {
-                        token = token.with_fg(Color::DarkGrey);
+                        style_sheet = self.render_config.calendar.unavailable_date;
                     }
                 }
 
-                self.terminal.write_styled(token)?;
+                let token = Styled::new(date).with_style_sheet(style_sheet);
+                self.terminal.write_styled(&token)?;
 
                 date_it = date_it.succ();
             }
@@ -425,7 +479,7 @@ where
     }
 }
 
-impl<T> CustomTypeBackend for Backend<T>
+impl<'a, T> CustomTypeBackend for Backend<'a, T>
 where
     T: Terminal,
 {
@@ -434,21 +488,23 @@ where
         prompt: &str,
         default: Option<&str>,
         cur_input: &Input,
-    ) -> InquireResult<()> {
-        self.print_prompt_input(prompt, default, cur_input)
+    ) -> Result<()> {
+        self.print_prompt_with_input(prompt, default, cur_input)
     }
 }
 
-impl<T> PasswordBackend for Backend<T>
+impl<'a, T> PasswordBackend for Backend<'a, T>
 where
     T: Terminal,
 {
-    fn render_password_prompt(&mut self, prompt: &str) -> InquireResult<()> {
-        self.print_prompt(prompt, None, None)
+    fn render_password_prompt(&mut self, prompt: &str) -> Result<()> {
+        self.print_prompt(prompt)?;
+        self.new_line()?;
+        Ok(())
     }
 }
 
-impl<T> Drop for Backend<T>
+impl<'a, T> Drop for Backend<'a, T>
 where
     T: Terminal,
 {

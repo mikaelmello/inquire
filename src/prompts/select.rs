@@ -6,7 +6,7 @@ use crate::{
     formatter::{self, OptionFormatter},
     input::Input,
     option_answer::OptionAnswer,
-    ui::{crossterm::CrosstermTerminal, Backend, Key, KeyModifiers, SelectBackend},
+    ui::{crossterm::CrosstermTerminal, Backend, Key, KeyModifiers, RenderConfig, SelectBackend},
     utils::paginate,
 };
 
@@ -76,6 +76,9 @@ pub struct Select<'a> {
 
     /// Function that formats the user input and presents it to the user as the final rendering of the prompt.
     pub formatter: OptionFormatter<'a>,
+
+    /// RenderConfig to apply to the rendered interface.
+    pub render_config: &'a RenderConfig,
 }
 
 impl<'a> Select<'a> {
@@ -109,6 +112,7 @@ impl<'a> Select<'a> {
             starting_cursor: Self::DEFAULT_STARTING_CURSOR,
             filter: Self::DEFAULT_FILTER,
             formatter: Self::DEFAULT_FORMATTER,
+            render_config: RenderConfig::default_static_ref(),
         }
     }
 
@@ -154,11 +158,17 @@ impl<'a> Select<'a> {
         self
     }
 
+    /// Sets the provided color theme to this prompt.
+    pub fn with_render_config(mut self, render_config: &'a RenderConfig) -> Self {
+        self.render_config = render_config;
+        self
+    }
+
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to the defined rules.
     pub fn prompt(self) -> InquireResult<OptionAnswer> {
         let terminal = CrosstermTerminal::new()?;
-        let mut backend = Backend::new(terminal)?;
+        let mut backend = Backend::new(terminal, self.render_config)?;
         self.prompt_with_backend(&mut backend)
     }
 

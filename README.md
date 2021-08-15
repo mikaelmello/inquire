@@ -36,6 +36,7 @@ It provides several different prompts in order to interactively ask the user for
 - Several kinds of prompts to suit your needs;
 - Standardized error handling (thanks to [thiserror](https://crates.io/crates/thiserror));
 - Support for fine-grained configuration for each prompt type, allowing you to customize:
+  - Rendering configuration (aka color theme + other components).
   - Default values;
   - Input validators and formatters;
   - Help messages;
@@ -69,6 +70,21 @@ inquire = { version = "0.0.6", features = ["date"] }
 # Cross-cutting concerns
 
 There are several features that are shared among different types of prompts. This section will give an overview on each of them.
+
+## Rendering configuration (aka color themes)
+
+All prompts allow you to set a custom `RenderConfig`, a struct that contains lots of style customization options.
+
+With `RenderConfig`, you can customize foreground color, background color and attributes (e.g. bold) of most components that are part of a prompt. Additionally, you can also customize the content of special tokens, such as prompt prefixes, highlighted-option prefixes, selected and unselected checkboxes, etc.
+
+This allows you to have greater control over the style of your application while continuing to have a clean API to create prompts as smoothly as possible.
+
+In the [`render_config.rs`](./examples/render_config.gif) example, you can take a look at the capabilities of this API. The example is exactly the same one as [`expense_tracker.rs`](./examples/expense_tracker.gif), but with several style aspects customized (Warning: the modifications did not have "looks good" as their goal :) ). Take a look at the differences:
+
+![Animated GIF making a demonstration of the expense_tracker example. You can replay this recording in your terminal with asciinema play command - asciinema play ./assets/expense_tracker.cast](./assets/expense_tracker_gifcast.gif)
+[Source](./examples/expense_tracker.rs)
+![Animated GIF making a demonstration of the render_config example. You can replay this recording in your terminal with asciinema play command - asciinema play ./assets/render_config.cast](./assets/render_config_gifcast.gif)
+[Source](./examples/render_config.rs)
 
 ## Validation
 

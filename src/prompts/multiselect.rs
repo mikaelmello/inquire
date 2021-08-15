@@ -6,7 +6,9 @@ use crate::{
     formatter::{self, MultiOptionFormatter},
     input::Input,
     option_answer::OptionAnswer,
-    ui::{crossterm::CrosstermTerminal, Backend, Key, KeyModifiers, MultiSelectBackend},
+    ui::{
+        crossterm::CrosstermTerminal, Backend, Key, KeyModifiers, MultiSelectBackend, RenderConfig,
+    },
     utils::paginate,
     validator::MultiOptionValidator,
 };
@@ -77,6 +79,9 @@ pub struct MultiSelect<'a> {
     ///
     /// In case of error, the message is displayed one line above the prompt.
     pub validator: Option<MultiOptionValidator<'a>>,
+
+    /// RenderConfig to apply to the rendered interface.
+    pub render_config: &'a RenderConfig,
 }
 
 impl<'a> MultiSelect<'a> {
@@ -120,6 +125,7 @@ impl<'a> MultiSelect<'a> {
             filter: Self::DEFAULT_FILTER,
             formatter: Self::DEFAULT_FORMATTER,
             validator: Self::DEFAULT_VALIDATOR,
+            render_config: RenderConfig::default_static_ref(),
         }
     }
 
@@ -187,11 +193,17 @@ impl<'a> MultiSelect<'a> {
         self
     }
 
+    /// Sets the provided color theme to this prompt.
+    pub fn with_render_config(mut self, render_config: &'a RenderConfig) -> Self {
+        self.render_config = render_config;
+        self
+    }
+
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to the defined rules.
     pub fn prompt(self) -> InquireResult<Vec<OptionAnswer>> {
         let terminal = CrosstermTerminal::new()?;
-        let mut backend = Backend::new(terminal)?;
+        let mut backend = Backend::new(terminal, self.render_config)?;
         self.prompt_with_backend(&mut backend)
     }
 

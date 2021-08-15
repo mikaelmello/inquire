@@ -56,6 +56,11 @@ pub struct StyleSheet {
 }
 
 impl StyleSheet {
+    /// Creates a style sheet with no colors and no attributes
+    pub fn new() -> Self {
+        Self::empty()
+    }
+
     /// A stylesheet with no colors and no attributes.
     pub fn empty() -> Self {
         Self {
@@ -124,6 +129,7 @@ impl Default for StyleSheet {
 /// The struct does not require that `T` implements [Display], however
 /// the only mapped use for this struct, printing in on [Terminal] requires
 /// `T` to implement it.
+#[derive(Clone, Debug)]
 pub struct Styled<T> {
     /// Content to be rendered.
     pub content: T,
