@@ -9,8 +9,8 @@ use crate::{
     error::{InquireError, InquireResult},
     formatter::{self, DateFormatter},
     ui::{
-        crossterm::CrosstermTerminal, Backend, DateSelectBackend, Key, KeyModifiers, RenderConfig,
-        Terminal,
+        crossterm::CrosstermTerminal, date::DateSelectBackend, Backend, Key, KeyModifiers,
+        RenderConfig, Terminal,
     },
     validator::DateValidator,
 };

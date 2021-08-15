@@ -46,5 +46,13 @@ name = "expense_tracker"
 required-features = ["date"]
 
 [[example]]
+name = "render_config"
+required-features = ["date"]
+
+[[example]]
+name = "empty_render_config"
+required-features = ["date"]
+
+[[example]]
 name = "date_complete"
 required-features = ["date"]

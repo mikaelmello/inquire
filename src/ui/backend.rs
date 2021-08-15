@@ -1,10 +1,7 @@
 use std::{fmt::Display, io::Result};
 
 use super::{key::Key, RenderConfig, Terminal};
-use crate::{
-    input::Input,
-    ui::{StyleSheet, Styled},
-};
+use crate::{input::Input, ui::Styled};
 
 pub trait CommonBackend {
     fn read_key(&mut self) -> Result<Key>;
@@ -37,21 +34,6 @@ pub trait MultiSelectBackend: CommonBackend {
     fn render_multiselect_prompt(&mut self, prompt: &str, cur_input: &Input) -> Result<()>;
     fn render_option<T: Display>(&mut self, content: T, focused: bool, checked: bool)
         -> Result<()>;
-}
-
-#[cfg(feature = "date")]
-pub trait DateSelectBackend: CommonBackend {
-    fn render_calendar_prompt(&mut self, prompt: &str) -> Result<()>;
-    fn render_calendar(
-        &mut self,
-        month: chrono::Month,
-        year: i32,
-        week_start: chrono::Weekday,
-        today: chrono::NaiveDate,
-        selected_date: chrono::NaiveDate,
-        min_date: Option<chrono::NaiveDate>,
-        max_date: Option<chrono::NaiveDate>,
-    ) -> Result<()>;
 }
 
 pub trait CustomTypeBackend: CommonBackend {
@@ -360,122 +342,145 @@ where
 }
 
 #[cfg(feature = "date")]
-impl<'a, T> DateSelectBackend for Backend<'a, T>
-where
-    T: Terminal,
-{
-    fn render_calendar_prompt(&mut self, prompt: &str) -> Result<()> {
-        self.print_prompt(prompt)?;
-        self.new_line()?;
-        Ok(())
+pub mod date {
+    use std::{io::Result, ops::Sub};
+
+    use chrono::{Datelike, Duration};
+
+    use crate::{
+        date_utils::get_start_date,
+        ui::{Styled, Terminal},
+    };
+
+    use super::{Backend, CommonBackend};
+
+    pub trait DateSelectBackend: CommonBackend {
+        fn render_calendar_prompt(&mut self, prompt: &str) -> Result<()>;
+        fn render_calendar(
+            &mut self,
+            month: chrono::Month,
+            year: i32,
+            week_start: chrono::Weekday,
+            today: chrono::NaiveDate,
+            selected_date: chrono::NaiveDate,
+            min_date: Option<chrono::NaiveDate>,
+            max_date: Option<chrono::NaiveDate>,
+        ) -> Result<()>;
     }
 
-    fn render_calendar(
-        &mut self,
-        month: chrono::Month,
-        year: i32,
-        week_start: chrono::Weekday,
-        today: chrono::NaiveDate,
-        selected_date: chrono::NaiveDate,
-        min_date: Option<chrono::NaiveDate>,
-        max_date: Option<chrono::NaiveDate>,
-    ) -> Result<()> {
-        use crate::date_utils::get_start_date;
-        use chrono::{Datelike, Duration};
-        use std::ops::Sub;
-
-        macro_rules! write_prefix {
-            () => {{
-                self.terminal
-                    .write_styled(&self.render_config.calendar.prefix)?;
-                self.terminal.write(' ')
-            }};
+    impl<'a, T> DateSelectBackend for Backend<'a, T>
+    where
+        T: Terminal,
+    {
+        fn render_calendar_prompt(&mut self, prompt: &str) -> Result<()> {
+            self.print_prompt(prompt)?;
+            self.new_line()?;
+            Ok(())
         }
 
-        // print header (month year)
-        let header = format!("{} {}", month.name().to_lowercase(), year);
-        let header = format!("{:^20}", header);
-        let header = Styled::new(header).with_style_sheet(self.render_config.calendar.header);
-
-        write_prefix!()?;
-
-        self.terminal.write_styled(&header)?;
-
-        self.new_line()?;
-
-        // print week header
-        let mut current_weekday = week_start;
-        let mut week_days: Vec<String> = vec![];
-        for _ in 0..7 {
-            let mut formatted = format!("{}", current_weekday);
-            formatted.make_ascii_lowercase();
-            formatted.pop();
-            week_days.push(formatted);
-
-            current_weekday = current_weekday.succ();
-        }
-
-        let week_days = Styled::new(week_days.join(" "))
-            .with_style_sheet(self.render_config.calendar.week_header);
-
-        write_prefix!()?;
-
-        self.terminal.write_styled(&week_days)?;
-        self.new_line()?;
-
-        // print dates
-        let mut date_it = get_start_date(month, year);
-        // first date of week-line is possibly in the previous month
-        if date_it.weekday() == week_start {
-            date_it = date_it.sub(Duration::weeks(1));
-        } else {
-            while date_it.weekday() != week_start {
-                date_it = date_it.pred();
+        fn render_calendar(
+            &mut self,
+            month: chrono::Month,
+            year: i32,
+            week_start: chrono::Weekday,
+            today: chrono::NaiveDate,
+            selected_date: chrono::NaiveDate,
+            min_date: Option<chrono::NaiveDate>,
+            max_date: Option<chrono::NaiveDate>,
+        ) -> Result<()> {
+            macro_rules! write_prefix {
+                () => {{
+                    self.terminal
+                        .write_styled(&self.render_config.calendar.prefix)?;
+                    self.terminal.write(' ')
+                }};
             }
-        }
 
-        for _ in 0..6 {
+            // print header (month year)
+            let header = format!("{} {}", month.name().to_lowercase(), year);
+            let header = format!("{:^20}", header);
+            let header = Styled::new(header).with_style_sheet(self.render_config.calendar.header);
+
             write_prefix!()?;
 
-            for i in 0..7 {
-                if i > 0 {
-                    self.terminal.write(' ')?;
-                }
-
-                let date = format!("{:2}", date_it.day());
-
-                let mut style_sheet = StyleSheet::empty();
-
-                if date_it == selected_date {
-                    style_sheet = self.render_config.calendar.selected_date;
-                } else if date_it == today {
-                    style_sheet = self.render_config.calendar.today_date;
-                } else if date_it.month() != month.number_from_month() {
-                    style_sheet = self.render_config.calendar.different_month_date;
-                }
-
-                if let Some(min_date) = min_date {
-                    if date_it < min_date {
-                        style_sheet = self.render_config.calendar.unavailable_date;
-                    }
-                }
-
-                if let Some(max_date) = max_date {
-                    if date_it > max_date {
-                        style_sheet = self.render_config.calendar.unavailable_date;
-                    }
-                }
-
-                let token = Styled::new(date).with_style_sheet(style_sheet);
-                self.terminal.write_styled(&token)?;
-
-                date_it = date_it.succ();
-            }
+            self.terminal.write_styled(&header)?;
 
             self.new_line()?;
-        }
 
-        Ok(())
+            // print week header
+            let mut current_weekday = week_start;
+            let mut week_days: Vec<String> = vec![];
+            for _ in 0..7 {
+                let mut formatted = format!("{}", current_weekday);
+                formatted.make_ascii_lowercase();
+                formatted.pop();
+                week_days.push(formatted);
+
+                current_weekday = current_weekday.succ();
+            }
+
+            let week_days = Styled::new(week_days.join(" "))
+                .with_style_sheet(self.render_config.calendar.week_header);
+
+            write_prefix!()?;
+
+            self.terminal.write_styled(&week_days)?;
+            self.new_line()?;
+
+            // print dates
+            let mut date_it = get_start_date(month, year);
+            // first date of week-line is possibly in the previous month
+            if date_it.weekday() == week_start {
+                date_it = date_it.sub(Duration::weeks(1));
+            } else {
+                while date_it.weekday() != week_start {
+                    date_it = date_it.pred();
+                }
+            }
+
+            for _ in 0..6 {
+                write_prefix!()?;
+
+                for i in 0..7 {
+                    if i > 0 {
+                        self.terminal.write(' ')?;
+                    }
+
+                    let date = format!("{:2}", date_it.day());
+
+                    let mut style_sheet = crate::ui::StyleSheet::empty();
+
+                    if date_it == selected_date {
+                        style_sheet = self.render_config.calendar.selected_date;
+                    } else if date_it == today {
+                        style_sheet = self.render_config.calendar.today_date;
+                    } else if date_it.month() != month.number_from_month() {
+                        style_sheet = self.render_config.calendar.different_month_date;
+                    }
+
+                    if let Some(min_date) = min_date {
+                        if date_it < min_date {
+                            style_sheet = self.render_config.calendar.unavailable_date;
+                        }
+                    }
+
+                    if let Some(max_date) = max_date {
+                        if date_it > max_date {
+                            style_sheet = self.render_config.calendar.unavailable_date;
+                        }
+                    }
+
+                    let token = Styled::new(date).with_style_sheet(style_sheet);
+                    self.terminal.write_styled(&token)?;
+
+                    date_it = date_it.succ();
+                }
+
+                self.new_line()?;
+            }
+
+            Ok(())
+        }
     }
 }
 
