@@ -2,7 +2,25 @@ use lazy_static::lazy_static;
 
 use super::{Color, StyleSheet, Styled};
 
-/// Color theme that can be applied to a prompt.
+/// Rendering configuration that can be applied to a prompt.
+///
+/// Render configurations can set mostly style sheets for particular
+/// parts of the prompt layout. Additionally, it allows you to set
+/// the content of a few tokens, such as prompt or error message prefixes.
+///
+/// # Example
+///
+/// ```
+/// use inquire::ui::{Color, RenderConfig, Styled};
+///
+/// let empty: RenderConfig = RenderConfig::empty();
+/// let default: RenderConfig = RenderConfig::default();
+///
+/// let default_used_in_prompts: &'static RenderConfig = RenderConfig::default_static_ref();
+///
+/// let prompt_prefix = Styled::new("$").with_fg(Color::Red);
+/// let mine = default.with_prompt_prefix(prompt_prefix);
+/// ```
 #[derive(Clone, Debug)]
 pub struct RenderConfig {
     /// Prefix added before prompts.
