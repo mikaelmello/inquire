@@ -293,7 +293,7 @@ impl<'a> TextPrompt<'a> {
                 if self.original_input.is_none() {
                     self.original_input = Some(self.input.clone());
                 }
-                self.input.reset_with(suggestion);
+                self.input = Input::new_with(suggestion);
             }
         }
     }

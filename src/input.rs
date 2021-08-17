@@ -28,19 +28,14 @@ impl Input {
         }
     }
 
-    #[cfg(test)]
-    pub fn with_content(mut self, content: &str) -> Self {
-        self.content = String::from(content);
-        self.length = content.graphemes(true).count();
-        self.cursor = std::cmp::min(self.cursor, self.length);
+    pub fn new_with(content: &str) -> Self {
+        let len = content.graphemes(true).count();
 
-        self
-    }
-
-    pub fn reset_with(&mut self, content: &str) {
-        self.content = String::from(content);
-        self.length = content.graphemes(true).count();
-        self.cursor = self.length;
+        Self {
+            content: String::from(content),
+            length: len,
+            cursor: len,
+        }
     }
 
     #[cfg(test)]
@@ -261,7 +256,7 @@ mod test {
         let content = "great 🌍, 🍞, 🚗, 1231321📞, 🎉, 🍆xsa232 s2da ake iak eaik";
 
         let assert = |expected, initial| {
-            let mut input = Input::new().with_content(content).with_cursor(initial);
+            let mut input = Input::new_with(content).with_cursor(initial);
 
             let dirty = input.handle_key(Key::Left(KeyModifiers::CONTROL));
             assert_eq!(expected != initial, dirty,
