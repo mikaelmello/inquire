@@ -23,6 +23,7 @@ const DEFAULT_HELP_MESSAGE: &str = "↑↓ to move, tab to auto-complete, enter 
 /// - **Prompt message**: Main message when prompting the user for input, `"What is your name?"` in the example below.
 /// - **Help message**: Message displayed at the line below the prompt.
 /// - **Default value**: Default value returned when the user submits an empty response.
+/// - **Placeholder**: Short hint that describes the expected value of the input.
 /// - **Validators**: Custom validators to the user's input, displaying an error message if the input does not pass the requirements.
 /// - **Formatter**: Custom formatter in case you need to pre-process the user input before showing it as the final answer.
 /// - **Suggester**: Custom function that returns a list of input suggestions based on the current text input. See more on "Autocomplete" below.
@@ -65,6 +66,9 @@ pub struct Text<'a> {
     /// Default value, returned when the user input is empty.
     pub default: Option<&'a str>,
 
+    /// Short hint that describes the expected value of the input.
+    pub placeholder: Option<&'a str>,
+
     /// Help message to be presented to the user.
     pub help_message: Option<&'a str>,
 
@@ -106,6 +110,7 @@ impl<'a> Text<'a> {
     pub fn new(message: &'a str) -> Self {
         Self {
             message,
+            placeholder: None,
             default: None,
             help_message: Self::DEFAULT_HELP_MESSAGE,
             validators: Self::DEFAULT_VALIDATORS,
@@ -125,6 +130,12 @@ impl<'a> Text<'a> {
     /// Sets the default input.
     pub fn with_default(mut self, message: &'a str) -> Self {
         self.default = Some(message);
+        self
+    }
+
+    /// Sets the placeholder.
+    pub fn with_placeholder(mut self, placeholder: &'a str) -> Self {
+        self.placeholder = Some(placeholder);
         self
     }
 
@@ -220,7 +231,10 @@ impl<'a> From<Text<'a>> for TextPrompt<'a> {
             formatter: so.formatter,
             validators: so.validators,
             suggester: so.suggester,
-            input: Input::new(),
+            input: so
+                .placeholder
+                .map(|p| Input::new().with_placeholder(p))
+                .unwrap_or_else(|| Input::new()),
             original_input: None,
             error: None,
             cursor_index: 0,
@@ -293,7 +307,7 @@ impl<'a> TextPrompt<'a> {
                 if self.original_input.is_none() {
                     self.original_input = Some(self.input.clone());
                 }
-                self.input.reset_with(suggestion);
+                self.input = Input::new_with(suggestion);
             }
         }
     }

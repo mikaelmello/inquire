@@ -36,8 +36,9 @@ It provides several different prompts in order to interactively ask the user for
 - Several kinds of prompts to suit your needs;
 - Standardized error handling (thanks to [thiserror](https://crates.io/crates/thiserror));
 - Support for fine-grained configuration for each prompt type, allowing you to customize:
-  - Rendering configuration (aka color theme + other components).
+  - Rendering configuration (aka color theme + other components);
   - Default values;
+  - Placeholders;
   - Input validators and formatters;
   - Help messages;
   - Auto-completion for [`Text`] prompts;
@@ -170,6 +171,7 @@ With `Text`, you can customize several aspects:
 - **Prompt message**: Main message when prompting the user for input, `"What is your name?"` in the example above.
 - **Help message**: Message displayed at the line below the prompt.
 - **Default value**: Default value returned when the user submits an empty response.
+- **Placeholder**: Short hint that describes the expected value of the input.
 - **Validators**: Custom validators to the user's input, displaying an error message if the input does not pass the requirements.
 - **Formatter**: Custom formatter in case you need to pre-process the user input before showing it as the final answer.
 - **Suggester**: Custom function that returns a list of input suggestions based on the current text input. See more on "Autocomplete" below.
@@ -347,7 +349,7 @@ match amount {
 
 This prompt has all of the validation, parsing and error handling features built-in to reduce as much boilerplaste as possible from your prompts. Its defaults are necessarily very simple in order to cover a large range of generic cases, for example a "Invalid input" error message.
 
-You can customize as many aspects of this prompt as you like: prompt message, help message, default value, value parser and value formatter.
+You can customize as many aspects of this prompt as you like: prompt message, help message, default value, placeholder, value parser and value formatter.
 
 **Behavior**
 
@@ -407,6 +409,7 @@ Confirm prompts provide several options of configuration:
 
 - **Prompt message**: Required when creating the prompt.
 - **Default value**: Default value returned when the user submits an empty response.
+- **Placeholder**: Short hint that describes the expected value of the input.
 - **Help message**: Message displayed at the line below the prompt.
 - **Formatter**: Custom formatter in case you need to pre-process the user input before showing it as the final answer.
   - Formats `true` to "Yes" and `false` to "No", by default.

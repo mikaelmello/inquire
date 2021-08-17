@@ -5,6 +5,7 @@ use crate::ui::{Key, KeyModifiers};
 #[derive(Clone, Debug)]
 pub struct Input {
     content: String,
+    placeholder: Option<String>,
     cursor: usize,
     length: usize,
 }
@@ -23,24 +24,26 @@ impl Input {
     pub fn new() -> Self {
         Self {
             content: String::new(),
+            placeholder: None,
             cursor: 0,
             length: 0,
         }
     }
 
-    #[cfg(test)]
-    pub fn with_content(mut self, content: &str) -> Self {
-        self.content = String::from(content);
-        self.length = content.graphemes(true).count();
-        self.cursor = std::cmp::min(self.cursor, self.length);
+    pub fn new_with(content: &str) -> Self {
+        let len = content.graphemes(true).count();
 
-        self
+        Self {
+            content: String::from(content),
+            placeholder: None,
+            length: len,
+            cursor: len,
+        }
     }
 
-    pub fn reset_with(&mut self, content: &str) {
-        self.content = String::from(content);
-        self.length = content.graphemes(true).count();
-        self.cursor = self.length;
+    pub fn with_placeholder(mut self, placeholder: &str) -> Self {
+        self.placeholder = Some(String::from(placeholder));
+        self
     }
 
     #[cfg(test)]
@@ -54,6 +57,14 @@ impl Input {
         self.cursor = cursor;
 
         self
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.length == 0
+    }
+
+    pub fn placeholder(&self) -> Option<&str> {
+        self.placeholder.as_deref()
     }
 
     pub fn handle_key(&mut self, key: Key) -> bool {
@@ -261,7 +272,7 @@ mod test {
         let content = "great 🌍, 🍞, 🚗, 1231321📞, 🎉, 🍆xsa232 s2da ake iak eaik";
 
         let assert = |expected, initial| {
-            let mut input = Input::new().with_content(content).with_cursor(initial);
+            let mut input = Input::new_with(content).with_cursor(initial);
 
             let dirty = input.handle_key(Key::Left(KeyModifiers::CONTROL));
             assert_eq!(expected != initial, dirty,
