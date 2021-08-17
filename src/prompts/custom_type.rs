@@ -13,7 +13,7 @@ use crate::{
 ///
 /// This prompt has all of the validation, parsing and error handling features built-in to reduce as much boilerplaste as possible from your prompts. Its defaults are necessarily very simple in order to cover a large range of generic cases, for example a "Invalid input" error message.
 ///
-/// You can customize as many aspects of this prompt as you like: prompt message, help message, default value, value parser and value formatter.
+/// You can customize as many aspects of this prompt as you like: prompt message, help message, default value, placeholder, value parser and value formatter.
 ///
 /// # Behavior
 ///
@@ -34,6 +34,7 @@ use crate::{
 ///     message: "How much is your travel going to cost?",
 ///     formatter: &|i| format!("${:.2}", i),
 ///     default: None,
+///     placeholder: Some("123.45"),
 ///     error_message: "Please type a valid number.".into(),
 ///     help_message: "Do not use currency and the number should use dots as the decimal separator.".into(),
 ///     parser: &|i| match i.parse::<f64>() {
@@ -70,6 +71,9 @@ pub struct CustomType<'a, T> {
     /// Default value, returned when the user input is empty.
     pub default: Option<(T, CustomTypeFormatter<'a, T>)>,
 
+    /// Short hint that describes the expected value of the input.
+    pub placeholder: Option<&'a str>,
+
     /// Help message to be presented to the user.
     pub help_message: Option<&'a str>,
 
@@ -98,6 +102,7 @@ where
         Self {
             message,
             default: None,
+            placeholder: None,
             help_message: None,
             formatter: &|val| val.to_string(),
             parser: parse_type!(T),
@@ -109,6 +114,12 @@ where
     /// Sets the default input.
     pub fn with_default(mut self, default: (T, CustomTypeFormatter<'a, T>)) -> Self {
         self.default = Some(default);
+        self
+    }
+
+    /// Sets the placeholder.
+    pub fn with_placeholder(mut self, placeholder: &'a str) -> Self {
+        self.placeholder = Some(placeholder);
         self
     }
 
@@ -181,7 +192,10 @@ where
             help_message: co.help_message,
             formatter: co.formatter,
             parser: co.parser,
-            input: Input::new(),
+            input: co
+                .placeholder
+                .map(|p| Input::new().with_placeholder(p))
+                .unwrap_or_else(|| Input::new()),
             error_message: co.error_message,
         }
     }

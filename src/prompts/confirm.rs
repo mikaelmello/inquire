@@ -21,6 +21,7 @@ use crate::{
 ///
 /// - **Prompt message**: Required when creating the prompt.
 /// - **Default value**: Default value returned when the user submits an empty response.
+/// - **Placeholder**: Short hint that describes the expected value of the input.
 /// - **Help message**: Message displayed at the line below the prompt.
 /// - **Formatter**: Custom formatter in case you need to pre-process the user input before showing it as the final answer.
 ///   - Formats `true` to "Yes" and `false` to "No", by default.
@@ -56,6 +57,9 @@ pub struct Confirm<'a> {
 
     /// Default value, returned when the user input is empty.
     pub default: Option<bool>,
+
+    /// Short hint that describes the expected value of the input.
+    pub placeholder: Option<&'a str>,
 
     /// Help message to be presented to the user.
     pub help_message: Option<&'a str>,
@@ -99,6 +103,7 @@ impl<'a> Confirm<'a> {
         Self {
             message,
             default: None,
+            placeholder: None,
             help_message: None,
             formatter: Self::DEFAULT_FORMATTER,
             parser: Self::DEFAULT_PARSER,
@@ -111,6 +116,12 @@ impl<'a> Confirm<'a> {
     /// Sets the default input.
     pub fn with_default(mut self, default: bool) -> Self {
         self.default = Some(default);
+        self
+    }
+
+    /// Sets the placeholder.
+    pub fn with_placeholder(mut self, placeholder: &'a str) -> Self {
+        self.placeholder = Some(placeholder);
         self
     }
 
@@ -180,6 +191,7 @@ impl<'a> From<Confirm<'a>> for CustomType<'a, bool> {
                 Some(val) => Some((val, co.default_value_formatter)),
                 None => None,
             },
+            placeholder: co.placeholder,
             help_message: co.help_message,
             formatter: co.formatter,
             parser: co.parser,
