@@ -51,6 +51,10 @@ impl Input {
         self
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.length == 0
+    }
+
     pub fn handle_key(&mut self, key: Key) -> bool {
         match key {
             Key::Backspace => self.backspace(),
