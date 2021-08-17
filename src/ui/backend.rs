@@ -127,13 +127,43 @@ where
     }
 
     fn print_input(&mut self, input: &Input) -> Result<()> {
+        self.terminal.write(' ')?;
+
+        if input.is_empty() {
+            if let Some(placeholder) = input.placeholder() {
+                if !placeholder.is_empty() {
+                    let mut chars = placeholder.chars();
+
+                    let first_char = chars.next();
+                    let rest: String = chars.collect();
+
+                    match first_char {
+                        Some(c) => self.terminal.write_styled(
+                            &Styled::new(c).with_style_sheet(self.render_config.placeholder_cursor),
+                        )?,
+                        None => {}
+                    }
+
+                    self.terminal.write_styled(
+                        &Styled::new(rest).with_style_sheet(self.render_config.placeholder),
+                    )?;
+
+                    return Ok(());
+                }
+            }
+
+            self.terminal.write_styled(
+                &Styled::new(' ').with_style_sheet(self.render_config.text_input.cursor),
+            )?;
+
+            return Ok(());
+        }
+
         let (before, mut at, after) = input.split();
 
         if at.is_empty() {
             at.push(' ');
         }
-
-        self.terminal.write(' ')?;
 
         self.terminal.write_styled(
             &Styled::new(before).with_style_sheet(self.render_config.text_input.text),

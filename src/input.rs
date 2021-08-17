@@ -5,7 +5,7 @@ use crate::ui::{Key, KeyModifiers};
 #[derive(Clone, Debug)]
 pub struct Input {
     content: String,
-    placeholder: String,
+    placeholder: Option<String>,
     cursor: usize,
     length: usize,
 }
@@ -24,7 +24,7 @@ impl Input {
     pub fn new() -> Self {
         Self {
             content: String::new(),
-            placeholder: String::new(),
+            placeholder: None,
             cursor: 0,
             length: 0,
         }
@@ -35,14 +35,14 @@ impl Input {
 
         Self {
             content: String::from(content),
-            placeholder: String::new(),
+            placeholder: None,
             length: len,
             cursor: len,
         }
     }
 
     pub fn with_placeholder(mut self, placeholder: &str) -> Self {
-        self.placeholder = String::from(placeholder);
+        self.placeholder = Some(String::from(placeholder));
         self
     }
 
@@ -63,8 +63,8 @@ impl Input {
         self.length == 0
     }
 
-    pub fn placeholder(&self) -> &str {
-        &self.placeholder
+    pub fn placeholder(&self) -> Option<&str> {
+        self.placeholder.as_deref()
     }
 
     pub fn handle_key(&mut self, key: Key) -> bool {
