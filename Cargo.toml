@@ -56,3 +56,7 @@ required-features = ["date"]
 [[example]]
 name = "date_complete"
 required-features = ["date"]
+
+[[example]]
+name = "manual_date_input"
+required-features = ["date"]
