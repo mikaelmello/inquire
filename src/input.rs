@@ -196,26 +196,27 @@ impl Input {
 
     fn insert(&mut self, c: char) -> bool {
         let at = self.cursor;
-        self.cursor = self.cursor.saturating_add(1);
 
         if at >= self.length {
             self.content.push(c);
-            self.length = self.length.saturating_add(1);
+            if self.update_length() {
+                self.cursor = self.cursor.saturating_add(1);
+            }
             return true;
         }
 
         let mut result = String::new();
-        let mut length = 0;
         for (index, grapheme) in self.content[..].graphemes(true).enumerate() {
-            length += 1;
             if index == at {
-                length += 1;
                 result.push(c);
             }
             result.push_str(grapheme);
         }
-        self.length = length;
+
         self.content = result;
+        if self.update_length() {
+            self.cursor = self.cursor.saturating_add(1);
+        }
 
         true
     }
@@ -260,10 +261,20 @@ impl Input {
 
         dirty
     }
+
+    fn update_length(&mut self) -> bool {
+        let new_len = self.content[..].graphemes(true).count();
+        let old_len = self.length;
+        self.length = new_len;
+
+        new_len != old_len
+    }
 }
 
 #[cfg(test)]
 mod test {
+    use unicode_segmentation::UnicodeSegmentation;
+
     use super::Input;
     use crate::ui::{Key, KeyModifiers};
 
@@ -306,6 +317,50 @@ mod test {
         }
         for i in 50..54 {
             assert(49, i);
+        }
+    }
+
+    #[test]
+    // https://github.com/mikaelmello/inquire/issues/5
+    fn regression_issue_5() {
+        let heart = '♥';
+        let vs16 = '\u{fe0f}';
+
+        let heart_without_vs16 = String::from(heart);
+        let heart_with_vs16 = "♥️";
+        // let heart_with_vs16_char = '♥️'; // this doesn't compile because there are 2 chars
+        let built_heart_with_vs16 = {
+            let mut s = String::from(heart);
+            s.push(vs16);
+            s
+        };
+
+        assert_eq!(6, heart_with_vs16.len());
+        assert_eq!(2, heart_with_vs16.chars().count());
+        assert_eq!(1, heart_with_vs16.graphemes(true).count());
+        assert_eq!(&built_heart_with_vs16, heart_with_vs16);
+
+        let mut input = Input::new();
+        assert_eq!(0, input.length);
+        assert_eq!(0, input.cursor);
+        assert_eq!("", input.content);
+
+        input.insert(heart);
+        {
+            assert_eq!(1, input.length);
+            assert_eq!(1, input.cursor);
+            assert_eq!(heart_without_vs16, input.content);
+            assert_ne!(heart_with_vs16, input.content);
+            assert!(input.content.find(vs16).is_none());
+        }
+
+        input.insert(vs16);
+        {
+            assert_eq!(1, input.length);
+            assert_eq!(1, input.cursor);
+            assert_ne!(heart_without_vs16, input.content);
+            assert_eq!(heart_with_vs16, input.content);
+            assert!(input.content.find(vs16).is_some());
         }
     }
 }
