@@ -99,9 +99,7 @@ If the input is not valid, your validator should return `Err(String)`, where the
 
 The validators are typed as a reference to `dyn Fn`. This allows both functions and closures to be used as validators, but it also means that the functions can not hold any mutable references.
 
-Finally, `inquire` has a feature called `builtin_validators` that is included by default. When the feature is on, several built-in validators are exported at the root-level of the library in the form of macros, check their documentation to see more details.
-
-The docs provide full-featured examples.
+Finally, `inquire` has a feature called `builtin_validators` that is included by default. When the feature is on, several built-in validators are exported at the root-level of the library in the form of macros. Check their documentation to see more details, they provide full-featured examples.
 
 In the [demo](#Demo) you can see the behavior of an input not passing the requirements in the _amount_ prompt, when the error message "Please type a valid number" is displayed. _Full disclosure, this error message was displayed due to a parsing, not validation, error, but the user experience is the same for both cases._
 

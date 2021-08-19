@@ -12,7 +12,6 @@
 //!
 //! This module also provides several built-in validators generated through macros,
 //! exported with the `builtin_validators` feature.
-
 use crate::option_answer::OptionAnswer;
 
 /// Type alias for validators that receive a string slice as the input,
@@ -111,6 +110,34 @@ pub type DateValidator<'a> = &'a dyn Fn(chrono::NaiveDate) -> Result<(), String>
 /// ```
 pub type MultiOptionValidator<'a> = &'a dyn Fn(&[OptionAnswer]) -> Result<(), String>;
 
+/// Custom trait to call correct method to retrieve input length.
+///
+/// The method can vary depending on the type of input.
+
+/// String inputs should count the number of graphemes, via
+/// `.graphemes(true).count()`, instead of the number of bytes
+/// via `.len()`. While simple slices should keep using `.len()`
+pub trait InquireLength {
+    /// String inputs should count the number of graphemes, via
+    /// `.graphemes(true).count()`, instead of the number of bytes
+    /// via `.len()`. While simple slices keep using `.len()`
+    fn inquire_length(&self) -> usize;
+}
+
+impl InquireLength for &str {
+    fn inquire_length(&self) -> usize {
+        use unicode_segmentation::UnicodeSegmentation;
+
+        self.graphemes(true).count()
+    }
+}
+
+impl<T> InquireLength for &[T] {
+    fn inquire_length(&self) -> usize {
+        self.len()
+    }
+}
+
 /// Built-in validator that checks whether the answer is not empty.
 ///
 /// # Arguments
@@ -121,7 +148,7 @@ pub type MultiOptionValidator<'a> = &'a dyn Fn(&[OptionAnswer]) -> Result<(), St
 /// # Examples
 ///
 /// ```
-/// use inquire::{required, validator::StringValidator};
+/// use inquire::{required, validator::{InquireLength, StringValidator}};
 ///
 /// let validator: StringValidator = required!();
 /// assert_eq!(Ok(()), validator("Generic input"));
@@ -149,9 +176,12 @@ macro_rules! required {
 /// Built-in validator that checks whether the answer length is smaller than
 /// or equal to the specified threshold.
 ///
-/// Be careful when using this as a StringValidator. The `len()` method used
-/// in this validator is not the best tool for that. See this
-/// [StackOverflow question](https://stackoverflow.com/questions/46290655/get-the-string-length-in-characters-in-rust)
+/// When using this macro, you **must** also import the [`InquireLength`]
+/// trait. The validator uses a custom-built length function that
+/// has a special implementation for strings, as we can't rely on a generic
+/// `.len()` for them. See this [StackOverflow question](https://stackoverflow.com/questions/46290655/get-the-string-length-in-characters-in-rust).
+///
+/// [`InquireLength`]: crate::validator::InquireLength
 ///
 /// # Arguments
 ///
@@ -162,7 +192,7 @@ macro_rules! required {
 /// # Examples
 ///
 /// ```
-/// use inquire::{max_length, validator::StringValidator};
+/// use inquire::{max_length, validator::{InquireLength, StringValidator}};
 ///
 /// let validator: StringValidator = max_length!(5);
 /// assert_eq!(Ok(()), validator("Good"));
@@ -181,7 +211,7 @@ macro_rules! max_length {
 
     ($length:expr, $message:expr) => {
         {
-            &|a| match a.len() {
+            &|a| match a.inquire_length() {
                 _len if _len <= $length => Ok(()),
                 _ => Err(String::from($message)),
             }
@@ -193,9 +223,12 @@ macro_rules! max_length {
 /// Built-in validator that checks whether the answer length is larger than
 /// or equal to the specified threshold.
 ///
-/// Be careful when using this as a StringValidator. The `len()` method used
-/// in this validator is not the best tool for that. See this
-/// [StackOverflow question](https://stackoverflow.com/questions/46290655/get-the-string-length-in-characters-in-rust)
+/// When using this macro, you **must** also import the [`InquireLength`]
+/// trait. The validator uses a custom-built length function that
+/// has a special implementation for strings, as we can't rely on a generic
+/// `.len()` for them. See this [StackOverflow question](https://stackoverflow.com/questions/46290655/get-the-string-length-in-characters-in-rust).
+///
+/// [`InquireLength`]: crate::validator::InquireLength
 ///
 /// # Arguments
 ///
@@ -206,7 +239,7 @@ macro_rules! max_length {
 /// # Examples
 ///
 /// ```
-/// use inquire::{min_length, validator::StringValidator};
+/// use inquire::{min_length, validator::{InquireLength, StringValidator}};
 ///
 /// let validator: StringValidator = min_length!(3);
 /// assert_eq!(Ok(()), validator("Yes"));
@@ -225,7 +258,7 @@ macro_rules! min_length {
 
     ($length:expr, $message:expr) => {
         {
-            &|a| match a.len() {
+            &|a| match a.inquire_length() {
                 _len if _len >= $length => Ok(()),
                 _ => Err(String::from($message)),
             }
@@ -236,9 +269,12 @@ macro_rules! min_length {
 /// Built-in validator that checks whether the answer length is equal to
 /// the specified value.
 ///
-/// Be careful when using this as a StringValidator. The `len()` method used
-/// in this validator is not the best tool for that. See this
-/// [StackOverflow question](https://stackoverflow.com/questions/46290655/get-the-string-length-in-characters-in-rust)
+/// When using this macro, you **must** also import the [`InquireLength`]
+/// trait. The validator uses a custom-built length function that
+/// has a special implementation for strings, as we can't rely on a generic
+/// `.len()` for them. See this [StackOverflow question](https://stackoverflow.com/questions/46290655/get-the-string-length-in-characters-in-rust).
+///
+/// [`InquireLength`]: crate::validator::InquireLength
 ///
 /// # Arguments
 ///
@@ -249,7 +285,7 @@ macro_rules! min_length {
 /// # Examples
 ///
 /// ```
-/// use inquire::{length, validator::StringValidator};
+/// use inquire::{length, validator::{InquireLength, StringValidator}};
 ///
 /// let validator: StringValidator = length!(3);
 /// assert_eq!(Ok(()), validator("Yes"));
@@ -267,9 +303,115 @@ macro_rules! length {
     };
 
     ($length:expr, $message:expr) => {{
-        &|a| match a.len() {
+        &|a| match a.inquire_length() {
             _len if _len == $length => Ok(()),
             _ => Err(String::from($message)),
         }
     }};
+}
+
+#[cfg(test)]
+mod test {
+    use crate::{
+        option_answer::OptionAnswer,
+        validator::{InquireLength, MultiOptionValidator, StringValidator},
+    };
+
+    fn build_option_vec(len: usize) -> Vec<OptionAnswer> {
+        let mut options = Vec::new();
+
+        for i in 0..len {
+            options.push(OptionAnswer::new(i, ""));
+        }
+
+        options
+    }
+
+    #[test]
+    fn string_length_counts_graphemes() {
+        let validator: StringValidator = length!(5);
+
+        assert!(matches!(validator("five!"), Ok(_)));
+        assert!(matches!(validator("♥️♥️♥️♥️♥️"), Ok(_)));
+        assert!(matches!(validator("🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️"), Ok(_)));
+
+        assert!(matches!(validator("five!!!"), Err(_)));
+        assert!(matches!(validator("🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️"), Err(_)));
+        assert!(matches!(
+            validator("🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️"),
+            Err(_)
+        ));
+    }
+
+    #[test]
+    fn slice_length() {
+        let validator: MultiOptionValidator = length!(5);
+
+        assert!(matches!(validator(&build_option_vec(5)), Ok(_)));
+        assert!(matches!(validator(&build_option_vec(4)), Err(_)));
+        assert!(matches!(validator(&build_option_vec(6)), Err(_)));
+    }
+
+    #[test]
+    fn string_max_length_counts_graphemes() {
+        let validator: StringValidator = max_length!(5);
+
+        assert!(matches!(validator(""), Ok(_)));
+        assert!(matches!(validator("five!"), Ok(_)));
+        assert!(matches!(validator("♥️♥️♥️♥️♥️"), Ok(_)));
+        assert!(matches!(validator("🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️"), Ok(_)));
+
+        assert!(matches!(validator("five!!!"), Err(_)));
+        assert!(matches!(validator("♥️♥️♥️♥️♥️♥️"), Err(_)));
+        assert!(matches!(
+            validator("🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️"),
+            Err(_)
+        ));
+    }
+
+    #[test]
+    fn slice_max_length() {
+        let validator: MultiOptionValidator = max_length!(5);
+
+        assert!(matches!(validator(&build_option_vec(0)), Ok(_)));
+        assert!(matches!(validator(&build_option_vec(1)), Ok(_)));
+        assert!(matches!(validator(&build_option_vec(2)), Ok(_)));
+        assert!(matches!(validator(&build_option_vec(3)), Ok(_)));
+        assert!(matches!(validator(&build_option_vec(4)), Ok(_)));
+        assert!(matches!(validator(&build_option_vec(5)), Ok(_)));
+        assert!(matches!(validator(&build_option_vec(6)), Err(_)));
+        assert!(matches!(validator(&build_option_vec(7)), Err(_)));
+        assert!(matches!(validator(&build_option_vec(8)), Err(_)));
+    }
+
+    #[test]
+    fn string_min_length_counts_graphemes() {
+        let validator: StringValidator = min_length!(5);
+
+        assert!(matches!(validator(""), Err(_)));
+        assert!(matches!(validator("♥️♥️♥️♥️"), Err(_)));
+        assert!(matches!(validator("mike"), Err(_)));
+
+        assert!(matches!(validator("five!"), Ok(_)));
+        assert!(matches!(validator("five!!!"), Ok(_)));
+        assert!(matches!(validator("♥️♥️♥️♥️♥️"), Ok(_)));
+        assert!(matches!(validator("♥️♥️♥️♥️♥️♥️"), Ok(_)));
+        assert!(matches!(validator("🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️"), Ok(_)));
+        assert!(matches!(validator("🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️"), Ok(_)));
+    }
+
+    #[test]
+    fn slice_min_length() {
+        let validator: MultiOptionValidator = min_length!(5);
+
+        assert!(matches!(validator(&build_option_vec(0)), Err(_)));
+        assert!(matches!(validator(&build_option_vec(1)), Err(_)));
+        assert!(matches!(validator(&build_option_vec(2)), Err(_)));
+        assert!(matches!(validator(&build_option_vec(3)), Err(_)));
+        assert!(matches!(validator(&build_option_vec(4)), Err(_)));
+        assert!(matches!(validator(&build_option_vec(5)), Ok(_)));
+        assert!(matches!(validator(&build_option_vec(6)), Ok(_)));
+        assert!(matches!(validator(&build_option_vec(7)), Ok(_)));
+        assert!(matches!(validator(&build_option_vec(8)), Ok(_)));
+    }
 }

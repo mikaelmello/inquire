@@ -32,7 +32,7 @@
 //! # Simple Example
 //!
 //! ```rust no_run
-//! use inquire::{max_length, Text};
+//! use inquire::{max_length, validator::InquireLength, Text};
 //!
 //! fn main() {
 //!     let status = Text::new("What are you thinking about?")

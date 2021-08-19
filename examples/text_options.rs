@@ -1,9 +1,9 @@
-use inquire::{required, ui::RenderConfig, Text};
+use inquire::{length, required, ui::RenderConfig, validator::InquireLength, Text};
 
 fn main() {
     let answer = Text::new("What's your name?")
         .with_suggester(&suggester)
-        .with_validators(&[required!()])
+        .with_validators(&[required!(), length!(10)])
         .prompt()
         .unwrap();
 

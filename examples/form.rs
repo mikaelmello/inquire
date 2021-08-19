@@ -1,4 +1,6 @@
-use inquire::{min_length, Confirm, DateSelect, MultiSelect, Password, Select, Text};
+use inquire::{
+    min_length, validator::InquireLength, Confirm, DateSelect, MultiSelect, Password, Select, Text,
+};
 
 fn main() {
     let fruits = vec![
