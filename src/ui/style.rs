@@ -1,5 +1,7 @@
 //! Contains definitions to apply style to rendered contents.
 
+use std::fmt::Display;
+
 use bitflags::bitflags;
 
 use super::Color;
@@ -125,12 +127,11 @@ impl Default for StyleSheet {
 
 /// Represents a content that when rendered must have the associated style
 /// applied to it.
-///
-/// The struct does not require that `T` implements [Display], however
-/// the only mapped use for this struct, printing in on [Terminal] requires
-/// `T` to implement it.
 #[derive(Clone, Debug)]
-pub struct Styled<T> {
+pub struct Styled<T>
+where
+    T: Display,
+{
     /// Content to be rendered.
     pub content: T,
 
@@ -138,7 +139,10 @@ pub struct Styled<T> {
     pub style: StyleSheet,
 }
 
-impl<T> Styled<T> {
+impl<T> Styled<T>
+where
+    T: Display,
+{
     /// Creates a new `Styled` object with the specified content
     /// and a default (empty) style sheet.
     pub fn new(content: T) -> Self {
