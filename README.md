@@ -326,6 +326,8 @@ By default, the user submission is formatted as "\*\*\*\*\*\*\*\*" (eight star c
 
 This prompt still allows the caller to customize standard properties: validators, input formatter, error and help messages.
 
+Finally, you can allow the user to toggle between displaying or not the current password input when pressing Ctrl+R. To enable it, set the `enable_display_toggle` variable to true or call `with_display_toggle_enabled()`.
+
 ## CustomType
 
 ![Animated GIF making a demonstration of a simple CustomType prompt created with this library. You can replay this recording in your terminal with asciinema play command using the file ./assets/custom_type.cast](./assets/custom_type.gif)

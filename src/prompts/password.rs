@@ -2,7 +2,7 @@ use crate::{
     error::{InquireError, InquireResult},
     formatter::StringFormatter,
     input::Input,
-    ui::{crossterm::CrosstermTerminal, Backend, Key, PasswordBackend, RenderConfig},
+    ui::{crossterm::CrosstermTerminal, Backend, Key, KeyModifiers, PasswordBackend, RenderConfig},
     validator::StringValidator,
 };
 
@@ -15,6 +15,9 @@ use crate::{
 /// By default, the user submission is formatted as "\*\*\*\*\*\*\*\*" (eight star characters).
 ///
 /// This prompt still allows the caller to customize standard properties: validators, input formatter, error and help messages.
+///
+/// Finally, you can allow the user to toggle between displaying or not the current password input when pressing Ctrl+R.
+/// To enable it, set the `enable_display_toggle` variable to true or call `with_display_toggle_enabled()`.
 ///
 /// # Example
 ///
@@ -39,6 +42,9 @@ pub struct Password<'a> {
     /// Function that formats the user input and presents it to the user as the final rendering of the prompt.
     pub formatter: StringFormatter<'a>,
 
+    /// Whether to allow the user to toggle the display of the current password input by pressing the Ctrl+R hotkey.
+    pub enable_display_toggle: bool,
+
     /// Collection of validators to apply to the user input.
     ///
     /// Validators are executed in the order they are stored, stopping at and displaying to the user
@@ -61,10 +67,14 @@ impl<'a> Password<'a> {
     /// Default help message.
     pub const DEFAULT_HELP_MESSAGE: Option<&'a str> = None;
 
+    /// Default value for the allow display toggle variable.
+    pub const DEFAULT_ENABLE_DISPLAY_TOGGLE: bool = false;
+
     /// Creates a [Password] with the provided message and default options.
     pub fn new(message: &'a str) -> Self {
         Self {
             message,
+            enable_display_toggle: Self::DEFAULT_ENABLE_DISPLAY_TOGGLE,
             help_message: Self::DEFAULT_HELP_MESSAGE,
             formatter: Self::DEFAULT_FORMATTER,
             validators: Self::DEFAULT_VALIDATORS,
@@ -75,6 +85,12 @@ impl<'a> Password<'a> {
     /// Sets the help message of the prompt.
     pub fn with_help_message(mut self, message: &'a str) -> Self {
         self.help_message = Some(message);
+        self
+    }
+
+    /// Sets the flag to enable display toggling.
+    pub fn with_display_toggle_enabled(mut self) -> Self {
+        self.enable_display_toggle = true;
         self
     }
 
@@ -136,6 +152,8 @@ struct PasswordPrompt<'a> {
     message: &'a str,
     help_message: Option<&'a str>,
     input: Input,
+    display_input: bool,
+    enable_display_toggle: bool,
     formatter: StringFormatter<'a>,
     validators: Vec<StringValidator<'a>>,
     error: Option<String>,
@@ -146,6 +164,8 @@ impl<'a> From<Password<'a>> for PasswordPrompt<'a> {
         Self {
             message: so.message,
             help_message: so.help_message,
+            display_input: false,
+            enable_display_toggle: so.enable_display_toggle,
             formatter: so.formatter,
             validators: so.validators,
             input: Input::new(),
@@ -162,7 +182,16 @@ impl<'a> From<&'a str> for Password<'a> {
 
 impl<'a> PasswordPrompt<'a> {
     fn on_change(&mut self, key: Key) {
-        self.input.handle_key(key);
+        match key {
+            Key::Char('r', m) | Key::Char('R', m)
+                if m.contains(KeyModifiers::CONTROL) && self.enable_display_toggle =>
+            {
+                self.display_input = !self.display_input;
+            }
+            _ => {
+                self.input.handle_key(key);
+            }
+        };
     }
 
     fn get_final_answer(&self) -> Result<String, String> {
@@ -185,7 +214,10 @@ impl<'a> PasswordPrompt<'a> {
             backend.render_error_message(err)?;
         }
 
-        backend.render_password_prompt(&prompt)?;
+        match self.display_input {
+            true => backend.render_full_prompt(&prompt, &self.input)?,
+            false => backend.render_empty_prompt(&prompt)?,
+        };
 
         if let Some(message) = self.help_message {
             backend.render_help_message(message)?;
