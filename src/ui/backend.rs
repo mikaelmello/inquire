@@ -46,7 +46,8 @@ pub trait CustomTypeBackend: CommonBackend {
 }
 
 pub trait PasswordBackend: CommonBackend {
-    fn render_password_prompt(&mut self, prompt: &str) -> Result<()>;
+    fn render_empty_prompt(&mut self, prompt: &str) -> Result<()>;
+    fn render_full_prompt(&mut self, prompt: &str, cur_input: &Input) -> Result<()>;
 }
 
 pub struct Backend<'a, T>
@@ -532,10 +533,14 @@ impl<'a, T> PasswordBackend for Backend<'a, T>
 where
     T: Terminal,
 {
-    fn render_password_prompt(&mut self, prompt: &str) -> Result<()> {
+    fn render_empty_prompt(&mut self, prompt: &str) -> Result<()> {
         self.print_prompt(prompt)?;
         self.new_line()?;
         Ok(())
+    }
+
+    fn render_full_prompt(&mut self, prompt: &str, cur_input: &Input) -> Result<()> {
+        self.print_prompt_with_input(prompt, None, cur_input)
     }
 }
 
