@@ -12,7 +12,7 @@ use crate::{
 
 /// Prompt suitable for when you need the user to select one option among many.
 ///
-/// The user can select and submit the current highlighted option by pressing space or enter.
+/// The user can select and submit the current highlighted option by pressing enter.
 ///
 /// This prompt requires a prompt message and a **non-empty** list of options to be displayed to the user. If the list is empty, the prompt operation will fail with an [`InquireError::InvalidConfiguration`] error.
 ///
@@ -99,7 +99,7 @@ impl<'a> Select<'a> {
 
     /// Default help message.
     pub const DEFAULT_HELP_MESSAGE: Option<&'a str> =
-        Some("↑↓ to move, space or enter to select, type to filter");
+        Some("↑↓ to move, enter to select, type to filter");
 
     /// Creates a [Select] with the provided message and options, along with default configuration values.
     pub fn new(message: &'a str, options: &'a [&str]) -> Self {
@@ -315,7 +315,7 @@ impl<'a> SelectPrompt<'a> {
 
             match key {
                 Key::Cancel => return Err(InquireError::OperationCanceled),
-                Key::Submit | Key::Char(' ', KeyModifiers::NONE) => match self.get_final_answer() {
+                Key::Submit => match self.get_final_answer() {
                     Some(answer) => {
                         final_answer = answer;
                         break;
