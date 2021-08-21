@@ -27,7 +27,7 @@ pub trait TextBackend: CommonBackend {
 
 pub trait SelectBackend: CommonBackend {
     fn render_select_prompt(&mut self, prompt: &str, cur_input: &Input) -> Result<()>;
-    fn render_option<T: Display>(&mut self, content: T, focused: bool) -> Result<()>;
+    fn render_options(&mut self, page: Page<OptionAnswer>) -> Result<()>;
 }
 
 pub trait MultiSelectBackend: CommonBackend {
@@ -331,20 +331,16 @@ where
         self.print_prompt_with_input(prompt, None, cur_input)
     }
 
-    fn render_option<D: Display>(&mut self, content: D, focused: bool) -> Result<()> {
-        match focused {
-            true => self
-                .terminal
-                .write_styled(&self.render_config.highlighted_option_prefix)?,
-            false => self.terminal.write(' ')?,
+    fn render_options(&mut self, page: Page<OptionAnswer>) -> Result<()> {
+        for (idx, option) in page.content.iter().enumerate() {
+            self.print_option_prefix(idx, &page)?;
+
+            self.terminal.write(' ')?;
+
+            self.print_option_value(option)?;
+
+            self.new_line()?;
         }
-
-        self.terminal.write(' ')?;
-
-        self.terminal
-            .write_styled(&Styled::new(content).with_style_sheet(self.render_config.option))?;
-
-        self.new_line()?;
 
         Ok(())
     }
