@@ -49,13 +49,13 @@ It provides several different prompts in order to interactively ask the user for
 Put this line in your `Cargo.toml`, under `[dependencies]`.
 
 ```
-inquire = "0.0.6"
+inquire = "0.0.7"
 ```
 
 \* If you'd like to use the date-related features, enable the `date` feature:
 
 ```
-inquire = { version = "0.0.6", features = ["date"] }
+inquire = { version = "0.0.7", features = ["date"] }
 ```
 
 [`Text`]: https://docs.rs/inquire/*/inquire/prompts/text/struct.Text.html

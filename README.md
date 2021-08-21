@@ -59,13 +59,13 @@ $ cargo run --example expense_tracker --features date
 Put this line in your `Cargo.toml`, under `[dependencies]`.
 
 ```
-inquire = "0.0.6"
+inquire = "0.0.7"
 ```
 
 \* If you'd like to use the date-related features, enable the `date` feature:
 
 ```
-inquire = { version = "0.0.6", features = ["date"] }
+inquire = { version = "0.0.7", features = ["date"] }
 ```
 
 # Cross-cutting concerns
