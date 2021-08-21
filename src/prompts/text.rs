@@ -352,13 +352,15 @@ impl<'a> TextPrompt<'a> {
             .map(|(i, val)| OptionAnswer::new(i, val))
             .collect::<Vec<OptionAnswer>>();
 
-        let display_cursor = self.cursor_index > 0;
         let list_index = self.cursor_index.saturating_sub(1);
-        let page = paginate(self.page_size, &choices, list_index);
+        let mut page = paginate(self.page_size, &choices, list_index);
 
-        for (idx, opt) in page.content.iter().enumerate() {
-            backend.render_suggestion(&opt.value, display_cursor && page.selection == idx)?;
+        let cursor_on_input = self.cursor_index == 0;
+        if cursor_on_input {
+            page.selection = usize::MAX;
         }
+
+        backend.render_suggestions(page)?;
 
         if let Some(message) = self.help_message {
             backend.render_help_message(message)?;

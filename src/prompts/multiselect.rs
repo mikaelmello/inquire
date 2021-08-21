@@ -409,13 +409,7 @@ impl<'a> MultiSelectPrompt<'a> {
 
         let page = paginate(self.page_size, &choices, self.cursor_index);
 
-        for (idx, opt) in page.content.iter().enumerate() {
-            backend.render_option(
-                &opt.value,
-                page.selection == idx,
-                self.checked.contains(&opt.index),
-            )?;
-        }
+        backend.render_options(page, &self.checked)?;
 
         if let Some(help_message) = self.help_message {
             backend.render_help_message(help_message)?;

@@ -1,7 +1,7 @@
-use std::{fmt::Display, io::Result};
+use std::{collections::HashSet, io::Result};
 
 use super::{key::Key, RenderConfig, Terminal};
-use crate::{input::Input, ui::Styled};
+use crate::{input::Input, option_answer::OptionAnswer, ui::Styled, utils::Page};
 
 pub trait CommonBackend {
     fn read_key(&mut self) -> Result<Key>;
@@ -22,18 +22,17 @@ pub trait TextBackend: CommonBackend {
         default: Option<&str>,
         cur_input: &Input,
     ) -> Result<()>;
-    fn render_suggestion<T: Display>(&mut self, content: T, focused: bool) -> Result<()>;
+    fn render_suggestions(&mut self, page: Page<OptionAnswer>) -> Result<()>;
 }
 
 pub trait SelectBackend: CommonBackend {
     fn render_select_prompt(&mut self, prompt: &str, cur_input: &Input) -> Result<()>;
-    fn render_option<T: Display>(&mut self, content: T, focused: bool) -> Result<()>;
+    fn render_options(&mut self, page: Page<OptionAnswer>) -> Result<()>;
 }
 
 pub trait MultiSelectBackend: CommonBackend {
     fn render_multiselect_prompt(&mut self, prompt: &str, cur_input: &Input) -> Result<()>;
-    fn render_option<T: Display>(&mut self, content: T, focused: bool, checked: bool)
-        -> Result<()>;
+    fn render_options(&mut self, page: Page<OptionAnswer>, checked: &HashSet<usize>) -> Result<()>;
 }
 
 pub trait CustomTypeBackend: CommonBackend {
@@ -96,6 +95,27 @@ where
         let token = Styled::new(prompt).with_style_sheet(self.render_config.prompt);
 
         self.terminal.write_styled(&token)
+    }
+
+    fn print_option_prefix(&mut self, idx: usize, page: &Page<OptionAnswer>) -> Result<()> {
+        let empty_prefix = Styled::new(" ");
+
+        let x = if idx == page.selection {
+            &self.render_config.highlighted_option_prefix
+        } else if idx == 0 && !page.first {
+            &self.render_config.scroll_up_prefix
+        } else if (idx + 1) == page.content.len() && !page.last {
+            &self.render_config.scroll_down_prefix
+        } else {
+            &empty_prefix
+        };
+
+        self.terminal.write_styled(&x)
+    }
+
+    fn print_option_value(&mut self, option: &OptionAnswer) -> Result<()> {
+        self.terminal
+            .write_styled(&Styled::new(&option.value).with_style_sheet(self.render_config.option))
     }
 
     fn print_default_value(&mut self, value: &str) -> Result<()> {
@@ -284,20 +304,16 @@ where
         self.print_prompt_with_input(prompt, default, cur_input)
     }
 
-    fn render_suggestion<D: Display>(&mut self, content: D, focused: bool) -> Result<()> {
-        match focused {
-            true => self
-                .terminal
-                .write_styled(&self.render_config.option_prefix)?,
-            false => self.terminal.write(' ')?,
+    fn render_suggestions(&mut self, page: Page<OptionAnswer>) -> Result<()> {
+        for (idx, option) in page.content.iter().enumerate() {
+            self.print_option_prefix(idx, &page)?;
+
+            self.terminal.write(' ')?;
+
+            self.print_option_value(option)?;
+
+            self.new_line()?;
         }
-
-        self.terminal.write(' ')?;
-
-        self.terminal
-            .write_styled(&Styled::new(content).with_style_sheet(self.render_config.option))?;
-
-        self.new_line()?;
 
         Ok(())
     }
@@ -311,20 +327,16 @@ where
         self.print_prompt_with_input(prompt, None, cur_input)
     }
 
-    fn render_option<D: Display>(&mut self, content: D, focused: bool) -> Result<()> {
-        match focused {
-            true => self
-                .terminal
-                .write_styled(&self.render_config.option_prefix)?,
-            false => self.terminal.write(' ')?,
+    fn render_options(&mut self, page: Page<OptionAnswer>) -> Result<()> {
+        for (idx, option) in page.content.iter().enumerate() {
+            self.print_option_prefix(idx, &page)?;
+
+            self.terminal.write(' ')?;
+
+            self.print_option_value(option)?;
+
+            self.new_line()?;
         }
-
-        self.terminal.write(' ')?;
-
-        self.terminal
-            .write_styled(&Styled::new(content).with_style_sheet(self.render_config.option))?;
-
-        self.new_line()?;
 
         Ok(())
     }
@@ -338,36 +350,27 @@ where
         self.print_prompt_with_input(prompt, None, cur_input)
     }
 
-    fn render_option<D: Display>(
-        &mut self,
-        content: D,
-        focused: bool,
-        checked: bool,
-    ) -> Result<()> {
-        match focused {
-            true => self
-                .terminal
-                .write_styled(&self.render_config.option_prefix)?,
-            false => self.terminal.write(' ')?,
+    fn render_options(&mut self, page: Page<OptionAnswer>, checked: &HashSet<usize>) -> Result<()> {
+        for (idx, option) in page.content.iter().enumerate() {
+            self.print_option_prefix(idx, &page)?;
+
+            self.terminal.write(' ')?;
+
+            match checked.contains(&option.index) {
+                true => self
+                    .terminal
+                    .write_styled(&self.render_config.selected_checkbox)?,
+                false => self
+                    .terminal
+                    .write_styled(&self.render_config.unselected_checkbox)?,
+            }
+
+            self.terminal.write(' ')?;
+
+            self.print_option_value(option)?;
+
+            self.new_line()?;
         }
-
-        self.terminal.write(' ')?;
-
-        match checked {
-            true => self
-                .terminal
-                .write_styled(&self.render_config.selected_checkbox)?,
-            false => self
-                .terminal
-                .write_styled(&self.render_config.unselected_checkbox)?,
-        }
-
-        self.terminal.write(' ')?;
-
-        self.terminal
-            .write_styled(&Styled::new(content).with_style_sheet(self.render_config.option))?;
-
-        self.new_line()?;
 
         Ok(())
     }
