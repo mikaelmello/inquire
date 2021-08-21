@@ -235,27 +235,42 @@ impl<'a> SelectPrompt<'a> {
             .collect()
     }
 
-    fn move_cursor_up(&mut self) {
-        self.cursor_index = self
-            .cursor_index
-            .checked_sub(1)
-            .or(self.filtered_options.len().checked_sub(1))
-            .unwrap_or_else(|| 0);
+    fn move_cursor_up(&mut self, qty: usize, wrap: bool) {
+        if wrap {
+            let after_wrap = qty.saturating_sub(self.cursor_index);
+            self.cursor_index = self
+                .cursor_index
+                .checked_sub(qty)
+                .unwrap_or(self.filtered_options.len().saturating_sub(after_wrap))
+        } else {
+            self.cursor_index = self.cursor_index.saturating_sub(qty);
+        }
     }
 
-    fn move_cursor_down(&mut self) {
-        self.cursor_index = self.cursor_index.saturating_add(1);
+    fn move_cursor_down(&mut self, qty: usize, wrap: bool) {
+        self.cursor_index = self.cursor_index.saturating_add(qty);
+
         if self.cursor_index >= self.filtered_options.len() {
-            self.cursor_index = 0;
+            self.cursor_index = if wrap {
+                self.cursor_index % self.filtered_options.len()
+            } else {
+                self.filtered_options.len().saturating_sub(1)
+            }
         }
     }
 
     fn on_change(&mut self, key: Key) {
         match key {
-            Key::Up(KeyModifiers::NONE) => self.move_cursor_up(),
-            Key::Char('k', KeyModifiers::NONE) if self.vim_mode => self.move_cursor_up(),
-            Key::Down(KeyModifiers::NONE) => self.move_cursor_down(),
-            Key::Char('j', KeyModifiers::NONE) if self.vim_mode => self.move_cursor_down(),
+            Key::Up(KeyModifiers::NONE) => self.move_cursor_up(1, true),
+            Key::Char('k', KeyModifiers::NONE) if self.vim_mode => self.move_cursor_up(1, true),
+            Key::PageUp => self.move_cursor_up(self.page_size, false),
+            Key::Home => self.move_cursor_up(usize::MAX, false),
+
+            Key::Down(KeyModifiers::NONE) => self.move_cursor_down(1, true),
+            Key::Char('j', KeyModifiers::NONE) if self.vim_mode => self.move_cursor_down(1, true),
+            Key::PageDown => self.move_cursor_down(self.page_size, false),
+            Key::End => self.move_cursor_down(usize::MAX, false),
+
             key => {
                 let dirty = self.input.handle_key(key);
 
