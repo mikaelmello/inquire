@@ -139,7 +139,7 @@ fn get_existing_payees() -> &'static [&'static str] {
 fn get_render_config() -> RenderConfig {
     let mut render_config = RenderConfig::default();
     render_config.prompt_prefix = Styled::new("$").with_fg(Color::Red);
-    render_config.option_prefix = Styled::new("➠").with_fg(Color::Yellow);
+    render_config.highlighted_option_prefix = Styled::new("➠").with_fg(Color::Yellow);
     render_config.selected_checkbox = Styled::new("☑").with_fg(Color::Green);
     render_config.unselected_checkbox = Styled::new("☐");
 

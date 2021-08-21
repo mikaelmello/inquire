@@ -80,11 +80,25 @@ pub struct RenderConfig {
     /// Render configuration for error messages.
     pub error_message: ErrorMessageRenderConfig,
 
-    /// Prefix for options.
+    /// Prefix for the current highlighted option.
     ///
     /// Note: a space character will be added to separate the prefix
     /// and the option value or the checkbox.
-    pub option_prefix: Styled<&'static str>,
+    pub highlighted_option_prefix: Styled<&'static str>,
+
+    /// Prefix for the option listed at the top of the page, when it is possible
+    /// to scroll up.
+    ///
+    /// Note: a space character will be added to separate the prefix
+    /// and the option value or the checkbox.
+    pub scroll_up_prefix: Styled<&'static str>,
+
+    /// Prefix for the option listed at the bottom of the page, when it is possible
+    /// to scroll down.
+    ///
+    /// Note: a space character will be added to separate the prefix
+    /// and the option value or the checkbox.
+    pub scroll_down_prefix: Styled<&'static str>,
 
     /// Selected checkbox in multi-select options.
     ///
@@ -126,7 +140,9 @@ impl RenderConfig {
             error_message: ErrorMessageRenderConfig::empty(),
             answer: StyleSheet::empty(),
             password_mask: '*',
-            option_prefix: Styled::new(">"),
+            highlighted_option_prefix: Styled::new(">"),
+            scroll_up_prefix: Styled::new("^"),
+            scroll_down_prefix: Styled::new("v"),
             selected_checkbox: Styled::new("[x]"),
             unselected_checkbox: Styled::new("[ ]"),
             option: StyleSheet::empty(),
@@ -190,9 +206,24 @@ impl RenderConfig {
         self
     }
 
-    /// Sets the styled component for option prefixes.
-    pub fn with_option_prefix(mut self, option_prefix: Styled<&'static str>) -> Self {
-        self.option_prefix = option_prefix;
+    /// Sets the styled component for prefixes in highlighted options.
+    pub fn with_highlighted_option_prefix(
+        mut self,
+        highlighted_option_prefix: Styled<&'static str>,
+    ) -> Self {
+        self.highlighted_option_prefix = highlighted_option_prefix;
+        self
+    }
+
+    /// Sets the styled component for prefixes in scroll-up indicators.
+    pub fn with_scroll_up_prefix(mut self, scroll_up_prefix: Styled<&'static str>) -> Self {
+        self.scroll_up_prefix = scroll_up_prefix;
+        self
+    }
+
+    /// Sets the styled component for prefixes in scroll-down indicators.
+    pub fn with_scroll_down_prefix(mut self, scroll_down_prefix: Styled<&'static str>) -> Self {
+        self.scroll_down_prefix = scroll_down_prefix;
         self
     }
 
@@ -237,7 +268,9 @@ impl Default for RenderConfig {
             error_message: ErrorMessageRenderConfig::default(),
             password_mask: '*',
             answer: StyleSheet::empty().with_fg(Color::Cyan),
-            option_prefix: Styled::new(">").with_fg(Color::Cyan),
+            highlighted_option_prefix: Styled::new(">").with_fg(Color::Cyan),
+            scroll_up_prefix: Styled::new("^"),
+            scroll_down_prefix: Styled::new("v"),
             selected_checkbox: Styled::new("[x]").with_fg(Color::Green),
             unselected_checkbox: Styled::new("[ ]"),
             option: StyleSheet::empty(),
