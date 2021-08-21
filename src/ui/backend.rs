@@ -1,4 +1,4 @@
-use std::{collections::HashSet, fmt::Display, io::Result};
+use std::{collections::HashSet, io::Result};
 
 use super::{key::Key, RenderConfig, Terminal};
 use crate::{input::Input, option_answer::OptionAnswer, ui::Styled, utils::Page};
@@ -22,7 +22,7 @@ pub trait TextBackend: CommonBackend {
         default: Option<&str>,
         cur_input: &Input,
     ) -> Result<()>;
-    fn render_suggestion<T: Display>(&mut self, content: T, focused: bool) -> Result<()>;
+    fn render_suggestions(&mut self, page: Page<OptionAnswer>) -> Result<()>;
 }
 
 pub trait SelectBackend: CommonBackend {
@@ -304,20 +304,16 @@ where
         self.print_prompt_with_input(prompt, default, cur_input)
     }
 
-    fn render_suggestion<D: Display>(&mut self, content: D, focused: bool) -> Result<()> {
-        match focused {
-            true => self
-                .terminal
-                .write_styled(&self.render_config.highlighted_option_prefix)?,
-            false => self.terminal.write(' ')?,
+    fn render_suggestions(&mut self, page: Page<OptionAnswer>) -> Result<()> {
+        for (idx, option) in page.content.iter().enumerate() {
+            self.print_option_prefix(idx, &page)?;
+
+            self.terminal.write(' ')?;
+
+            self.print_option_value(option)?;
+
+            self.new_line()?;
         }
-
-        self.terminal.write(' ')?;
-
-        self.terminal
-            .write_styled(&Styled::new(content).with_style_sheet(self.render_config.option))?;
-
-        self.new_line()?;
 
         Ok(())
     }
