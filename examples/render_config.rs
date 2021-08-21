@@ -141,6 +141,8 @@ fn get_render_config() -> RenderConfig {
     render_config.prompt_prefix = Styled::new("$").with_fg(Color::Red);
     render_config.highlighted_option_prefix = Styled::new("➠").with_fg(Color::Yellow);
     render_config.selected_checkbox = Styled::new("☑").with_fg(Color::Green);
+    render_config.scroll_up_prefix = Styled::new("⇞");
+    render_config.scroll_down_prefix = Styled::new("⇟");
     render_config.unselected_checkbox = Styled::new("☐");
 
     render_config.error_message = render_config
