@@ -318,15 +318,23 @@ match name {
 
 `Password` prompts are meant for secretive text inputs.
 
-It is a simple text prompt where the user's input is captured and not echoed back to the terminal.
+By default, the password prompt behaves like a standard one you'd see in common CLI applications: the user has no UI indicators about the state of the current input. They do not know how many characters they typed, or which character they typed, with no option to display the current text input.
 
-This prompt is meant to be as simple and raw as possible, not supporting features such as default values or auto-completion.
+However, you can still customize these and other behaviors if you wish:
+- **Standard display mode**: Set the display mode of the text input among hidden, masked and full via the `PasswordDisplayMode` enum.
+  - Hidden: default behavior, no UI indicators.
+  - Masked: behaves like a normal text input, except that all characters of the input are masked to a special character, which is `'*'` by default but can be customized via `RenderConfig`.
+  - Full: behaves like a normal text input, no modifications.
+- **Toggle display mode**: By enabling this feature by calling the `with_display_toggle_enabled()`, you allow the user to toggle between the standard display mode set and the full display mode. 
+  - If you have set the standard display mode to hidden (which is also the default) or masked, the user can press `Ctrl+R` to change the display mode to `Full`, and `Ctrl+R` again to change it back to the standard one.
+  - Obviously, if you have set the standard display mode to `Full`, pressing `Ctrl+R` won't cause any changes.
+- **Help message**: Message displayed at the line below the prompt.
+- **Formatter**: Custom formatter in case you need to pre-process the user input before showing it as the final answer.
+  - By default, it prints eight asterisk characters: `********`.
+- **Validators**: Custom validators to make sure a given submitted input pass the specified requirements, e.g. not allowing empty inputs or requiring special characters.
+  - No validators are on by default.
 
-By default, the user submission is formatted as "\*\*\*\*\*\*\*\*" (eight star characters).
-
-This prompt still allows the caller to customize standard properties: validators, input formatter, error and help messages.
-
-Finally, you can allow the user to toggle between displaying or not the current password input when pressing Ctrl+R. To enable it, set the `enable_display_toggle` variable to true or call `with_display_toggle_enabled()`.
+Remember that for CLI applications it is standard to not allow use any display modes other than `Hidden` and to not allow the user to see the text input in any way. _Use the customization options at your discretion_.
 
 ## CustomType
 

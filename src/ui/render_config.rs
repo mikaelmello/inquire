@@ -58,6 +58,13 @@ pub struct RenderConfig {
     /// Note: help messages are displayed wrapped in brackets, e.g. [Be careful!].
     pub help_message: StyleSheet,
 
+    /// Character used to mask password text inputs when in mode
+    /// [`Masked`](crate::prompts::PasswordDisplayMode).
+    ///
+    /// Note: Styles for masked text inputs are set in the
+    /// [`text_input`](crate::ui::RenderConfig::text_input) configuration.
+    pub password_mask: char,
+
     /// Render configuration of text inputs.
     ///
     /// Note: a non-styled space character is added before the text input as
@@ -118,6 +125,7 @@ impl RenderConfig {
             text_input: InputRenderConfig::empty(),
             error_message: ErrorMessageRenderConfig::empty(),
             answer: StyleSheet::empty(),
+            password_mask: '*',
             option_prefix: Styled::new(">"),
             selected_checkbox: Styled::new("[x]"),
             unselected_checkbox: Styled::new("[ ]"),
@@ -227,6 +235,7 @@ impl Default for RenderConfig {
             help_message: StyleSheet::empty().with_fg(Color::Cyan),
             text_input: InputRenderConfig::default(),
             error_message: ErrorMessageRenderConfig::default(),
+            password_mask: '*',
             answer: StyleSheet::empty().with_fg(Color::Cyan),
             option_prefix: Styled::new(">").with_fg(Color::Cyan),
             selected_checkbox: Styled::new("[x]").with_fg(Color::Green),
