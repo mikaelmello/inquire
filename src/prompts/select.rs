@@ -12,7 +12,7 @@ use crate::{
 
 /// Prompt suitable for when you need the user to select one option among many.
 ///
-/// The user can select and submit the current highlighted option by pressing space or enter.
+/// The user can select and submit the current highlighted option by pressing enter.
 ///
 /// This prompt requires a prompt message and a **non-empty** list of options to be displayed to the user. If the list is empty, the prompt operation will fail with an [`InquireError::InvalidConfiguration`] error.
 ///
@@ -99,7 +99,7 @@ impl<'a> Select<'a> {
 
     /// Default help message.
     pub const DEFAULT_HELP_MESSAGE: Option<&'a str> =
-        Some("↑↓ to move, space or enter to select, type to filter");
+        Some("↑↓ to move, enter to select, type to filter");
 
     /// Creates a [Select] with the provided message and options, along with default configuration values.
     pub fn new(message: &'a str, options: &'a [&str]) -> Self {
@@ -235,27 +235,42 @@ impl<'a> SelectPrompt<'a> {
             .collect()
     }
 
-    fn move_cursor_up(&mut self) {
-        self.cursor_index = self
-            .cursor_index
-            .checked_sub(1)
-            .or(self.filtered_options.len().checked_sub(1))
-            .unwrap_or_else(|| 0);
+    fn move_cursor_up(&mut self, qty: usize, wrap: bool) {
+        if wrap {
+            let after_wrap = qty.saturating_sub(self.cursor_index);
+            self.cursor_index = self
+                .cursor_index
+                .checked_sub(qty)
+                .unwrap_or(self.filtered_options.len().saturating_sub(after_wrap))
+        } else {
+            self.cursor_index = self.cursor_index.saturating_sub(qty);
+        }
     }
 
-    fn move_cursor_down(&mut self) {
-        self.cursor_index = self.cursor_index.saturating_add(1);
+    fn move_cursor_down(&mut self, qty: usize, wrap: bool) {
+        self.cursor_index = self.cursor_index.saturating_add(qty);
+
         if self.cursor_index >= self.filtered_options.len() {
-            self.cursor_index = 0;
+            self.cursor_index = if wrap {
+                self.cursor_index % self.filtered_options.len()
+            } else {
+                self.filtered_options.len().saturating_sub(1)
+            }
         }
     }
 
     fn on_change(&mut self, key: Key) {
         match key {
-            Key::Up(KeyModifiers::NONE) => self.move_cursor_up(),
-            Key::Char('k', KeyModifiers::NONE) if self.vim_mode => self.move_cursor_up(),
-            Key::Down(KeyModifiers::NONE) => self.move_cursor_down(),
-            Key::Char('j', KeyModifiers::NONE) if self.vim_mode => self.move_cursor_down(),
+            Key::Up(KeyModifiers::NONE) => self.move_cursor_up(1, true),
+            Key::Char('k', KeyModifiers::NONE) if self.vim_mode => self.move_cursor_up(1, true),
+            Key::PageUp => self.move_cursor_up(self.page_size, false),
+            Key::Home => self.move_cursor_up(usize::MAX, false),
+
+            Key::Down(KeyModifiers::NONE) => self.move_cursor_down(1, true),
+            Key::Char('j', KeyModifiers::NONE) if self.vim_mode => self.move_cursor_down(1, true),
+            Key::PageDown => self.move_cursor_down(self.page_size, false),
+            Key::End => self.move_cursor_down(usize::MAX, false),
+
             key => {
                 let dirty = self.input.handle_key(key);
 
@@ -315,7 +330,7 @@ impl<'a> SelectPrompt<'a> {
 
             match key {
                 Key::Cancel => return Err(InquireError::OperationCanceled),
-                Key::Submit | Key::Char(' ', KeyModifiers::NONE) => match self.get_final_answer() {
+                Key::Submit => match self.get_final_answer() {
                     Some(answer) => {
                         final_answer = answer;
                         break;
