@@ -264,21 +264,25 @@ impl<'a> TextPrompt<'a> {
         }
     }
 
-    fn move_cursor_up(&mut self) {
-        self.cursor_index = self.cursor_index.saturating_sub(1);
+    fn move_cursor_up(&mut self, qty: usize) {
+        self.cursor_index = self.cursor_index.saturating_sub(qty);
     }
 
-    fn move_cursor_down(&mut self) {
+    fn move_cursor_down(&mut self, qty: usize) {
         self.cursor_index = min(
-            self.cursor_index.saturating_add(1),
+            self.cursor_index.saturating_add(qty),
             self.suggested_options.len(),
         );
     }
 
     fn on_change(&mut self, key: Key) {
         match key {
-            Key::Up(KeyModifiers::NONE) => self.move_cursor_up(),
-            Key::Down(KeyModifiers::NONE) => self.move_cursor_down(),
+            Key::Up(KeyModifiers::NONE) => self.move_cursor_up(1),
+            Key::PageUp => self.move_cursor_up(self.page_size),
+
+            Key::Down(KeyModifiers::NONE) => self.move_cursor_down(1),
+            Key::PageDown => self.move_cursor_down(self.page_size),
+
             key => {
                 let dirty = self.input.handle_key(key);
 
