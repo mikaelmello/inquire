@@ -1,8 +1,9 @@
-use inquire::{min_length, validator::InquireLength, Password};
+use inquire::{min_length, validator::InquireLength, Password, PasswordDisplayMode};
 
 fn main() {
     let name = Password::new("RSA Encryption Key:")
         .with_display_toggle_enabled()
+        .with_display_mode(PasswordDisplayMode::Masked)
         .with_validator(min_length!(10))
         .with_formatter(&|_| String::from("Input received"))
         .with_help_message("It is recommended to generate a new one only for this purpose")

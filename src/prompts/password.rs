@@ -6,30 +6,59 @@ use crate::{
     validator::StringValidator,
 };
 
+/// Display modes of the text input of a password prompt.
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum PasswordDisplayMode {
+    /// Password text input is not rendered at all, no indication of input.
+    Hidden,
+
+    /// Characters of the password text input are rendered marked as different
+    /// characters, such as asterisks. These characters are configured in the
+    /// render config.
+    Masked,
+
+    /// Password text input is fully rendered as a normal input, just like
+    /// [Text](crate::Text) prompts.
+    Full,
+}
+
 /// Prompt meant for secretive text inputs.
 ///
-/// It is a simple text prompt where the user's input is captured and not echoed back to the terminal.
+/// By default, the password prompt behaves like a standard one you'd see in common CLI applications: the user has no UI indicators about the state of the current input. They do not know how many characters they typed, or which character they typed, with no option to display the current text input.
 ///
-/// This prompt is meant to be as simple and raw as possible, not supporting features such as default values or auto-completion.
+/// However, you can still customize these and other behaviors if you wish:
+/// - **Standard display mode**: Set the display mode of the text input among hidden, masked and full via the `PasswordDisplayMode` enum.
+///   - Hidden: default behavior, no UI indicators.
+///   - Masked: behaves like a normal text input, except that all characters of the input are masked to a special character, which is `'*'` by default but can be customized via `RenderConfig`.
+///   - Full: behaves like a normal text input, no modifications.
+/// - **Toggle display mode**: By enabling this feature by calling the `with_display_toggle_enabled()`, you allow the user to toggle between the standard display mode set and the full display mode.
+///   - If you have set the standard display mode to hidden (which is also the default) or masked, the user can press `Ctrl+R` to change the display mode to `Full`, and `Ctrl+R` again to change it back to the standard one.
+///   - Obviously, if you have set the standard display mode to `Full`, pressing `Ctrl+R` won't cause any changes.
+/// - **Help message**: Message displayed at the line below the prompt.
+/// - **Formatter**: Custom formatter in case you need to pre-process the user input before showing it as the final answer.
+///   - By default, it prints eight asterisk characters: `********`.
+/// - **Validators**: Custom validators to make sure a given submitted input pass the specified requirements, e.g. not allowing empty inputs or requiring special characters.
+///   - No validators are on by default.
 ///
-/// By default, the user submission is formatted as "\*\*\*\*\*\*\*\*" (eight star characters).
-///
-/// This prompt still allows the caller to customize standard properties: validators, input formatter, error and help messages.
-///
-/// Finally, you can allow the user to toggle between displaying or not the current password input when pressing Ctrl+R.
-/// To enable it, set the `enable_display_toggle` variable to true or call `with_display_toggle_enabled()`.
+/// Remember that for CLI applications it is standard to not allow use any display modes other than `Hidden` and to not allow the user to see the text input in any way. _Use the customization options at your discretion_.
 ///
 /// # Example
 ///
 /// ```no_run
-/// use inquire::Password;
+///  use inquire::{min_length, validator::InquireLength, Password, PasswordDisplayMode};
 ///
-/// let name = Password::new("Encryption key:").prompt();
+///  let name = Password::new("RSA Encryption Key:")
+///      .with_display_toggle_enabled()
+///      .with_display_mode(PasswordDisplayMode::Hidden)
+///      .with_validator(min_length!(10))
+///      .with_formatter(&|_| String::from("Input received"))
+///      .with_help_message("It is recommended to generate a new one only for this purpose")
+///      .prompt();
 ///
-/// match name {
-///     Ok(_) => println!("This doesn't look like a key."),
-///     Err(_) => println!("An error happened when asking for your key, try again later."),
-/// }
+///  match name {
+///      Ok(_) => println!("This doesn't look like a key."),
+///      Err(_) => println!("An error happened when asking for your key, try again later."),
+///  }
 /// ```
 #[derive(Clone)]
 pub struct Password<'a> {
@@ -41,6 +70,9 @@ pub struct Password<'a> {
 
     /// Function that formats the user input and presents it to the user as the final rendering of the prompt.
     pub formatter: StringFormatter<'a>,
+
+    /// How the password input is displayed to the user.
+    pub display_mode: PasswordDisplayMode,
 
     /// Whether to allow the user to toggle the display of the current password input by pressing the Ctrl+R hotkey.
     pub enable_display_toggle: bool,
@@ -70,11 +102,15 @@ impl<'a> Password<'a> {
     /// Default value for the allow display toggle variable.
     pub const DEFAULT_ENABLE_DISPLAY_TOGGLE: bool = false;
 
+    /// Default password display mode.
+    pub const DEFAULT_DISPLAY_MODE: PasswordDisplayMode = PasswordDisplayMode::Hidden;
+
     /// Creates a [Password] with the provided message and default options.
     pub fn new(message: &'a str) -> Self {
         Self {
             message,
             enable_display_toggle: Self::DEFAULT_ENABLE_DISPLAY_TOGGLE,
+            display_mode: Self::DEFAULT_DISPLAY_MODE,
             help_message: Self::DEFAULT_HELP_MESSAGE,
             formatter: Self::DEFAULT_FORMATTER,
             validators: Self::DEFAULT_VALIDATORS,
@@ -91,6 +127,12 @@ impl<'a> Password<'a> {
     /// Sets the flag to enable display toggling.
     pub fn with_display_toggle_enabled(mut self) -> Self {
         self.enable_display_toggle = true;
+        self
+    }
+
+    /// Sets the standard display mode for the prompt.
+    pub fn with_display_mode(mut self, mode: PasswordDisplayMode) -> Self {
+        self.display_mode = mode;
         self
     }
 
@@ -152,7 +194,8 @@ struct PasswordPrompt<'a> {
     message: &'a str,
     help_message: Option<&'a str>,
     input: Input,
-    display_input: bool,
+    standard_display_mode: PasswordDisplayMode,
+    display_mode: PasswordDisplayMode,
     enable_display_toggle: bool,
     formatter: StringFormatter<'a>,
     validators: Vec<StringValidator<'a>>,
@@ -164,7 +207,8 @@ impl<'a> From<Password<'a>> for PasswordPrompt<'a> {
         Self {
             message: so.message,
             help_message: so.help_message,
-            display_input: false,
+            standard_display_mode: so.display_mode,
+            display_mode: so.display_mode,
             enable_display_toggle: so.enable_display_toggle,
             formatter: so.formatter,
             validators: so.validators,
@@ -186,12 +230,20 @@ impl<'a> PasswordPrompt<'a> {
             Key::Char('r', m) | Key::Char('R', m)
                 if m.contains(KeyModifiers::CONTROL) && self.enable_display_toggle =>
             {
-                self.display_input = !self.display_input;
+                self.toggle_display_mode();
             }
             _ => {
                 self.input.handle_key(key);
             }
         };
+    }
+
+    fn toggle_display_mode(&mut self) {
+        self.display_mode = match self.display_mode {
+            PasswordDisplayMode::Hidden => PasswordDisplayMode::Full,
+            PasswordDisplayMode::Masked => PasswordDisplayMode::Full,
+            PasswordDisplayMode::Full => self.standard_display_mode,
+        }
     }
 
     fn get_final_answer(&self) -> Result<String, String> {
@@ -214,9 +266,16 @@ impl<'a> PasswordPrompt<'a> {
             backend.render_error_message(err)?;
         }
 
-        match self.display_input {
-            true => backend.render_full_prompt(&prompt, &self.input)?,
-            false => backend.render_empty_prompt(&prompt)?,
+        match self.display_mode {
+            PasswordDisplayMode::Hidden => {
+                backend.render_prompt(&prompt)?;
+            }
+            PasswordDisplayMode::Masked => {
+                backend.render_prompt_with_masked_input(&prompt, &self.input)?;
+            }
+            PasswordDisplayMode::Full => {
+                backend.render_prompt_with_full_input(&prompt, &self.input)?;
+            }
         };
 
         if let Some(message) = self.help_message {

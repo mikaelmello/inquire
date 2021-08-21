@@ -46,8 +46,9 @@ pub trait CustomTypeBackend: CommonBackend {
 }
 
 pub trait PasswordBackend: CommonBackend {
-    fn render_empty_prompt(&mut self, prompt: &str) -> Result<()>;
-    fn render_full_prompt(&mut self, prompt: &str, cur_input: &Input) -> Result<()>;
+    fn render_prompt(&mut self, prompt: &str) -> Result<()>;
+    fn render_prompt_with_masked_input(&mut self, prompt: &str, cur_input: &Input) -> Result<()>;
+    fn render_prompt_with_full_input(&mut self, prompt: &str, cur_input: &Input) -> Result<()>;
 }
 
 pub struct Backend<'a, T>
@@ -533,13 +534,23 @@ impl<'a, T> PasswordBackend for Backend<'a, T>
 where
     T: Terminal,
 {
-    fn render_empty_prompt(&mut self, prompt: &str) -> Result<()> {
+    fn render_prompt(&mut self, prompt: &str) -> Result<()> {
         self.print_prompt(prompt)?;
         self.new_line()?;
         Ok(())
     }
 
-    fn render_full_prompt(&mut self, prompt: &str, cur_input: &Input) -> Result<()> {
+    fn render_prompt_with_masked_input(&mut self, prompt: &str, cur_input: &Input) -> Result<()> {
+        let masked_string: String = (0..cur_input.length())
+            .map(|_| self.render_config.password_mask)
+            .collect();
+
+        let masked_input = Input::new_with(&masked_string).with_cursor(cur_input.cursor());
+
+        self.print_prompt_with_input(prompt, None, &masked_input)
+    }
+
+    fn render_prompt_with_full_input(&mut self, prompt: &str, cur_input: &Input) -> Result<()> {
         self.print_prompt_with_input(prompt, None, cur_input)
     }
 }
