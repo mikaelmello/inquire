@@ -27,6 +27,8 @@ pub enum Key {
     Delete(KeyModifiers),
     Home,
     End,
+    PageUp,
+    PageDown,
     Up(KeyModifiers),
     Down(KeyModifiers),
     Left(KeyModifiers),
@@ -83,6 +85,14 @@ impl From<KeyEvent> for Key {
                 code: KeyCode::End,
                 modifiers: _,
             } => Self::End,
+            KeyEvent {
+                code: KeyCode::PageUp,
+                modifiers: _,
+            } => Self::PageUp,
+            KeyEvent {
+                code: KeyCode::PageDown,
+                modifiers: _,
+            } => Self::PageDown,
             KeyEvent {
                 code: KeyCode::Up,
                 modifiers: m,
