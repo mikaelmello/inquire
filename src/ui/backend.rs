@@ -163,12 +163,12 @@ where
         if input.is_empty() {
             if let Some(placeholder) = input.placeholder() {
                 if !placeholder.is_empty() {
-                    let mut chars = placeholder.chars();
+                    let mut graphemes = placeholder.graphemes(true);
 
-                    let first_char = chars.next();
-                    let rest: String = chars.collect();
+                    let first_grapheme = graphemes.next();
+                    let rest: String = graphemes.collect();
 
-                    match first_char {
+                    match first_grapheme {
                         Some(c) => self.terminal.write_styled(
                             &Styled::new(c).with_style_sheet(self.render_config.placeholder_cursor),
                         )?,
