@@ -4,11 +4,18 @@ use super::{Attributes, Color, Key, Styled};
 
 const INITIAL_IN_MEMORY_CAPACITY: usize = 2048;
 
+pub struct TerminalSize {
+    pub width: u16,
+    pub height: u16,
+}
+
 pub trait Terminal {
     fn cursor_up(&mut self) -> Result<()>;
     fn cursor_move_to_column(&mut self, idx: u16) -> Result<()>;
     fn read_key(&mut self) -> Result<Key>;
     fn flush(&mut self) -> Result<()>;
+
+    fn get_size(&self) -> Result<TerminalSize>;
 
     fn get_in_memory_content(&self) -> &str;
     fn clear_in_memory_content(&mut self);
@@ -141,6 +148,10 @@ pub mod crossterm {
 
         fn flush(&mut self) -> Result<()> {
             self.get_writer().flush()
+        }
+
+        fn get_size(&self) -> Result<super::TerminalSize> {
+            terminal::size().map(|(width, height)| super::TerminalSize { width, height })
         }
 
         fn write<T: std::fmt::Display + AsRef<str>>(&mut self, val: T) -> Result<()> {
