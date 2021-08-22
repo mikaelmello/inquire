@@ -264,7 +264,7 @@ where
     }
 
     fn read_key(&mut self) -> Result<Key> {
-        self.terminal.read_key().map(Key::from)
+        self.terminal.read_key()
     }
 
     fn render_error_message(&mut self, error: &str) -> Result<()> {
