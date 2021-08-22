@@ -13,8 +13,8 @@ pub trait Terminal {
     fn get_in_memory_content(&self) -> &str;
     fn clear_in_memory_content(&mut self);
 
-    fn write<T: Display>(&mut self, val: T) -> Result<()>;
-    fn write_styled<'s, T: Display>(&mut self, val: &'s Styled<T>) -> Result<()>;
+    fn write<T: Display + AsRef<str>>(&mut self, val: T) -> Result<()>;
+    fn write_styled<'s, T: Display + AsRef<str>>(&mut self, val: &'s Styled<T>) -> Result<()>;
 
     fn clear_current_line(&mut self) -> Result<()>;
 
@@ -149,11 +149,14 @@ pub mod crossterm {
             self.get_writer().flush()
         }
 
-        fn write<T: std::fmt::Display>(&mut self, val: T) -> Result<()> {
-            self.write_command(Print(val))
+        fn write<T: std::fmt::Display + AsRef<str>>(&mut self, val: T) -> Result<()> {
+            self.write_command(Print(newline_converter::unix2dos(&val)))
         }
 
-        fn write_styled<'s, T: std::fmt::Display>(&mut self, val: &'s Styled<T>) -> Result<()> {
+        fn write_styled<'s, T: std::fmt::Display + AsRef<str>>(
+            &mut self,
+            val: &'s Styled<T>,
+        ) -> Result<()> {
             if let Some(color) = val.style.fg {
                 self.set_fg_color(color)?;
             }

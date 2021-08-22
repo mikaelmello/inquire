@@ -1,5 +1,7 @@
 use std::{collections::HashSet, io::Result};
 
+use unicode_segmentation::UnicodeSegmentation;
+
 use super::{key::Key, RenderConfig, Terminal};
 use crate::{
     input::Input,
@@ -137,7 +139,7 @@ where
     fn print_prompt(&mut self, prompt: &str) -> Result<()> {
         self.print_prompt_prefix()?;
 
-        self.terminal.write(' ')?;
+        self.terminal.write(" ")?;
 
         self.print_prompt_token(prompt)?;
 
@@ -147,7 +149,7 @@ where
     fn print_prompt_with_answer(&mut self, prompt: &str, answer: &str) -> Result<()> {
         self.print_prompt(prompt)?;
 
-        self.terminal.write(' ')?;
+        self.terminal.write(" ")?;
 
         let token = Styled::new(answer).with_style_sheet(self.render_config.answer);
         self.terminal.write_styled(&token)?;
@@ -158,7 +160,7 @@ where
     }
 
     fn print_input(&mut self, input: &Input) -> Result<()> {
-        self.terminal.write(' ')?;
+        self.terminal.write(" ")?;
 
         if input.is_empty() {
             if let Some(placeholder) = input.placeholder() {
@@ -184,7 +186,7 @@ where
             }
 
             self.terminal.write_styled(
-                &Styled::new(' ').with_style_sheet(self.render_config.text_input.cursor),
+                &Styled::new(" ").with_style_sheet(self.render_config.text_input.cursor),
             )?;
 
             return Ok(());
@@ -218,7 +220,7 @@ where
         self.print_prompt(prompt)?;
 
         if let Some(default) = default {
-            self.terminal.write(' ')?;
+            self.terminal.write(" ")?;
             self.print_default_value(default)?;
         }
 
@@ -236,8 +238,7 @@ where
     }
 
     fn new_line(&mut self) -> Result<()> {
-        self.terminal.cursor_move_to_column(0)?;
-        self.terminal.write("\n")?;
+        self.terminal.write("\r\n")?;
         self.cur_line = self.cur_line.saturating_add(1);
 
         Ok(())
@@ -272,7 +273,7 @@ where
             .write_styled(&self.render_config.error_message.prefix)?;
 
         self.terminal.write_styled(
-            &Styled::new(' ').with_style_sheet(self.render_config.error_message.separator),
+            &Styled::new(" ").with_style_sheet(self.render_config.error_message.separator),
         )?;
 
         self.terminal.write_styled(
@@ -286,13 +287,13 @@ where
 
     fn render_help_message(&mut self, help: &str) -> Result<()> {
         self.terminal
-            .write_styled(&Styled::new('[').with_style_sheet(self.render_config.help_message))?;
+            .write_styled(&Styled::new("[").with_style_sheet(self.render_config.help_message))?;
 
         self.terminal
             .write_styled(&Styled::new(help).with_style_sheet(self.render_config.help_message))?;
 
         self.terminal
-            .write_styled(&Styled::new(']').with_style_sheet(self.render_config.help_message))?;
+            .write_styled(&Styled::new("]").with_style_sheet(self.render_config.help_message))?;
 
         self.new_line()?;
 
@@ -317,7 +318,7 @@ where
         for (idx, option) in page.content.iter().enumerate() {
             self.print_option_prefix(idx, &page)?;
 
-            self.terminal.write(' ')?;
+            self.terminal.write(" ")?;
 
             self.print_option_value(option)?;
 
@@ -340,7 +341,7 @@ where
         for (idx, option) in page.content.iter().enumerate() {
             self.print_option_prefix(idx, &page)?;
 
-            self.terminal.write(' ')?;
+            self.terminal.write(" ")?;
 
             self.print_option_value(option)?;
 
@@ -363,7 +364,7 @@ where
         for (idx, option) in page.content.iter().enumerate() {
             self.print_option_prefix(idx, &page)?;
 
-            self.terminal.write(' ')?;
+            self.terminal.write(" ")?;
 
             match checked.contains(&option.index) {
                 true => self
@@ -374,7 +375,7 @@ where
                     .write_styled(&self.render_config.unselected_checkbox)?,
             }
 
-            self.terminal.write(' ')?;
+            self.terminal.write(" ")?;
 
             self.print_option_value(option)?;
 
@@ -436,7 +437,7 @@ pub mod date {
                 () => {{
                     self.terminal
                         .write_styled(&self.render_config.calendar.prefix)?;
-                    self.terminal.write(' ')
+                    self.terminal.write(" ")
                 }};
             }
 
@@ -487,7 +488,7 @@ pub mod date {
 
                 for i in 0..7 {
                     if i > 0 {
-                        self.terminal.write(' ')?;
+                        self.terminal.write(" ")?;
                     }
 
                     let date = format!("{:2}", date_it.day());
