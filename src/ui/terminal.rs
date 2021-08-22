@@ -2,11 +2,16 @@ use std::{fmt::Display, io::Result};
 
 use super::{Attributes, Color, Key, Styled};
 
+const INITIAL_IN_MEMORY_CAPACITY: usize = 2048;
+
 pub trait Terminal {
     fn cursor_up(&mut self) -> Result<()>;
     fn cursor_move_to_column(&mut self, idx: u16) -> Result<()>;
     fn read_key(&mut self) -> Result<Key>;
     fn flush(&mut self) -> Result<()>;
+
+    fn get_in_memory_content(&self) -> &str;
+    fn clear_in_memory_content(&mut self);
 
     fn write<T: Display>(&mut self, val: T) -> Result<()>;
     fn write_styled<'s, T: Display>(&mut self, val: &'s Styled<T>) -> Result<()>;
@@ -27,21 +32,23 @@ pub trait Terminal {
 }
 
 pub mod crossterm {
-    use std::io::{stdout, Result, Stdout, Write};
+    use std::io::{stdout, ErrorKind, Result, Stdout, Write};
 
     use crossterm::{
-        event::KeyEvent,
+        cursor,
+        event::{self, KeyEvent},
         queue,
-        style::{Attribute, Print},
-        terminal::{enable_raw_mode, ClearType},
+        style::{Attribute, Color, Print, SetAttribute, SetBackgroundColor, SetForegroundColor},
+        terminal::{self, enable_raw_mode, ClearType},
+        Command,
     };
 
     use crate::{
         error::{InquireError, InquireResult},
-        ui::{Attributes, Color, Key, Styled},
+        ui::{Attributes, Key, Styled},
     };
 
-    use super::Terminal;
+    use super::{Terminal, INITIAL_IN_MEMORY_CAPACITY};
 
     enum IO<'a> {
         Std {
@@ -56,6 +63,7 @@ pub mod crossterm {
 
     pub struct CrosstermTerminal<'a> {
         io: IO<'a>,
+        in_memory_content: String,
     }
 
     impl<'a> CrosstermTerminal<'a> {
@@ -70,6 +78,7 @@ pub mod crossterm {
 
             Ok(Self {
                 io: IO::Std { w: stdout() },
+                in_memory_content: String::with_capacity(INITIAL_IN_MEMORY_CAPACITY),
             })
         }
 
@@ -86,6 +95,7 @@ pub mod crossterm {
                     r: reader,
                     w: writer,
                 },
+                in_memory_content: String::with_capacity(INITIAL_IN_MEMORY_CAPACITY),
             }
         }
 
@@ -95,24 +105,37 @@ pub mod crossterm {
                 IO::Custom { r: _, w } => w,
             }
         }
+
+        fn write_command<C: Command>(&mut self, command: C) -> Result<()> {
+            command
+                .write_ansi(&mut self.in_memory_content)
+                .map_err(|_| {
+                    std::io::Error::new(
+                        ErrorKind::Other,
+                        "Not possible to write command to in-memory string",
+                    )
+                })?;
+
+            queue!(&mut self.get_writer(), command)
+        }
     }
 
     impl<'a> Terminal for CrosstermTerminal<'a> {
         fn cursor_up(&mut self) -> Result<()> {
-            queue!(&mut self.get_writer(), crossterm::cursor::MoveUp(1))
+            self.write_command(cursor::MoveUp(1))
         }
 
         fn cursor_move_to_column(&mut self, idx: u16) -> Result<()> {
-            queue!(&mut self.get_writer(), crossterm::cursor::MoveToColumn(idx))
+            self.write_command(cursor::MoveToColumn(idx))
         }
 
         fn read_key(&mut self) -> Result<Key> {
             loop {
                 match &mut self.io {
-                    IO::Std { w: _ } => match crossterm::event::read()? {
-                        crossterm::event::Event::Key(key_event) => return Ok(key_event.into()),
-                        crossterm::event::Event::Mouse(_) => {}
-                        crossterm::event::Event::Resize(_, _) => {}
+                    IO::Std { w: _ } => match event::read()? {
+                        event::Event::Key(key_event) => return Ok(key_event.into()),
+                        event::Event::Mouse(_) => {}
+                        event::Event::Resize(_, _) => {}
                     },
                     IO::Custom { r, w: _ } => {
                         let key = r.next().expect("Custom stream of characters has ended");
@@ -127,7 +150,7 @@ pub mod crossterm {
         }
 
         fn write<T: std::fmt::Display>(&mut self, val: T) -> Result<()> {
-            queue!(&mut self.get_writer(), Print(val))
+            self.write_command(Print(val))
         }
 
         fn write_styled<'s, T: std::fmt::Display>(&mut self, val: &'s Styled<T>) -> Result<()> {
@@ -157,70 +180,54 @@ pub mod crossterm {
         }
 
         fn clear_current_line(&mut self) -> Result<()> {
-            queue!(
-                &mut self.get_writer(),
-                crossterm::terminal::Clear(ClearType::CurrentLine)
-            )
+            self.write_command(terminal::Clear(ClearType::CurrentLine))
         }
 
         fn cursor_hide(&mut self) -> Result<()> {
-            queue!(&mut self.get_writer(), crossterm::cursor::Hide)
+            self.write_command(cursor::Hide)
         }
 
         fn cursor_show(&mut self) -> Result<()> {
-            queue!(&mut self.get_writer(), crossterm::cursor::Show)
+            self.write_command(cursor::Show)
         }
 
         fn set_attributes(&mut self, attributes: Attributes) -> Result<()> {
             if attributes.contains(Attributes::BOLD) {
-                queue!(
-                    &mut self.get_writer(),
-                    crossterm::style::SetAttribute(Attribute::Bold)
-                )?;
+                self.write_command(SetAttribute(Attribute::Bold))?;
             }
             if attributes.contains(Attributes::ITALIC) {
-                queue!(
-                    &mut self.get_writer(),
-                    crossterm::style::SetAttribute(Attribute::Italic)
-                )?;
+                self.write_command(SetAttribute(Attribute::Italic))?;
             }
 
             Ok(())
         }
 
         fn reset_attributes(&mut self) -> Result<()> {
-            queue!(
-                &mut self.get_writer(),
-                crossterm::style::SetAttribute(Attribute::Reset)
-            )
+            self.write_command(SetAttribute(Attribute::Reset))
         }
 
-        fn set_fg_color(&mut self, color: Color) -> Result<()> {
-            queue!(
-                &mut self.get_writer(),
-                crossterm::style::SetForegroundColor(color.into())
-            )
+        fn set_fg_color(&mut self, color: crate::ui::Color) -> Result<()> {
+            self.write_command(SetForegroundColor(color.into()))
         }
 
         fn reset_fg_color(&mut self) -> Result<()> {
-            queue!(
-                &mut self.get_writer(),
-                crossterm::style::SetForegroundColor(crossterm::style::Color::Reset)
-            )
+            self.write_command(SetForegroundColor(Color::Reset))
         }
 
-        fn set_bg_color(&mut self, color: Color) -> Result<()> {
-            queue!(
-                &mut self.get_writer(),
-                crossterm::style::SetBackgroundColor(color.into())
-            )
+        fn set_bg_color(&mut self, color: crate::ui::Color) -> Result<()> {
+            self.write_command(SetBackgroundColor(color.into()))
         }
 
         fn reset_bg_color(&mut self) -> Result<()> {
-            queue!(
-                &mut self.get_writer(),
-                crossterm::style::SetBackgroundColor(crossterm::style::Color::Reset)
-            )
+            self.write_command(SetBackgroundColor(Color::Reset))
+        }
+
+        fn get_in_memory_content(&self) -> &str {
+            self.in_memory_content.as_ref()
+        }
+
+        fn clear_in_memory_content(&mut self) {
+            self.in_memory_content.clear()
         }
     }
 
@@ -228,33 +235,33 @@ pub mod crossterm {
         fn drop(&mut self) {
             let _ = self.flush();
             let _ = match self.io {
-                IO::Std { w: _ } => crossterm::terminal::disable_raw_mode(),
+                IO::Std { w: _ } => terminal::disable_raw_mode(),
                 IO::Custom { r: _, w: _ } => Ok(()),
             };
         }
     }
 
-    impl From<Color> for crossterm::style::Color {
-        fn from(c: Color) -> Self {
+    impl From<crate::ui::Color> for Color {
+        fn from(c: crate::ui::Color) -> Self {
             match c {
-                Color::Black => crossterm::style::Color::Black,
-                Color::DarkGrey => crossterm::style::Color::DarkGrey,
-                Color::Red => crossterm::style::Color::Red,
-                Color::DarkRed => crossterm::style::Color::DarkRed,
-                Color::Green => crossterm::style::Color::Green,
-                Color::DarkGreen => crossterm::style::Color::DarkGreen,
-                Color::Yellow => crossterm::style::Color::Yellow,
-                Color::DarkYellow => crossterm::style::Color::DarkYellow,
-                Color::Blue => crossterm::style::Color::Blue,
-                Color::DarkBlue => crossterm::style::Color::DarkBlue,
-                Color::Magenta => crossterm::style::Color::Magenta,
-                Color::DarkMagenta => crossterm::style::Color::DarkMagenta,
-                Color::Cyan => crossterm::style::Color::Cyan,
-                Color::DarkCyan => crossterm::style::Color::DarkCyan,
-                Color::White => crossterm::style::Color::White,
-                Color::Grey => crossterm::style::Color::Grey,
-                Color::Rgb { r, g, b } => crossterm::style::Color::Rgb { r, g, b },
-                Color::AnsiValue(b) => crossterm::style::Color::AnsiValue(b),
+                crate::ui::Color::Black => Color::Black,
+                crate::ui::Color::DarkGrey => Color::DarkGrey,
+                crate::ui::Color::Red => Color::Red,
+                crate::ui::Color::DarkRed => Color::DarkRed,
+                crate::ui::Color::Green => Color::Green,
+                crate::ui::Color::DarkGreen => Color::DarkGreen,
+                crate::ui::Color::Yellow => Color::Yellow,
+                crate::ui::Color::DarkYellow => Color::DarkYellow,
+                crate::ui::Color::Blue => Color::Blue,
+                crate::ui::Color::DarkBlue => Color::DarkBlue,
+                crate::ui::Color::Magenta => Color::Magenta,
+                crate::ui::Color::DarkMagenta => Color::DarkMagenta,
+                crate::ui::Color::Cyan => Color::Cyan,
+                crate::ui::Color::DarkCyan => Color::DarkCyan,
+                crate::ui::Color::White => Color::White,
+                crate::ui::Color::Grey => Color::Grey,
+                crate::ui::Color::Rgb { r, g, b } => Color::Rgb { r, g, b },
+                crate::ui::Color::AnsiValue(b) => Color::AnsiValue(b),
             }
         }
     }

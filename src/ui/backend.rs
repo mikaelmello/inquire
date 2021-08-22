@@ -1,7 +1,12 @@
 use std::{collections::HashSet, io::Result};
 
 use super::{key::Key, RenderConfig, Terminal};
-use crate::{input::Input, option_answer::OptionAnswer, ui::Styled, utils::Page};
+use crate::{
+    input::Input,
+    option_answer::OptionAnswer,
+    ui::Styled,
+    utils::{count_newlines_hyperscreaming, Page},
+};
 
 pub trait CommonBackend {
     fn read_key(&mut self) -> Result<Key>;
@@ -76,13 +81,17 @@ where
     }
 
     fn reset_prompt(&mut self) -> Result<()> {
-        for _ in 0..self.cur_line {
+        let current = self.terminal.get_in_memory_content();
+        let lines = count_newlines_hyperscreaming(current);
+
+        for _ in 0..lines {
             self.terminal.cursor_up()?;
             self.terminal.cursor_move_to_column(0)?;
             self.terminal.clear_current_line()?;
         }
 
-        self.cur_line = 0;
+        self.terminal.clear_in_memory_content();
+
         Ok(())
     }
 
