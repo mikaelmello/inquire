@@ -9,7 +9,7 @@ use std::fmt;
 /// It is essentially the return type of the [Select](crate::Select) and [MultiSelect](crate::MultiSelect)
 /// prompts.
 #[derive(Clone, Debug, PartialEq)]
-pub struct OptionAnswer {
+pub struct ListOption {
     /// Index of the selected option relative to the original (full) list passed to the prompt.
     pub index: usize,
 
@@ -17,8 +17,8 @@ pub struct OptionAnswer {
     pub value: String,
 }
 
-impl OptionAnswer {
-    /// Constructor for OptionAnswer.
+impl ListOption {
+    /// Constructor for ListOption.
     ///
     /// # Arguments
     ///
@@ -28,9 +28,9 @@ impl OptionAnswer {
     /// # Examples
     ///
     /// ```
-    /// use inquire::option_answer::OptionAnswer;
+    /// use inquire::list_option::ListOption;
     ///
-    /// let answer = OptionAnswer::new(0, "a");
+    /// let answer = ListOption::new(0, "a");
     /// ```
     pub fn new(index: usize, value: &str) -> Self {
         Self {
@@ -40,7 +40,7 @@ impl OptionAnswer {
     }
 
     #[allow(unused)]
-    pub(in crate) fn from_str_list(vals: &[&str]) -> Vec<OptionAnswer> {
+    pub(in crate) fn from_str_list(vals: &[&str]) -> Vec<ListOption> {
         vals.iter()
             .enumerate()
             .map(|(index, value)| Self {
@@ -51,7 +51,7 @@ impl OptionAnswer {
     }
 
     #[allow(unused)]
-    pub(in crate) fn from_idx_str_list(vals: &[(usize, &str)]) -> Vec<OptionAnswer> {
+    pub(in crate) fn from_idx_str_list(vals: &[(usize, &str)]) -> Vec<ListOption> {
         vals.iter()
             .map(|(index, value)| Self {
                 index: *index,
@@ -61,7 +61,7 @@ impl OptionAnswer {
     }
 }
 
-impl fmt::Display for OptionAnswer {
+impl fmt::Display for ListOption {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.value)
     }

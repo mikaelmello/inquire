@@ -5,7 +5,7 @@ use crate::{
     error::{InquireError, InquireResult},
     formatter::{self, MultiOptionFormatter},
     input::Input,
-    option_answer::OptionAnswer,
+    list_option::ListOption,
     ui::{
         crossterm::CrosstermTerminal, Backend, Key, KeyModifiers, MultiSelectBackend, RenderConfig,
     },
@@ -201,7 +201,7 @@ impl<'a> MultiSelect<'a> {
 
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to the defined rules.
-    pub fn prompt(self) -> InquireResult<Vec<OptionAnswer>> {
+    pub fn prompt(self) -> InquireResult<Vec<ListOption>> {
         let terminal = CrosstermTerminal::new()?;
         let mut backend = Backend::new(terminal, self.render_config)?;
         self.prompt_with_backend(&mut backend)
@@ -210,7 +210,7 @@ impl<'a> MultiSelect<'a> {
     pub(in crate) fn prompt_with_backend<B: MultiSelectBackend>(
         self,
         backend: &mut B,
-    ) -> InquireResult<Vec<OptionAnswer>> {
+    ) -> InquireResult<Vec<ListOption>> {
         MultiSelectPrompt::new(self)?.prompt(backend)
     }
 }
@@ -368,16 +368,16 @@ impl<'a> MultiSelectPrompt<'a> {
         };
     }
 
-    fn get_final_answer(&self) -> Result<Vec<OptionAnswer>, String> {
+    fn get_final_answer(&self) -> Result<Vec<ListOption>, String> {
         let selected_options = self
             .options
             .iter()
             .enumerate()
             .filter_map(|(idx, opt)| match &self.checked.contains(&idx) {
-                true => Some(OptionAnswer::new(idx, opt)),
+                true => Some(ListOption::new(idx, opt)),
                 false => None,
             })
-            .collect::<Vec<OptionAnswer>>();
+            .collect::<Vec<ListOption>>();
 
         if let Some(validator) = self.validator {
             return match validator(&selected_options) {
@@ -404,8 +404,8 @@ impl<'a> MultiSelectPrompt<'a> {
             .filtered_options
             .iter()
             .cloned()
-            .map(|i| OptionAnswer::new(i, self.options.get(i).unwrap()))
-            .collect::<Vec<OptionAnswer>>();
+            .map(|i| ListOption::new(i, self.options.get(i).unwrap()))
+            .collect::<Vec<ListOption>>();
 
         let page = paginate(self.page_size, &choices, self.cursor_index);
 
@@ -420,11 +420,8 @@ impl<'a> MultiSelectPrompt<'a> {
         Ok(())
     }
 
-    fn prompt<B: MultiSelectBackend>(
-        mut self,
-        backend: &mut B,
-    ) -> InquireResult<Vec<OptionAnswer>> {
-        let final_answer: Vec<OptionAnswer>;
+    fn prompt<B: MultiSelectBackend>(mut self, backend: &mut B) -> InquireResult<Vec<ListOption>> {
+        let final_answer: Vec<ListOption>;
 
         loop {
             self.render(backend)?;

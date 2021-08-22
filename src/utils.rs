@@ -46,11 +46,11 @@ pub fn paginate<'a, T>(page_size: usize, choices: &[T], sel: usize) -> Page<T> {
 
 #[cfg(test)]
 mod test {
-    use crate::{option_answer::OptionAnswer, utils::paginate};
+    use crate::{list_option::ListOption, utils::paginate};
 
     #[test]
     fn paginate_too_few() {
-        let choices = OptionAnswer::from_str_list(&vec!["1", "2", "3"]);
+        let choices = ListOption::from_str_list(&vec!["1", "2", "3"]);
 
         let page_size = 4usize;
         let sel = 3usize;
@@ -65,7 +65,7 @@ mod test {
 
     #[test]
     fn paginate_first_half() {
-        let choices = OptionAnswer::from_str_list(&vec!["1", "2", "3", "4", "5", "6"]);
+        let choices = ListOption::from_str_list(&vec!["1", "2", "3", "4", "5", "6"]);
 
         let page_size = 4usize;
         let sel = 2usize;
@@ -80,7 +80,7 @@ mod test {
 
     #[test]
     fn paginate_middle() {
-        let choices = OptionAnswer::from_str_list(&vec!["1", "2", "3", "4", "5", "6"]);
+        let choices = ListOption::from_str_list(&vec!["1", "2", "3", "4", "5", "6"]);
 
         let page_size = 2usize;
         let sel = 3usize;
@@ -95,7 +95,7 @@ mod test {
 
     #[test]
     fn paginate_lasts_half() {
-        let choices = OptionAnswer::from_str_list(&vec!["1", "2", "3", "4", "5", "6"]);
+        let choices = ListOption::from_str_list(&vec!["1", "2", "3", "4", "5", "6"]);
 
         let page_size = 3usize;
         let sel = 5usize;

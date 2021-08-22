@@ -12,7 +12,7 @@
 //!
 //! This module also provides several built-in validators generated through macros,
 //! exported with the `builtin_validators` feature.
-use crate::option_answer::OptionAnswer;
+use crate::list_option::ListOption;
 
 /// Type alias for validators that receive a string slice as the input,
 /// such as [Text](crate::Text) and [Password](crate::Password).
@@ -88,7 +88,7 @@ pub type DateValidator<'a> = &'a dyn Fn(chrono::NaiveDate) -> Result<(), String>
 /// # Examples
 ///
 /// ```
-/// use inquire::option_answer::OptionAnswer;
+/// use inquire::list_option::ListOption;
 /// use inquire::validator::MultiOptionValidator;
 ///
 /// let validator: MultiOptionValidator = &|input| {
@@ -99,16 +99,16 @@ pub type DateValidator<'a> = &'a dyn Fn(chrono::NaiveDate) -> Result<(), String>
 ///     }
 /// };
 ///
-/// let mut ans = vec![OptionAnswer::new(0, "a"), OptionAnswer::new(1, "b")];
+/// let mut ans = vec![ListOption::new(0, "a"), ListOption::new(1, "b")];
 /// assert_eq!(Ok(()), validator(&ans));
 ///
-/// ans.push(OptionAnswer::new(3, "d"));
+/// ans.push(ListOption::new(3, "d"));
 /// assert_eq!(
 ///     Err(String::from("You should select at most two options")),
 ///     validator(&ans)
 /// );
 /// ```
-pub type MultiOptionValidator<'a> = &'a dyn Fn(&[OptionAnswer]) -> Result<(), String>;
+pub type MultiOptionValidator<'a> = &'a dyn Fn(&[ListOption]) -> Result<(), String>;
 
 /// Custom trait to call correct method to retrieve input length.
 ///
@@ -313,15 +313,15 @@ macro_rules! length {
 #[cfg(test)]
 mod test {
     use crate::{
-        option_answer::OptionAnswer,
+        list_option::ListOption,
         validator::{InquireLength, MultiOptionValidator, StringValidator},
     };
 
-    fn build_option_vec(len: usize) -> Vec<OptionAnswer> {
+    fn build_option_vec(len: usize) -> Vec<ListOption> {
         let mut options = Vec::new();
 
         for i in 0..len {
-            options.push(OptionAnswer::new(i, ""));
+            options.push(ListOption::new(i, ""));
         }
 
         options

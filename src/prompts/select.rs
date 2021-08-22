@@ -5,7 +5,7 @@ use crate::{
     error::{InquireError, InquireResult},
     formatter::{self, OptionFormatter},
     input::Input,
-    option_answer::OptionAnswer,
+    list_option::ListOption,
     ui::{crossterm::CrosstermTerminal, Backend, Key, KeyModifiers, RenderConfig, SelectBackend},
     utils::paginate,
 };
@@ -166,7 +166,7 @@ impl<'a> Select<'a> {
 
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to the defined rules.
-    pub fn prompt(self) -> InquireResult<OptionAnswer> {
+    pub fn prompt(self) -> InquireResult<ListOption> {
         let terminal = CrosstermTerminal::new()?;
         let mut backend = Backend::new(terminal, self.render_config)?;
         self.prompt_with_backend(&mut backend)
@@ -175,7 +175,7 @@ impl<'a> Select<'a> {
     pub(in crate) fn prompt_with_backend<B: SelectBackend>(
         self,
         backend: &mut B,
-    ) -> InquireResult<OptionAnswer> {
+    ) -> InquireResult<ListOption> {
         SelectPrompt::new(self)?.prompt(backend)
     }
 }
@@ -285,10 +285,10 @@ impl<'a> SelectPrompt<'a> {
         };
     }
 
-    fn get_final_answer(&self) -> Option<OptionAnswer> {
+    fn get_final_answer(&self) -> Option<ListOption> {
         self.filtered_options
             .get(self.cursor_index)
-            .and_then(|i| self.options.get(*i).map(|opt| OptionAnswer::new(*i, opt)))
+            .and_then(|i| self.options.get(*i).map(|opt| ListOption::new(*i, opt)))
     }
 
     fn render<B: SelectBackend>(&mut self, backend: &mut B) -> InquireResult<()> {
@@ -302,8 +302,8 @@ impl<'a> SelectPrompt<'a> {
             .filtered_options
             .iter()
             .cloned()
-            .map(|i| OptionAnswer::new(i, self.options.get(i).unwrap()))
-            .collect::<Vec<OptionAnswer>>();
+            .map(|i| ListOption::new(i, self.options.get(i).unwrap()))
+            .collect::<Vec<ListOption>>();
 
         let page = paginate(self.page_size, &choices, self.cursor_index);
 
@@ -318,8 +318,8 @@ impl<'a> SelectPrompt<'a> {
         Ok(())
     }
 
-    fn prompt<B: SelectBackend>(mut self, backend: &mut B) -> InquireResult<OptionAnswer> {
-        let final_answer: OptionAnswer;
+    fn prompt<B: SelectBackend>(mut self, backend: &mut B) -> InquireResult<ListOption> {
+        let final_answer: ListOption;
 
         loop {
             self.render(backend)?;

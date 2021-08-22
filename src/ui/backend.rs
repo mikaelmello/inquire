@@ -3,7 +3,7 @@ use std::{collections::HashSet, io::Result};
 use unicode_segmentation::UnicodeSegmentation;
 
 use super::{key::Key, RenderConfig, Terminal, TerminalSize};
-use crate::{input::Input, option_answer::OptionAnswer, ui::Styled, utils::Page};
+use crate::{input::Input, list_option::ListOption, ui::Styled, utils::Page};
 
 pub trait CommonBackend {
     fn read_key(&mut self) -> Result<Key>;
@@ -24,17 +24,17 @@ pub trait TextBackend: CommonBackend {
         default: Option<&str>,
         cur_input: &Input,
     ) -> Result<()>;
-    fn render_suggestions(&mut self, page: Page<OptionAnswer>) -> Result<()>;
+    fn render_suggestions(&mut self, page: Page<ListOption>) -> Result<()>;
 }
 
 pub trait SelectBackend: CommonBackend {
     fn render_select_prompt(&mut self, prompt: &str, cur_input: &Input) -> Result<()>;
-    fn render_options(&mut self, page: Page<OptionAnswer>) -> Result<()>;
+    fn render_options(&mut self, page: Page<ListOption>) -> Result<()>;
 }
 
 pub trait MultiSelectBackend: CommonBackend {
     fn render_multiselect_prompt(&mut self, prompt: &str, cur_input: &Input) -> Result<()>;
-    fn render_options(&mut self, page: Page<OptionAnswer>, checked: &HashSet<usize>) -> Result<()>;
+    fn render_options(&mut self, page: Page<ListOption>, checked: &HashSet<usize>) -> Result<()>;
 }
 
 pub trait CustomTypeBackend: CommonBackend {
@@ -137,7 +137,7 @@ where
         self.terminal.write_styled(&token)
     }
 
-    fn print_option_prefix(&mut self, idx: usize, page: &Page<OptionAnswer>) -> Result<()> {
+    fn print_option_prefix(&mut self, idx: usize, page: &Page<ListOption>) -> Result<()> {
         let empty_prefix = Styled::new(" ");
 
         let x = if idx == page.selection {
@@ -153,7 +153,7 @@ where
         self.terminal.write_styled(&x)
     }
 
-    fn print_option_value(&mut self, option: &OptionAnswer) -> Result<()> {
+    fn print_option_value(&mut self, option: &ListOption) -> Result<()> {
         self.terminal
             .write_styled(&Styled::new(&option.value).with_style_sheet(self.render_config.option))
     }
@@ -343,7 +343,7 @@ where
         self.print_prompt_with_input(prompt, default, cur_input)
     }
 
-    fn render_suggestions(&mut self, page: Page<OptionAnswer>) -> Result<()> {
+    fn render_suggestions(&mut self, page: Page<ListOption>) -> Result<()> {
         for (idx, option) in page.content.iter().enumerate() {
             self.print_option_prefix(idx, &page)?;
 
@@ -366,7 +366,7 @@ where
         self.print_prompt_with_input(prompt, None, cur_input)
     }
 
-    fn render_options(&mut self, page: Page<OptionAnswer>) -> Result<()> {
+    fn render_options(&mut self, page: Page<ListOption>) -> Result<()> {
         for (idx, option) in page.content.iter().enumerate() {
             self.print_option_prefix(idx, &page)?;
 
@@ -389,7 +389,7 @@ where
         self.print_prompt_with_input(prompt, None, cur_input)
     }
 
-    fn render_options(&mut self, page: Page<OptionAnswer>, checked: &HashSet<usize>) -> Result<()> {
+    fn render_options(&mut self, page: Page<ListOption>, checked: &HashSet<usize>) -> Result<()> {
         for (idx, option) in page.content.iter().enumerate() {
             self.print_option_prefix(idx, &page)?;
 

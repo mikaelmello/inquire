@@ -91,7 +91,7 @@ In the [`render_config.rs`](./examples/render_config.gif) example, you can take 
 
 Almost all prompts provide an API to set custom validators.
 
-The validators provided to a given prompt are called whenever the user submits their input. These validators vary by prompt type, receiving different types of variables as arguments, such as `&str`, `&[OptionAnswer]`, or `NaiveDate`, but their return type are always the same: `Result<(), String>`.
+The validators provided to a given prompt are called whenever the user submits their input. These validators vary by prompt type, receiving different types of variables as arguments, such as `&str`, `&[ListOption]`, or `NaiveDate`, but their return type are always the same: `Result<(), String>`.
 
 If the input provided by the user is invalid, your validator should return `Ok(())`.
 

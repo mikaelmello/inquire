@@ -46,7 +46,7 @@
 //! ? What's your name? My name is Mikael
 //! ```
 
-use crate::option_answer::OptionAnswer;
+use crate::list_option::ListOption;
 
 /// Type alias for formatters that receive a string slice as the input,
 /// required by [Text](crate::Text) and [Password](crate::Password) for example.
@@ -92,14 +92,14 @@ pub type BoolFormatter<'a> = &'a dyn Fn(bool) -> String;
 /// # Examples
 ///
 /// ```
-/// use inquire::option_answer::OptionAnswer;
+/// use inquire::list_option::ListOption;
 /// use inquire::formatter::OptionFormatter;
 ///
 /// let formatter: OptionFormatter = &|i| format!("Option {}: '{}'", i.index + 1, i.value);
-/// assert_eq!(String::from("Option 1: 'a'"), formatter(&OptionAnswer::new(0, "a")));
-/// assert_eq!(String::from("Option 2: 'b'"), formatter(&OptionAnswer::new(1, "b")));
+/// assert_eq!(String::from("Option 1: 'a'"), formatter(&ListOption::new(0, "a")));
+/// assert_eq!(String::from("Option 2: 'b'"), formatter(&ListOption::new(1, "b")));
 /// ```
-pub type OptionFormatter<'a> = &'a dyn Fn(&OptionAnswer) -> String;
+pub type OptionFormatter<'a> = &'a dyn Fn(&ListOption) -> String;
 
 /// Type alias for formatters used in [MultiSelect](crate::MultiSelect) prompts.
 ///
@@ -109,7 +109,7 @@ pub type OptionFormatter<'a> = &'a dyn Fn(&OptionAnswer) -> String;
 /// # Examples
 ///
 /// ```
-/// use inquire::option_answer::OptionAnswer;
+/// use inquire::list_option::ListOption;
 /// use inquire::formatter::MultiOptionFormatter;
 ///
 /// let formatter: MultiOptionFormatter = &|opts| {
@@ -121,13 +121,13 @@ pub type OptionFormatter<'a> = &'a dyn Fn(&OptionAnswer) -> String;
 ///     format!("You selected {} {}", len, options)
 /// };
 ///
-/// let mut ans = vec![OptionAnswer::new(0, "a")];
+/// let mut ans = vec![ListOption::new(0, "a")];
 /// assert_eq!(String::from("You selected 1 option"), formatter(&ans));
 ///
-/// ans.push(OptionAnswer::new(3, "d"));
+/// ans.push(ListOption::new(3, "d"));
 /// assert_eq!(String::from("You selected 2 options"), formatter(&ans));
 /// ```
-pub type MultiOptionFormatter<'a> = &'a dyn Fn(&[OptionAnswer]) -> String;
+pub type MultiOptionFormatter<'a> = &'a dyn Fn(&[ListOption]) -> String;
 
 /// Type alias for formatters used in [CustomType](crate::CustomType) prompts.
 ///
@@ -207,12 +207,12 @@ pub const DEFAULT_BOOL_FORMATTER: BoolFormatter = &|ans| match ans {
 /// # Examples
 ///
 /// ```
-/// use inquire::option_answer::OptionAnswer;
+/// use inquire::list_option::ListOption;
 /// use inquire::formatter::DEFAULT_OPTION_FORMATTER;
 ///
 /// let formatter = DEFAULT_OPTION_FORMATTER;
-/// assert_eq!(String::from("First option"), formatter(&OptionAnswer::new(0, "First option")));
-/// assert_eq!(String::from("First option"), formatter(&OptionAnswer::new(11, "First option")));
+/// assert_eq!(String::from("First option"), formatter(&ListOption::new(0, "First option")));
+/// assert_eq!(String::from("First option"), formatter(&ListOption::new(11, "First option")));
 /// ```
 pub const DEFAULT_OPTION_FORMATTER: OptionFormatter = &|ans| ans.to_string();
 
@@ -222,23 +222,23 @@ pub const DEFAULT_OPTION_FORMATTER: OptionFormatter = &|ans| ans.to_string();
 /// # Examples
 ///
 /// ```
-/// use inquire::option_answer::OptionAnswer;
+/// use inquire::list_option::ListOption;
 /// use inquire::formatter::DEFAULT_MULTI_OPTION_FORMATTER;
 ///
 /// let formatter = DEFAULT_MULTI_OPTION_FORMATTER;
 ///
-/// let mut ans = vec![OptionAnswer::new(0, "New York")];
+/// let mut ans = vec![ListOption::new(0, "New York")];
 /// assert_eq!(String::from("New York"), formatter(&ans));
 ///
-/// ans.push(OptionAnswer::new(3, "Seattle"));
+/// ans.push(ListOption::new(3, "Seattle"));
 /// assert_eq!(String::from("New York, Seattle"), formatter(&ans));
 ///
-/// ans.push(OptionAnswer::new(7, "Vancouver"));
+/// ans.push(ListOption::new(7, "Vancouver"));
 /// assert_eq!(String::from("New York, Seattle, Vancouver"), formatter(&ans));
 /// ```
 pub const DEFAULT_MULTI_OPTION_FORMATTER: MultiOptionFormatter = &|ans| {
     ans.iter()
-        .map(OptionAnswer::to_string)
+        .map(ListOption::to_string)
         .collect::<Vec<String>>()
         .join(", ")
 };
