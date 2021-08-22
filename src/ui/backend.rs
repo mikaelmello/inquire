@@ -2,13 +2,8 @@ use std::{collections::HashSet, io::Result};
 
 use unicode_segmentation::UnicodeSegmentation;
 
-use super::{key::Key, RenderConfig, Terminal};
-use crate::{
-    input::Input,
-    option_answer::OptionAnswer,
-    ui::Styled,
-    utils::{count_newlines_hyperscreaming, Page},
-};
+use super::{key::Key, RenderConfig, Terminal, TerminalSize};
+use crate::{input::Input, option_answer::OptionAnswer, ui::Styled, utils::Page};
 
 pub trait CommonBackend {
     fn read_key(&mut self) -> Result<Key>;
@@ -63,6 +58,7 @@ where
 {
     cur_line: usize,
     terminal: T,
+    terminal_size: TerminalSize,
     render_config: &'a RenderConfig,
 }
 
@@ -71,10 +67,16 @@ where
     T: Terminal,
 {
     pub fn new(terminal: T, render_config: &'a RenderConfig) -> Result<Self> {
+        let terminal_size = terminal.get_size().unwrap_or(TerminalSize {
+            width: 1000,
+            height: 1000,
+        });
+
         let mut backend = Self {
             cur_line: 0,
             terminal,
             render_config,
+            terminal_size,
         };
 
         backend.terminal.cursor_hide()?;
@@ -82,9 +84,36 @@ where
         Ok(backend)
     }
 
+    fn count_lines(&self, input: &str) -> u16 {
+        let mut lines: u16 = 0;
+        let mut cur_len: u16 = 0;
+
+        let term_width = self.terminal_size.width;
+
+        for g in input.graphemes(true) {
+            if g == "\r\n" {
+                let wrapped_count = cur_len / term_width;
+
+                let line_add = if cur_len % term_width == 0 { 0 } else { 1 };
+
+                lines = lines.saturating_add(wrapped_count.saturating_add(line_add));
+                cur_len = 0;
+            } else {
+                cur_len = cur_len.saturating_add(1);
+            }
+        }
+
+        if cur_len > 0 {
+            let wrapped_count = cur_len / term_width;
+            lines = lines.saturating_add(wrapped_count.saturating_add(1));
+        }
+
+        lines
+    }
+
     fn reset_prompt(&mut self) -> Result<()> {
         let current = self.terminal.get_in_memory_content();
-        let lines = count_newlines_hyperscreaming(current);
+        let lines = self.count_lines(current);
 
         for _ in 0..lines {
             self.terminal.cursor_up()?;
