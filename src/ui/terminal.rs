@@ -32,7 +32,10 @@ pub trait Terminal {
 }
 
 pub mod crossterm {
-    use std::io::{stdout, ErrorKind, Result, Stdout, Write};
+    use std::{
+        fmt::Write as fwrite,
+        io::{stdout, ErrorKind, Result, Stdout, Write},
+    };
 
     use crossterm::{
         cursor,
@@ -107,15 +110,6 @@ pub mod crossterm {
         }
 
         fn write_command<C: Command>(&mut self, command: C) -> Result<()> {
-            command
-                .write_ansi(&mut self.in_memory_content)
-                .map_err(|_| {
-                    std::io::Error::new(
-                        ErrorKind::Other,
-                        "Not possible to write command to in-memory string",
-                    )
-                })?;
-
             queue!(&mut self.get_writer(), command)
         }
     }
@@ -150,7 +144,15 @@ pub mod crossterm {
         }
 
         fn write<T: std::fmt::Display + AsRef<str>>(&mut self, val: T) -> Result<()> {
-            self.write_command(Print(newline_converter::unix2dos(&val)))
+            let converted = newline_converter::unix2dos(&val);
+            write!(&mut self.in_memory_content, "{}", converted).map_err(|_| {
+                std::io::Error::new(
+                    ErrorKind::Other,
+                    "Not possible to write command to in-memory string",
+                )
+            })?;
+
+            self.write_command(Print(converted))
         }
 
         fn write_styled<'s, T: std::fmt::Display + AsRef<str>>(
