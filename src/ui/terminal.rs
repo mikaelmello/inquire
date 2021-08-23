@@ -20,8 +20,8 @@ pub trait Terminal {
     fn get_in_memory_content(&self) -> &str;
     fn clear_in_memory_content(&mut self);
 
-    fn write<T: Display + AsRef<str>>(&mut self, val: T) -> Result<()>;
-    fn write_styled<'s, T: Display + AsRef<str>>(&mut self, val: &'s Styled<T>) -> Result<()>;
+    fn write<T: Display>(&mut self, val: T) -> Result<()>;
+    fn write_styled<'s, T: Display>(&mut self, val: &'s Styled<T>) -> Result<()>;
 
     fn clear_current_line(&mut self) -> Result<()>;
 
@@ -39,10 +39,7 @@ pub trait Terminal {
 }
 
 pub mod crossterm {
-    use std::{
-        fmt::Write as fwrite,
-        io::{stdout, ErrorKind, Result, Stdout, Write},
-    };
+    use std::io::{stdout, Result, Stdout, Write};
 
     use crossterm::{
         cursor,
@@ -154,22 +151,15 @@ pub mod crossterm {
             terminal::size().map(|(width, height)| super::TerminalSize { width, height })
         }
 
-        fn write<T: std::fmt::Display + AsRef<str>>(&mut self, val: T) -> Result<()> {
-            let converted = newline_converter::unix2dos(&val);
-            write!(&mut self.in_memory_content, "{}", converted).map_err(|_| {
-                std::io::Error::new(
-                    ErrorKind::Other,
-                    "Not possible to write command to in-memory string",
-                )
-            })?;
+        fn write<T: std::fmt::Display>(&mut self, val: T) -> Result<()> {
+            let formatted = format!("{}", val);
+            let converted = newline_converter::unix2dos(&formatted);
 
+            self.in_memory_content.push_str(converted.as_ref());
             self.write_command(Print(converted))
         }
 
-        fn write_styled<'s, T: std::fmt::Display + AsRef<str>>(
-            &mut self,
-            val: &'s Styled<T>,
-        ) -> Result<()> {
+        fn write_styled<'s, T: std::fmt::Display>(&mut self, val: &'s Styled<T>) -> Result<()> {
             if let Some(color) = val.style.fg {
                 self.set_fg_color(color)?;
             }
