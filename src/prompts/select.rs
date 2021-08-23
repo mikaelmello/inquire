@@ -3,7 +3,7 @@ use std::iter::FromIterator;
 use crate::{
     config::{self, Filter},
     error::{InquireError, InquireResult},
-    formatter::{self, OptionFormatter},
+    formatter::OptionFormatter,
     input::Input,
     list_option::ListOption,
     ui::{crossterm::CrosstermTerminal, Backend, Key, KeyModifiers, RenderConfig, SelectBackend},
@@ -82,8 +82,20 @@ pub struct Select<'a> {
 }
 
 impl<'a> Select<'a> {
-    /// Default formatter, set to [DEFAULT_OPTION_FORMATTER](crate::formatter::DEFAULT_OPTION_FORMATTER)
-    pub const DEFAULT_FORMATTER: OptionFormatter<'a> = formatter::DEFAULT_OPTION_FORMATTER;
+    /// String formatter used by default in [Select](crate::Select) prompts.
+    /// Simply prints the string value contained in the selected option.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use inquire::list_option::ListOption;
+    /// use inquire::Select;
+    ///
+    /// let formatter = Select::DEFAULT_FORMATTER;
+    /// assert_eq!(String::from("First option"), formatter(&ListOption::new(0, "First option")));
+    /// assert_eq!(String::from("First option"), formatter(&ListOption::new(11, "First option")));
+    /// ```
+    pub const DEFAULT_FORMATTER: OptionFormatter<'a> = &|ans| ans.to_string();
 
     /// Default filter, equal to the global default filter [config::DEFAULT_FILTER].
     pub const DEFAULT_FILTER: Filter<'a> = config::DEFAULT_FILTER;
@@ -166,7 +178,7 @@ impl<'a> Select<'a> {
 
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to the defined rules.
-    pub fn prompt(self) -> InquireResult<ListOption> {
+    pub fn prompt(self) -> InquireResult<ListOption<&'a str>> {
         let terminal = CrosstermTerminal::new()?;
         let mut backend = Backend::new(terminal, self.render_config)?;
         self.prompt_with_backend(&mut backend)
@@ -175,7 +187,7 @@ impl<'a> Select<'a> {
     pub(in crate) fn prompt_with_backend<B: SelectBackend>(
         self,
         backend: &mut B,
-    ) -> InquireResult<ListOption> {
+    ) -> InquireResult<ListOption<&'a str>> {
         SelectPrompt::new(self)?.prompt(backend)
     }
 }
@@ -285,10 +297,10 @@ impl<'a> SelectPrompt<'a> {
         };
     }
 
-    fn get_final_answer(&self) -> Option<ListOption> {
+    fn get_final_answer(&self) -> Option<ListOption<&'a str>> {
         self.filtered_options
             .get(self.cursor_index)
-            .and_then(|i| self.options.get(*i).map(|opt| ListOption::new(*i, opt)))
+            .and_then(|i| self.options.get(*i).map(|opt| ListOption::new(*i, *opt)))
     }
 
     fn render<B: SelectBackend>(&mut self, backend: &mut B) -> InquireResult<()> {
@@ -302,8 +314,8 @@ impl<'a> SelectPrompt<'a> {
             .filtered_options
             .iter()
             .cloned()
-            .map(|i| ListOption::new(i, self.options.get(i).unwrap()))
-            .collect::<Vec<ListOption>>();
+            .map(|i| ListOption::new(i, (*self.options.get(i).unwrap()).as_ref()))
+            .collect::<Vec<ListOption<&str>>>();
 
         let page = paginate(self.page_size, &choices, self.cursor_index);
 
@@ -318,8 +330,8 @@ impl<'a> SelectPrompt<'a> {
         Ok(())
     }
 
-    fn prompt<B: SelectBackend>(mut self, backend: &mut B) -> InquireResult<ListOption> {
-        let final_answer: ListOption;
+    fn prompt<B: SelectBackend>(mut self, backend: &mut B) -> InquireResult<ListOption<&'a str>> {
+        let final_answer;
 
         loop {
             self.render(backend)?;

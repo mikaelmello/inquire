@@ -99,7 +99,7 @@ pub type BoolFormatter<'a> = &'a dyn Fn(bool) -> String;
 /// assert_eq!(String::from("Option 1: 'a'"), formatter(&ListOption::new(0, "a")));
 /// assert_eq!(String::from("Option 2: 'b'"), formatter(&ListOption::new(1, "b")));
 /// ```
-pub type OptionFormatter<'a> = &'a dyn Fn(&ListOption) -> String;
+pub type OptionFormatter<'a> = &'a dyn Fn(&ListOption<&'a str>) -> String;
 
 /// Type alias for formatters used in [MultiSelect](crate::MultiSelect) prompts.
 ///
@@ -127,7 +127,7 @@ pub type OptionFormatter<'a> = &'a dyn Fn(&ListOption) -> String;
 /// ans.push(ListOption::new(3, "d"));
 /// assert_eq!(String::from("You selected 2 options"), formatter(&ans));
 /// ```
-pub type MultiOptionFormatter<'a> = &'a dyn Fn(&[ListOption]) -> String;
+pub type MultiOptionFormatter<'a> = &'a dyn Fn(&[ListOption<&'a str>]) -> String;
 
 /// Type alias for formatters used in [CustomType](crate::CustomType) prompts.
 ///
@@ -199,48 +199,6 @@ pub const DEFAULT_STRING_FORMATTER: StringFormatter = &|val| String::from(val);
 pub const DEFAULT_BOOL_FORMATTER: BoolFormatter = &|ans| match ans {
     true => String::from("Yes"),
     false => String::from("No"),
-};
-
-/// String formatter used by default in [Select](crate::Select) prompts.
-/// Simply prints the string value contained in the selected option.
-///
-/// # Examples
-///
-/// ```
-/// use inquire::list_option::ListOption;
-/// use inquire::formatter::DEFAULT_OPTION_FORMATTER;
-///
-/// let formatter = DEFAULT_OPTION_FORMATTER;
-/// assert_eq!(String::from("First option"), formatter(&ListOption::new(0, "First option")));
-/// assert_eq!(String::from("First option"), formatter(&ListOption::new(11, "First option")));
-/// ```
-pub const DEFAULT_OPTION_FORMATTER: OptionFormatter = &|ans| ans.to_string();
-
-/// String formatter used by default in [MultiSelect](crate::MultiSelect) prompts.
-/// Prints the string value of all selected options, separated by commas.
-///
-/// # Examples
-///
-/// ```
-/// use inquire::list_option::ListOption;
-/// use inquire::formatter::DEFAULT_MULTI_OPTION_FORMATTER;
-///
-/// let formatter = DEFAULT_MULTI_OPTION_FORMATTER;
-///
-/// let mut ans = vec![ListOption::new(0, "New York")];
-/// assert_eq!(String::from("New York"), formatter(&ans));
-///
-/// ans.push(ListOption::new(3, "Seattle"));
-/// assert_eq!(String::from("New York, Seattle"), formatter(&ans));
-///
-/// ans.push(ListOption::new(7, "Vancouver"));
-/// assert_eq!(String::from("New York, Seattle, Vancouver"), formatter(&ans));
-/// ```
-pub const DEFAULT_MULTI_OPTION_FORMATTER: MultiOptionFormatter = &|ans| {
-    ans.iter()
-        .map(ListOption::to_string)
-        .collect::<Vec<String>>()
-        .join(", ")
 };
 
 #[cfg(feature = "date")]

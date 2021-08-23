@@ -108,7 +108,7 @@ pub type DateValidator<'a> = &'a dyn Fn(chrono::NaiveDate) -> Result<(), String>
 ///     validator(&ans)
 /// );
 /// ```
-pub type MultiOptionValidator<'a> = &'a dyn Fn(&[ListOption]) -> Result<(), String>;
+pub type MultiOptionValidator<'a> = &'a dyn Fn(&[ListOption<&'a str>]) -> Result<(), String>;
 
 /// Custom trait to call correct method to retrieve input length.
 ///
@@ -317,7 +317,7 @@ mod test {
         validator::{InquireLength, MultiOptionValidator, StringValidator},
     };
 
-    fn build_option_vec(len: usize) -> Vec<ListOption> {
+    fn build_option_vec(len: usize) -> Vec<ListOption<&'static str>> {
         let mut options = Vec::new();
 
         for i in 0..len {

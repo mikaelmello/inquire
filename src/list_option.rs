@@ -1,23 +1,20 @@
 //! Utilities used to wrap user selections in [Select](crate::Select) and
 //! [MultiSelect](crate::MultiSelect) prompts.
 
-use std::fmt;
+use std::fmt::{self, Display};
 
 /// Represents a selection made by the user when prompted to select one or several
 /// options among those presented.
-///
-/// It is essentially the return type of the [Select](crate::Select) and [MultiSelect](crate::MultiSelect)
-/// prompts.
 #[derive(Clone, Debug, PartialEq)]
-pub struct ListOption {
+pub struct ListOption<T> {
     /// Index of the selected option relative to the original (full) list passed to the prompt.
     pub index: usize,
 
-    /// String value of the selected option.
-    pub value: String,
+    /// Value of the selected option.
+    pub value: T,
 }
 
-impl ListOption {
+impl<T> ListOption<T> {
     /// Constructor for ListOption.
     ///
     /// # Arguments
@@ -32,37 +29,31 @@ impl ListOption {
     ///
     /// let answer = ListOption::new(0, "a");
     /// ```
-    pub fn new(index: usize, value: &str) -> Self {
-        Self {
-            index,
-            value: value.to_string(),
-        }
+    pub fn new(index: usize, value: T) -> Self {
+        Self { index, value }
     }
 
     #[allow(unused)]
-    pub(in crate) fn from_str_list(vals: &[&str]) -> Vec<ListOption> {
-        vals.iter()
+    pub(in crate) fn from_list(vals: Vec<T>) -> Vec<ListOption<T>> {
+        vals.into_iter()
             .enumerate()
-            .map(|(index, value)| Self {
-                index,
-                value: value.to_string(),
-            })
+            .map(|(index, value)| Self { index, value })
             .collect()
     }
 
     #[allow(unused)]
-    pub(in crate) fn from_idx_str_list(vals: &[(usize, &str)]) -> Vec<ListOption> {
-        vals.iter()
-            .map(|(index, value)| Self {
-                index: *index,
-                value: value.to_string(),
-            })
+    pub(in crate) fn from_enumerated_list(vals: Vec<(usize, T)>) -> Vec<ListOption<T>> {
+        vals.into_iter()
+            .map(|(index, value)| Self { index, value })
             .collect()
     }
 }
 
-impl fmt::Display for ListOption {
+impl<T> fmt::Display for ListOption<T>
+where
+    T: Display,
+{
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.value)
+        self.value.fmt(f)
     }
 }

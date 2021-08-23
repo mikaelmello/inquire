@@ -349,8 +349,8 @@ impl<'a> TextPrompt<'a> {
             .suggested_options
             .iter()
             .enumerate()
-            .map(|(i, val)| ListOption::new(i, val))
-            .collect::<Vec<ListOption>>();
+            .map(|(i, val)| ListOption::new(i, val.as_ref()))
+            .collect::<Vec<ListOption<&str>>>();
 
         let list_index = self.cursor_index.saturating_sub(1);
         let mut page = paginate(self.page_size, &choices, list_index);

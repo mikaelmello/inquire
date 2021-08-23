@@ -3,7 +3,7 @@ use std::{collections::HashSet, iter::FromIterator};
 use crate::{
     config::{self, Filter},
     error::{InquireError, InquireResult},
-    formatter::{self, MultiOptionFormatter},
+    formatter::MultiOptionFormatter,
     input::Input,
     list_option::ListOption,
     ui::{
@@ -85,9 +85,32 @@ pub struct MultiSelect<'a> {
 }
 
 impl<'a> MultiSelect<'a> {
-    /// Default formatter, set to [DEFAULT_MULTI_OPTION_FORMATTER](crate::formatter::DEFAULT_MULTI_OPTION_FORMATTER)
-    pub const DEFAULT_FORMATTER: MultiOptionFormatter<'a> =
-        formatter::DEFAULT_MULTI_OPTION_FORMATTER;
+    /// String formatter used by default in [MultiSelect](crate::MultiSelect) prompts.
+    /// Prints the string value of all selected options, separated by commas.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use inquire::list_option::ListOption;
+    /// use inquire::MultiSelect;
+    ///
+    /// let formatter = MultiSelect::DEFAULT_FORMATTER;
+    ///
+    /// let mut ans = vec![ListOption::new(0, "New York")];
+    /// assert_eq!(String::from("New York"), formatter(&ans));
+    ///
+    /// ans.push(ListOption::new(3, "Seattle"));
+    /// assert_eq!(String::from("New York, Seattle"), formatter(&ans));
+    ///
+    /// ans.push(ListOption::new(7, "Vancouver"));
+    /// assert_eq!(String::from("New York, Seattle, Vancouver"), formatter(&ans));
+    /// ```
+    pub const DEFAULT_FORMATTER: MultiOptionFormatter<'a> = &|ans| {
+        ans.iter()
+            .map(ListOption::to_string)
+            .collect::<Vec<String>>()
+            .join(", ")
+    };
 
     /// Default filter, equal to the global default filter [config::DEFAULT_FILTER].
     pub const DEFAULT_FILTER: Filter<'a> = config::DEFAULT_FILTER;
@@ -201,7 +224,7 @@ impl<'a> MultiSelect<'a> {
 
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to the defined rules.
-    pub fn prompt(self) -> InquireResult<Vec<ListOption>> {
+    pub fn prompt(self) -> InquireResult<Vec<ListOption<&'a str>>> {
         let terminal = CrosstermTerminal::new()?;
         let mut backend = Backend::new(terminal, self.render_config)?;
         self.prompt_with_backend(&mut backend)
@@ -210,7 +233,7 @@ impl<'a> MultiSelect<'a> {
     pub(in crate) fn prompt_with_backend<B: MultiSelectBackend>(
         self,
         backend: &mut B,
-    ) -> InquireResult<Vec<ListOption>> {
+    ) -> InquireResult<Vec<ListOption<&'a str>>> {
         MultiSelectPrompt::new(self)?.prompt(backend)
     }
 }
@@ -368,16 +391,16 @@ impl<'a> MultiSelectPrompt<'a> {
         };
     }
 
-    fn get_final_answer(&self) -> Result<Vec<ListOption>, String> {
+    fn get_final_answer(&self) -> Result<Vec<ListOption<&'a str>>, String> {
         let selected_options = self
             .options
             .iter()
             .enumerate()
             .filter_map(|(idx, opt)| match &self.checked.contains(&idx) {
-                true => Some(ListOption::new(idx, opt)),
+                true => Some(ListOption::new(idx, *opt)),
                 false => None,
             })
-            .collect::<Vec<ListOption>>();
+            .collect::<Vec<ListOption<&'a str>>>();
 
         if let Some(validator) = self.validator {
             return match validator(&selected_options) {
@@ -404,8 +427,8 @@ impl<'a> MultiSelectPrompt<'a> {
             .filtered_options
             .iter()
             .cloned()
-            .map(|i| ListOption::new(i, self.options.get(i).unwrap()))
-            .collect::<Vec<ListOption>>();
+            .map(|i| ListOption::new(i, (*self.options.get(i).unwrap()).as_ref()))
+            .collect::<Vec<ListOption<&'a str>>>();
 
         let page = paginate(self.page_size, &choices, self.cursor_index);
 
@@ -420,8 +443,11 @@ impl<'a> MultiSelectPrompt<'a> {
         Ok(())
     }
 
-    fn prompt<B: MultiSelectBackend>(mut self, backend: &mut B) -> InquireResult<Vec<ListOption>> {
-        let final_answer: Vec<ListOption>;
+    fn prompt<B: MultiSelectBackend>(
+        mut self,
+        backend: &mut B,
+    ) -> InquireResult<Vec<ListOption<&'a str>>> {
+        let final_answer: Vec<ListOption<&'a str>>;
 
         loop {
             self.render(backend)?;
