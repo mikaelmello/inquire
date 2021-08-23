@@ -73,7 +73,7 @@ pub struct MultiSelect<'a> {
     pub keep_filter: bool,
 
     /// Function that formats the user input and presents it to the user as the final rendering of the prompt.
-    pub formatter: MultiOptionFormatter<'a>,
+    pub formatter: MultiOptionFormatter<'a, str>,
 
     /// Validator to apply to the user input.
     ///
@@ -105,7 +105,7 @@ impl<'a> MultiSelect<'a> {
     /// ans.push(ListOption::new(7, "Vancouver"));
     /// assert_eq!(String::from("New York, Seattle, Vancouver"), formatter(&ans));
     /// ```
-    pub const DEFAULT_FORMATTER: MultiOptionFormatter<'a> = &|ans| {
+    pub const DEFAULT_FORMATTER: MultiOptionFormatter<'a, str> = &|ans| {
         ans.iter()
             .map(ListOption::to_string)
             .collect::<Vec<String>>()
@@ -189,7 +189,7 @@ impl<'a> MultiSelect<'a> {
     }
 
     /// Sets the formatter.
-    pub fn with_formatter(mut self, formatter: MultiOptionFormatter<'a>) -> Self {
+    pub fn with_formatter(mut self, formatter: MultiOptionFormatter<'a, str>) -> Self {
         self.formatter = formatter;
         self
     }
@@ -250,7 +250,7 @@ struct MultiSelectPrompt<'a> {
     input: Input,
     filtered_options: Vec<usize>,
     filter: Filter<'a, str>,
-    formatter: MultiOptionFormatter<'a>,
+    formatter: MultiOptionFormatter<'a, str>,
     validator: Option<MultiOptionValidator<'a>>,
     error: Option<String>,
 }

@@ -75,7 +75,7 @@ pub struct Select<'a> {
     pub filter: Filter<'a, str>,
 
     /// Function that formats the user input and presents it to the user as the final rendering of the prompt.
-    pub formatter: OptionFormatter<'a>,
+    pub formatter: OptionFormatter<'a, str>,
 
     /// RenderConfig to apply to the rendered interface.
     pub render_config: &'a RenderConfig,
@@ -95,7 +95,7 @@ impl<'a> Select<'a> {
     /// assert_eq!(String::from("First option"), formatter(&ListOption::new(0, "First option")));
     /// assert_eq!(String::from("First option"), formatter(&ListOption::new(11, "First option")));
     /// ```
-    pub const DEFAULT_FORMATTER: OptionFormatter<'a> = &|ans| ans.to_string();
+    pub const DEFAULT_FORMATTER: OptionFormatter<'a, str> = &|ans| ans.to_string();
 
     /// Default filter, equal to the global default filter [config::DEFAULT_FILTER].
     pub const DEFAULT_FILTER: Filter<'a, str> = config::DEFAULT_FILTER;
@@ -159,7 +159,7 @@ impl<'a> Select<'a> {
     }
 
     /// Sets the formatter.
-    pub fn with_formatter(mut self, formatter: OptionFormatter<'a>) -> Self {
+    pub fn with_formatter(mut self, formatter: OptionFormatter<'a, str>) -> Self {
         self.formatter = formatter;
         self
     }
@@ -202,7 +202,7 @@ struct SelectPrompt<'a> {
     input: Input,
     filtered_options: Vec<usize>,
     filter: Filter<'a, str>,
-    formatter: OptionFormatter<'a>,
+    formatter: OptionFormatter<'a, str>,
 }
 
 impl<'a> SelectPrompt<'a> {

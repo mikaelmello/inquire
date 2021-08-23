@@ -99,7 +99,7 @@ pub type BoolFormatter<'a> = &'a dyn Fn(bool) -> String;
 /// assert_eq!(String::from("Option 1: 'a'"), formatter(&ListOption::new(0, "a")));
 /// assert_eq!(String::from("Option 2: 'b'"), formatter(&ListOption::new(1, "b")));
 /// ```
-pub type OptionFormatter<'a> = &'a dyn Fn(&ListOption<&'a str>) -> String;
+pub type OptionFormatter<'a, T> = &'a dyn Fn(&ListOption<&'a T>) -> String;
 
 /// Type alias for formatters used in [MultiSelect](crate::MultiSelect) prompts.
 ///
@@ -127,7 +127,7 @@ pub type OptionFormatter<'a> = &'a dyn Fn(&ListOption<&'a str>) -> String;
 /// ans.push(ListOption::new(3, "d"));
 /// assert_eq!(String::from("You selected 2 options"), formatter(&ans));
 /// ```
-pub type MultiOptionFormatter<'a> = &'a dyn Fn(&[ListOption<&'a str>]) -> String;
+pub type MultiOptionFormatter<'a, T> = &'a dyn Fn(&[ListOption<&'a T>]) -> String;
 
 /// Type alias for formatters used in [CustomType](crate::CustomType) prompts.
 ///
