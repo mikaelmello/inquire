@@ -67,7 +67,7 @@ pub struct MultiSelect<'a> {
 
     /// Function called with the current user input to filter the provided
     /// options.
-    pub filter: Filter<'a>,
+    pub filter: Filter<'a, str>,
 
     /// Whether the current filter typed by the user is kept or cleaned after a selection is made.
     pub keep_filter: bool,
@@ -113,7 +113,7 @@ impl<'a> MultiSelect<'a> {
     };
 
     /// Default filter, equal to the global default filter [config::DEFAULT_FILTER].
-    pub const DEFAULT_FILTER: Filter<'a> = config::DEFAULT_FILTER;
+    pub const DEFAULT_FILTER: Filter<'a, str> = config::DEFAULT_FILTER;
 
     /// Default page size, equal to the global default page size [config::DEFAULT_PAGE_SIZE]
     pub const DEFAULT_PAGE_SIZE: usize = config::DEFAULT_PAGE_SIZE;
@@ -183,7 +183,7 @@ impl<'a> MultiSelect<'a> {
     }
 
     /// Sets the filter function.
-    pub fn with_filter(mut self, filter: Filter<'a>) -> Self {
+    pub fn with_filter(mut self, filter: Filter<'a, str>) -> Self {
         self.filter = filter;
         self
     }
@@ -249,7 +249,7 @@ struct MultiSelectPrompt<'a> {
     keep_filter: bool,
     input: Input,
     filtered_options: Vec<usize>,
-    filter: Filter<'a>,
+    filter: Filter<'a, str>,
     formatter: MultiOptionFormatter<'a>,
     validator: Option<MultiOptionValidator<'a>>,
     error: Option<String>,
@@ -300,7 +300,7 @@ impl<'a> MultiSelectPrompt<'a> {
             .enumerate()
             .filter_map(|(i, opt)| match self.input.content() {
                 val if val.is_empty() => Some(i),
-                val if (self.filter)(&val, opt, i) => Some(i),
+                val if (self.filter)(&val, opt, opt, i) => Some(i),
                 _ => None,
             })
             .collect()

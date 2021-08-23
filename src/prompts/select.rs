@@ -72,7 +72,7 @@ pub struct Select<'a> {
 
     /// Function called with the current user input to filter the provided
     /// options.
-    pub filter: Filter<'a>,
+    pub filter: Filter<'a, str>,
 
     /// Function that formats the user input and presents it to the user as the final rendering of the prompt.
     pub formatter: OptionFormatter<'a>,
@@ -98,7 +98,7 @@ impl<'a> Select<'a> {
     pub const DEFAULT_FORMATTER: OptionFormatter<'a> = &|ans| ans.to_string();
 
     /// Default filter, equal to the global default filter [config::DEFAULT_FILTER].
-    pub const DEFAULT_FILTER: Filter<'a> = config::DEFAULT_FILTER;
+    pub const DEFAULT_FILTER: Filter<'a, str> = config::DEFAULT_FILTER;
 
     /// Default page size.
     pub const DEFAULT_PAGE_SIZE: usize = config::DEFAULT_PAGE_SIZE;
@@ -153,7 +153,7 @@ impl<'a> Select<'a> {
     }
 
     /// Sets the filter function.
-    pub fn with_filter(mut self, filter: Filter<'a>) -> Self {
+    pub fn with_filter(mut self, filter: Filter<'a, str>) -> Self {
         self.filter = filter;
         self
     }
@@ -201,7 +201,7 @@ struct SelectPrompt<'a> {
     page_size: usize,
     input: Input,
     filtered_options: Vec<usize>,
-    filter: Filter<'a>,
+    filter: Filter<'a, str>,
     formatter: OptionFormatter<'a>,
 }
 
@@ -241,7 +241,7 @@ impl<'a> SelectPrompt<'a> {
             .enumerate()
             .filter_map(|(i, opt)| match self.input.content() {
                 val if val.is_empty() => Some(i),
-                val if (self.filter)(&val, opt, i) => Some(i),
+                val if (self.filter)(&val, opt, opt, i) => Some(i),
                 _ => None,
             })
             .collect()

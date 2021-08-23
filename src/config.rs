@@ -2,7 +2,12 @@
 
 /// Type alias to represent the function used to filter options.
 ///
-/// The function receives the current filter value and the value and index values of the option.
+/// The function receives:
+/// - Current user input, filter value
+/// - Current option being evaluated, with type preserved
+/// - String value of the current option
+/// - Index of the current option in the original list
+///
 /// The return type should be whether the current option should be displayed to the user.
 ///
 /// # Examples
@@ -29,7 +34,7 @@
 /// assert_eq!(false, filter("san", "Jacksonville", 11));
 /// assert_eq!(true,  filter("san", "San Jose",     12));
 /// ```
-pub type Filter<'a> = &'a dyn Fn(&str, &str, usize) -> bool;
+pub type Filter<'a, T> = &'a dyn Fn(&str, &T, &str, usize) -> bool;
 
 /// Type alias to represent the function used to retrieve text input suggestions.
 /// The function receives the current input and should return a collection of strings
@@ -65,7 +70,7 @@ pub const DEFAULT_VIM_MODE: bool = false;
 /// assert_eq!(false, filter("sa", "Jacksonville", 11));
 /// assert_eq!(true,  filter("sa", "San Jose",     12));
 /// ```
-pub const DEFAULT_FILTER: Filter = &|filter, value, _| -> bool {
+pub const DEFAULT_FILTER: Filter<str> = &|filter, value, _, _| -> bool {
     let filter = filter.to_lowercase();
 
     value.to_lowercase().contains(&filter)
