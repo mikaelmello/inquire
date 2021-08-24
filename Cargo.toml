@@ -25,7 +25,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 [dependencies]
 crossterm = "0.20"
 unicode-segmentation = "1"
-chrono = {version = "0.4",  optional = true }
+chrono = { version = "0.4",  optional = true }
 thiserror = "1"
 bitflags = "1.0"
 lazy_static = "1.4.0"
