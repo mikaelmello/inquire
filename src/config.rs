@@ -46,32 +46,3 @@ pub const DEFAULT_PAGE_SIZE: usize = 7;
 
 /// Default value of vim mode.
 pub const DEFAULT_VIM_MODE: bool = false;
-
-/// Default filter function, which checks if the current filter value is a substring of the option value.
-/// If it is, the option is displayed.
-///
-/// # Examples
-///
-/// ```
-/// use inquire::config::DEFAULT_FILTER;
-///
-/// let filter = DEFAULT_FILTER;
-/// assert_eq!(false, filter("sa", "New York",      0));
-/// assert_eq!(true,  filter("sa", "Sacramento",    1));
-/// assert_eq!(true,  filter("sa", "Kansas",        2));
-/// assert_eq!(true,  filter("sa", "Mesa",          3));
-/// assert_eq!(false, filter("sa", "Phoenix",       4));
-/// assert_eq!(false, filter("sa", "Philadelphia",  5));
-/// assert_eq!(true,  filter("sa", "San Antonio",   6));
-/// assert_eq!(true,  filter("sa", "San Diego",     7));
-/// assert_eq!(false, filter("sa", "Dallas",        8));
-/// assert_eq!(true,  filter("sa", "San Francisco", 9));
-/// assert_eq!(false, filter("sa", "Austin",       10));
-/// assert_eq!(false, filter("sa", "Jacksonville", 11));
-/// assert_eq!(true,  filter("sa", "San Jose",     12));
-/// ```
-pub const DEFAULT_FILTER: Filter<str> = &|filter, value, _, _| -> bool {
-    let filter = filter.to_lowercase();
-
-    value.to_lowercase().contains(&filter)
-};

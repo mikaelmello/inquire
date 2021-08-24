@@ -97,8 +97,34 @@ impl<'a> Select<'a> {
     /// ```
     pub const DEFAULT_FORMATTER: OptionFormatter<'a, str> = &|ans| ans.to_string();
 
-    /// Default filter, equal to the global default filter [config::DEFAULT_FILTER].
-    pub const DEFAULT_FILTER: Filter<'a, str> = config::DEFAULT_FILTER;
+    /// Default filter function, which checks if the current filter value is a substring of the option value.
+    /// If it is, the option is displayed.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use inquire::config::DEFAULT_FILTER;
+    ///
+    /// let filter = DEFAULT_FILTER;
+    /// assert_eq!(false, filter("sa", "New York",      "New York",      0));
+    /// assert_eq!(true,  filter("sa", "Sacramento",    "Sacramento",    1));
+    /// assert_eq!(true,  filter("sa", "Kansas",        "Kansas",        2));
+    /// assert_eq!(true,  filter("sa", "Mesa",          "Mesa",          3));
+    /// assert_eq!(false, filter("sa", "Phoenix",       "Phoenix",       4));
+    /// assert_eq!(false, filter("sa", "Philadelphia",  "Philadelphia",  5));
+    /// assert_eq!(true,  filter("sa", "San Antonio",   "San Antonio",   6));
+    /// assert_eq!(true,  filter("sa", "San Diego",     "San Diego",     7));
+    /// assert_eq!(false, filter("sa", "Dallas",        "Dallas",        8));
+    /// assert_eq!(true,  filter("sa", "San Francisco", "San Francisco", 9));
+    /// assert_eq!(false, filter("sa", "Austin",        "Austin",       10));
+    /// assert_eq!(false, filter("sa", "Jacksonville",  "Jacksonville", 11));
+    /// assert_eq!(true,  filter("sa", "San Jose",      "San Jose",     12));
+    /// ```
+    pub const DEFAULT_FILTER: Filter<'a, str> = &|filter, _, string_value, _| -> bool {
+        let filter = filter.to_lowercase();
+
+        string_value.to_lowercase().contains(&filter)
+    };
 
     /// Default page size.
     pub const DEFAULT_PAGE_SIZE: usize = config::DEFAULT_PAGE_SIZE;
