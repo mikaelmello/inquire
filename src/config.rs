@@ -15,24 +15,24 @@
 /// ```
 /// use inquire::config::Filter;
 ///
-/// let filter: Filter = &|filter, value, _| -> bool {
+/// let filter: Filter<str> = &|filter, _, string_value, _| -> bool {
 ///     let filter = filter.to_lowercase();
 ///
-///     value.to_lowercase().starts_with(&filter)
+///     string_value.to_lowercase().starts_with(&filter)
 /// };
-/// assert_eq!(false, filter("san", "New York",      0));
-/// assert_eq!(false, filter("san", "Los Angeles",   1));
-/// assert_eq!(false, filter("san", "Chicago",       2));
-/// assert_eq!(false, filter("san", "Houston",       3));
-/// assert_eq!(false, filter("san", "Phoenix",       4));
-/// assert_eq!(false, filter("san", "Philadelphia",  5));
-/// assert_eq!(true,  filter("san", "San Antonio",   6));
-/// assert_eq!(true,  filter("san", "San Diego",     7));
-/// assert_eq!(false, filter("san", "Dallas",        8));
-/// assert_eq!(true,  filter("san", "San Francisco", 9));
-/// assert_eq!(false, filter("san", "Austin",       10));
-/// assert_eq!(false, filter("san", "Jacksonville", 11));
-/// assert_eq!(true,  filter("san", "San Jose",     12));
+/// assert_eq!(false, filter("san", "New York",      "New York",      0));
+/// assert_eq!(false, filter("san", "Los Angeles",   "Los Angeles",   1));
+/// assert_eq!(false, filter("san", "Chicago",       "Chicago",       2));
+/// assert_eq!(false, filter("san", "Houston",       "Houston",       3));
+/// assert_eq!(false, filter("san", "Phoenix",       "Phoenix",       4));
+/// assert_eq!(false, filter("san", "Philadelphia",  "Philadelphia",  5));
+/// assert_eq!(true,  filter("san", "San Antonio",   "San Antonio",   6));
+/// assert_eq!(true,  filter("san", "San Diego",     "San Diego",     7));
+/// assert_eq!(false, filter("san", "Dallas",        "Dallas",        8));
+/// assert_eq!(true,  filter("san", "San Francisco", "San Francisco", 9));
+/// assert_eq!(false, filter("san", "Austin",        "Austin",       10));
+/// assert_eq!(false, filter("san", "Jacksonville",  "Jacksonville", 11));
+/// assert_eq!(true,  filter("san", "San Jose",      "San Jose",     12));
 /// ```
 pub type Filter<'a, T> = &'a dyn Fn(&str, &T, &str, usize) -> bool;
 
