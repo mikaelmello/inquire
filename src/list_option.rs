@@ -33,6 +33,10 @@ impl<T> ListOption<T> {
         Self { index, value }
     }
 
+    pub fn as_ref(&self) -> ListOption<&T> {
+        ListOption::new(self.index, &self.value)
+    }
+
     #[allow(unused)]
     pub(in crate) fn from_list(vals: Vec<T>) -> Vec<ListOption<T>> {
         vals.into_iter()
