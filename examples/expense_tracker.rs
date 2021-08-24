@@ -1,3 +1,5 @@
+use std::fmt::{Display, Formatter};
+
 use inquire::{error::InquireResult, required, CustomType, DateSelect, MultiSelect, Select, Text};
 
 fn main() -> InquireResult<()> {
@@ -12,7 +14,7 @@ fn main() -> InquireResult<()> {
         .with_page_size(5)
         .prompt()?;
 
-    let _amount: f64 = CustomType::new("Amount:")
+    let amount: f64 = CustomType::new("Amount:")
         .with_formatter(&|i| format!("${}", i))
         .with_error_message("Please type a valid number")
         .with_help_message("Type the amount in US dollars using a decimal point as a separator")
@@ -23,12 +25,15 @@ fn main() -> InquireResult<()> {
         .with_help_message("Optional notes")
         .prompt()?;
 
-    let account = Select::new("Account:", get_accounts()).prompt()?;
+    let mut accounts = get_accounts();
+    let accounts_mut = accounts.iter_mut().collect();
+    let account = Select::new("Account:", accounts_mut).prompt()?;
+    account.balance -= amount;
 
     let _tags = MultiSelect::new("Tags:", get_tags()).prompt()?;
 
     println!("Your transaction has been successfully recorded.");
-    println!("The balance of {} is now $311.09", account);
+    println!("The balance of {} is now ${:.2}", account, account.balance);
 
     Ok(())
 }
@@ -47,25 +52,42 @@ fn get_tags() -> &'static [&'static str] {
     ]
 }
 
+struct Account {
+    name: &'static str,
+    balance: f64,
+}
+
+impl Account {
+    pub fn new(name: &'static str, balance: f64) -> Self {
+        Self { name, balance }
+    }
+}
+
+impl Display for Account {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
+        write!(f, "{}", self.name)
+    }
+}
+
 /// This could be retrieved from a database, for example.
-fn get_accounts() -> &'static [&'static str] {
-    &[
-        "401k",
-        "Cash",
-        "D40 Bank",
-        "D40 Bank Credit Card",
-        "Digital Wallet",
-        "Established Bank",
-        "Investments Account",
-        "Meal Voucher",
-        "Mortgage",
-        "Zeus Bank Credit Card",
+fn get_accounts() -> Vec<Account> {
+    vec![
+        Account::new("401k", 1.00),
+        Account::new("Cash", 10.00),
+        Account::new("D40 Bank", 100.00),
+        Account::new("D40 Bank Credit Card", 1000.00),
+        Account::new("Digital Wallet", 100.00),
+        Account::new("Established Bank", 10.00),
+        Account::new("Investments Account", 1.00),
+        Account::new("Meal Voucher", 10.00),
+        Account::new("Mortgage", 100.00),
+        Account::new("Zeus Bank Credit Card", 354.08),
     ]
 }
 
 /// This could be retrieved from a database, for example.
-fn get_categories() -> &'static [&'static str] {
-    &[
+fn get_categories() -> Vec<&'static str> {
+    vec![
         "Rent",
         "Energy",
         "Water",

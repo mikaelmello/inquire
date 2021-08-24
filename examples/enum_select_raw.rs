@@ -3,7 +3,7 @@ use std::fmt::{Display, Formatter};
 use inquire::Select;
 
 fn main() {
-    let ans = Select::new("Currency:", Currency::VARIANTS).prompt();
+    let ans = Select::new("Currency:", Currency::VARIANTS.to_vec()).prompt();
 
     match ans {
         Ok(choice) => println!("{} is not a good choice.", choice),
@@ -11,7 +11,7 @@ fn main() {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 enum Currency {
     BRL,
     USD,

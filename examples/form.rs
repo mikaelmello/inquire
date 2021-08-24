@@ -47,7 +47,7 @@ fn main() {
         .prompt()
         .unwrap();
 
-    let _language = Select::new("What is your favorite programming language?", &languages)
+    let _language = Select::new("What is your favorite programming language?", languages)
         .prompt()
         .unwrap();
 

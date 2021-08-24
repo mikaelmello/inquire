@@ -55,7 +55,7 @@ pub struct Select<'a, T> {
     pub message: &'a str,
 
     /// Options displayed to the user.
-    pub options: &'a [T],
+    pub options: Vec<T>,
 
     /// Help message to be presented to the user.
     pub help_message: Option<&'a str>,
@@ -143,7 +143,7 @@ where
         Some("↑↓ to move, enter to select, type to filter");
 
     /// Creates a [Select] with the provided message and options, along with default configuration values.
-    pub fn new(message: &'a str, options: &'a [T]) -> Self {
+    pub fn new(message: &'a str, options: Vec<T>) -> Self {
         Self {
             message,
             options,
@@ -207,13 +207,13 @@ where
 
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to the defined rules.
-    pub fn prompt(self) -> InquireResult<&'a T> {
+    pub fn prompt(self) -> InquireResult<T> {
         self.raw_prompt().map(|op| op.value)
     }
 
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to the defined rules.
-    pub fn raw_prompt(self) -> InquireResult<ListOption<&'a T>> {
+    pub fn raw_prompt(self) -> InquireResult<ListOption<T>> {
         let terminal = CrosstermTerminal::new()?;
         let mut backend = Backend::new(terminal, self.render_config)?;
         self.prompt_with_backend(&mut backend)
@@ -222,21 +222,21 @@ where
     pub(in crate) fn prompt_with_backend<B: SelectBackend>(
         self,
         backend: &mut B,
-    ) -> InquireResult<ListOption<&'a T>> {
+    ) -> InquireResult<ListOption<T>> {
         SelectPrompt::new(self)?.prompt(backend)
     }
 }
 
 struct SelectPrompt<'a, T> {
     message: &'a str,
-    options: &'a [T],
+    options: Vec<T>,
     string_options: Vec<String>,
+    filtered_options: Vec<usize>,
     help_message: Option<&'a str>,
     vim_mode: bool,
     cursor_index: usize,
     page_size: usize,
     input: Input,
-    filtered_options: Vec<usize>,
     filter: Filter<'a, T>,
     formatter: OptionFormatter<'a, T>,
 }
@@ -340,9 +340,9 @@ where
         };
     }
 
-    fn get_final_answer(&mut self) -> ListOption<&'a T> {
+    fn get_final_answer(&mut self) -> ListOption<T> {
         let index = *self.filtered_options.get(self.cursor_index).unwrap();
-        let value = self.options.get(index).unwrap();
+        let value = self.options.swap_remove(index);
 
         ListOption::new(index, value)
     }
@@ -374,7 +374,7 @@ where
         Ok(())
     }
 
-    fn prompt<B: SelectBackend>(mut self, backend: &mut B) -> InquireResult<ListOption<&'a T>> {
+    fn prompt<B: SelectBackend>(mut self, backend: &mut B) -> InquireResult<ListOption<T>> {
         loop {
             self.render(backend)?;
 
@@ -389,7 +389,7 @@ where
             }
         }
         let final_answer = self.get_final_answer();
-        let formatted = (self.formatter)(&final_answer);
+        let formatted = (self.formatter)(&final_answer.as_ref());
 
         backend.finish_prompt(&self.message, &formatted)?;
 
