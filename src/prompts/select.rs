@@ -94,9 +94,9 @@ where
     /// use inquire::list_option::ListOption;
     /// use inquire::Select;
     ///
-    /// let formatter = Select::DEFAULT_FORMATTER;
-    /// assert_eq!(String::from("First option"), formatter(&ListOption::new(0, "First option")));
-    /// assert_eq!(String::from("First option"), formatter(&ListOption::new(11, "First option")));
+    /// let formatter = Select::<&str>::DEFAULT_FORMATTER;
+    /// assert_eq!(String::from("First option"), formatter(&ListOption::new(0, &"First option")));
+    /// assert_eq!(String::from("First option"), formatter(&ListOption::new(11, &"First option")));
     /// ```
     pub const DEFAULT_FORMATTER: OptionFormatter<'a, T> = &|ans| ans.to_string();
 
@@ -106,22 +106,22 @@ where
     /// # Examples
     ///
     /// ```
-    /// use inquire::config::DEFAULT_FILTER;
+    /// use inquire::Select;
     ///
-    /// let filter = DEFAULT_FILTER;
-    /// assert_eq!(false, filter("sa", "New York",      "New York",      0));
-    /// assert_eq!(true,  filter("sa", "Sacramento",    "Sacramento",    1));
-    /// assert_eq!(true,  filter("sa", "Kansas",        "Kansas",        2));
-    /// assert_eq!(true,  filter("sa", "Mesa",          "Mesa",          3));
-    /// assert_eq!(false, filter("sa", "Phoenix",       "Phoenix",       4));
-    /// assert_eq!(false, filter("sa", "Philadelphia",  "Philadelphia",  5));
-    /// assert_eq!(true,  filter("sa", "San Antonio",   "San Antonio",   6));
-    /// assert_eq!(true,  filter("sa", "San Diego",     "San Diego",     7));
-    /// assert_eq!(false, filter("sa", "Dallas",        "Dallas",        8));
-    /// assert_eq!(true,  filter("sa", "San Francisco", "San Francisco", 9));
-    /// assert_eq!(false, filter("sa", "Austin",        "Austin",       10));
-    /// assert_eq!(false, filter("sa", "Jacksonville",  "Jacksonville", 11));
-    /// assert_eq!(true,  filter("sa", "San Jose",      "San Jose",     12));
+    /// let filter = Select::<&str>::DEFAULT_FILTER;
+    /// assert_eq!(false, filter("sa", &"New York",      "New York",      0));
+    /// assert_eq!(true,  filter("sa", &"Sacramento",    "Sacramento",    1));
+    /// assert_eq!(true,  filter("sa", &"Kansas",        "Kansas",        2));
+    /// assert_eq!(true,  filter("sa", &"Mesa",          "Mesa",          3));
+    /// assert_eq!(false, filter("sa", &"Phoenix",       "Phoenix",       4));
+    /// assert_eq!(false, filter("sa", &"Philadelphia",  "Philadelphia",  5));
+    /// assert_eq!(true,  filter("sa", &"San Antonio",   "San Antonio",   6));
+    /// assert_eq!(true,  filter("sa", &"San Diego",     "San Diego",     7));
+    /// assert_eq!(false, filter("sa", &"Dallas",        "Dallas",        8));
+    /// assert_eq!(true,  filter("sa", &"San Francisco", "San Francisco", 9));
+    /// assert_eq!(false, filter("sa", &"Austin",        "Austin",       10));
+    /// assert_eq!(false, filter("sa", &"Jacksonville",  "Jacksonville", 11));
+    /// assert_eq!(true,  filter("sa", &"San Jose",      "San Jose",     12));
     /// ```
     pub const DEFAULT_FILTER: Filter<'a, T> = &|filter, _, string_value, _| -> bool {
         let filter = filter.to_lowercase();
