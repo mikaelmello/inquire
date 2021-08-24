@@ -1,4 +1,4 @@
-use std::iter::FromIterator;
+use std::fmt::Display;
 
 use crate::{
     config::{self, Filter},
@@ -49,13 +49,13 @@ use crate::{
 /// ```
 ///
 /// [`InquireError::InvalidConfiguration`]: crate::error::InquireError::InvalidConfiguration
-#[derive(Copy, Clone)]
-pub struct Select<'a> {
+#[derive(Clone)]
+pub struct Select<'a, T> {
     /// Message to be presented to the user.
     pub message: &'a str,
 
     /// Options displayed to the user.
-    pub options: &'a [&'a str],
+    pub options: &'a [T],
 
     /// Help message to be presented to the user.
     pub help_message: Option<&'a str>,
@@ -72,16 +72,19 @@ pub struct Select<'a> {
 
     /// Function called with the current user input to filter the provided
     /// options.
-    pub filter: Filter<'a, str>,
+    pub filter: Filter<'a, T>,
 
     /// Function that formats the user input and presents it to the user as the final rendering of the prompt.
-    pub formatter: OptionFormatter<'a, str>,
+    pub formatter: OptionFormatter<'a, T>,
 
     /// RenderConfig to apply to the rendered interface.
     pub render_config: &'a RenderConfig,
 }
 
-impl<'a> Select<'a> {
+impl<'a, T> Select<'a, T>
+where
+    T: Display,
+{
     /// String formatter used by default in [Select](crate::Select) prompts.
     /// Simply prints the string value contained in the selected option.
     ///
@@ -95,7 +98,7 @@ impl<'a> Select<'a> {
     /// assert_eq!(String::from("First option"), formatter(&ListOption::new(0, "First option")));
     /// assert_eq!(String::from("First option"), formatter(&ListOption::new(11, "First option")));
     /// ```
-    pub const DEFAULT_FORMATTER: OptionFormatter<'a, str> = &|ans| ans.to_string();
+    pub const DEFAULT_FORMATTER: OptionFormatter<'a, T> = &|ans| ans.to_string();
 
     /// Default filter function, which checks if the current filter value is a substring of the option value.
     /// If it is, the option is displayed.
@@ -120,7 +123,7 @@ impl<'a> Select<'a> {
     /// assert_eq!(false, filter("sa", "Jacksonville",  "Jacksonville", 11));
     /// assert_eq!(true,  filter("sa", "San Jose",      "San Jose",     12));
     /// ```
-    pub const DEFAULT_FILTER: Filter<'a, str> = &|filter, _, string_value, _| -> bool {
+    pub const DEFAULT_FILTER: Filter<'a, T> = &|filter, _, string_value, _| -> bool {
         let filter = filter.to_lowercase();
 
         string_value.to_lowercase().contains(&filter)
@@ -140,7 +143,7 @@ impl<'a> Select<'a> {
         Some("↑↓ to move, enter to select, type to filter");
 
     /// Creates a [Select] with the provided message and options, along with default configuration values.
-    pub fn new(message: &'a str, options: &'a [&str]) -> Self {
+    pub fn new(message: &'a str, options: &'a [T]) -> Self {
         Self {
             message,
             options,
@@ -179,13 +182,13 @@ impl<'a> Select<'a> {
     }
 
     /// Sets the filter function.
-    pub fn with_filter(mut self, filter: Filter<'a, str>) -> Self {
+    pub fn with_filter(mut self, filter: Filter<'a, T>) -> Self {
         self.filter = filter;
         self
     }
 
     /// Sets the formatter.
-    pub fn with_formatter(mut self, formatter: OptionFormatter<'a, str>) -> Self {
+    pub fn with_formatter(mut self, formatter: OptionFormatter<'a, T>) -> Self {
         self.formatter = formatter;
         self
     }
@@ -204,7 +207,7 @@ impl<'a> Select<'a> {
 
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to the defined rules.
-    pub fn prompt(self) -> InquireResult<ListOption<&'a str>> {
+    pub fn prompt(self) -> InquireResult<ListOption<&'a T>> {
         let terminal = CrosstermTerminal::new()?;
         let mut backend = Backend::new(terminal, self.render_config)?;
         self.prompt_with_backend(&mut backend)
@@ -213,26 +216,30 @@ impl<'a> Select<'a> {
     pub(in crate) fn prompt_with_backend<B: SelectBackend>(
         self,
         backend: &mut B,
-    ) -> InquireResult<ListOption<&'a str>> {
+    ) -> InquireResult<ListOption<&'a T>> {
         SelectPrompt::new(self)?.prompt(backend)
     }
 }
 
-struct SelectPrompt<'a> {
+struct SelectPrompt<'a, T> {
     message: &'a str,
-    options: &'a [&'a str],
+    options: &'a [T],
+    string_options: Vec<String>,
     help_message: Option<&'a str>,
     vim_mode: bool,
     cursor_index: usize,
     page_size: usize,
     input: Input,
     filtered_options: Vec<usize>,
-    filter: Filter<'a, str>,
-    formatter: OptionFormatter<'a, str>,
+    filter: Filter<'a, T>,
+    formatter: OptionFormatter<'a, T>,
 }
 
-impl<'a> SelectPrompt<'a> {
-    fn new(so: Select<'a>) -> InquireResult<Self> {
+impl<'a, T> SelectPrompt<'a, T>
+where
+    T: Display,
+{
+    fn new(so: Select<'a, T>) -> InquireResult<Self> {
         if so.options.is_empty() {
             return Err(InquireError::InvalidConfiguration(
                 "Available options can not be empty".into(),
@@ -247,15 +254,19 @@ impl<'a> SelectPrompt<'a> {
             )));
         }
 
+        let string_options = so.options.iter().map(T::to_string).collect();
+        let filtered_options = (0..so.options.len()).collect();
+
         Ok(Self {
             message: so.message,
             options: so.options,
+            string_options,
+            filtered_options,
             help_message: so.help_message,
             vim_mode: so.vim_mode,
             cursor_index: so.starting_cursor,
             page_size: so.page_size,
             input: Input::new(),
-            filtered_options: Vec::from_iter(0..so.options.len()),
             filter: so.filter,
             formatter: so.formatter,
         })
@@ -267,7 +278,7 @@ impl<'a> SelectPrompt<'a> {
             .enumerate()
             .filter_map(|(i, opt)| match self.input.content() {
                 val if val.is_empty() => Some(i),
-                val if (self.filter)(&val, opt, opt, i) => Some(i),
+                val if (self.filter)(&val, opt, self.string_options.get(i).unwrap(), i) => Some(i),
                 _ => None,
             })
             .collect()
@@ -323,10 +334,11 @@ impl<'a> SelectPrompt<'a> {
         };
     }
 
-    fn get_final_answer(&self) -> Option<ListOption<&'a str>> {
-        self.filtered_options
-            .get(self.cursor_index)
-            .and_then(|i| self.options.get(*i).map(|opt| ListOption::new(*i, *opt)))
+    fn get_final_answer(&mut self) -> ListOption<&'a T> {
+        let index = *self.filtered_options.get(self.cursor_index).unwrap();
+        let value = self.options.get(index).unwrap();
+
+        ListOption::new(index, value)
     }
 
     fn render<B: SelectBackend>(&mut self, backend: &mut B) -> InquireResult<()> {
@@ -340,8 +352,8 @@ impl<'a> SelectPrompt<'a> {
             .filtered_options
             .iter()
             .cloned()
-            .map(|i| ListOption::new(i, (*self.options.get(i).unwrap()).as_ref()))
-            .collect::<Vec<ListOption<&str>>>();
+            .map(|i| ListOption::new(i, self.options.get(i).unwrap()))
+            .collect::<Vec<ListOption<&T>>>();
 
         let page = paginate(self.page_size, &choices, self.cursor_index);
 
@@ -356,9 +368,7 @@ impl<'a> SelectPrompt<'a> {
         Ok(())
     }
 
-    fn prompt<B: SelectBackend>(mut self, backend: &mut B) -> InquireResult<ListOption<&'a str>> {
-        let final_answer;
-
+    fn prompt<B: SelectBackend>(mut self, backend: &mut B) -> InquireResult<ListOption<&'a T>> {
         loop {
             self.render(backend)?;
 
@@ -366,17 +376,13 @@ impl<'a> SelectPrompt<'a> {
 
             match key {
                 Key::Cancel => return Err(InquireError::OperationCanceled),
-                Key::Submit => match self.get_final_answer() {
-                    Some(answer) => {
-                        final_answer = answer;
-                        break;
-                    }
-                    None => {}
-                },
+                Key::Submit => {
+                    break;
+                }
                 key => self.on_change(key),
             }
         }
-
+        let final_answer = self.get_final_answer();
         let formatted = (self.formatter)(&final_answer);
 
         backend.finish_prompt(&self.message, &formatted)?;
