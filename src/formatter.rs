@@ -95,7 +95,7 @@ pub type BoolFormatter<'a> = &'a dyn Fn(bool) -> String;
 /// use inquire::list_option::ListOption;
 /// use inquire::formatter::OptionFormatter;
 ///
-/// let formatter: OptionFormatter = &|i| format!("Option {}: '{}'", i.index + 1, i.value);
+/// let formatter: OptionFormatter<str> = &|i| format!("Option {}: '{}'", i.index + 1, i.value);
 /// assert_eq!(String::from("Option 1: 'a'"), formatter(&ListOption::new(0, "a")));
 /// assert_eq!(String::from("Option 2: 'b'"), formatter(&ListOption::new(1, "b")));
 /// ```
@@ -112,7 +112,7 @@ pub type OptionFormatter<'a, T> = &'a dyn Fn(&ListOption<&T>) -> String;
 /// use inquire::list_option::ListOption;
 /// use inquire::formatter::MultiOptionFormatter;
 ///
-/// let formatter: MultiOptionFormatter = &|opts| {
+/// let formatter: MultiOptionFormatter<str> = &|opts| {
 ///     let len = opts.len();
 ///     let options = match len {
 ///         1 => "option",
