@@ -6,7 +6,7 @@ fn main() {
     let ans = Select::new("Currency:", Currency::VARIANTS).prompt();
 
     match ans {
-        Ok(choice) => println!("{} is not a good choice.", choice.value),
+        Ok(choice) => println!("{} is not a good choice.", choice),
         Err(_) => println!("There was an error, please try again"),
     }
 }

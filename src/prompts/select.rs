@@ -207,7 +207,13 @@ where
 
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to the defined rules.
-    pub fn prompt(self) -> InquireResult<ListOption<&'a T>> {
+    pub fn prompt(self) -> InquireResult<&'a T> {
+        self.raw_prompt().map(|op| op.value)
+    }
+
+    /// Parses the provided behavioral and rendering options and prompts
+    /// the CLI user for input according to the defined rules.
+    pub fn raw_prompt(self) -> InquireResult<ListOption<&'a T>> {
         let terminal = CrosstermTerminal::new()?;
         let mut backend = Backend::new(terminal, self.render_config)?;
         self.prompt_with_backend(&mut backend)

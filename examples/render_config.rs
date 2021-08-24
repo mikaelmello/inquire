@@ -46,7 +46,7 @@ fn main() -> InquireResult<()> {
         .prompt()?;
 
     println!("Your transaction has been successfully recorded.");
-    println!("The balance of {} is now $311.09", account.value);
+    println!("The balance of {} is now $311.09", account);
 
     Ok(())
 }
