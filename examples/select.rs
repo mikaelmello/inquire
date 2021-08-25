@@ -15,10 +15,10 @@ fn main() {
         "Pineapple",
     ];
 
-    let ans = Select::new("What's your favorite fruit?", &options).prompt();
+    let ans = Select::new("What's your favorite fruit?", options).prompt();
 
     match ans {
-        Ok(choice) => println!("{}! That's mine too!", choice.value),
+        Ok(choice) => println!("{}! That's mine too!", choice),
         Err(_) => println!("There was an error, please try again"),
     }
 }

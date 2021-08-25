@@ -91,7 +91,7 @@ In the [`render_config.rs`](./examples/render_config.gif) example, you can take 
 
 Almost all prompts provide an API to set custom validators.
 
-The validators provided to a given prompt are called whenever the user submits their input. These validators vary by prompt type, receiving different types of variables as arguments, such as `&str`, `&[OptionAnswer]`, or `NaiveDate`, but their return type are always the same: `Result<(), String>`.
+The validators provided to a given prompt are called whenever the user submits their input. These validators vary by prompt type, receiving different types of variables as arguments, such as `&str`, `&[ListOption]`, or `NaiveDate`, but their return type are always the same: `Result<(), String>`.
 
 If the input provided by the user is invalid, your validator should return `Ok(())`.
 
@@ -241,14 +241,12 @@ Finally, the user selects a date by pressing the space or enter keys.
 ![Animated GIF making a demonstration of a simple Select prompt created with this library. You can replay this recording in your terminal with asciinema play command using the file ./assets/select.cast](./assets/select.gif)
 
 ```rust
-let options = vec!["Banana", "Apple", "Strawberry", "Grapes",
-    "Lemon", "Tangerine", "Watermelon", "Orange", "Pear", "Avocado", "Pineapple",
-];
+let options: Vec<&str> = vec!["Banana", "Apple", "Strawberry", "Grapes", "Lemon", "Tangerine", "Watermelon", "Orange", "Pear", "Avocado", "Pineapple"];
 
-let ans = Select::new("What's your favorite fruit?", &options).prompt();
+let ans: Result<&str, InquireError> = Select::new("What's your favorite fruit?", options).prompt();
 
 match ans {
-    Ok(choice) => println!("{}! That's mine too!", choice.value),
+    Ok(choice) => println!("{}! That's mine too!", choice),
     Err(_) => println!("There was an error, please try again"),
 }
 ```
@@ -257,7 +255,8 @@ match ans {
 
 The user can select and submit the current highlighted option by pressing space or enter.
 
-This prompt requires a prompt message and a **non-empty** list of options to be displayed to the user. If the list is empty, the prompt operation will fail with an `InquireError::InvalidConfiguration` error.
+This prompt requires a prompt message and a **non-empty** `Vec` of options to be displayed to the user. The options can be of any type as long as they implement the `Display` trait. It is required that the `Vec` is moved to the prompt, as the prompt will return the selected option (`Vec` element) after the user submits.
+- If the list is empty, the prompt operation will fail with an `InquireError::InvalidConfiguration` error.
 
 This prompt does not support custom validators because of its nature. A submission always selects exactly one of the options. If this option was not supposed to be selected or is invalid in some way, it probably should not be included in the options list.
 
@@ -284,7 +283,8 @@ The source is too long, find it [here](./examples/multiselect.rs).
 
 The user can select (or deselect) the current highlighted option by pressing space, clean all selections by pressing the left arrow and select all options by pressing the right arrow.
 
-This prompt requires a prompt message and a **non-empty** list of options to be displayed to the user. If the list is empty, the prompt operation will fail with an `InquireError::InvalidConfiguration` error.
+This prompt requires a prompt message and a **non-empty** `Vec` of options to be displayed to the user. The options can be of any type as long as they implement the `Display` trait. It is required that the `Vec` is moved to the prompt, as the prompt will return the ownership of the `Vec` after the user submits, with only the selected options inside it.
+- If the list is empty, the prompt operation will fail with an `InquireError::InvalidConfiguration` error.
 
 The options are paginated in order to provide a smooth experience to the user, with the default page size being 7. The user can move from the options and the pages will be updated accordingly, including moving from the last to the first options (or vice-versa).
 

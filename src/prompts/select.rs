@@ -1,11 +1,11 @@
-use std::iter::FromIterator;
+use std::fmt::Display;
 
 use crate::{
     config::{self, Filter},
     error::{InquireError, InquireResult},
-    formatter::{self, OptionFormatter},
+    formatter::OptionFormatter,
     input::Input,
-    option_answer::OptionAnswer,
+    list_option::ListOption,
     ui::{crossterm::CrosstermTerminal, Backend, Key, KeyModifiers, RenderConfig, SelectBackend},
     utils::paginate,
 };
@@ -14,7 +14,8 @@ use crate::{
 ///
 /// The user can select and submit the current highlighted option by pressing enter.
 ///
-/// This prompt requires a prompt message and a **non-empty** list of options to be displayed to the user. If the list is empty, the prompt operation will fail with an [`InquireError::InvalidConfiguration`] error.
+/// This prompt requires a prompt message and a **non-empty** `Vec` of options to be displayed to the user. The options can be of any type as long as they implement the `Display` trait. It is required that the `Vec` is moved to the prompt, as the prompt will return the selected option (`Vec` element) after the user submits.
+/// - If the list is empty, the prompt operation will fail with an `InquireError::InvalidConfiguration` error.
 ///
 /// This prompt does not support custom validators because of its nature. A submission always selects exactly one of the options. If this option was not supposed to be selected or is invalid in some way, it probably should not be included in the options list.
 ///
@@ -34,28 +35,28 @@ use crate::{
 /// # Example
 ///
 /// ```no_run
-/// use inquire::Select;
+/// use inquire::{error::InquireError, Select};
 ///
-/// let options = vec!["Banana", "Apple", "Strawberry", "Grapes",
+/// let options: Vec<&str> = vec!["Banana", "Apple", "Strawberry", "Grapes",
 ///     "Lemon", "Tangerine", "Watermelon", "Orange", "Pear", "Avocado", "Pineapple",
 /// ];
 ///
-/// let ans = Select::new("What's your favorite fruit?", &options).prompt();
+/// let ans: Result<&str, InquireError> = Select::new("What's your favorite fruit?", options).prompt();
 ///
 /// match ans {
-///     Ok(choice) => println!("{}! That's mine too!", choice.value),
+///     Ok(choice) => println!("{}! That's mine too!", choice),
 ///     Err(_) => println!("There was an error, please try again"),
 /// }
 /// ```
 ///
 /// [`InquireError::InvalidConfiguration`]: crate::error::InquireError::InvalidConfiguration
-#[derive(Copy, Clone)]
-pub struct Select<'a> {
+#[derive(Clone)]
+pub struct Select<'a, T> {
     /// Message to be presented to the user.
     pub message: &'a str,
 
     /// Options displayed to the user.
-    pub options: &'a [&'a str],
+    pub options: Vec<T>,
 
     /// Help message to be presented to the user.
     pub help_message: Option<&'a str>,
@@ -72,21 +73,62 @@ pub struct Select<'a> {
 
     /// Function called with the current user input to filter the provided
     /// options.
-    pub filter: Filter<'a>,
+    pub filter: Filter<'a, T>,
 
     /// Function that formats the user input and presents it to the user as the final rendering of the prompt.
-    pub formatter: OptionFormatter<'a>,
+    pub formatter: OptionFormatter<'a, T>,
 
     /// RenderConfig to apply to the rendered interface.
     pub render_config: &'a RenderConfig,
 }
 
-impl<'a> Select<'a> {
-    /// Default formatter, set to [DEFAULT_OPTION_FORMATTER](crate::formatter::DEFAULT_OPTION_FORMATTER)
-    pub const DEFAULT_FORMATTER: OptionFormatter<'a> = formatter::DEFAULT_OPTION_FORMATTER;
+impl<'a, T> Select<'a, T>
+where
+    T: Display,
+{
+    /// String formatter used by default in [Select](crate::Select) prompts.
+    /// Simply prints the string value contained in the selected option.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use inquire::list_option::ListOption;
+    /// use inquire::Select;
+    ///
+    /// let formatter = Select::<&str>::DEFAULT_FORMATTER;
+    /// assert_eq!(String::from("First option"), formatter(ListOption::new(0, &"First option")));
+    /// assert_eq!(String::from("First option"), formatter(ListOption::new(11, &"First option")));
+    /// ```
+    pub const DEFAULT_FORMATTER: OptionFormatter<'a, T> = &|ans| ans.to_string();
 
-    /// Default filter, equal to the global default filter [config::DEFAULT_FILTER].
-    pub const DEFAULT_FILTER: Filter<'a> = config::DEFAULT_FILTER;
+    /// Default filter function, which checks if the current filter value is a substring of the option value.
+    /// If it is, the option is displayed.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use inquire::Select;
+    ///
+    /// let filter = Select::<&str>::DEFAULT_FILTER;
+    /// assert_eq!(false, filter("sa", &"New York",      "New York",      0));
+    /// assert_eq!(true,  filter("sa", &"Sacramento",    "Sacramento",    1));
+    /// assert_eq!(true,  filter("sa", &"Kansas",        "Kansas",        2));
+    /// assert_eq!(true,  filter("sa", &"Mesa",          "Mesa",          3));
+    /// assert_eq!(false, filter("sa", &"Phoenix",       "Phoenix",       4));
+    /// assert_eq!(false, filter("sa", &"Philadelphia",  "Philadelphia",  5));
+    /// assert_eq!(true,  filter("sa", &"San Antonio",   "San Antonio",   6));
+    /// assert_eq!(true,  filter("sa", &"San Diego",     "San Diego",     7));
+    /// assert_eq!(false, filter("sa", &"Dallas",        "Dallas",        8));
+    /// assert_eq!(true,  filter("sa", &"San Francisco", "San Francisco", 9));
+    /// assert_eq!(false, filter("sa", &"Austin",        "Austin",       10));
+    /// assert_eq!(false, filter("sa", &"Jacksonville",  "Jacksonville", 11));
+    /// assert_eq!(true,  filter("sa", &"San Jose",      "San Jose",     12));
+    /// ```
+    pub const DEFAULT_FILTER: Filter<'a, T> = &|filter, _, string_value, _| -> bool {
+        let filter = filter.to_lowercase();
+
+        string_value.to_lowercase().contains(&filter)
+    };
 
     /// Default page size.
     pub const DEFAULT_PAGE_SIZE: usize = config::DEFAULT_PAGE_SIZE;
@@ -102,7 +144,7 @@ impl<'a> Select<'a> {
         Some("↑↓ to move, enter to select, type to filter");
 
     /// Creates a [Select] with the provided message and options, along with default configuration values.
-    pub fn new(message: &'a str, options: &'a [&str]) -> Self {
+    pub fn new(message: &'a str, options: Vec<T>) -> Self {
         Self {
             message,
             options,
@@ -141,13 +183,13 @@ impl<'a> Select<'a> {
     }
 
     /// Sets the filter function.
-    pub fn with_filter(mut self, filter: Filter<'a>) -> Self {
+    pub fn with_filter(mut self, filter: Filter<'a, T>) -> Self {
         self.filter = filter;
         self
     }
 
     /// Sets the formatter.
-    pub fn with_formatter(mut self, formatter: OptionFormatter<'a>) -> Self {
+    pub fn with_formatter(mut self, formatter: OptionFormatter<'a, T>) -> Self {
         self.formatter = formatter;
         self
     }
@@ -166,7 +208,13 @@ impl<'a> Select<'a> {
 
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to the defined rules.
-    pub fn prompt(self) -> InquireResult<OptionAnswer> {
+    pub fn prompt(self) -> InquireResult<T> {
+        self.raw_prompt().map(|op| op.value)
+    }
+
+    /// Parses the provided behavioral and rendering options and prompts
+    /// the CLI user for input according to the defined rules.
+    pub fn raw_prompt(self) -> InquireResult<ListOption<T>> {
         let terminal = CrosstermTerminal::new()?;
         let mut backend = Backend::new(terminal, self.render_config)?;
         self.prompt_with_backend(&mut backend)
@@ -175,26 +223,30 @@ impl<'a> Select<'a> {
     pub(in crate) fn prompt_with_backend<B: SelectBackend>(
         self,
         backend: &mut B,
-    ) -> InquireResult<OptionAnswer> {
+    ) -> InquireResult<ListOption<T>> {
         SelectPrompt::new(self)?.prompt(backend)
     }
 }
 
-struct SelectPrompt<'a> {
+struct SelectPrompt<'a, T> {
     message: &'a str,
-    options: &'a [&'a str],
+    options: Vec<T>,
+    string_options: Vec<String>,
+    filtered_options: Vec<usize>,
     help_message: Option<&'a str>,
     vim_mode: bool,
     cursor_index: usize,
     page_size: usize,
     input: Input,
-    filtered_options: Vec<usize>,
-    filter: Filter<'a>,
-    formatter: OptionFormatter<'a>,
+    filter: Filter<'a, T>,
+    formatter: OptionFormatter<'a, T>,
 }
 
-impl<'a> SelectPrompt<'a> {
-    fn new(so: Select<'a>) -> InquireResult<Self> {
+impl<'a, T> SelectPrompt<'a, T>
+where
+    T: Display,
+{
+    fn new(so: Select<'a, T>) -> InquireResult<Self> {
         if so.options.is_empty() {
             return Err(InquireError::InvalidConfiguration(
                 "Available options can not be empty".into(),
@@ -209,15 +261,19 @@ impl<'a> SelectPrompt<'a> {
             )));
         }
 
+        let string_options = so.options.iter().map(T::to_string).collect();
+        let filtered_options = (0..so.options.len()).collect();
+
         Ok(Self {
             message: so.message,
             options: so.options,
+            string_options,
+            filtered_options,
             help_message: so.help_message,
             vim_mode: so.vim_mode,
             cursor_index: so.starting_cursor,
             page_size: so.page_size,
             input: Input::new(),
-            filtered_options: Vec::from_iter(0..so.options.len()),
             filter: so.filter,
             formatter: so.formatter,
         })
@@ -229,7 +285,7 @@ impl<'a> SelectPrompt<'a> {
             .enumerate()
             .filter_map(|(i, opt)| match self.input.content() {
                 val if val.is_empty() => Some(i),
-                val if (self.filter)(&val, opt, i) => Some(i),
+                val if (self.filter)(&val, opt, self.string_options.get(i).unwrap(), i) => Some(i),
                 _ => None,
             })
             .collect()
@@ -285,10 +341,11 @@ impl<'a> SelectPrompt<'a> {
         };
     }
 
-    fn get_final_answer(&self) -> Option<OptionAnswer> {
-        self.filtered_options
-            .get(self.cursor_index)
-            .and_then(|i| self.options.get(*i).map(|opt| OptionAnswer::new(*i, opt)))
+    fn get_final_answer(&mut self) -> ListOption<T> {
+        let index = *self.filtered_options.get(self.cursor_index).unwrap();
+        let value = self.options.swap_remove(index);
+
+        ListOption::new(index, value)
     }
 
     fn render<B: SelectBackend>(&mut self, backend: &mut B) -> InquireResult<()> {
@@ -302,8 +359,8 @@ impl<'a> SelectPrompt<'a> {
             .filtered_options
             .iter()
             .cloned()
-            .map(|i| OptionAnswer::new(i, self.options.get(i).unwrap()))
-            .collect::<Vec<OptionAnswer>>();
+            .map(|i| ListOption::new(i, self.options.get(i).unwrap()))
+            .collect::<Vec<ListOption<&T>>>();
 
         let page = paginate(self.page_size, &choices, self.cursor_index);
 
@@ -318,9 +375,7 @@ impl<'a> SelectPrompt<'a> {
         Ok(())
     }
 
-    fn prompt<B: SelectBackend>(mut self, backend: &mut B) -> InquireResult<OptionAnswer> {
-        let final_answer: OptionAnswer;
-
+    fn prompt<B: SelectBackend>(mut self, backend: &mut B) -> InquireResult<ListOption<T>> {
         loop {
             self.render(backend)?;
 
@@ -328,18 +383,12 @@ impl<'a> SelectPrompt<'a> {
 
             match key {
                 Key::Cancel => return Err(InquireError::OperationCanceled),
-                Key::Submit => match self.get_final_answer() {
-                    Some(answer) => {
-                        final_answer = answer;
-                        break;
-                    }
-                    None => {}
-                },
+                Key::Submit => break,
                 key => self.on_change(key),
             }
         }
-
-        let formatted = (self.formatter)(&final_answer);
+        let final_answer = self.get_final_answer();
+        let formatted = (self.formatter)(final_answer.as_ref());
 
         backend.finish_prompt(&self.message, &formatted)?;
 
