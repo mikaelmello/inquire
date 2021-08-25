@@ -1,14 +1,28 @@
 use std::fmt::{Display, Formatter};
 
-use inquire::Select;
+use inquire::{error::InquireResult, Select};
 
-fn main() {
-    let ans = Select::new("Currency:", Currency::VARIANTS.to_vec()).prompt();
+fn main() -> InquireResult<()> {
+    let ans: Currency = Select::new("Currency:", Currency::VARIANTS.to_vec()).prompt()?;
 
     match ans {
-        Ok(choice) => println!("{} is not a good choice.", choice),
-        Err(_) => println!("There was an error, please try again"),
+        Currency::BRL | Currency::USD | Currency::CAD | Currency::EUR | Currency::GBP => {
+            bank_transfer()
+        }
+        Currency::BTC | Currency::LTC => crypto_transfer(),
     }
+
+    Ok(())
+}
+
+fn bank_transfer() {
+    // ask for bank account
+    // transfer funds
+}
+
+fn crypto_transfer() {
+    // ask for wallet address
+    // transfer funds
 }
 
 #[derive(Debug, Copy, Clone)]
