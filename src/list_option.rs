@@ -33,6 +33,7 @@ impl<T> ListOption<T> {
         Self { index, value }
     }
 
+    /// Converts from `&ListOption<T>` to `ListOption<&T>`.
     pub fn as_ref(&self) -> ListOption<&T> {
         ListOption::new(self.index, &self.value)
     }
