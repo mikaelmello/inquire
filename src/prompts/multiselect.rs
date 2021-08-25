@@ -1,4 +1,4 @@
-use std::{collections::HashSet, iter::FromIterator};
+use std::{collections::HashSet, fmt::Display};
 
 use crate::{
     config::{self, Filter},
@@ -41,13 +41,13 @@ use crate::{
 /// For a full-featured example, check the [GitHub repository](https://github.com/mikaelmello/inquire/blob/main/examples/multiselect.rs).
 ///
 /// [`InquireError::InvalidConfiguration`]: crate::error::InquireError::InvalidConfiguration
-#[derive(Copy, Clone)]
-pub struct MultiSelect<'a> {
+#[derive(Clone)]
+pub struct MultiSelect<'a, T> {
     /// Message to be presented to the user.
     pub message: &'a str,
 
     /// Options displayed to the user.
-    pub options: &'a [&'a str],
+    pub options: Vec<T>,
 
     /// Default indexes of options to be selected from the start.
     pub default: Option<&'a [usize]>,
@@ -67,24 +67,27 @@ pub struct MultiSelect<'a> {
 
     /// Function called with the current user input to filter the provided
     /// options.
-    pub filter: Filter<'a, str>,
+    pub filter: Filter<'a, T>,
 
     /// Whether the current filter typed by the user is kept or cleaned after a selection is made.
     pub keep_filter: bool,
 
     /// Function that formats the user input and presents it to the user as the final rendering of the prompt.
-    pub formatter: MultiOptionFormatter<'a, str>,
+    pub formatter: MultiOptionFormatter<'a, T>,
 
     /// Validator to apply to the user input.
     ///
     /// In case of error, the message is displayed one line above the prompt.
-    pub validator: Option<MultiOptionValidator<'a>>,
+    pub validator: Option<MultiOptionValidator<'a, T>>,
 
     /// RenderConfig to apply to the rendered interface.
     pub render_config: &'a RenderConfig,
 }
 
-impl<'a> MultiSelect<'a> {
+impl<'a, T> MultiSelect<'a, T>
+where
+    T: Display,
+{
     /// String formatter used by default in [MultiSelect](crate::MultiSelect) prompts.
     /// Prints the string value of all selected options, separated by commas.
     ///
@@ -105,9 +108,9 @@ impl<'a> MultiSelect<'a> {
     /// ans.push(ListOption::new(7, "Vancouver"));
     /// assert_eq!(String::from("New York, Seattle, Vancouver"), formatter(&ans));
     /// ```
-    pub const DEFAULT_FORMATTER: MultiOptionFormatter<'a, str> = &|ans| {
+    pub const DEFAULT_FORMATTER: MultiOptionFormatter<'a, T> = &|ans| {
         ans.iter()
-            .map(ListOption::to_string)
+            .map(|opt| opt.to_string())
             .collect::<Vec<String>>()
             .join(", ")
     };
@@ -135,7 +138,7 @@ impl<'a> MultiSelect<'a> {
     /// assert_eq!(false, filter("sa", "Jacksonville",  "Jacksonville", 11));
     /// assert_eq!(true,  filter("sa", "San Jose",      "San Jose",     12));
     /// ```
-    pub const DEFAULT_FILTER: Filter<'a, str> = &|filter, _, string_value, _| -> bool {
+    pub const DEFAULT_FILTER: Filter<'a, T> = &|filter, _, string_value, _| -> bool {
         let filter = filter.to_lowercase();
 
         string_value.to_lowercase().contains(&filter)
@@ -157,11 +160,8 @@ impl<'a> MultiSelect<'a> {
     pub const DEFAULT_HELP_MESSAGE: Option<&'a str> =
         Some("↑↓ to move, space to select one, → to all, ← to none, type to filter");
 
-    /// Default validator set for the [MultiSelect] prompt, none.
-    pub const DEFAULT_VALIDATOR: Option<MultiOptionValidator<'a>> = None;
-
     /// Creates a [MultiSelect] with the provided message and options, along with default configuration values.
-    pub fn new(message: &'a str, options: &'a [&str]) -> Self {
+    pub fn new(message: &'a str, options: Vec<T>) -> Self {
         Self {
             message,
             options,
@@ -173,7 +173,7 @@ impl<'a> MultiSelect<'a> {
             keep_filter: Self::DEFAULT_KEEP_FILTER,
             filter: Self::DEFAULT_FILTER,
             formatter: Self::DEFAULT_FORMATTER,
-            validator: Self::DEFAULT_VALIDATOR,
+            validator: None,
             render_config: RenderConfig::default_static_ref(),
         }
     }
@@ -209,13 +209,13 @@ impl<'a> MultiSelect<'a> {
     }
 
     /// Sets the filter function.
-    pub fn with_filter(mut self, filter: Filter<'a, str>) -> Self {
+    pub fn with_filter(mut self, filter: Filter<'a, T>) -> Self {
         self.filter = filter;
         self
     }
 
     /// Sets the formatter.
-    pub fn with_formatter(mut self, formatter: MultiOptionFormatter<'a, str>) -> Self {
+    pub fn with_formatter(mut self, formatter: MultiOptionFormatter<'a, T>) -> Self {
         self.formatter = formatter;
         self
     }
@@ -225,7 +225,7 @@ impl<'a> MultiSelect<'a> {
     /// of selections.
     ///
     /// In case of error, the message is displayed one line above the prompt.
-    pub fn with_validator(mut self, validator: MultiOptionValidator<'a>) -> Self {
+    pub fn with_validator(mut self, validator: MultiOptionValidator<'a, T>) -> Self {
         self.validator = Some(validator);
         self
     }
@@ -250,7 +250,14 @@ impl<'a> MultiSelect<'a> {
 
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to the defined rules.
-    pub fn prompt(self) -> InquireResult<Vec<ListOption<&'a str>>> {
+    pub fn prompt(self) -> InquireResult<Vec<T>> {
+        self.raw_prompt()
+            .map(|op| op.into_iter().map(|o| o.value).collect())
+    }
+
+    /// Parses the provided behavioral and rendering options and prompts
+    /// the CLI user for input according to the defined rules.
+    pub fn raw_prompt(self) -> InquireResult<Vec<ListOption<T>>> {
         let terminal = CrosstermTerminal::new()?;
         let mut backend = Backend::new(terminal, self.render_config)?;
         self.prompt_with_backend(&mut backend)
@@ -259,14 +266,15 @@ impl<'a> MultiSelect<'a> {
     pub(in crate) fn prompt_with_backend<B: MultiSelectBackend>(
         self,
         backend: &mut B,
-    ) -> InquireResult<Vec<ListOption<&'a str>>> {
+    ) -> InquireResult<Vec<ListOption<T>>> {
         MultiSelectPrompt::new(self)?.prompt(backend)
     }
 }
 
-struct MultiSelectPrompt<'a> {
+struct MultiSelectPrompt<'a, T> {
     message: &'a str,
-    options: &'a [&'a str],
+    options: Vec<T>,
+    string_options: Vec<String>,
     help_message: Option<&'a str>,
     vim_mode: bool,
     cursor_index: usize,
@@ -275,14 +283,17 @@ struct MultiSelectPrompt<'a> {
     keep_filter: bool,
     input: Input,
     filtered_options: Vec<usize>,
-    filter: Filter<'a, str>,
-    formatter: MultiOptionFormatter<'a, str>,
-    validator: Option<MultiOptionValidator<'a>>,
+    filter: Filter<'a, T>,
+    formatter: MultiOptionFormatter<'a, T>,
+    validator: Option<MultiOptionValidator<'a, T>>,
     error: Option<String>,
 }
 
-impl<'a> MultiSelectPrompt<'a> {
-    fn new(mso: MultiSelect<'a>) -> InquireResult<Self> {
+impl<'a, T> MultiSelectPrompt<'a, T>
+where
+    T: Display,
+{
+    fn new(mso: MultiSelect<'a, T>) -> InquireResult<Self> {
         if mso.options.is_empty() {
             return Err(InquireError::InvalidConfiguration(
                 "Available options can not be empty".into(),
@@ -300,23 +311,28 @@ impl<'a> MultiSelectPrompt<'a> {
             }
         }
 
+        let string_options = mso.options.iter().map(T::to_string).collect();
+        let filtered_options = (0..mso.options.len()).collect();
+        let checked_options = mso
+            .default
+            .map_or_else(|| HashSet::new(), |d| d.iter().cloned().collect());
+
         Ok(Self {
             message: mso.message,
             options: mso.options,
+            string_options,
+            filtered_options,
             help_message: mso.help_message,
             vim_mode: mso.vim_mode,
             cursor_index: mso.starting_cursor,
             page_size: mso.page_size,
             keep_filter: mso.keep_filter,
             input: Input::new(),
-            filtered_options: Vec::from_iter(0..mso.options.len()),
             filter: mso.filter,
             formatter: mso.formatter,
             validator: mso.validator,
             error: None,
-            checked: mso
-                .default
-                .map_or_else(|| HashSet::new(), |d| d.iter().cloned().collect()),
+            checked: checked_options,
         })
     }
 
@@ -326,7 +342,7 @@ impl<'a> MultiSelectPrompt<'a> {
             .enumerate()
             .filter_map(|(i, opt)| match self.input.content() {
                 val if val.is_empty() => Some(i),
-                val if (self.filter)(&val, opt, opt, i) => Some(i),
+                val if (self.filter)(&val, opt, self.string_options.get(i).unwrap(), i) => Some(i),
                 _ => None,
             })
             .collect()
@@ -417,25 +433,32 @@ impl<'a> MultiSelectPrompt<'a> {
         };
     }
 
-    fn get_final_answer(&self) -> Result<Vec<ListOption<&'a str>>, String> {
-        let selected_options = self
-            .options
-            .iter()
-            .enumerate()
-            .filter_map(|(idx, opt)| match &self.checked.contains(&idx) {
-                true => Some(ListOption::new(idx, *opt)),
-                false => None,
-            })
-            .collect::<Vec<ListOption<&'a str>>>();
-
+    fn validate_current_answer(&self) -> Result<(), String> {
         if let Some(validator) = self.validator {
-            return match validator(&selected_options) {
-                Ok(_) => Ok(selected_options),
-                Err(err) => Err(err),
-            };
-        }
+            let selected_options = self
+                .options
+                .iter()
+                .enumerate()
+                .filter_map(|(idx, opt)| match &self.checked.contains(&idx) {
+                    true => Some(ListOption::new(idx, opt)),
+                    false => None,
+                })
+                .collect::<Vec<ListOption<&T>>>();
 
-        return Ok(selected_options);
+            validator(&selected_options)
+        } else {
+            Ok(())
+        }
+    }
+
+    fn retain_final_answer(&mut self) {
+        let mut index = 0;
+        let checked = self.checked.clone();
+        self.options.retain(|_| {
+            let keep = checked.contains(&index);
+            index += 1;
+            keep
+        });
     }
 
     fn render<B: MultiSelectBackend>(&mut self, backend: &mut B) -> InquireResult<()> {
@@ -453,8 +476,8 @@ impl<'a> MultiSelectPrompt<'a> {
             .filtered_options
             .iter()
             .cloned()
-            .map(|i| ListOption::new(i, (*self.options.get(i).unwrap()).as_ref()))
-            .collect::<Vec<ListOption<&'a str>>>();
+            .map(|i| ListOption::new(i, self.options.get(i).unwrap()))
+            .collect::<Vec<ListOption<&T>>>();
 
         let page = paginate(self.page_size, &choices, self.cursor_index);
 
@@ -472,9 +495,7 @@ impl<'a> MultiSelectPrompt<'a> {
     fn prompt<B: MultiSelectBackend>(
         mut self,
         backend: &mut B,
-    ) -> InquireResult<Vec<ListOption<&'a str>>> {
-        let final_answer: Vec<ListOption<&'a str>>;
-
+    ) -> InquireResult<Vec<ListOption<T>>> {
         loop {
             self.render(backend)?;
 
@@ -482,18 +503,25 @@ impl<'a> MultiSelectPrompt<'a> {
 
             match key {
                 Key::Cancel => return Err(InquireError::OperationCanceled),
-                Key::Submit => match self.get_final_answer() {
-                    Ok(answer) => {
-                        final_answer = answer;
-                        break;
-                    }
+                Key::Submit => match self.validate_current_answer() {
+                    Ok(()) => break,
                     Err(err) => self.error = Some(err),
                 },
                 key => self.on_change(key),
             }
         }
 
-        let formatted = (self.formatter)(&final_answer);
+        self.retain_final_answer();
+
+        let final_answer: Vec<ListOption<T>> = self
+            .options
+            .into_iter()
+            .enumerate()
+            .map(|(idx, opt)| ListOption::new(idx, opt))
+            .collect();
+
+        let refs: Vec<ListOption<&T>> = final_answer.iter().map(ListOption::as_ref).collect();
+        let formatted = (self.formatter)(&refs);
 
         backend.finish_prompt(&self.message, &formatted)?;
 

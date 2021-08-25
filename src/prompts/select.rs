@@ -382,14 +382,12 @@ where
 
             match key {
                 Key::Cancel => return Err(InquireError::OperationCanceled),
-                Key::Submit => {
-                    break;
-                }
+                Key::Submit => break,
                 key => self.on_change(key),
             }
         }
         let final_answer = self.get_final_answer();
-        let formatted = (self.formatter)(&final_answer.as_ref());
+        let formatted = (self.formatter)(final_answer.as_ref());
 
         backend.finish_prompt(&self.message, &formatted)?;
 

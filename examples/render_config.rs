@@ -49,14 +49,17 @@ fn main() -> InquireResult<()> {
         .prompt()?;
 
     println!("Your transaction has been successfully recorded.");
-    println!("The balance of {} is now $311.09", account);
+    println!(
+        "The balance of {} is now ${:.2}",
+        account.name, account.balance
+    );
 
     Ok(())
 }
 
 /// This could be retrieved from a database, for example.
-fn get_tags() -> &'static [&'static str] {
-    &[
+fn get_tags() -> Vec<&'static str> {
+    vec![
         "august-surprise",
         "birthday-gifts",
         "cat-aurora",

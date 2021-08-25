@@ -51,8 +51,8 @@ fn main() -> InquireResult<()> {
 }
 
 /// This could be retrieved from a database, for example.
-fn get_tags() -> &'static [&'static str] {
-    &[
+fn get_tags() -> Vec<&'static str> {
+    vec![
         "august-surprise",
         "birthday-gifts",
         "cat-aurora",

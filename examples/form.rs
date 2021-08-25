@@ -16,6 +16,7 @@ fn main() {
         "Avocado",
         "Pineapple",
     ];
+    let pineapple_index = fruits.len() - 1;
 
     let languages = vec![
         "C++",
@@ -35,11 +36,11 @@ fn main() {
         .prompt()
         .unwrap();
 
-    let _eats_pineapple = MultiSelect::new("What are your favorite fruits?", &fruits)
-        .prompt()
+    let _eats_pineapple = MultiSelect::new("What are your favorite fruits?", fruits)
+        .raw_prompt()
         .unwrap()
         .into_iter()
-        .find(|o| o.index == fruits.len() - 1)
+        .find(|o| o.index == pineapple_index)
         .is_some();
 
     let _eats_pizza = Confirm::new("Do you eat pizza?")

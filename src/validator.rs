@@ -108,7 +108,7 @@ pub type DateValidator<'a> = &'a dyn Fn(chrono::NaiveDate) -> Result<(), String>
 ///     validator(&ans)
 /// );
 /// ```
-pub type MultiOptionValidator<'a> = &'a dyn Fn(&[ListOption<&'a str>]) -> Result<(), String>;
+pub type MultiOptionValidator<'a, T> = &'a dyn Fn(&[ListOption<&T>]) -> Result<(), String>;
 
 /// Custom trait to call correct method to retrieve input length.
 ///
@@ -345,7 +345,7 @@ mod test {
 
     #[test]
     fn slice_length() {
-        let validator: MultiOptionValidator = length!(5);
+        let validator: MultiOptionValidator<str> = length!(5);
 
         assert!(matches!(validator(&build_option_vec(5)), Ok(_)));
         assert!(matches!(validator(&build_option_vec(4)), Err(_)));
@@ -371,7 +371,7 @@ mod test {
 
     #[test]
     fn slice_max_length() {
-        let validator: MultiOptionValidator = max_length!(5);
+        let validator: MultiOptionValidator<str> = max_length!(5);
 
         assert!(matches!(validator(&build_option_vec(0)), Ok(_)));
         assert!(matches!(validator(&build_option_vec(1)), Ok(_)));
@@ -402,7 +402,7 @@ mod test {
 
     #[test]
     fn slice_min_length() {
-        let validator: MultiOptionValidator = min_length!(5);
+        let validator: MultiOptionValidator<str> = min_length!(5);
 
         assert!(matches!(validator(&build_option_vec(0)), Err(_)));
         assert!(matches!(validator(&build_option_vec(1)), Err(_)));
