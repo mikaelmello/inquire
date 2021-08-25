@@ -14,7 +14,8 @@ use crate::{
 ///
 /// The user can select and submit the current highlighted option by pressing enter.
 ///
-/// This prompt requires a prompt message and a **non-empty** list of options to be displayed to the user. If the list is empty, the prompt operation will fail with an [`InquireError::InvalidConfiguration`] error.
+/// This prompt requires a prompt message and a **non-empty** `Vec` of options to be displayed to the user. The options can be of any type as long as they implement the `Display` trait. It is required that the `Vec` is moved to the prompt, as the prompt will return the selected option (`Vec` element) after the user submits.
+/// - If the list is empty, the prompt operation will fail with an `InquireError::InvalidConfiguration` error.
 ///
 /// This prompt does not support custom validators because of its nature. A submission always selects exactly one of the options. If this option was not supposed to be selected or is invalid in some way, it probably should not be included in the options list.
 ///
@@ -34,13 +35,13 @@ use crate::{
 /// # Example
 ///
 /// ```no_run
-/// use inquire::Select;
+/// use inquire::{error::InquireError, Select};
 ///
-/// let options = vec!["Banana", "Apple", "Strawberry", "Grapes",
+/// let options: Vec<&str> = vec!["Banana", "Apple", "Strawberry", "Grapes",
 ///     "Lemon", "Tangerine", "Watermelon", "Orange", "Pear", "Avocado", "Pineapple",
 /// ];
 ///
-/// let ans = Select::new("What's your favorite fruit?", options).prompt();
+/// let ans: Result<&str, InquireError> = Select::new("What's your favorite fruit?", options).prompt();
 ///
 /// match ans {
 ///     Ok(choice) => println!("{}! That's mine too!", choice),

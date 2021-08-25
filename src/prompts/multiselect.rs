@@ -17,7 +17,8 @@ use crate::{
 ///
 /// The user can select (or deselect) the current highlighted option by pressing space, clean all selections by pressing the left arrow and select all options by pressing the right arrow.
 ///
-/// This prompt requires a prompt message and a **non-empty** list of options to be displayed to the user. If the list is empty, the prompt operation will fail with an [`InquireError::InvalidConfiguration`] error.
+/// This prompt requires a prompt message and a **non-empty** `Vec` of options to be displayed to the user. The options can be of any type as long as they implement the `Display` trait. It is required that the `Vec` is moved to the prompt, as the prompt will return the ownership of the `Vec` after the user submits, with only the selected options inside it.
+/// - If the list is empty, the prompt operation will fail with an `InquireError::InvalidConfiguration` error.
 ///
 /// The options are paginated in order to provide a smooth experience to the user, with the default page size being 7. The user can move from the options and the pages will be updated accordingly, including moving from the last to the first options (or vice-versa).
 ///
