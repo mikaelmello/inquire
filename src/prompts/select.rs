@@ -40,10 +40,10 @@ use crate::{
 ///     "Lemon", "Tangerine", "Watermelon", "Orange", "Pear", "Avocado", "Pineapple",
 /// ];
 ///
-/// let ans = Select::new("What's your favorite fruit?", &options).prompt();
+/// let ans = Select::new("What's your favorite fruit?", options).prompt();
 ///
 /// match ans {
-///     Ok(choice) => println!("{}! That's mine too!", choice.value),
+///     Ok(choice) => println!("{}! That's mine too!", choice),
 ///     Err(_) => println!("There was an error, please try again"),
 /// }
 /// ```
@@ -95,8 +95,8 @@ where
     /// use inquire::Select;
     ///
     /// let formatter = Select::<&str>::DEFAULT_FORMATTER;
-    /// assert_eq!(String::from("First option"), formatter(&ListOption::new(0, &"First option")));
-    /// assert_eq!(String::from("First option"), formatter(&ListOption::new(11, &"First option")));
+    /// assert_eq!(String::from("First option"), formatter(ListOption::new(0, &"First option")));
+    /// assert_eq!(String::from("First option"), formatter(ListOption::new(11, &"First option")));
     /// ```
     pub const DEFAULT_FORMATTER: OptionFormatter<'a, T> = &|ans| ans.to_string();
 

@@ -91,7 +91,7 @@ pub type DateValidator<'a> = &'a dyn Fn(chrono::NaiveDate) -> Result<(), String>
 /// use inquire::list_option::ListOption;
 /// use inquire::validator::MultiOptionValidator;
 ///
-/// let validator: MultiOptionValidator = &|input| {
+/// let validator = &|input: &[ListOption<&str>]| {
 ///     if input.len() <= 2 {
 ///         Ok(())
 ///     } else {

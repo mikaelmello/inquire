@@ -97,15 +97,15 @@ where
     /// use inquire::list_option::ListOption;
     /// use inquire::MultiSelect;
     ///
-    /// let formatter = MultiSelect::DEFAULT_FORMATTER;
+    /// let formatter = MultiSelect::<&str>::DEFAULT_FORMATTER;
     ///
-    /// let mut ans = vec![ListOption::new(0, "New York")];
+    /// let mut ans = vec![ListOption::new(0, &"New York")];
     /// assert_eq!(String::from("New York"), formatter(&ans));
     ///
-    /// ans.push(ListOption::new(3, "Seattle"));
+    /// ans.push(ListOption::new(3, &"Seattle"));
     /// assert_eq!(String::from("New York, Seattle"), formatter(&ans));
     ///
-    /// ans.push(ListOption::new(7, "Vancouver"));
+    /// ans.push(ListOption::new(7, &"Vancouver"));
     /// assert_eq!(String::from("New York, Seattle, Vancouver"), formatter(&ans));
     /// ```
     pub const DEFAULT_FORMATTER: MultiOptionFormatter<'a, T> = &|ans| {
@@ -121,22 +121,22 @@ where
     /// # Examples
     ///
     /// ```
-    /// use inquire::config::DEFAULT_FILTER;
+    /// use inquire::MultiSelect;
     ///
-    /// let filter = DEFAULT_FILTER;
-    /// assert_eq!(false, filter("sa", "New York",      "New York",      0));
-    /// assert_eq!(true,  filter("sa", "Sacramento",    "Sacramento",    1));
-    /// assert_eq!(true,  filter("sa", "Kansas",        "Kansas",        2));
-    /// assert_eq!(true,  filter("sa", "Mesa",          "Mesa",          3));
-    /// assert_eq!(false, filter("sa", "Phoenix",       "Phoenix",       4));
-    /// assert_eq!(false, filter("sa", "Philadelphia",  "Philadelphia",  5));
-    /// assert_eq!(true,  filter("sa", "San Antonio",   "San Antonio",   6));
-    /// assert_eq!(true,  filter("sa", "San Diego",     "San Diego",     7));
-    /// assert_eq!(false, filter("sa", "Dallas",        "Dallas",        8));
-    /// assert_eq!(true,  filter("sa", "San Francisco", "San Francisco", 9));
-    /// assert_eq!(false, filter("sa", "Austin",        "Austin",       10));
-    /// assert_eq!(false, filter("sa", "Jacksonville",  "Jacksonville", 11));
-    /// assert_eq!(true,  filter("sa", "San Jose",      "San Jose",     12));
+    /// let filter = MultiSelect::<&str>::DEFAULT_FILTER;
+    /// assert_eq!(false, filter("sa", &"New York",      "New York",      0));
+    /// assert_eq!(true,  filter("sa", &"Sacramento",    "Sacramento",    1));
+    /// assert_eq!(true,  filter("sa", &"Kansas",        "Kansas",        2));
+    /// assert_eq!(true,  filter("sa", &"Mesa",          "Mesa",          3));
+    /// assert_eq!(false, filter("sa", &"Phoenix",       "Phoenix",       4));
+    /// assert_eq!(false, filter("sa", &"Philadelphia",  "Philadelphia",  5));
+    /// assert_eq!(true,  filter("sa", &"San Antonio",   "San Antonio",   6));
+    /// assert_eq!(true,  filter("sa", &"San Diego",     "San Diego",     7));
+    /// assert_eq!(false, filter("sa", &"Dallas",        "Dallas",        8));
+    /// assert_eq!(true,  filter("sa", &"San Francisco", "San Francisco", 9));
+    /// assert_eq!(false, filter("sa", &"Austin",        "Austin",       10));
+    /// assert_eq!(false, filter("sa", &"Jacksonville",  "Jacksonville", 11));
+    /// assert_eq!(true,  filter("sa", &"San Jose",      "San Jose",     12));
     /// ```
     pub const DEFAULT_FILTER: Filter<'a, T> = &|filter, _, string_value, _| -> bool {
         let filter = filter.to_lowercase();
