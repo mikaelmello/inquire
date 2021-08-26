@@ -208,12 +208,17 @@ where
 
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to the defined rules.
+    ///
+    /// Returns the owned object selected by the user.
     pub fn prompt(self) -> InquireResult<T> {
         self.raw_prompt().map(|op| op.value)
     }
 
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to the defined rules.
+    ///
+    /// Returns a [`ListOption`](crate::list_option::ListOption) containing
+    /// the index of the selection and the owned object selected by the user.
     pub fn raw_prompt(self) -> InquireResult<ListOption<T>> {
         let terminal = CrosstermTerminal::new()?;
         let mut backend = Backend::new(terminal, self.render_config)?;
