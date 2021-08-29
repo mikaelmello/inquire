@@ -124,6 +124,22 @@ impl Input {
         self.cursor
     }
 
+    pub fn pre_cursor(&self) -> &str {
+        if self.cursor == self.length {
+            &self.content[..]
+        } else {
+            let last = self.content[..]
+                .grapheme_indices(true)
+                .take(self.cursor.saturating_add(1))
+                .last();
+
+            match last {
+                Some((beg, _)) => &self.content[..beg],
+                None => &self.content[..],
+            }
+        }
+    }
+
     fn move_backward(&mut self, kind: MoveKind) -> bool {
         if self.cursor == 0 {
             return false;
