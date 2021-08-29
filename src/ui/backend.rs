@@ -76,6 +76,8 @@ where
     prompt_end_position: Position,
     prompt_cursor_offset: Option<usize>,
     prompt_cursor_position: Option<Position>,
+    show_cursor: bool,
+    cursor_displayed: bool,
     terminal: T,
     terminal_size: TerminalSize,
     render_config: &'a RenderConfig,
@@ -96,6 +98,8 @@ where
             prompt_end_position: Position::default(),
             prompt_cursor_offset: None,
             prompt_cursor_position: None,
+            show_cursor: false,
+            cursor_displayed: false,
             terminal,
             render_config,
             terminal_size,
@@ -150,6 +154,22 @@ where
         Ok(())
     }
 
+    fn update_cursor_status(&mut self) -> Result<()> {
+        if self.cursor_displayed == self.show_cursor {
+            return Ok(());
+        }
+
+        if self.show_cursor {
+            self.terminal.cursor_show()?;
+            self.cursor_displayed = true;
+        } else {
+            self.terminal.cursor_hide()?;
+            self.cursor_displayed = false;
+        }
+
+        Ok(())
+    }
+
     fn mark_prompt_cursor_position(&mut self) {
         self.mark_prompt_cursor_position_with_offset(0);
     }
@@ -176,6 +196,10 @@ where
         self.prompt_end_position = Position::default();
         self.prompt_cursor_position = None;
         self.prompt_cursor_offset = None;
+
+        // let's default to false to catch any previous
+        // default behaviors we didn't account for
+        self.show_cursor = false;
 
         Ok(())
     }
@@ -355,6 +379,8 @@ where
 
             self.prompt_current_position = prompt_cursor_position;
         }
+
+        self.update_cursor_status()?;
 
         self.flush()
     }
