@@ -311,7 +311,8 @@ macro_rules! length {
 }
 
 #[cfg(test)]
-mod test {
+#[cfg(feature = "builtin_validators")]
+mod builtin_validators_test {
     use crate::{
         list_option::ListOption,
         validator::{InquireLength, MultiOptionValidator, StringValidator},
