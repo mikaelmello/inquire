@@ -130,6 +130,20 @@ where
         self.prompt_end_position = cur_pos;
     }
 
+    fn move_cursor_to_end_position(&mut self) -> Result<()> {
+        if self.prompt_current_position.row != self.prompt_end_position.row {
+            let diff = self
+                .prompt_end_position
+                .row
+                .saturating_sub(self.prompt_current_position.row);
+            self.terminal.cursor_down(diff)?;
+            self.terminal
+                .cursor_move_to_column(self.prompt_end_position.col)?;
+        }
+
+        Ok(())
+    }
+
     fn mark_prompt_cursor_position(&mut self) {
         self.mark_prompt_cursor_position_with_offset(0);
     }
@@ -143,17 +157,10 @@ where
     }
 
     fn reset_prompt(&mut self) -> Result<()> {
-        if self.prompt_current_position.row != self.prompt_end_position.row {
-            let diff = self
-                .prompt_end_position
-                .row
-                .saturating_sub(self.prompt_current_position.row);
-            self.terminal.cursor_down(diff)?;
-        }
+        self.move_cursor_to_end_position()?;
 
         for _ in 0..self.prompt_end_position.row {
             self.terminal.cursor_up(1)?;
-            self.terminal.cursor_move_to_column(0)?;
             self.terminal.clear_current_line()?;
         }
 
@@ -662,6 +669,7 @@ where
     T: Terminal,
 {
     fn drop(&mut self) {
+        let _ = self.move_cursor_to_end_position();
         let _ = self.terminal.cursor_show();
     }
 }
