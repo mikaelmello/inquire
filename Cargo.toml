@@ -30,6 +30,7 @@ thiserror = "1"
 bitflags = "1.0"
 lazy_static = "1.4.0"
 newline-converter = "0.2.0"
+unicode-width = "0.1.8"
 
 [dev-dependencies]
 ntest = "0.7.3"
