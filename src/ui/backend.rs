@@ -1,6 +1,6 @@
 use std::{collections::HashSet, fmt::Display, io::Result};
 
-use unicode_segmentation::UnicodeSegmentation;
+use unicode_width::UnicodeWidthChar;
 
 use super::{key::Key, RenderConfig, Terminal, TerminalSize};
 use crate::{input::Input, list_option::ListOption, ui::Styled, utils::Page};
@@ -116,22 +116,28 @@ where
 
         let mut cur_pos = Position::default();
 
-        for (idx, g) in input.graphemes(true).enumerate() {
-            if g == "\r\n" {
+        for (idx, c) in input.chars().enumerate() {
+            let len = UnicodeWidthChar::width(c).unwrap_or(0) as u16;
+
+            if c == '\n' {
                 cur_pos.row = cur_pos.row.saturating_add(1);
                 cur_pos.col = 0;
             } else {
-                cur_pos.col = cur_pos.col.saturating_add(1);
-            }
+                let left = term_width - cur_pos.col;
 
-            if cur_pos.col >= term_width {
-                cur_pos.row = cur_pos.row.saturating_add(1);
-                cur_pos.col = 0;
+                if left >= len {
+                    cur_pos.col = cur_pos.col.saturating_add(len);
+                } else {
+                    cur_pos.row = cur_pos.row.saturating_add(1);
+                    cur_pos.col = len;
+                }
             }
 
             if let Some(prompt_cursor_offset) = self.prompt_cursor_offset {
                 if prompt_cursor_offset == idx {
-                    self.prompt_cursor_position = Some(cur_pos);
+                    let mut cursor_position = cur_pos;
+                    cursor_position.col = cursor_position.col.saturating_sub(len);
+                    self.prompt_cursor_position = Some(cursor_position);
                 }
             }
         }
@@ -176,7 +182,7 @@ where
 
     fn mark_prompt_cursor_position_with_offset(&mut self, offset: usize) {
         let current = self.terminal.get_in_memory_content();
-        let position = current.graphemes(true).count();
+        let position = current.chars().count();
         let position = position.saturating_add(offset);
 
         self.prompt_cursor_offset.insert(position);
@@ -273,40 +279,30 @@ where
     fn print_input(&mut self, input: &Input) -> Result<()> {
         self.terminal.write(" ")?;
 
-        if input.is_empty() {
-            self.mark_prompt_cursor_position();
+        let cursor_offset = input.pre_cursor().chars().count();
+        self.mark_prompt_cursor_position_with_offset(cursor_offset);
+        self.show_cursor = true;
 
+        if input.is_empty() {
             match input.placeholder() {
-                None => self.terminal.write(' ')?,
-                Some(p) if p.is_empty() => self.terminal.write(' ')?,
+                None => {}
+                Some(p) if p.is_empty() => {}
                 Some(p) => self.terminal.write_styled(
                     &Styled::new(p).with_style_sheet(self.render_config.placeholder),
                 )?,
             }
-
-            self.show_cursor = true;
-
-            return Ok(());
+        } else {
+            self.terminal.write_styled(
+                &Styled::new(input.content()).with_style_sheet(self.render_config.text_input),
+            )?;
         }
 
-        let (before, mut at, after) = input.split();
-
-        if at.is_empty() {
-            at.push(' ');
+        // if cursor is at end of input, we need to add
+        // a space, otherwise the cursor will render on the
+        // \n character, on the next line.
+        if input.cursor() == input.length() {
+            self.terminal.write(' ')?;
         }
-
-        self.terminal.write_styled(
-            &Styled::new(before).with_style_sheet(self.render_config.text_input.text),
-        )?;
-
-        self.mark_prompt_cursor_position();
-        self.terminal.write_styled(
-            &Styled::new(at).with_style_sheet(self.render_config.text_input.cursor),
-        )?;
-
-        self.terminal.write_styled(
-            &Styled::new(after).with_style_sheet(self.render_config.text_input.text),
-        )?;
 
         Ok(())
     }

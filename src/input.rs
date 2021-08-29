@@ -93,25 +93,6 @@ impl Input {
         self.length = 0;
     }
 
-    // returns the substrings before, at and after the cursor
-    pub fn split(&self) -> (String, String, String) {
-        let mut before = String::new();
-        let mut at = String::new();
-        let mut after = String::new();
-
-        for (index, grapheme) in self.content[..].graphemes(true).enumerate() {
-            if index < self.cursor {
-                before.push_str(grapheme);
-            } else if index == self.cursor {
-                at.push_str(grapheme);
-            } else {
-                after.push_str(grapheme);
-            }
-        }
-
-        (before, at, after)
-    }
-
     pub fn content(&self) -> &str {
         &self.content
     }
