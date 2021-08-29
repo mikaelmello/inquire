@@ -2,7 +2,8 @@ use crate::{
     error::{InquireError, InquireResult},
     formatter::StringFormatter,
     input::Input,
-    ui::{crossterm::CrosstermTerminal, Backend, Key, KeyModifiers, PasswordBackend, RenderConfig},
+    terminal::get_default_terminal,
+    ui::{Backend, Key, KeyModifiers, PasswordBackend, RenderConfig},
     validator::StringValidator,
 };
 
@@ -191,7 +192,7 @@ impl<'a> Password<'a> {
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to the defined rules.
     pub fn prompt(self) -> InquireResult<String> {
-        let terminal = CrosstermTerminal::new()?;
+        let terminal = get_default_terminal()?;
         let mut backend = Backend::new(terminal, self.render_config)?;
         self.prompt_with_backend(&mut backend)
     }
@@ -331,7 +332,10 @@ impl<'a> PasswordPrompt<'a> {
 #[cfg(test)]
 mod test {
     use super::Password;
-    use crate::ui::{crossterm::CrosstermTerminal, Backend, RenderConfig};
+    use crate::{
+        terminal::crossterm::CrosstermTerminal,
+        ui::{Backend, RenderConfig},
+    };
     use crossterm::event::{KeyCode, KeyEvent};
 
     fn default<'a>() -> Password<'a> {

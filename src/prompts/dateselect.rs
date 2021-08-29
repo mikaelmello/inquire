@@ -8,10 +8,8 @@ use crate::{
     date_utils::{get_current_date, get_month},
     error::{InquireError, InquireResult},
     formatter::{self, DateFormatter},
-    ui::{
-        crossterm::CrosstermTerminal, date::DateSelectBackend, Backend, Key, KeyModifiers,
-        RenderConfig, Terminal,
-    },
+    terminal::{get_default_terminal, Terminal},
+    ui::{date::DateSelectBackend, Backend, Key, KeyModifiers, RenderConfig},
     validator::DateValidator,
 };
 
@@ -233,7 +231,7 @@ impl<'a> DateSelect<'a> {
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to the defined rules.
     pub fn prompt(self) -> InquireResult<NaiveDate> {
-        let terminal = CrosstermTerminal::new()?;
+        let terminal = get_default_terminal()?;
         let mut backend = Backend::new(terminal, self.render_config)?;
         self.prompt_with_backend(&mut backend)
     }
@@ -430,7 +428,8 @@ impl<'a> DateSelectPrompt<'a> {
 mod test {
     use crate::{
         date_utils::get_current_date,
-        ui::{crossterm::CrosstermTerminal, Backend, RenderConfig},
+        terminal::crossterm::CrosstermTerminal,
+        ui::{Backend, RenderConfig},
         DateSelect,
     };
     use chrono::NaiveDate;

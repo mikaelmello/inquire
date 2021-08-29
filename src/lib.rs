@@ -65,6 +65,7 @@ mod input;
 pub mod list_option;
 pub mod parser;
 mod prompts;
+mod terminal;
 pub mod ui;
 mod utils;
 pub mod validator;

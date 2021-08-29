@@ -6,9 +6,8 @@ use crate::{
     formatter::MultiOptionFormatter,
     input::Input,
     list_option::ListOption,
-    ui::{
-        crossterm::CrosstermTerminal, Backend, Key, KeyModifiers, MultiSelectBackend, RenderConfig,
-    },
+    terminal::get_default_terminal,
+    ui::{Backend, Key, KeyModifiers, MultiSelectBackend, RenderConfig},
     utils::paginate,
     validator::MultiOptionValidator,
 };
@@ -278,7 +277,7 @@ where
     /// Returns a [`ListOption`](crate::list_option::ListOption) containing
     /// the index of the selection and the owned object selected by the user.
     pub fn raw_prompt(self) -> InquireResult<Vec<ListOption<T>>> {
-        let terminal = CrosstermTerminal::new()?;
+        let terminal = get_default_terminal()?;
         let mut backend = Backend::new(terminal, self.render_config)?;
         self.prompt_with_backend(&mut backend)
     }
