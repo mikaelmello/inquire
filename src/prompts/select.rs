@@ -346,7 +346,14 @@ where
         };
     }
 
+    fn has_answer_highlighted(&mut self) -> bool {
+        self.filtered_options.get(self.cursor_index).is_some()
+    }
+
     fn get_final_answer(&mut self) -> ListOption<T> {
+        // should only be called after current cursor index is validated
+        // on has_answer_highlighted
+
         let index = *self.filtered_options.get(self.cursor_index).unwrap();
         let value = self.options.swap_remove(index);
 
@@ -388,15 +395,86 @@ where
 
             match key {
                 Key::Cancel => return Err(InquireError::OperationCanceled),
-                Key::Submit => break,
+                Key::Submit => match self.has_answer_highlighted() {
+                    true => break,
+                    false => {}
+                },
                 key => self.on_change(key),
             }
         }
+
         let final_answer = self.get_final_answer();
         let formatted = (self.formatter)(final_answer.as_ref());
 
         backend.finish_prompt(&self.message, &formatted)?;
 
         Ok(final_answer)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::{
+        formatter::OptionFormatter,
+        list_option::ListOption,
+        ui::{crossterm::CrosstermTerminal, Backend, RenderConfig},
+        Select,
+    };
+    use crossterm::event::{KeyCode, KeyEvent};
+
+    #[test]
+    /// Tests that a closure that actually closes on a variable can be used
+    /// as a Select formatter.
+    fn closure_formatter() {
+        let read: Vec<KeyEvent> = vec![KeyCode::Down, KeyCode::Enter]
+            .into_iter()
+            .map(KeyEvent::from)
+            .collect();
+        let mut read = read.iter();
+
+        let formatted = String::from("Thanks!");
+        let formatter: OptionFormatter<i32> = &|_| formatted.clone();
+
+        let options = vec![1, 2, 3];
+
+        let mut write: Vec<u8> = Vec::new();
+        let terminal = CrosstermTerminal::new_with_io(&mut write, &mut read);
+        let mut backend = Backend::new(terminal, RenderConfig::default_static_ref()).unwrap();
+
+        let ans = Select::new("Question", options)
+            .with_formatter(formatter)
+            .prompt_with_backend(&mut backend)
+            .unwrap();
+
+        assert_eq!(ListOption::new(1, 2), ans);
+    }
+
+    #[test]
+    // https://github.com/mikaelmello/inquire/issues/29
+    fn regression_29() {
+        let read: Vec<KeyEvent> = [
+            KeyCode::Char('9'),
+            KeyCode::Enter,
+            KeyCode::Backspace,
+            KeyCode::Char('3'),
+            KeyCode::Enter,
+        ]
+        .iter()
+        .map(|c| KeyEvent::from(*c))
+        .collect();
+
+        let mut read = read.iter();
+
+        let options = vec![1, 2, 3];
+
+        let mut write: Vec<u8> = Vec::new();
+        let terminal = CrosstermTerminal::new_with_io(&mut write, &mut read);
+        let mut backend = Backend::new(terminal, RenderConfig::default_static_ref()).unwrap();
+
+        let ans = Select::new("Question", options)
+            .prompt_with_backend(&mut backend)
+            .unwrap();
+
+        assert_eq!(ListOption::new(2, 3), ans);
     }
 }
