@@ -77,6 +77,13 @@ pub struct Confirm<'a> {
     pub error_message: String,
 
     /// RenderConfig to apply to the rendered interface.
+    ///
+    /// Note: The default render config considers if the NO_COLOR environment variable
+    /// is set to decide whether to render the colored config or the empty one.
+    ///
+    /// When overriding the config in a prompt, NO_COLOR is no longer considered and your
+    /// config is treated as the only source of truth. If you want to customize colors
+    /// and still suport NO_COLOR, you will have to do this on your end.
     pub render_config: &'a RenderConfig,
 }
 
@@ -156,6 +163,13 @@ impl<'a> Confirm<'a> {
     }
 
     /// Sets the provided color theme to this prompt.
+    ///
+    /// Note: The default render config considers if the NO_COLOR environment variable
+    /// is set to decide whether to render the colored config or the empty one.
+    ///
+    /// When overriding the config in a prompt, NO_COLOR is no longer considered and your
+    /// config is treated as the only source of truth. If you want to customize colors
+    /// and still suport NO_COLOR, you will have to do this on your end.
     pub fn with_render_config(mut self, render_config: &'a RenderConfig) -> Self {
         self.render_config = render_config;
         self

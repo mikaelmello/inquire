@@ -1,3 +1,5 @@
+use std::env;
+
 use lazy_static::lazy_static;
 
 use super::{Color, StyleSheet, Styled};
@@ -144,6 +146,30 @@ impl RenderConfig {
         }
     }
 
+    /// RenderConfig where default colors and attributes are applied.
+    pub fn default_colored() -> Self {
+        Self {
+            prompt_prefix: Styled::new("?").with_fg(Color::Green),
+            prompt: StyleSheet::empty(),
+            default_value: StyleSheet::empty(),
+            placeholder: StyleSheet::new().with_fg(Color::DarkGrey),
+            help_message: StyleSheet::empty().with_fg(Color::Cyan),
+            text_input: StyleSheet::empty(),
+            error_message: ErrorMessageRenderConfig::default_colored(),
+            password_mask: '*',
+            answer: StyleSheet::empty().with_fg(Color::Cyan),
+            highlighted_option_prefix: Styled::new(">").with_fg(Color::Cyan),
+            scroll_up_prefix: Styled::new("^"),
+            scroll_down_prefix: Styled::new("v"),
+            selected_checkbox: Styled::new("[x]").with_fg(Color::Green),
+            unselected_checkbox: Styled::new("[ ]"),
+            option: StyleSheet::empty(),
+
+            #[cfg(feature = "date")]
+            calendar: calendar::CalendarRenderConfig::default_colored(),
+        }
+    }
+
     /// Static reference to a [default](crate::ui::RenderConfig::default) render configuration.
     pub fn default_static_ref() -> &'static Self {
         lazy_static! {
@@ -247,25 +273,9 @@ impl RenderConfig {
 
 impl Default for RenderConfig {
     fn default() -> Self {
-        Self {
-            prompt_prefix: Styled::new("?").with_fg(Color::Green),
-            prompt: StyleSheet::empty(),
-            default_value: StyleSheet::empty(),
-            placeholder: StyleSheet::new().with_fg(Color::DarkGrey),
-            help_message: StyleSheet::empty().with_fg(Color::Cyan),
-            text_input: StyleSheet::empty(),
-            error_message: ErrorMessageRenderConfig::default(),
-            password_mask: '*',
-            answer: StyleSheet::empty().with_fg(Color::Cyan),
-            highlighted_option_prefix: Styled::new(">").with_fg(Color::Cyan),
-            scroll_up_prefix: Styled::new("^"),
-            scroll_down_prefix: Styled::new("v"),
-            selected_checkbox: Styled::new("[x]").with_fg(Color::Green),
-            unselected_checkbox: Styled::new("[ ]"),
-            option: StyleSheet::empty(),
-
-            #[cfg(feature = "date")]
-            calendar: calendar::CalendarRenderConfig::default(),
+        match env::var("NO_COLOR") {
+            Ok(_) => Self::empty(),
+            Err(_) => Self::default_colored(),
         }
     }
 }
@@ -296,6 +306,15 @@ impl ErrorMessageRenderConfig {
         }
     }
 
+    /// Render configuration where default colors and attributes are applied.
+    pub fn default_colored() -> Self {
+        Self {
+            prefix: Styled::new("#").with_fg(Color::Red),
+            separator: StyleSheet::empty(),
+            message: StyleSheet::empty().with_fg(Color::Red),
+        }
+    }
+
     /// Sets the prefix.
     pub fn with_prefix(mut self, prefix: Styled<&'static str>) -> Self {
         self.prefix = prefix;
@@ -318,18 +337,10 @@ impl ErrorMessageRenderConfig {
     }
 }
 
-impl Default for ErrorMessageRenderConfig {
-    fn default() -> Self {
-        Self {
-            prefix: Styled::new("#").with_fg(Color::Red),
-            separator: StyleSheet::empty(),
-            message: StyleSheet::empty().with_fg(Color::Red),
-        }
-    }
-}
-
 #[cfg(feature = "date")]
-mod calendar {
+pub mod calendar {
+    //! Module containing additional render config for date prompts.
+
     use super::{Color, StyleSheet, Styled};
 
     /// Calendar configuration for error messages.
@@ -380,15 +391,8 @@ mod calendar {
             }
         }
 
-        /// Sets the prefix.
-        pub fn with_prefix(mut self, prefix: Styled<&'static str>) -> Self {
-            self.prefix = prefix;
-            self
-        }
-    }
-
-    impl Default for CalendarRenderConfig {
-        fn default() -> Self {
+        /// Render configuration where default colors and attributes are applied.
+        pub fn default_colored() -> Self {
             Self {
                 prefix: Styled::new(">").with_fg(Color::Green),
                 header: StyleSheet::empty(),
@@ -402,6 +406,12 @@ mod calendar {
                 different_month_date: StyleSheet::empty().with_fg(Color::DarkGrey),
                 unavailable_date: StyleSheet::empty().with_fg(Color::DarkGrey),
             }
+        }
+
+        /// Sets the prefix.
+        pub fn with_prefix(mut self, prefix: Styled<&'static str>) -> Self {
+            self.prefix = prefix;
+            self
         }
     }
 }
