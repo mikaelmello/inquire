@@ -276,8 +276,6 @@ where
 
     fn new_line(&mut self) -> Result<()> {
         self.terminal.write("\r\n")?;
-        self.cur_line = self.cur_line.saturating_add(1);
-
         Ok(())
     }
 }
