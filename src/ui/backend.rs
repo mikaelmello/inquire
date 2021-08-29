@@ -1,6 +1,6 @@
 use std::{collections::HashSet, fmt::Display, io::Result};
 
-use unicode_segmentation::UnicodeSegmentation;
+use unicode_width::UnicodeWidthChar;
 
 use super::{key::Key, RenderConfig, Terminal, TerminalSize};
 use crate::{input::Input, list_option::ListOption, ui::Styled, utils::Page};
@@ -56,11 +56,27 @@ pub trait PasswordBackend: CommonBackend {
     fn render_prompt_with_full_input(&mut self, prompt: &str, cur_input: &Input) -> Result<()>;
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct Position {
+    pub row: u16,
+    pub col: u16,
+}
+
+impl Default for Position {
+    fn default() -> Self {
+        Self { row: 0, col: 0 }
+    }
+}
+
 pub struct Backend<'a, T>
 where
     T: Terminal,
 {
-    cur_line: usize,
+    prompt_current_position: Position,
+    prompt_end_position: Position,
+    prompt_cursor_offset: Option<usize>,
+    prompt_cursor_position: Option<Position>,
+    show_cursor: bool,
     terminal: T,
     terminal_size: TerminalSize,
     render_config: &'a RenderConfig,
@@ -77,7 +93,11 @@ where
         });
 
         let mut backend = Self {
-            cur_line: 0,
+            prompt_current_position: Position::default(),
+            prompt_end_position: Position::default(),
+            prompt_cursor_offset: None,
+            prompt_cursor_position: None,
+            show_cursor: false,
             terminal,
             render_config,
             terminal_size,
@@ -88,44 +108,90 @@ where
         Ok(backend)
     }
 
-    fn count_lines(&self, input: &str) -> u16 {
-        let mut lines: u16 = 0;
-        let mut cur_len: u16 = 0;
-
+    fn update_position_info(&mut self) {
+        let input = self.terminal.get_in_memory_content();
         let term_width = self.terminal_size.width;
 
-        for g in input.graphemes(true) {
-            if g == "\r\n" {
-                let wrapped_count = cur_len / term_width;
+        let mut cur_pos = Position::default();
 
-                let line_add = if cur_len % term_width == 0 { 0 } else { 1 };
+        for (idx, c) in input.chars().enumerate() {
+            let len = UnicodeWidthChar::width(c).unwrap_or(0) as u16;
 
-                lines = lines.saturating_add(wrapped_count.saturating_add(line_add));
-                cur_len = 0;
+            if c == '\n' {
+                cur_pos.row = cur_pos.row.saturating_add(1);
+                cur_pos.col = 0;
             } else {
-                cur_len = cur_len.saturating_add(1);
+                let left = term_width - cur_pos.col;
+
+                if left >= len {
+                    cur_pos.col = cur_pos.col.saturating_add(len);
+                } else {
+                    cur_pos.row = cur_pos.row.saturating_add(1);
+                    cur_pos.col = len;
+                }
+            }
+
+            if let Some(prompt_cursor_offset) = self.prompt_cursor_offset {
+                if prompt_cursor_offset == idx {
+                    let mut cursor_position = cur_pos;
+                    cursor_position.col = cursor_position.col.saturating_sub(len);
+                    self.prompt_cursor_position = Some(cursor_position);
+                }
             }
         }
 
-        if cur_len > 0 {
-            let wrapped_count = cur_len / term_width;
-            lines = lines.saturating_add(wrapped_count.saturating_add(1));
+        self.prompt_current_position = cur_pos;
+        self.prompt_end_position = cur_pos;
+    }
+
+    fn move_cursor_to_end_position(&mut self) -> Result<()> {
+        if self.prompt_current_position.row != self.prompt_end_position.row {
+            let diff = self
+                .prompt_end_position
+                .row
+                .saturating_sub(self.prompt_current_position.row);
+            self.terminal.cursor_down(diff)?;
+            self.terminal
+                .cursor_move_to_column(self.prompt_end_position.col)?;
         }
 
-        lines
+        Ok(())
+    }
+
+    fn update_cursor_status(&mut self) -> Result<()> {
+        match self.show_cursor {
+            true => self.terminal.cursor_show(),
+            false => self.terminal.cursor_hide(),
+        }
+    }
+
+    fn mark_prompt_cursor_position(&mut self, offset: usize) {
+        let current = self.terminal.get_in_memory_content();
+        let position = current.chars().count();
+        let position = position.saturating_add(offset);
+
+        self.prompt_cursor_offset.insert(position);
     }
 
     fn reset_prompt(&mut self) -> Result<()> {
-        let current = self.terminal.get_in_memory_content();
-        let lines = self.count_lines(current);
+        self.move_cursor_to_end_position()?;
 
-        for _ in 0..lines {
-            self.terminal.cursor_up()?;
-            self.terminal.cursor_move_to_column(0)?;
+        for _ in 0..self.prompt_end_position.row {
+            self.terminal.cursor_up(1)?;
             self.terminal.clear_current_line()?;
         }
 
         self.terminal.clear_in_memory_content();
+
+        self.prompt_current_position = Position::default();
+        self.prompt_end_position = Position::default();
+        self.prompt_cursor_position = None;
+        self.prompt_cursor_offset = None;
+
+        // let's default to false to catch any previous
+        // default behaviors we didn't account for
+        self.show_cursor = false;
+        self.terminal.cursor_hide()?;
 
         Ok(())
     }
@@ -199,51 +265,30 @@ where
     fn print_input(&mut self, input: &Input) -> Result<()> {
         self.terminal.write(" ")?;
 
+        let cursor_offset = input.pre_cursor().chars().count();
+        self.mark_prompt_cursor_position(cursor_offset);
+        self.show_cursor = true;
+
         if input.is_empty() {
-            if let Some(placeholder) = input.placeholder() {
-                if !placeholder.is_empty() {
-                    let mut graphemes = placeholder.graphemes(true);
-
-                    let first_grapheme = graphemes.next();
-                    let rest: String = graphemes.collect();
-
-                    match first_grapheme {
-                        Some(c) => self.terminal.write_styled(
-                            &Styled::new(c).with_style_sheet(self.render_config.placeholder_cursor),
-                        )?,
-                        None => {}
-                    }
-
-                    self.terminal.write_styled(
-                        &Styled::new(rest).with_style_sheet(self.render_config.placeholder),
-                    )?;
-
-                    return Ok(());
-                }
+            match input.placeholder() {
+                None => {}
+                Some(p) if p.is_empty() => {}
+                Some(p) => self.terminal.write_styled(
+                    &Styled::new(p).with_style_sheet(self.render_config.placeholder),
+                )?,
             }
-
+        } else {
             self.terminal.write_styled(
-                &Styled::new(" ").with_style_sheet(self.render_config.text_input.cursor),
+                &Styled::new(input.content()).with_style_sheet(self.render_config.text_input),
             )?;
-
-            return Ok(());
         }
 
-        let (before, mut at, after) = input.split();
-
-        if at.is_empty() {
-            at.push(' ');
+        // if cursor is at end of input, we need to add
+        // a space, otherwise the cursor will render on the
+        // \n character, on the next line.
+        if input.cursor() == input.length() {
+            self.terminal.write(' ')?;
         }
-
-        self.terminal.write_styled(
-            &Styled::new(before).with_style_sheet(self.render_config.text_input.text),
-        )?;
-        self.terminal.write_styled(
-            &Styled::new(at).with_style_sheet(self.render_config.text_input.cursor),
-        )?;
-        self.terminal.write_styled(
-            &Styled::new(after).with_style_sheet(self.render_config.text_input.text),
-        )?;
 
         Ok(())
     }
@@ -276,8 +321,6 @@ where
 
     fn new_line(&mut self) -> Result<()> {
         self.terminal.write("\r\n")?;
-        self.cur_line = self.cur_line.saturating_add(1);
-
         Ok(())
     }
 }
@@ -291,6 +334,20 @@ where
     }
 
     fn frame_finish(&mut self) -> Result<()> {
+        self.update_position_info();
+
+        if let Some(prompt_cursor_position) = self.prompt_cursor_position {
+            let row_diff = self.prompt_current_position.row - prompt_cursor_position.row;
+
+            self.terminal.cursor_up(row_diff)?;
+            self.terminal
+                .cursor_move_to_column(prompt_cursor_position.col)?;
+
+            self.prompt_current_position = prompt_cursor_position;
+        }
+
+        self.update_cursor_status()?;
+
         self.flush()
     }
 
@@ -534,10 +591,18 @@ pub mod date {
 
                     let date = format!("{:2}", date_it.day());
 
+                    let cursor_offset = if date_it.day() < 10 { 1 } else { 0 };
+
                     let mut style_sheet = crate::ui::StyleSheet::empty();
 
                     if date_it == selected_date {
-                        style_sheet = self.render_config.calendar.selected_date;
+                        self.mark_prompt_cursor_position(cursor_offset);
+                        if let Some(custom_style_sheet) = self.render_config.calendar.selected_date
+                        {
+                            style_sheet = custom_style_sheet;
+                        } else {
+                            self.show_cursor = true;
+                        }
                     } else if date_it == today {
                         style_sheet = self.render_config.calendar.today_date;
                     } else if date_it.month() != month.number_from_month() {
@@ -614,6 +679,7 @@ where
     T: Terminal,
 {
     fn drop(&mut self) {
+        let _ = self.move_cursor_to_end_position();
         let _ = self.terminal.cursor_show();
     }
 }

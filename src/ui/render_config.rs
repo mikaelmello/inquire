@@ -46,13 +46,6 @@ pub struct RenderConfig {
     /// and after the default value, as separators.
     pub placeholder: StyleSheet,
 
-    /// Render configuration of placeholder cursors.
-    ///
-    /// Note: placeholders are displayed wrapped in parenthesis, e.g. (yes).
-    /// Non-styled space characters is added before the default value display
-    /// and after the default value, as separators.
-    pub placeholder_cursor: StyleSheet,
-
     /// Render configuration of help messages.
     ///
     /// Note: help messages are displayed wrapped in brackets, e.g. [Be careful!].
@@ -65,11 +58,11 @@ pub struct RenderConfig {
     /// [`text_input`](crate::ui::RenderConfig::text_input) configuration.
     pub password_mask: char,
 
-    /// Render configuration of text inputs.
+    /// Style sheet for text inputs.
     ///
     /// Note: a non-styled space character is added before the text input as
     /// a separator from the prompt message (or default value display).
-    pub text_input: InputRenderConfig,
+    pub text_input: StyleSheet,
 
     /// Render configuration of final prompt answers (submissions).
     ///
@@ -134,9 +127,8 @@ impl RenderConfig {
             prompt: StyleSheet::empty(),
             default_value: StyleSheet::empty(),
             placeholder: StyleSheet::empty(),
-            placeholder_cursor: StyleSheet::empty(),
             help_message: StyleSheet::empty(),
-            text_input: InputRenderConfig::empty(),
+            text_input: StyleSheet::empty(),
             error_message: ErrorMessageRenderConfig::empty(),
             answer: StyleSheet::empty(),
             password_mask: '*',
@@ -176,8 +168,8 @@ impl RenderConfig {
         self
     }
 
-    /// Sets the text input render configuration.
-    pub fn with_text_input(mut self, text_input: InputRenderConfig) -> Self {
+    /// Sets style for text inputs.
+    pub fn with_text_input(mut self, text_input: StyleSheet) -> Self {
         self.text_input = text_input;
         self
     }
@@ -260,11 +252,8 @@ impl Default for RenderConfig {
             prompt: StyleSheet::empty(),
             default_value: StyleSheet::empty(),
             placeholder: StyleSheet::new().with_fg(Color::DarkGrey),
-            placeholder_cursor: StyleSheet::new()
-                .with_fg(Color::Black)
-                .with_bg(Color::DarkGrey),
             help_message: StyleSheet::empty().with_fg(Color::Cyan),
-            text_input: InputRenderConfig::default(),
+            text_input: StyleSheet::empty(),
             error_message: ErrorMessageRenderConfig::default(),
             password_mask: '*',
             answer: StyleSheet::empty().with_fg(Color::Cyan),
@@ -277,54 +266,6 @@ impl Default for RenderConfig {
 
             #[cfg(feature = "date")]
             calendar: calendar::CalendarRenderConfig::default(),
-        }
-    }
-}
-
-/// Render configuration for text inputs.
-///
-/// All text will be rendered with the `text`
-/// style sheet applied, except for the one character
-/// behind the cursor, which will have the `cursor`
-/// style sheet applied.
-#[derive(Clone, Debug)]
-pub struct InputRenderConfig {
-    /// Text style.
-    pub text: StyleSheet,
-
-    /// Cursor style.
-    pub cursor: StyleSheet,
-}
-
-impl InputRenderConfig {
-    /// Render configuration in which no colors or attributes are applied.
-    pub fn empty() -> Self {
-        Self {
-            text: StyleSheet::empty(),
-            cursor: StyleSheet::empty(),
-        }
-    }
-
-    /// Sets the text stylesheet.
-    pub fn with_text(mut self, text: StyleSheet) -> Self {
-        self.text = text;
-        self
-    }
-
-    /// Sets the cursor stylesheet.
-    pub fn with_cursor(mut self, cursor: StyleSheet) -> Self {
-        self.cursor = cursor;
-        self
-    }
-}
-
-impl Default for InputRenderConfig {
-    fn default() -> Self {
-        Self {
-            text: StyleSheet::empty(),
-            cursor: StyleSheet::empty()
-                .with_bg(Color::Grey)
-                .with_fg(Color::Black),
         }
     }
 }
@@ -404,7 +345,14 @@ mod calendar {
         pub week_header: StyleSheet,
 
         /// Style sheet for the currently selected date.
-        pub selected_date: StyleSheet,
+        ///
+        /// When `None`, no custom style sheet will be applied and the native
+        /// terminal cursor will be used in the first char of the date number.
+        ///
+        /// Whem `Some(_)`, the style sheet will be applied to the two columns
+        /// where the number is positioned, padded to spaces in the left if the
+        /// number only has one digit. e.g. " 5" or "23".
+        pub selected_date: Option<StyleSheet>,
 
         /// Style sheet for today's date, just for hinting purposes.
         pub today_date: StyleSheet,
@@ -425,7 +373,7 @@ mod calendar {
                 prefix: Styled::new(">"),
                 header: StyleSheet::empty(),
                 week_header: StyleSheet::empty(),
-                selected_date: StyleSheet::empty(),
+                selected_date: None,
                 today_date: StyleSheet::empty(),
                 different_month_date: StyleSheet::empty(),
                 unavailable_date: StyleSheet::empty(),
@@ -445,9 +393,11 @@ mod calendar {
                 prefix: Styled::new(">").with_fg(Color::Green),
                 header: StyleSheet::empty(),
                 week_header: StyleSheet::empty(),
-                selected_date: StyleSheet::empty()
-                    .with_fg(Color::Black)
-                    .with_bg(Color::Grey),
+                selected_date: Some(
+                    StyleSheet::empty()
+                        .with_fg(Color::Black)
+                        .with_bg(Color::Grey),
+                ),
                 today_date: StyleSheet::empty().with_fg(Color::Green),
                 different_month_date: StyleSheet::empty().with_fg(Color::DarkGrey),
                 unavailable_date: StyleSheet::empty().with_fg(Color::DarkGrey),
