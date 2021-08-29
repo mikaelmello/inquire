@@ -165,11 +165,7 @@ where
         }
     }
 
-    fn mark_prompt_cursor_position(&mut self) {
-        self.mark_prompt_cursor_position_with_offset(0);
-    }
-
-    fn mark_prompt_cursor_position_with_offset(&mut self, offset: usize) {
+    fn mark_prompt_cursor_position(&mut self, offset: usize) {
         let current = self.terminal.get_in_memory_content();
         let position = current.chars().count();
         let position = position.saturating_add(offset);
@@ -270,7 +266,7 @@ where
         self.terminal.write(" ")?;
 
         let cursor_offset = input.pre_cursor().chars().count();
-        self.mark_prompt_cursor_position_with_offset(cursor_offset);
+        self.mark_prompt_cursor_position(cursor_offset);
         self.show_cursor = true;
 
         if input.is_empty() {
@@ -595,11 +591,18 @@ pub mod date {
 
                     let date = format!("{:2}", date_it.day());
 
+                    let cursor_offset = if date_it.day() < 10 { 1 } else { 0 };
+
                     let mut style_sheet = crate::ui::StyleSheet::empty();
 
                     if date_it == selected_date {
-                        self.mark_prompt_cursor_position();
-                        style_sheet = self.render_config.calendar.selected_date;
+                        self.mark_prompt_cursor_position(cursor_offset);
+                        if let Some(custom_style_sheet) = self.render_config.calendar.selected_date
+                        {
+                            style_sheet = custom_style_sheet;
+                        } else {
+                            self.show_cursor = true;
+                        }
                     } else if date_it == today {
                         style_sheet = self.render_config.calendar.today_date;
                     } else if date_it.month() != month.number_from_month() {

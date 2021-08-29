@@ -345,7 +345,14 @@ mod calendar {
         pub week_header: StyleSheet,
 
         /// Style sheet for the currently selected date.
-        pub selected_date: StyleSheet,
+        ///
+        /// When `None`, no custom style sheet will be applied and the native
+        /// terminal cursor will be used in the first char of the date number.
+        ///
+        /// Whem `Some(_)`, the style sheet will be applied to the two columns
+        /// where the number is positioned, padded to spaces in the left if the
+        /// number only has one digit. e.g. " 5" or "23".
+        pub selected_date: Option<StyleSheet>,
 
         /// Style sheet for today's date, just for hinting purposes.
         pub today_date: StyleSheet,
@@ -366,7 +373,7 @@ mod calendar {
                 prefix: Styled::new(">"),
                 header: StyleSheet::empty(),
                 week_header: StyleSheet::empty(),
-                selected_date: StyleSheet::empty(),
+                selected_date: None,
                 today_date: StyleSheet::empty(),
                 different_month_date: StyleSheet::empty(),
                 unavailable_date: StyleSheet::empty(),
@@ -386,9 +393,11 @@ mod calendar {
                 prefix: Styled::new(">").with_fg(Color::Green),
                 header: StyleSheet::empty(),
                 week_header: StyleSheet::empty(),
-                selected_date: StyleSheet::empty()
-                    .with_fg(Color::Black)
-                    .with_bg(Color::Grey),
+                selected_date: Some(
+                    StyleSheet::empty()
+                        .with_fg(Color::Black)
+                        .with_bg(Color::Grey),
+                ),
                 today_date: StyleSheet::empty().with_fg(Color::Green),
                 different_month_date: StyleSheet::empty().with_fg(Color::DarkGrey),
                 unavailable_date: StyleSheet::empty().with_fg(Color::DarkGrey),
