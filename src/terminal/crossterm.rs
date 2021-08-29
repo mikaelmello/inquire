@@ -2,7 +2,7 @@ use std::io::{stdout, Result, Stdout, Write};
 
 use crossterm::{
     cursor,
-    event::{self, KeyEvent},
+    event::{self, KeyCode, KeyEvent, KeyModifiers},
     queue,
     style::{Attribute, Color, Print, SetAttribute, SetBackgroundColor, SetForegroundColor},
     terminal::{self, enable_raw_mode, ClearType},
@@ -228,6 +228,108 @@ impl From<crate::ui::Color> for Color {
             crate::ui::Color::Grey => Color::Grey,
             crate::ui::Color::Rgb { r, g, b } => Color::Rgb { r, g, b },
             crate::ui::Color::AnsiValue(b) => Color::AnsiValue(b),
+        }
+    }
+}
+
+impl From<KeyModifiers> for crate::ui::KeyModifiers {
+    fn from(m: KeyModifiers) -> Self {
+        let mut modifiers = Self::empty();
+
+        if m.contains(KeyModifiers::NONE) {
+            modifiers |= crate::ui::KeyModifiers::NONE;
+        }
+        if m.contains(KeyModifiers::ALT) {
+            modifiers |= crate::ui::KeyModifiers::ALT;
+        }
+        if m.contains(KeyModifiers::CONTROL) {
+            modifiers |= crate::ui::KeyModifiers::CONTROL;
+        }
+        if m.contains(KeyModifiers::SHIFT) {
+            modifiers |= crate::ui::KeyModifiers::SHIFT;
+        }
+
+        modifiers
+    }
+}
+
+impl From<KeyEvent> for Key {
+    fn from(event: KeyEvent) -> Self {
+        match event {
+            KeyEvent {
+                code: KeyCode::Char('c'),
+                modifiers: crossterm::event::KeyModifiers::CONTROL,
+            }
+            | KeyEvent {
+                code: KeyCode::Esc,
+                modifiers: _,
+            } => Self::Cancel,
+            KeyEvent {
+                code: KeyCode::Enter,
+                modifiers: _,
+            }
+            | KeyEvent {
+                code: KeyCode::Char('\n'),
+                modifiers: _,
+            }
+            | KeyEvent {
+                code: KeyCode::Char('\r'),
+                modifiers: _,
+            } => Self::Submit,
+            KeyEvent {
+                code: KeyCode::Tab,
+                modifiers: _,
+            }
+            | KeyEvent {
+                code: KeyCode::Char('\t'),
+                modifiers: _,
+            } => Self::Tab,
+            KeyEvent {
+                code: KeyCode::Backspace,
+                modifiers: _,
+            } => Self::Backspace,
+            KeyEvent {
+                code: KeyCode::Delete,
+                modifiers: m,
+            } => Self::Delete(m.into()),
+            KeyEvent {
+                code: KeyCode::Home,
+                modifiers: _,
+            } => Self::Home,
+            KeyEvent {
+                code: KeyCode::End,
+                modifiers: _,
+            } => Self::End,
+            KeyEvent {
+                code: KeyCode::PageUp,
+                modifiers: _,
+            } => Self::PageUp,
+            KeyEvent {
+                code: KeyCode::PageDown,
+                modifiers: _,
+            } => Self::PageDown,
+            KeyEvent {
+                code: KeyCode::Up,
+                modifiers: m,
+            } => Self::Up(m.into()),
+            KeyEvent {
+                code: KeyCode::Down,
+                modifiers: m,
+            } => Self::Down(m.into()),
+            KeyEvent {
+                code: KeyCode::Left,
+                modifiers: m,
+            } => Self::Left(m.into()),
+            KeyEvent {
+                code: KeyCode::Right,
+                modifiers: m,
+            } => Self::Right(m.into()),
+            KeyEvent {
+                code: KeyCode::Char(c),
+                modifiers: m,
+            } => Self::Char(c, m.into()),
+            #[allow(deprecated)]
+            _ => Self::Any,
         }
     }
 }
