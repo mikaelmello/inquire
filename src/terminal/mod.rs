@@ -5,11 +5,15 @@ use crate::{
     ui::{Attributes, Color, Key, Styled},
 };
 
-use self::crossterm::CrosstermTerminal;
-
 const INITIAL_IN_MEMORY_CAPACITY: usize = 2048;
 
+#[cfg(feature = "crossterm")]
+#[cfg_attr(docsrs, doc(cfg(feature = "crossterm")))]
 pub mod crossterm;
+
+#[cfg(feature = "termion")]
+#[cfg_attr(docsrs, doc(cfg(feature = "termion")))]
+pub mod termion;
 
 pub struct TerminalSize {
     pub width: u16,
@@ -47,5 +51,21 @@ pub trait Terminal: Sized {
 }
 
 pub fn get_default_terminal() -> InquireResult<impl Terminal> {
-    CrosstermTerminal::new()
+    #[cfg(feature = "crossterm")]
+    return crossterm::CrosstermTerminal::new();
+
+    #[cfg(all(feature = "termion", not(feature = "crossterm")))]
+    return termion::TermionTerminal::new();
+
+    #[cfg(all(not(feature = "crossterm"), not(feature = "termion")))]
+    {
+        compile_error!("At least one of crossterm or termion must be enabled");
+
+        // this is here to silence an additional compilation error
+        // when no terminals are enabled. it complains about mismatched
+        // return types.
+        Err(crate::error::InquireError::InvalidConfiguration(
+            "Missing terminal backend".into(),
+        ))
+    }
 }

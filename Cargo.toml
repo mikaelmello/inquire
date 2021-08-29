@@ -14,7 +14,7 @@ categories = ["command-line-interface", "value-formatting"]
 include = ["/examples", "/src", "/LICENSE"]
 
 [features]
-default = ["builtin_validators"]
+default = ["builtin_validators", "crossterm"]
 builtin_validators = []
 date = ["chrono"]
 
@@ -23,9 +23,10 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
-crossterm = "0.21"
+crossterm = { version = "0.21", optional = true }
+termion = { version = "1.5.6", optional = true }
 unicode-segmentation = "1"
-chrono = { version = "0.4",  optional = true }
+chrono = { version = "0.4", optional = true }
 thiserror = "1"
 bitflags = "1.0"
 lazy_static = "1.4.0"
