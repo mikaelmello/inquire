@@ -37,7 +37,9 @@ fn main() -> InquireResult<()> {
 
     let mut accounts = get_accounts();
     let accounts_mut = accounts.iter_mut().collect();
-    let account = Select::new("Account:", accounts_mut).prompt()?;
+    let account = Select::new("Account:", accounts_mut)
+        .with_render_config(RenderConfig::empty_static_ref())
+        .prompt()?;
     account.balance -= amount;
 
     let _tags = MultiSelect::new("Tags:", get_tags())
