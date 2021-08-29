@@ -416,6 +416,7 @@ impl<'a> TextPrompt<'a> {
 }
 
 #[cfg(test)]
+#[cfg(feature = "crossterm")]
 mod test {
     use super::Text;
     use crate::{

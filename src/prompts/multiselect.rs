@@ -550,11 +550,13 @@ where
 }
 
 #[cfg(test)]
+#[cfg(feature = "crossterm")]
 mod test {
     use crate::{
         formatter::MultiOptionFormatter,
         list_option::ListOption,
-        ui::{crossterm::CrosstermTerminal, Backend, RenderConfig},
+        terminal::crossterm::CrosstermTerminal,
+        ui::{Backend, RenderConfig},
         MultiSelect,
     };
     use crossterm::event::{KeyCode, KeyEvent};

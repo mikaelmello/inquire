@@ -430,6 +430,7 @@ where
 }
 
 #[cfg(test)]
+#[cfg(feature = "crossterm")]
 mod test {
     use crate::{
         formatter::OptionFormatter,

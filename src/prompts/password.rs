@@ -330,6 +330,7 @@ impl<'a> PasswordPrompt<'a> {
 }
 
 #[cfg(test)]
+#[cfg(feature = "crossterm")]
 mod test {
     use super::Password;
     use crate::{

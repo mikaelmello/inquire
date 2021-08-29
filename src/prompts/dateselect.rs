@@ -425,6 +425,7 @@ impl<'a> DateSelectPrompt<'a> {
 }
 
 #[cfg(test)]
+#[cfg(feature = "crossterm")]
 mod test {
     use crate::{
         date_utils::get_current_date,
