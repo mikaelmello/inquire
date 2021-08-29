@@ -77,7 +77,6 @@ where
     prompt_cursor_offset: Option<usize>,
     prompt_cursor_position: Option<Position>,
     show_cursor: bool,
-    cursor_displayed: bool,
     terminal: T,
     terminal_size: TerminalSize,
     render_config: &'a RenderConfig,
@@ -99,7 +98,6 @@ where
             prompt_cursor_offset: None,
             prompt_cursor_position: None,
             show_cursor: false,
-            cursor_displayed: false,
             terminal,
             render_config,
             terminal_size,
@@ -161,19 +159,10 @@ where
     }
 
     fn update_cursor_status(&mut self) -> Result<()> {
-        if self.cursor_displayed == self.show_cursor {
-            return Ok(());
+        match self.show_cursor {
+            true => self.terminal.cursor_show(),
+            false => self.terminal.cursor_hide(),
         }
-
-        if self.show_cursor {
-            self.terminal.cursor_show()?;
-            self.cursor_displayed = true;
-        } else {
-            self.terminal.cursor_hide()?;
-            self.cursor_displayed = false;
-        }
-
-        Ok(())
     }
 
     fn mark_prompt_cursor_position(&mut self) {
@@ -206,6 +195,7 @@ where
         // let's default to false to catch any previous
         // default behaviors we didn't account for
         self.show_cursor = false;
+        self.terminal.cursor_hide()?;
 
         Ok(())
     }
