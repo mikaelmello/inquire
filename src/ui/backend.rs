@@ -274,33 +274,17 @@ where
         self.terminal.write(" ")?;
 
         if input.is_empty() {
-            if let Some(placeholder) = input.placeholder() {
-                if !placeholder.is_empty() {
-                    let mut graphemes = placeholder.graphemes(true);
+            self.mark_prompt_cursor_position();
 
-                    let first_grapheme = graphemes.next();
-                    let rest: String = graphemes.collect();
-
-                    self.mark_prompt_cursor_position();
-                    match first_grapheme {
-                        Some(c) => self.terminal.write_styled(
-                            &Styled::new(c).with_style_sheet(self.render_config.placeholder_cursor),
-                        )?,
-                        None => {}
-                    }
-
-                    self.terminal.write_styled(
-                        &Styled::new(rest).with_style_sheet(self.render_config.placeholder),
-                    )?;
-
-                    return Ok(());
-                }
+            match input.placeholder() {
+                None => self.terminal.write(' ')?,
+                Some(p) if p.is_empty() => self.terminal.write(' ')?,
+                Some(p) => self.terminal.write_styled(
+                    &Styled::new(p).with_style_sheet(self.render_config.placeholder),
+                )?,
             }
 
-            self.mark_prompt_cursor_position();
-            self.terminal.write_styled(
-                &Styled::new(" ").with_style_sheet(self.render_config.text_input.cursor),
-            )?;
+            self.show_cursor = true;
 
             return Ok(());
         }

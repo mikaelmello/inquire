@@ -46,13 +46,6 @@ pub struct RenderConfig {
     /// and after the default value, as separators.
     pub placeholder: StyleSheet,
 
-    /// Render configuration of placeholder cursors.
-    ///
-    /// Note: placeholders are displayed wrapped in parenthesis, e.g. (yes).
-    /// Non-styled space characters is added before the default value display
-    /// and after the default value, as separators.
-    pub placeholder_cursor: StyleSheet,
-
     /// Render configuration of help messages.
     ///
     /// Note: help messages are displayed wrapped in brackets, e.g. [Be careful!].
@@ -134,7 +127,6 @@ impl RenderConfig {
             prompt: StyleSheet::empty(),
             default_value: StyleSheet::empty(),
             placeholder: StyleSheet::empty(),
-            placeholder_cursor: StyleSheet::empty(),
             help_message: StyleSheet::empty(),
             text_input: InputRenderConfig::empty(),
             error_message: ErrorMessageRenderConfig::empty(),
@@ -260,9 +252,6 @@ impl Default for RenderConfig {
             prompt: StyleSheet::empty(),
             default_value: StyleSheet::empty(),
             placeholder: StyleSheet::new().with_fg(Color::DarkGrey),
-            placeholder_cursor: StyleSheet::new()
-                .with_fg(Color::Black)
-                .with_bg(Color::DarkGrey),
             help_message: StyleSheet::empty().with_fg(Color::Cyan),
             text_input: InputRenderConfig::default(),
             error_message: ErrorMessageRenderConfig::default(),
