@@ -131,8 +131,13 @@ where
     }
 
     fn mark_prompt_cursor_position(&mut self) {
+        self.mark_prompt_cursor_position_with_offset(0);
+    }
+
+    fn mark_prompt_cursor_position_with_offset(&mut self, offset: usize) {
         let current = self.terminal.get_in_memory_content();
         let position = current.graphemes(true).count();
+        let position = position.saturating_add(offset);
 
         self.prompt_cursor_offset.insert(position);
     }
