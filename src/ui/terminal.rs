@@ -76,12 +76,9 @@ pub mod crossterm {
 
     impl<'a> CrosstermTerminal<'a> {
         pub fn new() -> InquireResult<Self> {
-            enable_raw_mode().map_err(|e| {
-                if e.raw_os_error() == Some(25i32) {
-                    InquireError::NotTTY
-                } else {
-                    InquireError::from(e)
-                }
+            enable_raw_mode().map_err(|e| match e.raw_os_error() {
+                Some(25) | Some(6) => InquireError::NotTTY,
+                _ => InquireError::from(e),
             })?;
 
             Ok(Self {
