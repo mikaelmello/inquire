@@ -62,6 +62,12 @@ pub struct Position {
     pub col: u16,
 }
 
+impl Default for Position {
+    fn default() -> Self {
+        Self { row: 0, col: 0 }
+    }
+}
+
 pub struct Backend<'a, T>
 where
     T: Terminal,
@@ -86,8 +92,8 @@ where
         });
 
         let mut backend = Self {
-            prompt_current_position: Position { row: 0, col: 0 },
-            prompt_end_position: Position { row: 0, col: 0 },
+            prompt_current_position: Position::default(),
+            prompt_end_position: Position::default(),
             prompt_cursor_offset: None,
             prompt_cursor_position: None,
             terminal,
@@ -104,7 +110,7 @@ where
         let input = self.terminal.get_in_memory_content();
         let term_width = self.terminal_size.width;
 
-        let mut cur_pos = Position { row: 0, col: 0 };
+        let mut cur_pos = Position::default();
 
         for (idx, g) in input.graphemes(true).enumerate() {
             if g == "\r\n" {
@@ -165,6 +171,11 @@ where
         }
 
         self.terminal.clear_in_memory_content();
+
+        self.prompt_current_position = Position::default();
+        self.prompt_end_position = Position::default();
+        self.prompt_cursor_position = None;
+        self.prompt_cursor_offset = None;
 
         Ok(())
     }
