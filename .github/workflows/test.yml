@@ -18,6 +18,7 @@ jobs:
       - name: Test with no features [crossterm]
         run: cargo test --verbose --no-default-features --features=crossterm
       - name: Test with no features [termion]
+        if: matrix.os != 'windows-latest'
         run: cargo test --verbose --no-default-features --features=termion
       - name: Test with default features
         run: cargo test --verbose
