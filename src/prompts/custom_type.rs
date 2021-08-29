@@ -4,7 +4,6 @@ use crate::{
     error::{InquireError, InquireResult},
     formatter::CustomTypeFormatter,
     input::Input,
-    parse_type,
     parser::CustomTypeParser,
     ui::{crossterm::CrosstermTerminal, Backend, CustomTypeBackend, Key, RenderConfig},
 };
@@ -112,7 +111,7 @@ where
             placeholder: None,
             help_message: None,
             formatter: &|val| val.to_string(),
-            parser: parse_type!(T),
+            parser: &|a| a.parse::<T>().map_err(|_| ()),
             error_message: "Invalid input".into(),
             render_config: RenderConfig::default_static_ref(),
         }
