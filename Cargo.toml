@@ -54,6 +54,14 @@ name = "empty_render_config"
 required-features = ["date"]
 
 [[example]]
+name = "text_options"
+required-features = ["builtin_validators"]
+
+[[example]]
+name = "password_full_featured"
+required-features = ["builtin_validators"]
+
+[[example]]
 name = "date_complete"
 required-features = ["date"]
 
