@@ -323,6 +323,16 @@ where
     fn frame_finish(&mut self) -> Result<()> {
         self.update_position_info();
 
+        if let Some(prompt_cursor_position) = self.prompt_cursor_position {
+            let row_diff = self.prompt_current_position.row - prompt_cursor_position.row;
+
+            self.terminal.cursor_up(row_diff)?;
+            self.terminal
+                .cursor_move_to_column(prompt_cursor_position.col)?;
+
+            self.prompt_current_position = prompt_cursor_position;
+        }
+
         self.flush()
     }
 
