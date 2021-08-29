@@ -14,8 +14,12 @@ jobs:
           rust-version: ${{ matrix.rust }}
       - uses: actions/checkout@master
       - name: Build
-        run: cargo build --all-features --verbose
+        run: cargo build --verbose --all-features
+      - name: Test with no features [crossterm]
+        run: cargo test --verbose --no-default-features --features=crossterm
+      - name: Test with no features [termion]
+        run: cargo test --verbose --no-default-features --features=termion
       - name: Test with default features
         run: cargo test --verbose
       - name: Test with all features
-        run: cargo test --all-features --verbose
+        run: cargo test --verbose --all-features
