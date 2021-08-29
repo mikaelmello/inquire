@@ -1,4 +1,4 @@
-use std::{collections::HashSet, fmt::Display};
+use std::{collections::BTreeSet, fmt::Display};
 
 use crate::{
     config::{self, Filter},
@@ -297,7 +297,7 @@ struct MultiSelectPrompt<'a, T> {
     help_message: Option<&'a str>,
     vim_mode: bool,
     cursor_index: usize,
-    checked: HashSet<usize>,
+    checked: BTreeSet<usize>,
     page_size: usize,
     keep_filter: bool,
     input: Input,
@@ -334,7 +334,7 @@ where
         let filtered_options = (0..mso.options.len()).collect();
         let checked_options = mso
             .default
-            .map_or_else(|| HashSet::new(), |d| d.iter().cloned().collect());
+            .map_or_else(|| BTreeSet::new(), |d| d.iter().cloned().collect());
 
         Ok(Self {
             message: mso.message,
@@ -383,7 +383,9 @@ where
         self.cursor_index = self.cursor_index.saturating_add(qty);
 
         if self.cursor_index >= self.filtered_options.len() {
-            self.cursor_index = if wrap {
+            self.cursor_index = if self.filtered_options.is_empty() {
+                0
+            } else if wrap {
                 self.cursor_index % self.filtered_options.len()
             } else {
                 self.filtered_options.len().saturating_sub(1)
@@ -470,14 +472,21 @@ where
         }
     }
 
-    fn retain_final_answer(&mut self) {
-        let mut index = 0;
-        let checked = self.checked.clone();
-        self.options.retain(|_| {
-            let keep = checked.contains(&index);
-            index += 1;
-            keep
-        });
+    fn get_final_answer(&mut self) -> Vec<ListOption<T>> {
+        let mut answer = vec![];
+
+        // by iterating in descending order, we can safely
+        // swap remove because the elements to the right
+        // that we did not remove will not matter anymore.
+        for index in self.checked.iter().rev() {
+            let index = *index;
+            let value = self.options.swap_remove(index);
+            let lo = ListOption::new(index, value);
+            answer.push(lo);
+        }
+        answer.reverse();
+
+        answer
     }
 
     fn render<B: MultiSelectBackend>(&mut self, backend: &mut B) -> InquireResult<()> {
@@ -530,20 +539,109 @@ where
             }
         }
 
-        self.retain_final_answer();
-
-        let final_answer: Vec<ListOption<T>> = self
-            .options
-            .into_iter()
-            .enumerate()
-            .map(|(idx, opt)| ListOption::new(idx, opt))
-            .collect();
-
+        let final_answer = self.get_final_answer();
         let refs: Vec<ListOption<&T>> = final_answer.iter().map(ListOption::as_ref).collect();
         let formatted = (self.formatter)(&refs);
 
         backend.finish_prompt(&self.message, &formatted)?;
 
         Ok(final_answer)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::{
+        formatter::MultiOptionFormatter,
+        list_option::ListOption,
+        ui::{crossterm::CrosstermTerminal, Backend, RenderConfig},
+        MultiSelect,
+    };
+    use crossterm::event::{KeyCode, KeyEvent};
+
+    #[test]
+    /// Tests that a closure that actually closes on a variable can be used
+    /// as a Select formatter.
+    fn closure_formatter() {
+        let read: Vec<KeyEvent> = vec![KeyCode::Char(' '), KeyCode::Enter]
+            .into_iter()
+            .map(KeyEvent::from)
+            .collect();
+        let mut read = read.iter();
+
+        let formatted = String::from("Thanks!");
+        let formatter: MultiOptionFormatter<i32> = &|_| formatted.clone();
+
+        let options = vec![1, 2, 3];
+
+        let mut write: Vec<u8> = Vec::new();
+        let terminal = CrosstermTerminal::new_with_io(&mut write, &mut read);
+        let mut backend = Backend::new(terminal, RenderConfig::default_static_ref()).unwrap();
+
+        let ans = MultiSelect::new("Question", options)
+            .with_formatter(formatter)
+            .prompt_with_backend(&mut backend)
+            .unwrap();
+
+        assert_eq!(vec![ListOption::new(0, 1)], ans);
+    }
+
+    #[test]
+    // Anti-regression test: https://github.com/mikaelmello/inquire/issues/30
+    fn down_arrow_on_empty_list_does_not_panic() {
+        let read: Vec<KeyEvent> = [
+            KeyCode::Char('9'),
+            KeyCode::Down,
+            KeyCode::Backspace,
+            KeyCode::Char('3'),
+            KeyCode::Down,
+            KeyCode::Backspace,
+            KeyCode::Enter,
+        ]
+        .iter()
+        .map(|c| KeyEvent::from(*c))
+        .collect();
+
+        let mut read = read.iter();
+
+        let options = vec![1, 2, 3];
+
+        let mut write: Vec<u8> = Vec::new();
+        let terminal = CrosstermTerminal::new_with_io(&mut write, &mut read);
+        let mut backend = Backend::new(terminal, RenderConfig::default_static_ref()).unwrap();
+
+        let ans = MultiSelect::new("Question", options)
+            .prompt_with_backend(&mut backend)
+            .unwrap();
+
+        assert_eq!(Vec::<ListOption<i32>>::new(), ans);
+    }
+
+    #[test]
+    // Anti-regression test: https://github.com/mikaelmello/inquire/issues/31
+    fn list_option_indexes_are_relative_to_input_vec() {
+        let read: Vec<KeyEvent> = vec![
+            KeyCode::Down,
+            KeyCode::Char(' '),
+            KeyCode::Down,
+            KeyCode::Char(' '),
+            KeyCode::Enter,
+        ]
+        .into_iter()
+        .map(KeyEvent::from)
+        .collect();
+        let mut read = read.iter();
+
+        let options = vec![1, 2, 3];
+
+        let mut write: Vec<u8> = Vec::new();
+        let terminal = CrosstermTerminal::new_with_io(&mut write, &mut read);
+        let mut backend = Backend::new(terminal, RenderConfig::default_static_ref()).unwrap();
+
+        let ans = MultiSelect::new("Question", options)
+            .prompt_with_backend(&mut backend)
+            .unwrap();
+
+        assert_eq!(vec![ListOption::new(1, 2), ListOption::new(2, 3)], ans);
     }
 }

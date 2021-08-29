@@ -1,4 +1,4 @@
-use std::{collections::HashSet, fmt::Display, io::Result};
+use std::{collections::BTreeSet, fmt::Display, io::Result};
 
 use unicode_width::UnicodeWidthChar;
 
@@ -43,7 +43,7 @@ pub trait MultiSelectBackend: CommonBackend {
     fn render_options<D: Display>(
         &mut self,
         page: Page<ListOption<D>>,
-        checked: &HashSet<usize>,
+        checked: &BTreeSet<usize>,
     ) -> Result<()>;
 }
 
@@ -463,7 +463,7 @@ where
     fn render_options<D: Display>(
         &mut self,
         page: Page<ListOption<D>>,
-        checked: &HashSet<usize>,
+        checked: &BTreeSet<usize>,
     ) -> Result<()> {
         for (idx, option) in page.content.iter().enumerate() {
             self.print_option_prefix(idx, &page)?;

@@ -327,7 +327,9 @@ where
         self.cursor_index = self.cursor_index.saturating_add(qty);
 
         if self.cursor_index >= self.filtered_options.len() {
-            self.cursor_index = if wrap {
+            self.cursor_index = if self.filtered_options.is_empty() {
+                0
+            } else if wrap {
                 self.cursor_index % self.filtered_options.len()
             } else {
                 self.filtered_options.len().saturating_sub(1)
@@ -466,8 +468,8 @@ mod test {
     }
 
     #[test]
-    // https://github.com/mikaelmello/inquire/issues/29
-    fn regression_29() {
+    // Anti-regression test: https://github.com/mikaelmello/inquire/issues/29
+    fn enter_arrow_on_empty_list_does_not_panic() {
         let read: Vec<KeyEvent> = [
             KeyCode::Char('9'),
             KeyCode::Enter,
@@ -492,5 +494,36 @@ mod test {
             .unwrap();
 
         assert_eq!(ListOption::new(2, 3), ans);
+    }
+
+    #[test]
+    // Anti-regression test: https://github.com/mikaelmello/inquire/issues/30
+    fn down_arrow_on_empty_list_does_not_panic() {
+        let read: Vec<KeyEvent> = [
+            KeyCode::Char('9'),
+            KeyCode::Down,
+            KeyCode::Backspace,
+            KeyCode::Char('3'),
+            KeyCode::Down,
+            KeyCode::Backspace,
+            KeyCode::Enter,
+        ]
+        .iter()
+        .map(|c| KeyEvent::from(*c))
+        .collect();
+
+        let mut read = read.iter();
+
+        let options = vec![1, 2, 3];
+
+        let mut write: Vec<u8> = Vec::new();
+        let terminal = CrosstermTerminal::new_with_io(&mut write, &mut read);
+        let mut backend = Backend::new(terminal, RenderConfig::default_static_ref()).unwrap();
+
+        let ans = Select::new("Question", options)
+            .prompt_with_backend(&mut backend)
+            .unwrap();
+
+        assert_eq!(ListOption::new(0, 1), ans);
     }
 }
