@@ -129,7 +129,7 @@ pub mod crossterm {
         }
 
         fn cursor_move_to_column(&mut self, idx: u16) -> Result<()> {
-            self.write_command(cursor::MoveToColumn(idx))
+            self.write_command(cursor::MoveToColumn(idx.saturating_add(1)))
         }
 
         fn read_key(&mut self) -> Result<Key> {
