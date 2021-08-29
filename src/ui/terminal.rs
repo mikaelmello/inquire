@@ -10,7 +10,8 @@ pub struct TerminalSize {
 }
 
 pub trait Terminal {
-    fn cursor_up(&mut self) -> Result<()>;
+    fn cursor_up(&mut self, cnt: u16) -> Result<()>;
+    fn cursor_down(&mut self, cnt: u16) -> Result<()>;
     fn cursor_move_to_column(&mut self, idx: u16) -> Result<()>;
     fn read_key(&mut self) -> Result<Key>;
     fn flush(&mut self) -> Result<()>;
@@ -119,8 +120,12 @@ pub mod crossterm {
     }
 
     impl<'a> Terminal for CrosstermTerminal<'a> {
-        fn cursor_up(&mut self) -> Result<()> {
-            self.write_command(cursor::MoveUp(1))
+        fn cursor_up(&mut self, cnt: u16) -> Result<()> {
+            self.write_command(cursor::MoveUp(cnt))
+        }
+
+        fn cursor_down(&mut self, cnt: u16) -> Result<()> {
+            self.write_command(cursor::MoveDown(cnt))
         }
 
         fn cursor_move_to_column(&mut self, idx: u16) -> Result<()> {

@@ -120,7 +120,7 @@ where
         let lines = self.count_lines(current);
 
         for _ in 0..lines {
-            self.terminal.cursor_up()?;
+            self.terminal.cursor_up(1)?;
             self.terminal.cursor_move_to_column(0)?;
             self.terminal.clear_current_line()?;
         }
