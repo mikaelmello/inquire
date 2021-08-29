@@ -312,7 +312,7 @@ mod test {
 
         #[cfg(unix)]
         assert_eq!(
-            "\x1B[1m\x1B[3m\x1B[1m\x1B[0m",
+            "\x1B[1m\x1B[3m\x1B[1m\x1B[m",
             std::str::from_utf8(&write).unwrap()
         );
     }
@@ -333,10 +333,7 @@ mod test {
         }
 
         #[cfg(unix)]
-        assert_eq!(
-            "\x1B[1m\x1B[3m\x1B[0m",
-            std::str::from_utf8(&write).unwrap()
-        );
+        assert_eq!("\x1B[1m\x1B[3m\x1B[m", std::str::from_utf8(&write).unwrap());
     }
 
     #[test]
