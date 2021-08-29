@@ -45,12 +45,18 @@ pub enum PasswordDisplayMode {
 /// # Example
 ///
 /// ```no_run
-///  use inquire::{min_length, validator::InquireLength, Password, PasswordDisplayMode};
+///  use inquire::{validator::StringValidator, Password, PasswordDisplayMode};
 ///
-///  let name = Password::new("RSA Encryption Key:")
+///  let validator: StringValidator = &|input| if input.chars().count() < 10 {
+///      Err(String::from("Keys must have at least 10 characters."))
+///  } else {
+///      Ok(())
+///  };
+///
+///  let name = Password::new("Encryption Key:")
 ///      .with_display_toggle_enabled()
 ///      .with_display_mode(PasswordDisplayMode::Hidden)
-///      .with_validator(min_length!(10))
+///      .with_validator(validator)
 ///      .with_formatter(&|_| String::from("Input received"))
 ///      .with_help_message("It is recommended to generate a new one only for this purpose")
 ///      .prompt();
