@@ -31,9 +31,6 @@ bitflags = "1.0"
 lazy_static = "1.4.0"
 newline-converter = "0.2.0"
 
-[dev-dependencies]
-ntest = "0.7.3"
-
 [[example]]
 name = "form"
 required-features = ["date"]

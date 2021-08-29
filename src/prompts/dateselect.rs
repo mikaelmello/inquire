@@ -421,7 +421,6 @@ mod test {
     };
     use chrono::NaiveDate;
     use crossterm::event::{KeyCode, KeyEvent};
-    use ntest::timeout;
 
     fn default<'a>() -> DateSelect<'a> {
         DateSelect::new("Question?")
@@ -434,7 +433,6 @@ mod test {
 
         ($name:ident,$input:expr,$output:expr,$prompt:expr) => {
             #[test]
-            #[timeout(100)]
             fn $name() {
                 let read: Vec<KeyEvent> = $input.into_iter().map(KeyEvent::from).collect();
                 let mut read = read.iter();
@@ -461,7 +459,6 @@ mod test {
     );
 
     #[test]
-    #[timeout(100)]
     /// Tests that a closure that actually closes on a variable can be used
     /// as a DateSelect validator.
     fn closure_validator() {

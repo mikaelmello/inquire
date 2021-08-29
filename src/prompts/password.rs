@@ -319,7 +319,6 @@ mod test {
     use super::Password;
     use crate::ui::{crossterm::CrosstermTerminal, Backend, RenderConfig};
     use crossterm::event::{KeyCode, KeyEvent};
-    use ntest::timeout;
 
     fn default<'a>() -> Password<'a> {
         Password::new("Question?")
@@ -338,7 +337,6 @@ mod test {
 
         ($name:ident,$input:expr,$output:expr,$prompt:expr) => {
             #[test]
-            #[timeout(100)]
             fn $name() {
                 let read: Vec<KeyEvent> = $input.into_iter().map(KeyEvent::from).collect();
                 let mut read = read.iter();
