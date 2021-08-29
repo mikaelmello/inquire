@@ -1,4 +1,4 @@
-use std::{collections::HashSet, fmt::Display};
+use std::{collections::BTreeSet, fmt::Display};
 
 use crate::{
     config::{self, Filter},
@@ -298,7 +298,7 @@ struct MultiSelectPrompt<'a, T> {
     help_message: Option<&'a str>,
     vim_mode: bool,
     cursor_index: usize,
-    checked: HashSet<usize>,
+    checked: BTreeSet<usize>,
     page_size: usize,
     keep_filter: bool,
     input: Input,
@@ -335,7 +335,7 @@ where
         let filtered_options = (0..mso.options.len()).collect();
         let checked_options = mso
             .default
-            .map_or_else(|| HashSet::new(), |d| d.iter().cloned().collect());
+            .map_or_else(|| BTreeSet::new(), |d| d.iter().cloned().collect());
 
         Ok(Self {
             message: mso.message,
