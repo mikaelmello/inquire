@@ -234,6 +234,7 @@ where
                     let first_grapheme = graphemes.next();
                     let rest: String = graphemes.collect();
 
+                    self.mark_prompt_cursor_position();
                     match first_grapheme {
                         Some(c) => self.terminal.write_styled(
                             &Styled::new(c).with_style_sheet(self.render_config.placeholder_cursor),
@@ -249,6 +250,7 @@ where
                 }
             }
 
+            self.mark_prompt_cursor_position();
             self.terminal.write_styled(
                 &Styled::new(" ").with_style_sheet(self.render_config.text_input.cursor),
             )?;
@@ -265,9 +267,12 @@ where
         self.terminal.write_styled(
             &Styled::new(before).with_style_sheet(self.render_config.text_input.text),
         )?;
+
+        self.mark_prompt_cursor_position();
         self.terminal.write_styled(
             &Styled::new(at).with_style_sheet(self.render_config.text_input.cursor),
         )?;
+
         self.terminal.write_styled(
             &Styled::new(after).with_style_sheet(self.render_config.text_input.text),
         )?;
@@ -564,6 +569,7 @@ pub mod date {
                     let mut style_sheet = crate::ui::StyleSheet::empty();
 
                     if date_it == selected_date {
+                        self.mark_prompt_cursor_position();
                         style_sheet = self.render_config.calendar.selected_date;
                     } else if date_it == today {
                         style_sheet = self.render_config.calendar.today_date;
