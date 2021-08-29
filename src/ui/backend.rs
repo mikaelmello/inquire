@@ -56,11 +56,20 @@ pub trait PasswordBackend: CommonBackend {
     fn render_prompt_with_full_input(&mut self, prompt: &str, cur_input: &Input) -> Result<()>;
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct Position {
+    pub row: u16,
+    pub col: u16,
+}
+
 pub struct Backend<'a, T>
 where
     T: Terminal,
 {
-    cur_line: usize,
+    prompt_current_position: Position,
+    prompt_end_position: Position,
+    prompt_cursor_offset: Option<usize>,
+    prompt_cursor_position: Option<Position>,
     terminal: T,
     terminal_size: TerminalSize,
     render_config: &'a RenderConfig,
@@ -77,7 +86,10 @@ where
         });
 
         let mut backend = Self {
-            cur_line: 0,
+            prompt_current_position: Position { row: 0, col: 0 },
+            prompt_end_position: Position { row: 0, col: 0 },
+            prompt_cursor_offset: None,
+            prompt_cursor_position: None,
             terminal,
             render_config,
             terminal_size,
@@ -88,38 +100,53 @@ where
         Ok(backend)
     }
 
-    fn count_lines(&self, input: &str) -> u16 {
-        let mut lines: u16 = 0;
-        let mut cur_len: u16 = 0;
-
+    fn update_position_info(&mut self) {
+        let input = self.terminal.get_in_memory_content();
         let term_width = self.terminal_size.width;
 
-        for g in input.graphemes(true) {
+        let mut cur_pos = Position { row: 0, col: 0 };
+
+        for (idx, g) in input.graphemes(true).enumerate() {
             if g == "\r\n" {
-                let wrapped_count = cur_len / term_width;
-
-                let line_add = if cur_len % term_width == 0 { 0 } else { 1 };
-
-                lines = lines.saturating_add(wrapped_count.saturating_add(line_add));
-                cur_len = 0;
+                cur_pos.row = cur_pos.row.saturating_add(1);
+                cur_pos.col = 0;
             } else {
-                cur_len = cur_len.saturating_add(1);
+                cur_pos.col = cur_pos.col.saturating_add(1);
+            }
+
+            if cur_pos.col >= term_width {
+                cur_pos.row = cur_pos.row.saturating_add(1);
+                cur_pos.col = 0;
+            }
+
+            if let Some(prompt_cursor_offset) = self.prompt_cursor_offset {
+                if prompt_cursor_offset == idx {
+                    self.prompt_cursor_position = Some(cur_pos);
+                }
             }
         }
 
-        if cur_len > 0 {
-            let wrapped_count = cur_len / term_width;
-            lines = lines.saturating_add(wrapped_count.saturating_add(1));
-        }
+        self.prompt_current_position = cur_pos;
+        self.prompt_end_position = cur_pos;
+    }
 
-        lines
+    fn mark_prompt_cursor_position(&mut self) {
+        let current = self.terminal.get_in_memory_content();
+        let position = current.graphemes(true).count();
+
+        self.prompt_cursor_offset.insert(position);
     }
 
     fn reset_prompt(&mut self) -> Result<()> {
-        let current = self.terminal.get_in_memory_content();
-        let lines = self.count_lines(current);
+        if self.prompt_current_position.row != self.prompt_end_position.row {
+            let diff = self
+                .prompt_end_position
+                .row
+                .saturating_sub(self.prompt_current_position.row);
+            self.terminal.cursor_down(diff)?;
+        }
 
-        for _ in 0..lines {
+        for _ in 0..self.prompt_end_position.row {
             self.terminal.cursor_up(1)?;
             self.terminal.cursor_move_to_column(0)?;
             self.terminal.clear_current_line()?;
@@ -289,6 +316,8 @@ where
     }
 
     fn frame_finish(&mut self) -> Result<()> {
+        self.update_position_info();
+
         self.flush()
     }
 
