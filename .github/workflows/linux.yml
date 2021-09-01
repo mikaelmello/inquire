@@ -1,0 +1,110 @@
+name: build
+on: [push]
+jobs:
+  linux:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        build: [msrv, stable, beta, nightly]
+        include:
+          - build: stable
+            os: ubuntu-latest
+            rust: stable
+
+          - build: msrv
+            os: ubuntu-18.04
+            rust: 1.53.0
+
+          - build: beta
+            os: ubuntu-latest
+            rust: beta
+
+          - build: nightly
+            os: ubuntu-latest
+            rust: nightly
+
+    steps:
+      - uses: hecrj/setup-rust-action@v1
+        with:
+          rust-version: ${{ matrix.rust }}
+      - uses: actions/checkout@master
+      - name: Build
+        run: cargo build --verbose --all-features
+      - name: Test with no features [crossterm]
+        run: cargo test --verbose --no-default-features --features=crossterm
+      - name: Test with no features [termion]
+        run: cargo test --verbose --no-default-features --features=termion
+      - name: Test with default features
+        run: cargo test --verbose
+      - name: Test with all features
+        run: cargo test --verbose --all-features
+
+  macOS:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        build: [msrv, stable, beta, nightly]
+        include:
+          - build: stable
+            os: macOS-latest
+            rust: stable
+
+          - build: msrv
+            os: macOS-latest
+            rust: 1.53.0
+
+          - build: beta
+            os: macOS-latest
+            rust: beta
+
+          - build: nightly
+            os: macOS-latest
+            rust: nightly
+
+    steps:
+      - uses: hecrj/setup-rust-action@v1
+        with:
+          rust-version: ${{ matrix.rust }}
+      - uses: actions/checkout@master
+      - name: Build
+        run: cargo build --verbose --all-features
+      - name: Test with no features [crossterm]
+        run: cargo test --verbose --no-default-features --features=crossterm
+      - name: Test with no features [termion]
+        run: cargo test --verbose --no-default-features --features=termion
+      - name: Test with default features
+        run: cargo test --verbose
+      - name: Test with all features
+        run: cargo test --verbose --all-features
+
+  windows:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        build: [win-gnu, win-msvc, msrv]
+        include:
+          - build: win-gnu
+            os: windows-latest
+            rust: stable-x86_64-gnu
+
+          - build: win-msvc
+            os: windows-latest
+            rust: stable
+
+          - build: msrv
+            os: windows-latest
+            rust: 1.53.0
+
+    steps:
+      - uses: hecrj/setup-rust-action@v1
+        with:
+          rust-version: ${{ matrix.rust }}
+      - uses: actions/checkout@master
+      - name: Build with default features
+        run: cargo build --verbose
+      - name: Test with no features [crossterm]
+        run: cargo test --verbose --no-default-features --features=crossterm
+      - name: Test with default features
+        run: cargo test --verbose
+      - name: Test with all supported features
+        run: cargo test --verbose --no-default-features --features=crossterm,date,builtin_validators

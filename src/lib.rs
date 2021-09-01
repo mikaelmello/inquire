@@ -61,6 +61,7 @@
 //! [`Password`]: crate::Password
 
 #![warn(missing_docs)]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 
 pub mod config;
 #[cfg(feature = "date")]
@@ -71,6 +72,7 @@ mod input;
 pub mod list_option;
 pub mod parser;
 mod prompts;
+mod terminal;
 pub mod ui;
 mod utils;
 pub mod validator;

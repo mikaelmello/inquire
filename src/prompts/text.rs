@@ -6,7 +6,8 @@ use crate::{
     formatter::{StringFormatter, DEFAULT_STRING_FORMATTER},
     input::Input,
     list_option::ListOption,
-    ui::{crossterm::CrosstermTerminal, Backend, Key, KeyModifiers, RenderConfig, TextBackend},
+    terminal::get_default_terminal,
+    ui::{Backend, Key, KeyModifiers, RenderConfig, TextBackend},
     utils::paginate,
     validator::StringValidator,
 };
@@ -208,7 +209,7 @@ impl<'a> Text<'a> {
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to the defined rules.
     pub fn prompt(self) -> InquireResult<String> {
-        let terminal = CrosstermTerminal::new()?;
+        let terminal = get_default_terminal()?;
         let mut backend = Backend::new(terminal, self.render_config)?;
         self.prompt_with_backend(&mut backend)
     }
@@ -415,9 +416,13 @@ impl<'a> TextPrompt<'a> {
 }
 
 #[cfg(test)]
+#[cfg(feature = "crossterm")]
 mod test {
     use super::Text;
-    use crate::ui::{crossterm::CrosstermTerminal, Backend, RenderConfig};
+    use crate::{
+        terminal::crossterm::CrosstermTerminal,
+        ui::{Backend, RenderConfig},
+    };
     use crossterm::event::{KeyCode, KeyEvent};
 
     fn default<'a>() -> Text<'a> {

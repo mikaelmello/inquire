@@ -2,8 +2,14 @@ use std::{collections::BTreeSet, fmt::Display, io::Result};
 
 use unicode_width::UnicodeWidthChar;
 
-use super::{key::Key, RenderConfig, Terminal, TerminalSize};
-use crate::{input::Input, list_option::ListOption, ui::Styled, utils::Page};
+use super::{key::Key, RenderConfig};
+use crate::{
+    input::Input,
+    list_option::ListOption,
+    terminal::{Terminal, TerminalSize},
+    ui::Styled,
+    utils::Page,
+};
 
 pub trait CommonBackend {
     fn read_key(&mut self) -> Result<Key>;
@@ -490,10 +496,7 @@ pub mod date {
 
     use chrono::{Datelike, Duration};
 
-    use crate::{
-        date_utils::get_start_date,
-        ui::{Styled, Terminal},
-    };
+    use crate::{date_utils::get_start_date, terminal::Terminal, ui::Styled};
 
     use super::{Backend, CommonBackend};
 

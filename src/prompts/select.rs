@@ -6,7 +6,8 @@ use crate::{
     formatter::OptionFormatter,
     input::Input,
     list_option::ListOption,
-    ui::{crossterm::CrosstermTerminal, Backend, Key, KeyModifiers, RenderConfig, SelectBackend},
+    terminal::get_default_terminal,
+    ui::{Backend, Key, KeyModifiers, RenderConfig, SelectBackend},
     utils::paginate,
 };
 
@@ -234,7 +235,7 @@ where
     /// Returns a [`ListOption`](crate::list_option::ListOption) containing
     /// the index of the selection and the owned object selected by the user.
     pub fn raw_prompt(self) -> InquireResult<ListOption<T>> {
-        let terminal = CrosstermTerminal::new()?;
+        let terminal = get_default_terminal()?;
         let mut backend = Backend::new(terminal, self.render_config)?;
         self.prompt_with_backend(&mut backend)
     }
@@ -429,11 +430,13 @@ where
 }
 
 #[cfg(test)]
+#[cfg(feature = "crossterm")]
 mod test {
     use crate::{
         formatter::OptionFormatter,
         list_option::ListOption,
-        ui::{crossterm::CrosstermTerminal, Backend, RenderConfig},
+        terminal::crossterm::CrosstermTerminal,
+        ui::{Backend, RenderConfig},
         Select,
     };
     use crossterm::event::{KeyCode, KeyEvent};
