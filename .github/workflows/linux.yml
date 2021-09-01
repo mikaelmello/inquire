@@ -1,0 +1,40 @@
+name: build
+on: [push]
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        build: [msrv, stable, beta, nightly]
+        include:
+          - build: stable
+            os: ubuntu-latest
+            rust: stable
+
+          - build: msrv
+            os: ubuntu-18.04
+            rust: 1.53.0
+
+          - build: beta
+            os: ubuntu-latest
+            rust: beta
+
+          - build: nightly
+            os: ubuntu-latest
+            rust: nightly
+
+    steps:
+      - uses: hecrj/setup-rust-action@v1
+        with:
+          rust-version: ${{ matrix.rust }}
+      - uses: actions/checkout@master
+      - name: Build
+        run: cargo build --verbose --all-features
+      - name: Test with no features [crossterm]
+        run: cargo test --verbose --no-default-features --features=crossterm
+      - name: Test with no features [termion]
+        run: cargo test --verbose --no-default-features --features=termion
+      - name: Test with default features
+        run: cargo test --verbose
+      - name: Test with all features
+        run: cargo test --verbose --all-features

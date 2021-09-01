@@ -5,8 +5,23 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macOS-latest]
-        rust: [stable, nightly]
+        build: [msrv, stable, beta, nightly]
+        include:
+          - build: stable
+            os: macOS-latest
+            rust: stable
+
+          - build: msrv
+            os: macOS-latest
+            rust: 1.53.0
+
+          - build: beta
+            os: macOS-latest
+            rust: beta
+
+          - build: nightly
+            os: macOS-latest
+            rust: nightly
 
     steps:
       - uses: hecrj/setup-rust-action@v1
@@ -18,7 +33,6 @@ jobs:
       - name: Test with no features [crossterm]
         run: cargo test --verbose --no-default-features --features=crossterm
       - name: Test with no features [termion]
-        if: matrix.os != 'windows-latest'
         run: cargo test --verbose --no-default-features --features=termion
       - name: Test with default features
         run: cargo test --verbose
