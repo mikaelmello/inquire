@@ -34,6 +34,8 @@ jobs:
         run: cargo test --verbose --no-default-features --features=crossterm
       - name: Test with no features [termion]
         run: cargo test --verbose --no-default-features --features=termion
+      - name: Test with no features [console]
+        run: cargo test --verbose --no-default-features --features=console
       - name: Test with default features
         run: cargo test --verbose
       - name: Test with all features
@@ -72,6 +74,8 @@ jobs:
         run: cargo test --verbose --no-default-features --features=crossterm
       - name: Test with no features [termion]
         run: cargo test --verbose --no-default-features --features=termion
+      - name: Test with no features [console]
+        run: cargo test --verbose --no-default-features --features=console
       - name: Test with default features
         run: cargo test --verbose
       - name: Test with all features
@@ -104,6 +108,8 @@ jobs:
         run: cargo build --verbose
       - name: Test with no features [crossterm]
         run: cargo test --verbose --no-default-features --features=crossterm
+      - name: Test with no features [console]
+        run: cargo test --verbose --no-default-features --features=console
       - name: Test with default features
         run: cargo test --verbose
       - name: Test with all supported features
