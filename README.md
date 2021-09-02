@@ -2,7 +2,7 @@
 
 [crates.io]: https://crates.io/crates/inquire
 [Latest Version]: https://img.shields.io/crates/v/inquire.svg
-[Build status]: https://github.com/mikaelmello/inquire/actions/workflows/test.yml/badge.svg
+[Build status]: https://github.com/mikaelmello/inquire/actions/workflows/build.yml/badge.svg
 [Supported platforms]: https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-success
 [License]: https://img.shields.io/crates/l/inquire.svg
 
