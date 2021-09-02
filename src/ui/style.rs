@@ -42,7 +42,7 @@ bitflags! {
 /// assert!(style_sheet.is_empty());
 ///
 /// let style_sheet = style_sheet
-///     .with_bg(Color::Blue)
+///     .with_bg(Color::DarkBlue)
 ///     .with_attr(Attributes::ITALIC | Attributes::BOLD);
 ///
 /// assert!(!style_sheet.is_empty());

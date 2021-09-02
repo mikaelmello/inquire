@@ -20,7 +20,7 @@ use super::{Color, StyleSheet, Styled};
 ///
 /// let default_used_in_prompts: &'static RenderConfig = RenderConfig::default_static_ref();
 ///
-/// let prompt_prefix = Styled::new("$").with_fg(Color::Red);
+/// let prompt_prefix = Styled::new("$").with_fg(Color::DarkRed);
 /// let mine = default.with_prompt_prefix(prompt_prefix);
 /// ```
 #[derive(Clone, Debug)]

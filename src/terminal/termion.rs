@@ -18,6 +18,7 @@ use crate::{
 use super::{Terminal, INITIAL_IN_MEMORY_CAPACITY};
 
 enum IO<'a> {
+    #[allow(unused)]
     Std {
         r: Keys<Stdin>,
         w: RawTerminal<Stdout>,
@@ -35,6 +36,7 @@ pub struct TermionTerminal<'a> {
 }
 
 impl<'a> TermionTerminal<'a> {
+    #[allow(unused)]
     pub fn new() -> InquireResult<Self> {
         let raw_mode = stdout()
             .into_raw_mode()

@@ -12,6 +12,7 @@ pub struct ConsoleTerminal {
 }
 
 impl ConsoleTerminal {
+    #[allow(unused)]
     pub fn new() -> Self {
         Self {
             term: Term::stdout(),
