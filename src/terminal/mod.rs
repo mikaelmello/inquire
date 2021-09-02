@@ -2,7 +2,7 @@ use std::{fmt::Display, io::Result};
 
 use crate::{
     error::InquireResult,
-    ui::{Attributes, Color, Key, Styled},
+    ui::{Key, Styled},
 };
 
 const INITIAL_IN_MEMORY_CAPACITY: usize = 2048;
@@ -39,15 +39,6 @@ pub trait Terminal: Sized {
 
     fn cursor_hide(&mut self) -> Result<()>;
     fn cursor_show(&mut self) -> Result<()>;
-
-    fn set_attributes(&mut self, attributes: Attributes) -> Result<()>;
-    fn reset_attributes(&mut self) -> Result<()>;
-
-    fn set_fg_color(&mut self, color: Color) -> Result<()>;
-    fn reset_fg_color(&mut self) -> Result<()>;
-
-    fn set_bg_color(&mut self, color: Color) -> Result<()>;
-    fn reset_bg_color(&mut self) -> Result<()>;
 }
 
 pub fn get_default_terminal() -> InquireResult<impl Terminal> {

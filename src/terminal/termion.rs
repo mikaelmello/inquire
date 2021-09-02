@@ -75,6 +75,37 @@ impl<'a> TermionTerminal<'a> {
             IO::Custom { r: _, w } => w,
         }
     }
+
+    fn set_attributes(&mut self, attributes: Attributes) -> Result<()> {
+        if attributes.contains(Attributes::BOLD) {
+            write!(self.get_writer(), "{}", termion::style::Bold)?;
+        }
+        if attributes.contains(Attributes::ITALIC) {
+            write!(self.get_writer(), "{}", termion::style::Italic)?;
+        }
+
+        Ok(())
+    }
+
+    fn reset_attributes(&mut self) -> Result<()> {
+        write!(self.get_writer(), "{}", termion::style::Reset)
+    }
+
+    fn set_fg_color(&mut self, color: crate::ui::Color) -> Result<()> {
+        write!(self.get_writer(), "{}", color::Fg(color))
+    }
+
+    fn reset_fg_color(&mut self) -> Result<()> {
+        write!(self.get_writer(), "{}", color::Fg(color::Reset))
+    }
+
+    fn set_bg_color(&mut self, color: crate::ui::Color) -> Result<()> {
+        write!(self.get_writer(), "{}", color::Bg(color))
+    }
+
+    fn reset_bg_color(&mut self) -> Result<()> {
+        write!(self.get_writer(), "{}", color::Bg(color::Reset))
+    }
 }
 
 impl<'a> Terminal for TermionTerminal<'a> {
@@ -158,37 +189,6 @@ impl<'a> Terminal for TermionTerminal<'a> {
 
     fn cursor_show(&mut self) -> Result<()> {
         write!(self.get_writer(), "{}", termion::cursor::Show)
-    }
-
-    fn set_attributes(&mut self, attributes: Attributes) -> Result<()> {
-        if attributes.contains(Attributes::BOLD) {
-            write!(self.get_writer(), "{}", termion::style::Bold)?;
-        }
-        if attributes.contains(Attributes::ITALIC) {
-            write!(self.get_writer(), "{}", termion::style::Italic)?;
-        }
-
-        Ok(())
-    }
-
-    fn reset_attributes(&mut self) -> Result<()> {
-        write!(self.get_writer(), "{}", termion::style::Reset)
-    }
-
-    fn set_fg_color(&mut self, color: crate::ui::Color) -> Result<()> {
-        write!(self.get_writer(), "{}", color::Fg(color))
-    }
-
-    fn reset_fg_color(&mut self) -> Result<()> {
-        write!(self.get_writer(), "{}", color::Fg(color::Reset))
-    }
-
-    fn set_bg_color(&mut self, color: crate::ui::Color) -> Result<()> {
-        write!(self.get_writer(), "{}", color::Bg(color))
-    }
-
-    fn reset_bg_color(&mut self) -> Result<()> {
-        write!(self.get_writer(), "{}", color::Bg(color::Reset))
     }
 
     fn get_in_memory_content(&self) -> &str {

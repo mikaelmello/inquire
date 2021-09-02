@@ -72,6 +72,37 @@ impl<'a> CrosstermTerminal<'a> {
     fn write_command<C: Command>(&mut self, command: C) -> Result<()> {
         queue!(&mut self.get_writer(), command)
     }
+
+    fn set_attributes(&mut self, attributes: Attributes) -> Result<()> {
+        if attributes.contains(Attributes::BOLD) {
+            self.write_command(SetAttribute(Attribute::Bold))?;
+        }
+        if attributes.contains(Attributes::ITALIC) {
+            self.write_command(SetAttribute(Attribute::Italic))?;
+        }
+
+        Ok(())
+    }
+
+    fn reset_attributes(&mut self) -> Result<()> {
+        self.write_command(SetAttribute(Attribute::Reset))
+    }
+
+    fn set_fg_color(&mut self, color: crate::ui::Color) -> Result<()> {
+        self.write_command(SetForegroundColor(color.into()))
+    }
+
+    fn reset_fg_color(&mut self) -> Result<()> {
+        self.write_command(SetForegroundColor(Color::Reset))
+    }
+
+    fn set_bg_color(&mut self, color: crate::ui::Color) -> Result<()> {
+        self.write_command(SetBackgroundColor(color.into()))
+    }
+
+    fn reset_bg_color(&mut self) -> Result<()> {
+        self.write_command(SetBackgroundColor(Color::Reset))
+    }
 }
 
 impl<'a> Terminal for CrosstermTerminal<'a> {
@@ -155,37 +186,6 @@ impl<'a> Terminal for CrosstermTerminal<'a> {
 
     fn cursor_show(&mut self) -> Result<()> {
         self.write_command(cursor::Show)
-    }
-
-    fn set_attributes(&mut self, attributes: Attributes) -> Result<()> {
-        if attributes.contains(Attributes::BOLD) {
-            self.write_command(SetAttribute(Attribute::Bold))?;
-        }
-        if attributes.contains(Attributes::ITALIC) {
-            self.write_command(SetAttribute(Attribute::Italic))?;
-        }
-
-        Ok(())
-    }
-
-    fn reset_attributes(&mut self) -> Result<()> {
-        self.write_command(SetAttribute(Attribute::Reset))
-    }
-
-    fn set_fg_color(&mut self, color: crate::ui::Color) -> Result<()> {
-        self.write_command(SetForegroundColor(color.into()))
-    }
-
-    fn reset_fg_color(&mut self) -> Result<()> {
-        self.write_command(SetForegroundColor(Color::Reset))
-    }
-
-    fn set_bg_color(&mut self, color: crate::ui::Color) -> Result<()> {
-        self.write_command(SetBackgroundColor(color.into()))
-    }
-
-    fn reset_bg_color(&mut self) -> Result<()> {
-        self.write_command(SetBackgroundColor(Color::Reset))
     }
 
     fn get_in_memory_content(&self) -> &str {
