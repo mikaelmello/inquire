@@ -209,25 +209,26 @@ impl<'a> Drop for CrosstermTerminal<'a> {
 
 impl From<crate::ui::Color> for Color {
     fn from(c: crate::ui::Color) -> Self {
+        use crate::ui::Color as C;
         match c {
-            crate::ui::Color::Black => Color::Black,
-            crate::ui::Color::DarkGrey => Color::DarkGrey,
-            crate::ui::Color::Red => Color::Red,
-            crate::ui::Color::DarkRed => Color::DarkRed,
-            crate::ui::Color::Green => Color::Green,
-            crate::ui::Color::DarkGreen => Color::DarkGreen,
-            crate::ui::Color::Yellow => Color::Yellow,
-            crate::ui::Color::DarkYellow => Color::DarkYellow,
-            crate::ui::Color::Blue => Color::Blue,
-            crate::ui::Color::DarkBlue => Color::DarkBlue,
-            crate::ui::Color::Magenta => Color::Magenta,
-            crate::ui::Color::DarkMagenta => Color::DarkMagenta,
-            crate::ui::Color::Cyan => Color::Cyan,
-            crate::ui::Color::DarkCyan => Color::DarkCyan,
-            crate::ui::Color::White => Color::White,
-            crate::ui::Color::Grey => Color::Grey,
-            crate::ui::Color::Rgb { r, g, b } => Color::Rgb { r, g, b },
-            crate::ui::Color::AnsiValue(b) => Color::AnsiValue(b),
+            C::Black => Color::Black,
+            C::LightRed => Color::Red,
+            C::DarkRed => Color::DarkRed,
+            C::LightGreen => Color::Green,
+            C::DarkGreen => Color::DarkGreen,
+            C::LightYellow => Color::Yellow,
+            C::DarkYellow => Color::DarkYellow,
+            C::LightBlue => Color::Blue,
+            C::DarkBlue => Color::DarkBlue,
+            C::LightMagenta => Color::Magenta,
+            C::DarkMagenta => Color::DarkMagenta,
+            C::LightCyan => Color::Cyan,
+            C::DarkCyan => Color::DarkCyan,
+            C::White => Color::White,
+            C::Grey => Color::Grey,
+            C::DarkGrey => Color::DarkGrey,
+            C::Rgb { r, g, b } => Color::Rgb { r, g, b },
+            C::AnsiValue(b) => Color::AnsiValue(b),
         }
     }
 }
@@ -414,10 +415,10 @@ mod test {
         {
             let mut terminal = CrosstermTerminal::new_with_io(&mut write, &mut read);
 
-            terminal.set_fg_color(Color::Red).unwrap();
+            terminal.set_fg_color(Color::LightRed).unwrap();
             terminal.reset_fg_color().unwrap();
             terminal.set_fg_color(Color::Black).unwrap();
-            terminal.set_fg_color(Color::Green).unwrap();
+            terminal.set_fg_color(Color::LightGreen).unwrap();
         }
 
         #[cfg(unix)]
@@ -436,10 +437,10 @@ mod test {
         {
             let mut terminal = CrosstermTerminal::new_with_io(&mut write, &mut read);
 
-            terminal.set_bg_color(Color::Red).unwrap();
+            terminal.set_bg_color(Color::LightRed).unwrap();
             terminal.reset_bg_color().unwrap();
             terminal.set_bg_color(Color::Black).unwrap();
-            terminal.set_bg_color(Color::Green).unwrap();
+            terminal.set_bg_color(Color::LightGreen).unwrap();
         }
 
         #[cfg(unix)]

@@ -207,28 +207,29 @@ impl<'a> Drop for TermionTerminal<'a> {
 }
 
 macro_rules! into_termion_color {
-    ($self:expr, $fn_name:ident, $f:expr) => {
+    ($self:expr, $fn_name:ident, $f:expr) => {{
+        use $crate::ui::Color as C;
         match $self {
-            crate::ui::Color::Black => color::Black.$fn_name($f),
-            crate::ui::Color::DarkGrey => color::LightBlack.$fn_name($f),
-            crate::ui::Color::Red => color::LightRed.$fn_name($f),
-            crate::ui::Color::DarkRed => color::Red.$fn_name($f),
-            crate::ui::Color::Green => color::LightGreen.$fn_name($f),
-            crate::ui::Color::DarkGreen => color::Green.$fn_name($f),
-            crate::ui::Color::Yellow => color::LightYellow.$fn_name($f),
-            crate::ui::Color::DarkYellow => color::Yellow.$fn_name($f),
-            crate::ui::Color::Blue => color::LightBlue.$fn_name($f),
-            crate::ui::Color::DarkBlue => color::Blue.$fn_name($f),
-            crate::ui::Color::Magenta => color::LightMagenta.$fn_name($f),
-            crate::ui::Color::DarkMagenta => color::Magenta.$fn_name($f),
-            crate::ui::Color::Cyan => color::LightCyan.$fn_name($f),
-            crate::ui::Color::DarkCyan => color::Cyan.$fn_name($f),
-            crate::ui::Color::White => color::LightWhite.$fn_name($f),
-            crate::ui::Color::Grey => color::White.$fn_name($f),
-            crate::ui::Color::Rgb { r, g, b } => color::Rgb(*r, *g, *b).$fn_name($f),
-            crate::ui::Color::AnsiValue(b) => color::AnsiValue(*b).$fn_name($f),
+            C::Black => color::Black.$fn_name($f),
+            C::LightRed => color::LightRed.$fn_name($f),
+            C::DarkRed => color::Red.$fn_name($f),
+            C::LightGreen => color::LightGreen.$fn_name($f),
+            C::DarkGreen => color::Green.$fn_name($f),
+            C::LightYellow => color::LightYellow.$fn_name($f),
+            C::DarkYellow => color::Yellow.$fn_name($f),
+            C::LightBlue => color::LightBlue.$fn_name($f),
+            C::DarkBlue => color::Blue.$fn_name($f),
+            C::LightMagenta => color::LightMagenta.$fn_name($f),
+            C::DarkMagenta => color::Magenta.$fn_name($f),
+            C::LightCyan => color::LightCyan.$fn_name($f),
+            C::DarkCyan => color::Cyan.$fn_name($f),
+            C::White => color::LightWhite.$fn_name($f),
+            C::Grey => color::White.$fn_name($f),
+            C::DarkGrey => color::LightBlack.$fn_name($f),
+            C::Rgb { r, g, b } => color::Rgb(*r, *g, *b).$fn_name($f),
+            C::AnsiValue(b) => color::AnsiValue(*b).$fn_name($f),
         }
-    };
+    }};
 }
 
 impl Color for crate::ui::Color {
@@ -345,10 +346,10 @@ mod test {
         {
             let mut terminal = TermionTerminal::new_with_io(&mut write, &mut read);
 
-            terminal.set_fg_color(Color::Red).unwrap();
+            terminal.set_fg_color(Color::LightRed).unwrap();
             terminal.reset_fg_color().unwrap();
             terminal.set_fg_color(Color::Black).unwrap();
-            terminal.set_fg_color(Color::Green).unwrap();
+            terminal.set_fg_color(Color::LightGreen).unwrap();
         }
 
         #[cfg(unix)]
@@ -367,10 +368,10 @@ mod test {
         {
             let mut terminal = TermionTerminal::new_with_io(&mut write, &mut read);
 
-            terminal.set_bg_color(Color::Red).unwrap();
+            terminal.set_bg_color(Color::LightRed).unwrap();
             terminal.reset_bg_color().unwrap();
             terminal.set_bg_color(Color::Black).unwrap();
-            terminal.set_bg_color(Color::Green).unwrap();
+            terminal.set_bg_color(Color::LightGreen).unwrap();
         }
 
         #[cfg(unix)]

@@ -149,19 +149,19 @@ impl RenderConfig {
     /// RenderConfig where default colors and attributes are applied.
     pub fn default_colored() -> Self {
         Self {
-            prompt_prefix: Styled::new("?").with_fg(Color::Green),
+            prompt_prefix: Styled::new("?").with_fg(Color::LightGreen),
             prompt: StyleSheet::empty(),
             default_value: StyleSheet::empty(),
             placeholder: StyleSheet::new().with_fg(Color::DarkGrey),
-            help_message: StyleSheet::empty().with_fg(Color::Cyan),
+            help_message: StyleSheet::empty().with_fg(Color::LightCyan),
             text_input: StyleSheet::empty(),
             error_message: ErrorMessageRenderConfig::default_colored(),
             password_mask: '*',
-            answer: StyleSheet::empty().with_fg(Color::Cyan),
-            highlighted_option_prefix: Styled::new(">").with_fg(Color::Cyan),
+            answer: StyleSheet::empty().with_fg(Color::LightCyan),
+            highlighted_option_prefix: Styled::new(">").with_fg(Color::LightCyan),
             scroll_up_prefix: Styled::new("^"),
             scroll_down_prefix: Styled::new("v"),
-            selected_checkbox: Styled::new("[x]").with_fg(Color::Green),
+            selected_checkbox: Styled::new("[x]").with_fg(Color::LightGreen),
             unselected_checkbox: Styled::new("[ ]"),
             option: StyleSheet::empty(),
 
@@ -309,9 +309,9 @@ impl ErrorMessageRenderConfig {
     /// Render configuration where default colors and attributes are applied.
     pub fn default_colored() -> Self {
         Self {
-            prefix: Styled::new("#").with_fg(Color::Red),
+            prefix: Styled::new("#").with_fg(Color::LightRed),
             separator: StyleSheet::empty(),
-            message: StyleSheet::empty().with_fg(Color::Red),
+            message: StyleSheet::empty().with_fg(Color::LightRed),
         }
     }
 
@@ -394,7 +394,7 @@ pub mod calendar {
         /// Render configuration where default colors and attributes are applied.
         pub fn default_colored() -> Self {
             Self {
-                prefix: Styled::new(">").with_fg(Color::Green),
+                prefix: Styled::new(">").with_fg(Color::LightGreen),
                 header: StyleSheet::empty(),
                 week_header: StyleSheet::empty(),
                 selected_date: Some(
@@ -402,7 +402,7 @@ pub mod calendar {
                         .with_fg(Color::Black)
                         .with_bg(Color::Grey),
                 ),
-                today_date: StyleSheet::empty().with_fg(Color::Green),
+                today_date: StyleSheet::empty().with_fg(Color::LightGreen),
                 different_month_date: StyleSheet::empty().with_fg(Color::DarkGrey),
                 unavailable_date: StyleSheet::empty().with_fg(Color::DarkGrey),
             }

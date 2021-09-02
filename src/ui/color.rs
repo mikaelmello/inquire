@@ -8,57 +8,132 @@
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Color {
     /// Black color.
+    ///
+    /// Ansi code reference: 0
+    ///
+    /// Supported on all terminal back-ends: `crossterm`, `termion` and `console`.
     Black,
 
-    /// Dark grey color.
-    DarkGrey,
-
     /// Light red color.
-    Red,
+    ///
+    /// Ansi code reference: 9
+    ///
+    /// Supported on two terminal back-ends: `crossterm` (the default) and `termion`.
+    /// On `console`, it is mapped to the `DarkRed` color (Ansi code reference 1).
+    LightRed,
 
     /// Dark red color.
+    ///
+    /// Ansi code reference: 1
+    ///
+    /// Supported on all terminal back-ends: `crossterm`, `termion` and `console`.
     DarkRed,
 
     /// Light green color.
-    Green,
+    ///
+    /// Ansi code reference: 10
+    ///
+    /// Supported on two terminal back-ends: `crossterm` (the default) and `termion`.
+    /// On `console`, it is mapped to the `DarkGreen` color (Ansi code reference 2).
+    LightGreen,
 
     /// Dark green color.
+    ///
+    /// Ansi code reference: 2
+    ///
+    /// Supported on all terminal back-ends: `crossterm`, `termion` and `console`.
     DarkGreen,
 
     /// Light yellow color.
-    Yellow,
+    ///
+    /// Ansi code reference: 11
+    ///
+    /// Supported on two terminal back-ends: `crossterm` (the default) and `termion`.
+    /// On `console`, it is mapped to the `DarkYellow` color (Ansi code reference 3).
+    LightYellow,
 
     /// Dark yellow color.
+    ///
+    /// Ansi code reference: 3
+    ///
+    /// Supported on all terminal back-ends: `crossterm`, `termion` and `console`.
     DarkYellow,
 
     /// Light blue color.
-    Blue,
+    ///
+    /// Ansi code reference: 12
+    ///
+    /// Supported on two terminal back-ends: `crossterm` (the default) and `termion`.
+    /// On `console`, it is mapped to the `DarkBlue` color (Ansi code reference 4).
+    LightBlue,
 
     /// Dark blue color.
+    ///
+    /// Ansi code reference: 4
+    ///
+    /// Supported on all terminal back-ends: `crossterm`, `termion` and `console`.
     DarkBlue,
 
     /// Light magenta color.
-    Magenta,
+    ///
+    /// Ansi code reference: 13
+    ///
+    /// Supported on two terminal back-ends: `crossterm` (the default) and `termion`.
+    /// On `console`, it is mapped to the `DarkMagenta` color (Ansi code reference 5).
+    LightMagenta,
 
     /// Dark magenta color.
+    ///
+    /// Ansi code reference: 5
+    ///
+    /// Supported on all terminal back-ends: `crossterm`, `termion` and `console`.
     DarkMagenta,
 
     /// Light cyan color.
-    Cyan,
+    ///
+    /// Ansi code reference: 14
+    ///
+    /// Supported on two terminal back-ends: `crossterm` (the default) and `termion`.
+    /// On `console`, it is mapped to the `DarkCyan` color (Ansi code reference 6).
+    LightCyan,
 
     /// Dark cyan color.
+    ///
+    /// Ansi code reference: 6
+    ///
+    /// Supported on all terminal back-ends: `crossterm`, `termion` and `console`.
     DarkCyan,
 
     /// White color.
+    ///
+    /// Ansi code reference: 15
+    ///
+    /// Supported on two terminal back-ends: `crossterm` (the default) and `termion`.
+    /// On `console`, it is mapped to the `Grey` color (Ansi code reference 7).
     White,
 
     /// Grey color.
+    ///
+    /// Ansi code reference: 7
+    ///
+    /// Supported on all terminal back-ends: `crossterm`, `termion` and `console`.
     Grey,
+
+    /// Dark grey color.
+    ///
+    /// Ansi code reference: 8
+    ///
+    /// Supported on two terminal back-ends: `crossterm` (the default) and `termion`.
+    /// On `console`, it is mapped to the `Black` color (Ansi code reference 0).
+    DarkGrey,
 
     /// An RGB color. See [RGB color model](https://en.wikipedia.org/wiki/RGB_color_model) for more info.
     ///
     /// Most UNIX terminals and Windows 10 supported only.
     /// See [Platform-specific notes](enum.Color.html#platform-specific-notes) for more info.
+    ///
+    /// Supported on the default terminal back-end `crossterm` and on `termion`.
+    /// Not supported on `console`.
     Rgb {
         /// red value of RGB.
         r: u8,
@@ -74,5 +149,7 @@ pub enum Color {
     ///
     /// Most UNIX terminals and Windows 10 supported only.
     /// See [Platform-specific notes](enum.Color.html#platform-specific-notes) for more info.
+    ///
+    /// Supported on all terminal back-ends: `crossterm`, `termion` and `console`.
     AnsiValue(u8),
 }
