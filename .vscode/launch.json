@@ -44,15 +44,15 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug example 'input'",
+      "name": "Debug example 'text_simple'",
       "cargo": {
         "args": [
           "build",
-          "--example=input",
+          "--example=text_simple",
           "--package=inquire"
         ],
         "filter": {
-          "name": "input",
+          "name": "text_simple",
           "kind": "example"
         }
       },
