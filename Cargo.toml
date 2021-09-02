@@ -25,12 +25,16 @@ rustdoc-args = ["--cfg", "docsrs"]
 [dependencies]
 crossterm = { version = "0.21", optional = true }
 termion = { version = "1.5.6", optional = true }
-unicode-segmentation = "1"
+console = { version = "0.14.1", optional = true, features = ["windows-console-colors"] }
+
 chrono = { version = "0.4", optional = true }
+
 thiserror = "1"
 bitflags = "1.0"
 lazy_static = "1.4.0"
 newline-converter = "0.2.0"
+
+unicode-segmentation = "1"
 unicode-width = "0.1.8"
 
 [[example]]

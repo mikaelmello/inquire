@@ -15,6 +15,11 @@ pub mod crossterm;
 #[cfg_attr(docsrs, doc(cfg(feature = "termion")))]
 pub mod termion;
 
+#[cfg(unix)]
+#[cfg(feature = "console")]
+#[cfg_attr(docsrs, doc(cfg(all(unix, feature = "console"))))]
+pub mod console_unix;
+
 pub struct TerminalSize {
     pub width: u16,
     pub height: u16,
@@ -48,7 +53,18 @@ pub fn get_default_terminal() -> InquireResult<impl Terminal> {
     #[cfg(all(feature = "termion", not(feature = "crossterm")))]
     return termion::TermionTerminal::new();
 
-    #[cfg(all(not(feature = "crossterm"), not(feature = "termion")))]
+    #[cfg(all(
+        feature = "console",
+        not(feature = "termion"),
+        not(feature = "crossterm")
+    ))]
+    return Ok(console_unix::ConsoleTerminal::new());
+
+    #[cfg(all(
+        not(feature = "crossterm"),
+        not(feature = "termion"),
+        not(feature = "console")
+    ))]
     {
         compile_error!("At least one of crossterm or termion must be enabled");
 

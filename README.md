@@ -35,8 +35,8 @@ It provides several different prompts in order to interactively ask the user for
 - Cross-platform, supporting UNIX and Windows terminals (thanks to [crossterm](https://crates.io/crates/crossterm));
 - Several kinds of prompts to suit your needs;
 - Standardized error handling (thanks to [thiserror](https://crates.io/crates/thiserror));
-- You can choose your terminal backend between `crossterm` and `termion`.
-  - Perfect if you already use one other than the default (crossterm) and do not want additional dependencies.
+- You can choose your terminal backend between `crossterm` (default), `termion` or `console`.
+  - Perfect if you already use one library and do not want additional dependencies.
 - Support for fine-grained configuration for each prompt type, allowing you to customize:
   - Rendering configuration (aka color theme + other components);
   - Default values;
@@ -111,13 +111,17 @@ Currently, there are like 3 major libraries to manipulate terminals: [crossterm]
 
 Binary Rust applications that intend to manipulate terminals will probably pick any one of these 3 to power underlying abstractions. `inquire` chose to support crossterm by default in order to support many features on Windows out-of-the-box.
 
-However, if your application already uses a dependency other than crossterm, such as console or termion, you can enable another terminal via feature flags. It is also important to disable inquire's default features as it comes with `crossterm` enabled and selected by default. Such as this:
+However, if your application already uses a dependency other than crossterm, such as console or termion, you can enable another terminal via feature flags. It is also important to disable inquire's default features as it comes with `crossterm` enabled by default. Such as this:
 
 ```toml
 inquire = { version = "0.0.10", default-features = false, features = ["termion", "date"] }
 ```
 
-At the moment, termion is already supported but console is still in the works.
+or this:
+
+```toml
+inquire = { version = "0.0.10", default-features = false, features = ["console", "date"] }
+```
 
 ## Formatting
 
