@@ -35,6 +35,8 @@ It provides several different prompts in order to interactively ask the user for
 - Cross-platform, supporting UNIX and Windows terminals (thanks to [crossterm](https://crates.io/crates/crossterm));
 - Several kinds of prompts to suit your needs;
 - Standardized error handling (thanks to [thiserror](https://crates.io/crates/thiserror));
+- You can choose your terminal backend between `crossterm` and `termion`.
+  - Perfect if you already use one other than the default (crossterm) and do not want additional dependencies.
 - Support for fine-grained configuration for each prompt type, allowing you to customize:
   - Rendering configuration (aka color theme + other components);
   - Default values;
@@ -102,6 +104,20 @@ The validators are typed as a reference to `dyn Fn`. This allows both functions 
 Finally, `inquire` has a feature called `builtin_validators` that is included by default. When the feature is on, several built-in validators are exported at the root-level of the library in the form of macros. Check their documentation to see more details, they provide full-featured examples.
 
 In the [demo](#Demo) you can see the behavior of an input not passing the requirements in the _amount_ prompt, when the error message "Please type a valid number" is displayed. _Full disclosure, this error message was displayed due to a parsing, not validation, error, but the user experience is the same for both cases._
+
+## Terminal Back-end
+
+Currently, there are like 3 major libraries to manipulate terminals: [crossterm](https://lib.rs/crates/crossterm), [console](https://lib.rs/crates/console) and [termion](https://lib.rs/crates/crossterm).
+
+Binary Rust applications that intend to manipulate terminals will probably pick any one of these 3 to power underlying abstractions. `inquire` chose to support crossterm by default in order to support many features on Windows out-of-the-box.
+
+However, if your application already uses a dependency other than crossterm, such as console or termion, you can enable another terminal via feature flags. It is also important to disable inquire's default features as it comes with `crossterm` enabled and selected by default. Such as this:
+
+```toml
+inquire = { version = "0.0.10", default-features = false, features = ["termion", "date"] }
+```
+
+At the moment, termion is already supported but console is still in the works.
 
 ## Formatting
 

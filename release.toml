@@ -9,10 +9,10 @@ post-release-commit-message = "chore: start next development iteration v{{next_v
 
 pre-release-replacements = [
   {file="README.md", search="inquire = \".*\"", replace="{{crate_name}} = \"{{version}}\""},
-  {file="README.md", search="inquire = \\{.*\\}", replace="{{crate_name}} = { version = \"{{version}}\", features = [\"date\"] }"},
+  {file="README.md", search="inquire = \\{ version = \"[\\.0-9]*\"", replace="{{crate_name}} = { version = \"{{version}}\""},
 
   {file="CRATE_README.md", search="inquire = \".*\"", replace="{{crate_name}} = \"{{version}}\""},
-  {file="CRATE_README.md", search="inquire = \\{.*\\}", replace="{{crate_name}} = { version = \"{{version}}\", features = [\"date\"] }"},
+  {file="CRATE_README.md", search="inquire = \\{ version = \"[\\.0-9]*\"", replace="{{crate_name}} = { version = \"{{version}}\""},
 
   {file="CHANGELOG.md", search="Unreleased", replace="{{version}}"},
   {file="CHANGELOG.md", search="\\.\\.\\.HEAD", replace="...{{tag_name}}", exactly=1},
