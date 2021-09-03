@@ -336,6 +336,9 @@ where
     T: Terminal,
 {
     fn frame_setup(&mut self) -> Result<()> {
+        self.terminal.cursor_hide()?;
+        self.terminal.flush()?;
+
         self.reset_prompt()
     }
 
