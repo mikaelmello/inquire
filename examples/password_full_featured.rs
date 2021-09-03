@@ -1,4 +1,4 @@
-use inquire::{min_length, validator::InquireLength, Password, PasswordDisplayMode};
+use inquire::{min_length, Password, PasswordDisplayMode};
 
 fn main() {
     let name = Password::new("RSA Encryption Key:")

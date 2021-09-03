@@ -148,7 +148,7 @@ impl<T> InquireLength for &[T] {
 /// # Examples
 ///
 /// ```
-/// use inquire::{required, validator::{InquireLength, StringValidator}};
+/// use inquire::{required, validator::{StringValidator}};
 ///
 /// let validator: StringValidator = required!();
 /// assert_eq!(Ok(()), validator("Generic input"));
@@ -176,12 +176,9 @@ macro_rules! required {
 /// Built-in validator that checks whether the answer length is smaller than
 /// or equal to the specified threshold.
 ///
-/// When using this macro, you **must** also import the [`InquireLength`]
-/// trait. The validator uses a custom-built length function that
-/// has a special implementation for strings, as we can't rely on a generic
-/// `.len()` for them. See this [StackOverflow question](https://stackoverflow.com/questions/46290655/get-the-string-length-in-characters-in-rust).
-///
-/// [`InquireLength`]: crate::validator::InquireLength
+/// The validator uses a custom-built length function that
+/// has a special implementation for strings which counts the number of
+/// graphemes. See this [StackOverflow question](https://stackoverflow.com/questions/46290655/get-the-string-length-in-characters-in-rust).
 ///
 /// # Arguments
 ///
@@ -192,7 +189,7 @@ macro_rules! required {
 /// # Examples
 ///
 /// ```
-/// use inquire::{max_length, validator::{InquireLength, StringValidator}};
+/// use inquire::{max_length, validator::{StringValidator}};
 ///
 /// let validator: StringValidator = max_length!(5);
 /// assert_eq!(Ok(()), validator("Good"));
@@ -209,26 +206,21 @@ macro_rules! max_length {
         $crate::max_length! {$length, format!("The length of the response should be at most {}", $length)}
     };
 
-    ($length:expr, $message:expr) => {
-        {
-            &|a| match a.inquire_length() {
-                _len if _len <= $length => Ok(()),
-                _ => Err(String::from($message)),
-            }
-
+    ($length:expr, $message:expr) => {{
+        use $crate::validator::InquireLength;
+        &|a| match a.inquire_length() {
+            _len if _len <= $length => Ok(()),
+            _ => Err(String::from($message)),
         }
-    };
+    }};
 }
 
 /// Built-in validator that checks whether the answer length is larger than
 /// or equal to the specified threshold.
 ///
-/// When using this macro, you **must** also import the [`InquireLength`]
-/// trait. The validator uses a custom-built length function that
-/// has a special implementation for strings, as we can't rely on a generic
-/// `.len()` for them. See this [StackOverflow question](https://stackoverflow.com/questions/46290655/get-the-string-length-in-characters-in-rust).
-///
-/// [`InquireLength`]: crate::validator::InquireLength
+/// The validator uses a custom-built length function that
+/// has a special implementation for strings which counts the number of
+/// graphemes. See this [StackOverflow question](https://stackoverflow.com/questions/46290655/get-the-string-length-in-characters-in-rust).
 ///
 /// # Arguments
 ///
@@ -239,7 +231,7 @@ macro_rules! max_length {
 /// # Examples
 ///
 /// ```
-/// use inquire::{min_length, validator::{InquireLength, StringValidator}};
+/// use inquire::{min_length, validator::{StringValidator}};
 ///
 /// let validator: StringValidator = min_length!(3);
 /// assert_eq!(Ok(()), validator("Yes"));
@@ -256,25 +248,21 @@ macro_rules! min_length {
         $crate::min_length! {$length, format!("The length of the response should be at least {}", $length)}
     };
 
-    ($length:expr, $message:expr) => {
-        {
-            &|a| match a.inquire_length() {
-                _len if _len >= $length => Ok(()),
-                _ => Err(String::from($message)),
-            }
+    ($length:expr, $message:expr) => {{
+        use $crate::validator::InquireLength;
+        &|a| match a.inquire_length() {
+            _len if _len >= $length => Ok(()),
+            _ => Err(String::from($message)),
         }
-    };
+    }};
 }
 
 /// Built-in validator that checks whether the answer length is equal to
 /// the specified value.
 ///
-/// When using this macro, you **must** also import the [`InquireLength`]
-/// trait. The validator uses a custom-built length function that
-/// has a special implementation for strings, as we can't rely on a generic
-/// `.len()` for them. See this [StackOverflow question](https://stackoverflow.com/questions/46290655/get-the-string-length-in-characters-in-rust).
-///
-/// [`InquireLength`]: crate::validator::InquireLength
+/// The validator uses a custom-built length function that
+/// has a special implementation for strings which counts the number of
+/// graphemes. See this [StackOverflow question](https://stackoverflow.com/questions/46290655/get-the-string-length-in-characters-in-rust).
 ///
 /// # Arguments
 ///
@@ -285,7 +273,7 @@ macro_rules! min_length {
 /// # Examples
 ///
 /// ```
-/// use inquire::{length, validator::{InquireLength, StringValidator}};
+/// use inquire::{length, validator::{StringValidator}};
 ///
 /// let validator: StringValidator = length!(3);
 /// assert_eq!(Ok(()), validator("Yes"));
@@ -303,6 +291,7 @@ macro_rules! length {
     };
 
     ($length:expr, $message:expr) => {{
+        use $crate::validator::InquireLength;
         &|a| match a.inquire_length() {
             _len if _len == $length => Ok(()),
             _ => Err(String::from($message)),
@@ -315,7 +304,7 @@ macro_rules! length {
 mod builtin_validators_test {
     use crate::{
         list_option::ListOption,
-        validator::{InquireLength, MultiOptionValidator, StringValidator},
+        validator::{MultiOptionValidator, StringValidator},
     };
 
     fn build_option_vec(len: usize) -> Vec<ListOption<&'static str>> {
