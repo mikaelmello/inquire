@@ -1,12 +1,12 @@
 use std::fmt::Display;
 
 use crate::{
-    config::{self, Filter},
     error::{InquireError, InquireResult},
     formatter::OptionFormatter,
     input::Input,
     list_option::ListOption,
     terminal::get_default_terminal,
+    type_aliases::{self, Filter},
     ui::{Backend, Key, KeyModifiers, RenderConfig, SelectBackend},
     utils::paginate,
 };
@@ -139,10 +139,10 @@ where
     };
 
     /// Default page size.
-    pub const DEFAULT_PAGE_SIZE: usize = config::DEFAULT_PAGE_SIZE;
+    pub const DEFAULT_PAGE_SIZE: usize = type_aliases::DEFAULT_PAGE_SIZE;
 
     /// Default value of vim mode.
-    pub const DEFAULT_VIM_MODE: bool = config::DEFAULT_VIM_MODE;
+    pub const DEFAULT_VIM_MODE: bool = type_aliases::DEFAULT_VIM_MODE;
 
     /// Default starting cursor index.
     pub const DEFAULT_STARTING_CURSOR: usize = 0;

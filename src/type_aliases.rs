@@ -1,4 +1,4 @@
-//! General type aliases and default values used by multiple prompts.
+//! General type aliases.
 
 /// Type alias to represent the function used to filter options.
 ///

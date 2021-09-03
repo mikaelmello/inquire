@@ -1,12 +1,12 @@
 use std::cmp::min;
 
 use crate::{
-    config::{self, Suggester},
     error::{InquireError, InquireResult},
     formatter::{StringFormatter, DEFAULT_STRING_FORMATTER},
     input::Input,
     list_option::ListOption,
     terminal::get_default_terminal,
+    type_aliases::{self, Suggester},
     ui::{Backend, Key, KeyModifiers, RenderConfig, TextBackend},
     utils::paginate,
     validator::StringValidator,
@@ -106,7 +106,7 @@ impl<'a> Text<'a> {
     pub const DEFAULT_FORMATTER: StringFormatter<'a> = DEFAULT_STRING_FORMATTER;
 
     /// Default page size, equal to the global default page size [config::DEFAULT_PAGE_SIZE]
-    pub const DEFAULT_PAGE_SIZE: usize = config::DEFAULT_PAGE_SIZE;
+    pub const DEFAULT_PAGE_SIZE: usize = type_aliases::DEFAULT_PAGE_SIZE;
 
     /// Default validators added to the [Text] prompt, none.
     pub const DEFAULT_VALIDATORS: Vec<StringValidator<'a>> = vec![];
