@@ -5,7 +5,13 @@
 
 ### Features
 
-- Add support for different terminal backends, adding support for `termion` while keeping `crossterm` as the default.
+- Add support to use `console` or `termion` as the library to handle terminals while keeping `crossterm` as the default choice.
+
+### Improvements
+
+- Removed need to add `use inquire::validator::InquireLength` when using one of the length-related built-in validators.
+- Cursor should not ficker anymore in wrong positions on ~~Windows~~ slower terminals.
+- Documentation on the `Color` enum used for render configuration has been improved.
 
 ### Fixes
 
