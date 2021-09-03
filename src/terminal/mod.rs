@@ -15,10 +15,9 @@ pub mod crossterm;
 #[cfg_attr(docsrs, doc(cfg(feature = "termion")))]
 pub mod termion;
 
-#[cfg(unix)]
 #[cfg(feature = "console")]
-#[cfg_attr(docsrs, doc(cfg(all(unix, feature = "console"))))]
-pub mod console_unix;
+#[cfg_attr(docsrs, doc(cfg(feature = "console")))]
+pub mod console;
 
 pub struct TerminalSize {
     pub width: u16,
@@ -58,7 +57,7 @@ pub fn get_default_terminal() -> InquireResult<impl Terminal> {
         not(feature = "termion"),
         not(feature = "crossterm")
     ))]
-    return Ok(console_unix::ConsoleTerminal::new());
+    return Ok(console::ConsoleTerminal::new());
 
     #[cfg(all(
         not(feature = "crossterm"),
@@ -66,7 +65,7 @@ pub fn get_default_terminal() -> InquireResult<impl Terminal> {
         not(feature = "console")
     ))]
     {
-        compile_error!("At least one of crossterm or termion must be enabled");
+        compile_error!("At least one of crossterm, termion or console must be enabled");
 
         // this is here to silence an additional compilation error
         // when no terminals are enabled. it complains about mismatched
