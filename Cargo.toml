@@ -39,7 +39,7 @@ unicode-width = "0.1.8"
 
 [[example]]
 name = "form"
-required-features = ["date"]
+required-features = ["builtin_validators", "date"]
 
 [[example]]
 name = "date"
@@ -47,15 +47,15 @@ required-features = ["date"]
 
 [[example]]
 name = "expense_tracker"
-required-features = ["date"]
+required-features = ["builtin_validators", "date"]
 
 [[example]]
 name = "render_config"
-required-features = ["date"]
+required-features = ["builtin_validators", "date"]
 
 [[example]]
 name = "empty_render_config"
-required-features = ["date"]
+required-features = ["builtin_validators", "date"]
 
 [[example]]
 name = "text_options"
