@@ -5,6 +5,7 @@ pub struct Page<'a, T> {
     pub last: bool,
     pub content: &'a [T],
     pub selection: usize,
+    pub total: usize,
 }
 
 pub fn paginate<'a, T>(page_size: usize, choices: &[T], sel: usize) -> Page<T> {
@@ -41,6 +42,7 @@ pub fn paginate<'a, T>(page_size: usize, choices: &[T], sel: usize) -> Page<T> {
         last: end == choices.len(),
         content: &choices[start..end],
         selection: cursor,
+        total: choices.len(),
     }
 }
 
@@ -61,6 +63,7 @@ mod test {
         assert_eq!(3usize, page.selection);
         assert_eq!(true, page.first);
         assert_eq!(true, page.last);
+        assert_eq!(3, page.total);
     }
 
     #[test]
@@ -76,6 +79,7 @@ mod test {
         assert_eq!(2usize, page.selection);
         assert_eq!(true, page.first);
         assert_eq!(false, page.last);
+        assert_eq!(6, page.total);
     }
 
     #[test]
@@ -91,6 +95,7 @@ mod test {
         assert_eq!(1usize, page.selection);
         assert_eq!(false, page.first);
         assert_eq!(false, page.last);
+        assert_eq!(6, page.total);
     }
 
     #[test]
@@ -106,5 +111,6 @@ mod test {
         assert_eq!(2usize, page.selection);
         assert_eq!(false, page.first);
         assert_eq!(true, page.last);
+        assert_eq!(6, page.total);
     }
 }
