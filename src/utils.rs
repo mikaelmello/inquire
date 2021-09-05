@@ -46,9 +46,47 @@ pub fn paginate<'a, T>(page_size: usize, choices: &[T], sel: usize) -> Page<T> {
     }
 }
 
+pub fn int_log10<T>(mut i: T) -> usize
+where
+    T: std::ops::DivAssign + std::cmp::PartialOrd + From<u8> + Copy,
+{
+    let mut len = 0;
+    let zero = T::from(0);
+    let ten = T::from(10);
+
+    while i > zero {
+        i /= ten;
+        len += 1;
+    }
+
+    len
+}
+
 #[cfg(test)]
 mod test {
-    use crate::{list_option::ListOption, utils::paginate};
+    use crate::{
+        list_option::ListOption,
+        utils::{int_log10, paginate},
+    };
+
+    #[test]
+    fn int_log10_works() {
+        for i in 1..10 {
+            assert_eq!(1, int_log10(i), "Int log 10 failed for value {}", i);
+        }
+        for i in 10..100 {
+            assert_eq!(2, int_log10(i), "Int log 10 failed for value {}", i);
+        }
+        for i in 100..1000 {
+            assert_eq!(3, int_log10(i), "Int log 10 failed for value {}", i);
+        }
+        for i in 1000..10000 {
+            assert_eq!(4, int_log10(i), "Int log 10 failed for value {}", i);
+        }
+        for i in 10000..100000 {
+            assert_eq!(5, int_log10(i), "Int log 10 failed for value {}", i);
+        }
+    }
 
     #[test]
     fn paginate_too_few() {
