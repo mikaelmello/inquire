@@ -109,6 +109,9 @@ pub struct RenderConfig {
     /// option value to the right.
     pub unselected_checkbox: Styled<&'static str>,
 
+    /// Definition of index prefixes in option lists.
+    pub option_index_prefix: IndexPrefix,
+
     /// Style sheet for options.
     ///
     /// Note: a non-styled space character is added before the option value as
@@ -139,6 +142,7 @@ impl RenderConfig {
             scroll_down_prefix: Styled::new("v"),
             selected_checkbox: Styled::new("[x]"),
             unselected_checkbox: Styled::new("[ ]"),
+            option_index_prefix: IndexPrefix::None,
             option: StyleSheet::empty(),
 
             #[cfg(feature = "date")]
@@ -163,6 +167,7 @@ impl RenderConfig {
             scroll_down_prefix: Styled::new("v"),
             selected_checkbox: Styled::new("[x]").with_fg(Color::LightGreen),
             unselected_checkbox: Styled::new("[ ]"),
+            option_index_prefix: IndexPrefix::None,
             option: StyleSheet::empty(),
 
             #[cfg(feature = "date")]
@@ -257,6 +262,12 @@ impl RenderConfig {
         self
     }
 
+    /// Sets the index prefix for option lists.
+    pub fn with_option_index_prefix(mut self, index_prefix: IndexPrefix) -> Self {
+        self.option_index_prefix = index_prefix;
+        self
+    }
+
     /// Sets the style sheet for option values.
     pub fn with_option(mut self, option: StyleSheet) -> Self {
         self.option = option;
@@ -278,6 +289,44 @@ impl Default for RenderConfig {
             Err(_) => Self::default_colored(),
         }
     }
+}
+
+/// Definition of index prefixes in option lists.
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum IndexPrefix {
+    /// Lists of options will not display any hints regarding
+    /// the position/index of the positions.
+    None,
+
+    /// A simple index (1-based) will be displayed before the
+    /// option string representation.
+    Simple,
+
+    /// A simple index (1-based) will be displayed before the
+    /// option string representation.
+    ///
+    /// The number representation of the index is padded with
+    /// spaces so that the length is the same of the largest
+    /// index. That is, if the list has 100 options, the first 9
+    /// options will be rendered as `"  1", "  2", ...`. Then all
+    /// indexes with two digits will be padded with one space, and
+    /// finally the last option with index 100 will not need to be
+    /// padded.
+    /// ```
+    SpacePadded,
+
+    /// A simple index (1-based) will be displayed before the
+    /// option string representation.
+    ///
+    /// The number representation of the index is padded with
+    /// zeroes so that the length is the same of the largest
+    /// index. That is, if the list has 100 options, the first 9
+    /// options will be rendered as `"001", "002", ...`. Then all
+    /// indexes with two digits will be padded with one zero, and
+    /// finally the last option with index 100 will not need to be
+    /// padded.
+    /// ```
+    ZeroPadded,
 }
 
 /// Render configuration for error messages.

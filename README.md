@@ -291,6 +291,7 @@ Like all others, this prompt also allows you to customize several aspects of it:
 - **Formatter**: Custom formatter in case you need to pre-process the user input before showing it as the final answer.
   - Prints the selected option string value by default.
 - **Page size**: Number of options displayed at once, 7 by default.
+- **Display option indexes**: On long lists, it might be helpful to display the indexes of the options to the user. Via the `RenderConfig`, you can set the display mode of the indexes as a prefix of an option. The default configuration is `None`, to not render any index when displaying the options.
 - **Filter function**: Function that defines if an option is displayed or not based on the current filter input.
 
 ## MultiSelect
@@ -320,6 +321,7 @@ Customizable options:
 - **Validator**: Custom validator to make sure a given submitted input pass the specified requirements, e.g. not allowing 0 selected options or limiting the number of options that the user is allowed to select.
   - No validators are on by default.
 - **Page size**: Number of options displayed at once, 7 by default.
+- **Display option indexes**: On long lists, it might be helpful to display the indexes of the options to the user. Via the `RenderConfig`, you can set the display mode of the indexes as a prefix of an option. The default configuration is `None`, to not render any index when displaying the options.
 - **Filter function**: Function that defines if an option is displayed or not based on the current filter input.
 - **Keep filter flag**: Whether the current filter input should be cleared or not after a selection is made. Defaults to true.
 
