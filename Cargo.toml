@@ -17,6 +17,7 @@ include = ["/examples", "/src", "/LICENSE"]
 default = ["builtin_validators", "crossterm"]
 builtin_validators = []
 date = ["chrono"]
+editor = ["tempfile"]
 
 [package.metadata.docs.rs]
 all-features = true
@@ -28,6 +29,8 @@ termion = { version = "1.5", optional = true }
 console = { version = "0.14", optional = true, features = ["windows-console-colors"] }
 
 chrono = { version = "0.4", optional = true }
+
+tempfile = { version = "3", optional = true }
 
 thiserror = "1"
 bitflags = "1"
