@@ -63,6 +63,7 @@
 #![warn(missing_docs)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
+pub mod config;
 #[cfg(feature = "date")]
 mod date_utils;
 pub mod error;
