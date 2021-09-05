@@ -1,7 +1,5 @@
 use std::env;
 
-use lazy_static::lazy_static;
-
 use super::{Color, StyleSheet, Styled};
 
 /// Rendering configuration that can be applied to a prompt.
@@ -18,7 +16,7 @@ use super::{Color, StyleSheet, Styled};
 /// let empty: RenderConfig = RenderConfig::empty();
 /// let default: RenderConfig = RenderConfig::default();
 ///
-/// let default_used_in_prompts: &'static RenderConfig = RenderConfig::default_static_ref();
+/// let default_used_in_prompts: &'static RenderConfig = RenderConfig::default();
 ///
 /// let prompt_prefix = Styled::new("$").with_fg(Color::DarkRed);
 /// let mine = default.with_prompt_prefix(prompt_prefix);
@@ -168,24 +166,6 @@ impl RenderConfig {
             #[cfg(feature = "date")]
             calendar: calendar::CalendarRenderConfig::default_colored(),
         }
-    }
-
-    /// Static reference to a [default](crate::ui::RenderConfig::default) render configuration.
-    pub fn default_static_ref() -> &'static Self {
-        lazy_static! {
-            static ref DEFAULT_RENDER_CONFIG: RenderConfig = RenderConfig::default();
-        };
-
-        &DEFAULT_RENDER_CONFIG
-    }
-
-    /// Static reference to an [empty](crate::ui::RenderConfig::empty) render configuration.
-    pub fn empty_static_ref() -> &'static Self {
-        lazy_static! {
-            static ref EMPTY_RENDER_CONFIG: RenderConfig = RenderConfig::empty();
-        };
-
-        &EMPTY_RENDER_CONFIG
     }
 
     /// Sets the prompt prefix and its style sheet.

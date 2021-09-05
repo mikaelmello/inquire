@@ -1,6 +1,7 @@
 use std::str::FromStr;
 
 use crate::{
+    config::get_configuration,
     error::{InquireError, InquireResult},
     formatter::CustomTypeFormatter,
     input::Input,
@@ -41,7 +42,7 @@ use crate::{
 ///         Ok(val) => Ok(val),
 ///         Err(_) => Err(()),
 ///     },
-///     render_config: RenderConfig::default_static_ref(),
+///     render_config: RenderConfig::default(),
 /// };
 /// ```
 ///
@@ -94,7 +95,7 @@ pub struct CustomType<'a, T> {
     /// When overriding the config in a prompt, NO_COLOR is no longer considered and your
     /// config is treated as the only source of truth. If you want to customize colors
     /// and still suport NO_COLOR, you will have to do this on your end.
-    pub render_config: &'a RenderConfig,
+    pub render_config: RenderConfig,
 }
 
 impl<'a, T> CustomType<'a, T>
@@ -106,6 +107,8 @@ where
     where
         T: FromStr + ToString,
     {
+        let config = get_configuration();
+
         Self {
             message,
             default: None,
@@ -114,7 +117,7 @@ where
             formatter: &|val| val.to_string(),
             parser: &|a| a.parse::<T>().map_err(|_| ()),
             error_message: "Invalid input".into(),
-            render_config: RenderConfig::default_static_ref(),
+            render_config: config.render_config,
         }
     }
 
@@ -162,7 +165,7 @@ where
     /// When overriding the config in a prompt, NO_COLOR is no longer considered and your
     /// config is treated as the only source of truth. If you want to customize colors
     /// and still suport NO_COLOR, you will have to do this on your end.
-    pub fn with_render_config(mut self, render_config: &'a RenderConfig) -> Self {
+    pub fn with_render_config(mut self, render_config: RenderConfig) -> Self {
         self.render_config = render_config;
         self
     }

@@ -1,4 +1,5 @@
 use crate::{
+    config::get_configuration,
     error::InquireResult,
     formatter::{BoolFormatter, DEFAULT_BOOL_FORMATTER},
     parser::{BoolParser, DEFAULT_BOOL_PARSER},
@@ -85,7 +86,7 @@ pub struct Confirm<'a> {
     /// When overriding the config in a prompt, NO_COLOR is no longer considered and your
     /// config is treated as the only source of truth. If you want to customize colors
     /// and still suport NO_COLOR, you will have to do this on your end.
-    pub render_config: &'a RenderConfig,
+    pub render_config: RenderConfig,
 }
 
 impl<'a> Confirm<'a> {
@@ -108,6 +109,8 @@ impl<'a> Confirm<'a> {
 
     /// Creates a [Confirm] with the provided message and default configuration values.
     pub fn new(message: &'a str) -> Self {
+        let config = get_configuration();
+
         Self {
             message,
             default: None,
@@ -117,7 +120,7 @@ impl<'a> Confirm<'a> {
             parser: Self::DEFAULT_PARSER,
             default_value_formatter: Self::DEFAULT_DEFAULT_VALUE_FORMATTER,
             error_message: String::from(Self::DEFAULT_ERROR_MESSAGE),
-            render_config: RenderConfig::default_static_ref(),
+            render_config: config.render_config,
         }
     }
 
@@ -171,7 +174,7 @@ impl<'a> Confirm<'a> {
     /// When overriding the config in a prompt, NO_COLOR is no longer considered and your
     /// config is treated as the only source of truth. If you want to customize colors
     /// and still suport NO_COLOR, you will have to do this on your end.
-    pub fn with_render_config(mut self, render_config: &'a RenderConfig) -> Self {
+    pub fn with_render_config(mut self, render_config: RenderConfig) -> Self {
         self.render_config = render_config;
         self
     }

@@ -1,4 +1,5 @@
 use crate::{
+    config::get_configuration,
     error::{InquireError, InquireResult},
     formatter::StringFormatter,
     input::Input,
@@ -100,7 +101,7 @@ pub struct Password<'a> {
     /// When overriding the config in a prompt, NO_COLOR is no longer considered and your
     /// config is treated as the only source of truth. If you want to customize colors
     /// and still suport NO_COLOR, you will have to do this on your end.
-    pub render_config: &'a RenderConfig,
+    pub render_config: RenderConfig,
 }
 
 impl<'a> Password<'a> {
@@ -121,6 +122,8 @@ impl<'a> Password<'a> {
 
     /// Creates a [Password] with the provided message and default options.
     pub fn new(message: &'a str) -> Self {
+        let config = get_configuration();
+
         Self {
             message,
             enable_display_toggle: Self::DEFAULT_ENABLE_DISPLAY_TOGGLE,
@@ -128,7 +131,7 @@ impl<'a> Password<'a> {
             help_message: Self::DEFAULT_HELP_MESSAGE,
             formatter: Self::DEFAULT_FORMATTER,
             validators: Self::DEFAULT_VALIDATORS,
-            render_config: RenderConfig::default_static_ref(),
+            render_config: config.render_config,
         }
     }
 
@@ -190,7 +193,7 @@ impl<'a> Password<'a> {
     /// When overriding the config in a prompt, NO_COLOR is no longer considered and your
     /// config is treated as the only source of truth. If you want to customize colors
     /// and still suport NO_COLOR, you will have to do this on your end.
-    pub fn with_render_config(mut self, render_config: &'a RenderConfig) -> Self {
+    pub fn with_render_config(mut self, render_config: RenderConfig) -> Self {
         self.render_config = render_config;
         self
     }
@@ -368,8 +371,7 @@ mod test {
 
                 let mut write: Vec<u8> = Vec::new();
                 let terminal = CrosstermTerminal::new_with_io(&mut write, &mut read);
-                let mut backend =
-                    Backend::new(terminal, RenderConfig::default_static_ref()).unwrap();
+                let mut backend = Backend::new(terminal, RenderConfig::default()).unwrap();
 
                 let ans = $prompt.prompt_with_backend(&mut backend).unwrap();
 

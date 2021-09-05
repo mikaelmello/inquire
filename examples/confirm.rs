@@ -31,7 +31,7 @@ fn main() {
             true => String::from("si"),
             false => String::from("no"),
         },
-        render_config: RenderConfig::default_static_ref(),
+        render_config: RenderConfig::default(),
     }
     .prompt()
     .unwrap();

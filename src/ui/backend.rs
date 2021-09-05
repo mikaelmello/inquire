@@ -74,7 +74,7 @@ impl Default for Position {
     }
 }
 
-pub struct Backend<'a, T>
+pub struct Backend<T>
 where
     T: Terminal,
 {
@@ -85,14 +85,14 @@ where
     show_cursor: bool,
     terminal: T,
     terminal_size: TerminalSize,
-    render_config: &'a RenderConfig,
+    render_config: RenderConfig,
 }
 
-impl<'a, T> Backend<'a, T>
+impl<T> Backend<T>
 where
     T: Terminal,
 {
-    pub fn new(terminal: T, render_config: &'a RenderConfig) -> Result<Self> {
+    pub fn new(terminal: T, render_config: RenderConfig) -> Result<Self> {
         let terminal_size = terminal.get_size().unwrap_or(TerminalSize {
             width: 1000,
             height: 1000,
@@ -221,13 +221,13 @@ where
         let empty_prefix = Styled::new(" ");
 
         let x = if idx == page.selection {
-            &self.render_config.highlighted_option_prefix
+            self.render_config.highlighted_option_prefix
         } else if idx == 0 && !page.first {
-            &self.render_config.scroll_up_prefix
+            self.render_config.scroll_up_prefix
         } else if (idx + 1) == page.content.len() && !page.last {
-            &self.render_config.scroll_down_prefix
+            self.render_config.scroll_down_prefix
         } else {
-            &empty_prefix
+            empty_prefix
         };
 
         self.terminal.write_styled(&x)
@@ -331,7 +331,7 @@ where
     }
 }
 
-impl<'a, T> CommonBackend for Backend<'a, T>
+impl<T> CommonBackend for Backend<T>
 where
     T: Terminal,
 {
@@ -404,7 +404,7 @@ where
     }
 }
 
-impl<'a, T> TextBackend for Backend<'a, T>
+impl<T> TextBackend for Backend<T>
 where
     T: Terminal,
 {
@@ -432,7 +432,7 @@ where
     }
 }
 
-impl<'a, T> SelectBackend for Backend<'a, T>
+impl<T> SelectBackend for Backend<T>
 where
     T: Terminal,
 {
@@ -455,7 +455,7 @@ where
     }
 }
 
-impl<'a, T> MultiSelectBackend for Backend<'a, T>
+impl<T> MultiSelectBackend for Backend<T>
 where
     T: Terminal,
 {
@@ -517,7 +517,7 @@ pub mod date {
         ) -> Result<()>;
     }
 
-    impl<'a, T> DateSelectBackend for Backend<'a, T>
+    impl<T> DateSelectBackend for Backend<T>
     where
         T: Terminal,
     {
@@ -641,7 +641,7 @@ pub mod date {
     }
 }
 
-impl<'a, T> CustomTypeBackend for Backend<'a, T>
+impl<T> CustomTypeBackend for Backend<T>
 where
     T: Terminal,
 {
@@ -655,7 +655,7 @@ where
     }
 }
 
-impl<'a, T> PasswordBackend for Backend<'a, T>
+impl<T> PasswordBackend for Backend<T>
 where
     T: Terminal,
 {
@@ -680,7 +680,7 @@ where
     }
 }
 
-impl<'a, T> Drop for Backend<'a, T>
+impl<T> Drop for Backend<T>
 where
     T: Terminal,
 {
