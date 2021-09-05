@@ -2,13 +2,12 @@ use std::{collections::BTreeSet, fmt::Display, io::Result};
 
 use unicode_width::UnicodeWidthChar;
 
-use super::{key::Key, RenderConfig};
 use crate::{
     input::Input,
     list_option::ListOption,
     terminal::{Terminal, TerminalSize},
-    ui::Styled,
-    utils::Page,
+    ui::{IndexPrefix, Key, RenderConfig, Styled},
+    utils::{int_log10, Page},
 };
 
 pub trait CommonBackend {
@@ -238,6 +237,28 @@ where
             .write_styled(&Styled::new(&option.value).with_style_sheet(self.render_config.option))
     }
 
+    fn print_option_index_prefix(&mut self, index: usize, max_index: usize) -> Option<Result<()>> {
+        let index = index.saturating_add(1);
+
+        let content = match self.render_config.option_index_prefix {
+            IndexPrefix::None => None,
+            IndexPrefix::Simple => Some(format!("{})", index)),
+            IndexPrefix::SpacePadded => {
+                let width = int_log10(max_index.saturating_add(1));
+                Some(format!("{:width$})", index, width = width))
+            }
+            IndexPrefix::ZeroPadded => {
+                let width = int_log10(max_index.saturating_add(1));
+                Some(format!("{:0width$})", index, width = width))
+            }
+        };
+
+        content.map(|prefix| {
+            self.terminal
+                .write_styled(&Styled::new(prefix).with_style_sheet(self.render_config.option))
+        })
+    }
+
     fn print_default_value(&mut self, value: &str) -> Result<()> {
         let content = format!("({})", value);
         let token = Styled::new(content).with_style_sheet(self.render_config.default_value);
@@ -446,6 +467,14 @@ where
 
             self.terminal.write(" ")?;
 
+            match self.print_option_index_prefix(option.index, page.total) {
+                Some(res) => {
+                    res?;
+                    self.terminal.write(" ")?;
+                }
+                None => {}
+            };
+
             self.print_option_value(option)?;
 
             self.new_line()?;
@@ -472,6 +501,14 @@ where
             self.print_option_prefix(idx, &page)?;
 
             self.terminal.write(" ")?;
+
+            match self.print_option_index_prefix(option.index, page.total) {
+                Some(res) => {
+                    res?;
+                    self.terminal.write(" ")?;
+                }
+                None => {}
+            };
 
             match checked.contains(&option.index) {
                 true => self
