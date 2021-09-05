@@ -23,7 +23,7 @@ use super::{Color, StyleSheet, Styled};
 /// let prompt_prefix = Styled::new("$").with_fg(Color::DarkRed);
 /// let mine = default.with_prompt_prefix(prompt_prefix);
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Copy, Clone, Debug)]
 pub struct RenderConfig {
     /// Prefix added before prompts.
     ///
@@ -281,7 +281,7 @@ impl Default for RenderConfig {
 }
 
 /// Render configuration for error messages.
-#[derive(Clone, Debug)]
+#[derive(Copy, Clone, Debug)]
 pub struct ErrorMessageRenderConfig {
     /// Prefix style.
     pub prefix: Styled<&'static str>,
@@ -344,7 +344,7 @@ pub mod calendar {
     use super::{Color, StyleSheet, Styled};
 
     /// Calendar configuration for error messages.
-    #[derive(Clone, Debug)]
+    #[derive(Copy, Clone, Debug)]
     pub struct CalendarRenderConfig {
         /// Prefix style.
         pub prefix: Styled<&'static str>,
