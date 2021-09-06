@@ -334,8 +334,8 @@ impl<'a> PasswordPrompt<'a> {
             let key = backend.read_key()?;
 
             match key {
-                Key::Cancel => return Err(InquireError::OperationCanceled),
-                Key::Interrupt => return Err(InquireError::OperationInterrupted),
+                Key::Interrupt => interrupt_prompt!(),
+                Key::Cancel => cancel_prompt!(backend, &self.message),
                 Key::Submit => match self.get_final_answer() {
                     Ok(answer) => {
                         final_answer = answer;
@@ -347,9 +347,9 @@ impl<'a> PasswordPrompt<'a> {
             }
         }
 
-        backend.finish_prompt(&self.message, &(self.formatter)(&final_answer))?;
+        let formatted = (self.formatter)(&final_answer);
 
-        Ok(final_answer)
+        finish_prompt_with_answer!(backend, &self.message, &formatted, final_answer);
     }
 }
 

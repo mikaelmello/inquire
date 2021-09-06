@@ -72,6 +72,13 @@ pub struct RenderConfig {
     /// a separator from the prompt message (or default value display).
     pub answer: StyleSheet,
 
+    /// Render configuration of the message printed in the place of an answer
+    /// when the prompt is canceled by the user - by pressing ESC.
+    ///
+    /// Note: a non-styled space character is added before the indicator as
+    /// a separator from the prompt message.
+    pub canceled_prompt_indicator: Styled<&'static str>,
+
     /// Render configuration for error messages.
     pub error_message: ErrorMessageRenderConfig,
 
@@ -136,6 +143,7 @@ impl RenderConfig {
             text_input: StyleSheet::empty(),
             error_message: ErrorMessageRenderConfig::empty(),
             answer: StyleSheet::empty(),
+            canceled_prompt_indicator: Styled::new("<canceled>"),
             password_mask: '*',
             highlighted_option_prefix: Styled::new(">"),
             scroll_up_prefix: Styled::new("^"),
@@ -162,6 +170,7 @@ impl RenderConfig {
             error_message: ErrorMessageRenderConfig::default_colored(),
             password_mask: '*',
             answer: StyleSheet::empty().with_fg(Color::LightCyan),
+            canceled_prompt_indicator: Styled::new("<canceled>").with_fg(Color::DarkYellow),
             highlighted_option_prefix: Styled::new(">").with_fg(Color::LightCyan),
             scroll_up_prefix: Styled::new("^"),
             scroll_down_prefix: Styled::new("v"),

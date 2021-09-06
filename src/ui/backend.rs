@@ -16,7 +16,8 @@ pub trait CommonBackend {
     fn frame_setup(&mut self) -> Result<()>;
     fn frame_finish(&mut self) -> Result<()>;
 
-    fn finish_prompt(&mut self, prompt: &str, answer: &str) -> Result<()>;
+    fn render_canceled_prompt(&mut self, prompt: &str) -> Result<()>;
+    fn render_prompt_with_answer(&mut self, prompt: &str, answer: &str) -> Result<()>;
 
     fn render_error_message(&mut self, error: &str) -> Result<()>;
     fn render_help_message(&mut self, help: &str) -> Result<()>;
@@ -276,19 +277,6 @@ where
         Ok(())
     }
 
-    fn print_prompt_with_answer(&mut self, prompt: &str, answer: &str) -> Result<()> {
-        self.print_prompt(prompt)?;
-
-        self.terminal.write(" ")?;
-
-        let token = Styled::new(answer).with_style_sheet(self.render_config.answer);
-        self.terminal.write_styled(&token)?;
-
-        self.new_line()?;
-
-        Ok(())
-    }
-
     fn print_input(&mut self, input: &Input) -> Result<()> {
         self.terminal.write(" ")?;
 
@@ -381,9 +369,28 @@ where
         self.flush()
     }
 
-    fn finish_prompt(&mut self, prompt: &str, answer: &str) -> Result<()> {
-        self.reset_prompt()?;
-        self.print_prompt_with_answer(prompt, answer)?;
+    fn render_canceled_prompt(&mut self, prompt: &str) -> Result<()> {
+        self.print_prompt(prompt)?;
+
+        self.terminal.write(" ")?;
+
+        self.terminal
+            .write_styled(&self.render_config.canceled_prompt_indicator)?;
+
+        self.new_line()?;
+
+        Ok(())
+    }
+
+    fn render_prompt_with_answer(&mut self, prompt: &str, answer: &str) -> Result<()> {
+        self.print_prompt(prompt)?;
+
+        self.terminal.write(" ")?;
+
+        let token = Styled::new(answer).with_style_sheet(self.render_config.answer);
+        self.terminal.write_styled(&token)?;
+
+        self.new_line()?;
 
         Ok(())
     }

@@ -570,8 +570,8 @@ where
             let key = backend.read_key()?;
 
             match key {
-                Key::Cancel => return Err(InquireError::OperationCanceled),
-                Key::Interrupt => return Err(InquireError::OperationInterrupted),
+                Key::Interrupt => interrupt_prompt!(),
+                Key::Cancel => cancel_prompt!(backend, &self.message),
                 Key::Submit => match self.validate_current_answer() {
                     Ok(()) => break,
                     Err(err) => self.error = Some(err),
@@ -584,9 +584,7 @@ where
         let refs: Vec<ListOption<&T>> = final_answer.iter().map(ListOption::as_ref).collect();
         let formatted = (self.formatter)(&refs);
 
-        backend.finish_prompt(&self.message, &formatted)?;
-
-        Ok(final_answer)
+        finish_prompt_with_answer!(backend, &self.message, &formatted, final_answer);
     }
 }
 
