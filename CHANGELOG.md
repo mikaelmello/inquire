@@ -5,6 +5,7 @@
 
 ### Features
 
+- Add [`Editor`](https://docs.rs/inquire/0.0.11/inquire/prompts/editor/struct.Editor.html) prompt.
 - Add support to use `console` or `termion` as the library to handle terminals while keeping `crossterm` as the default choice.
 - Canceling the prompt by pressing `ESC` is now a different behavior than interrupting the prompt by pressing `Ctrl+C`.
   - If the prompt is canceled, the final prompt render indicates to the user that it was canceled via a `<canceled>` text, which is customizable via RenderConfig, and the prompt method returns `Err(InquireError::OperationCanceled)`.
