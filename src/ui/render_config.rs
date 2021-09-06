@@ -128,6 +128,7 @@ pub struct RenderConfig {
     /// Render configuration for calendar
 
     #[cfg(feature = "date")]
+    /// Render configuration for date prompts.
     pub calendar: calendar::CalendarRenderConfig,
 }
 
