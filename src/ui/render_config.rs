@@ -171,7 +171,7 @@ impl RenderConfig {
             error_message: ErrorMessageRenderConfig::default_colored(),
             password_mask: '*',
             answer: StyleSheet::empty().with_fg(Color::LightCyan),
-            canceled_prompt_indicator: Styled::new("<canceled>").with_fg(Color::DarkYellow),
+            canceled_prompt_indicator: Styled::new("<canceled>").with_fg(Color::DarkRed),
             highlighted_option_prefix: Styled::new(">").with_fg(Color::LightCyan),
             scroll_up_prefix: Styled::new("^"),
             scroll_down_prefix: Styled::new("v"),
