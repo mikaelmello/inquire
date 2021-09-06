@@ -532,6 +532,7 @@ where
 
             match key {
                 Key::Cancel => return Err(InquireError::OperationCanceled),
+                Key::Interrupt => return Err(InquireError::OperationInterrupted),
                 Key::Submit => match self.validate_current_answer() {
                     Ok(()) => break,
                     Err(err) => self.error = Some(err),

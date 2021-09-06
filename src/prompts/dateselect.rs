@@ -405,6 +405,7 @@ impl<'a> DateSelectPrompt<'a> {
 
             match key {
                 Key::Cancel => return Err(InquireError::OperationCanceled),
+                Key::Interrupt => return Err(InquireError::OperationInterrupted),
                 Key::Submit | Key::Char(' ', _) => match self.get_final_answer() {
                     Ok(answer) => {
                         final_answer = answer;

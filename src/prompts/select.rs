@@ -413,6 +413,7 @@ where
 
             match key {
                 Key::Cancel => return Err(InquireError::OperationCanceled),
+                Key::Interrupt => return Err(InquireError::OperationInterrupted),
                 Key::Submit => match self.has_answer_highlighted() {
                     true => break,
                     false => {}

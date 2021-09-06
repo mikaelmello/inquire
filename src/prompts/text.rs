@@ -398,6 +398,7 @@ impl<'a> TextPrompt<'a> {
 
             match key {
                 Key::Cancel => return Err(InquireError::OperationCanceled),
+                Key::Interrupt => return Err(InquireError::OperationInterrupted),
                 Key::Submit => match self.get_final_answer() {
                     Ok(answer) => {
                         final_answer = answer;
