@@ -16,6 +16,7 @@
 
 It provides several different prompts in order to interactively ask the user for information via the CLI. With `inquire`, you can use:
 - [`Text`] to get text input from the user, with _built-in auto-completion support_;
+- [`Editor`]* to get longer text inputs by opening a text editor for the user;
 - [`DateSelect`]* to get a date input from the user, selected via an _interactive calendar_;
 - [`Select`] to ask the user to select one option from a given list;
 - [`MultiSelect`] to ask the user to select an arbitrary number of options from a given list;
@@ -42,6 +43,7 @@ It provides several different prompts in order to interactively ask the user for
   - Auto-completion for [`Text`] prompts;
   - Custom list filters for Select and [`MultiSelect`] prompts;
   - Custom parsers for [`Confirm`] and [`CustomType`] prompts;
+  - Custom extensions for files created by [`Editor`] prompts;
   - and many others!
 
 ## Usage
@@ -63,5 +65,6 @@ inquire = { version = "0.0.8", features = ["date"] }
 [`Select`]: https://docs.rs/inquire/*/inquire/prompts/select/struct.Select.html
 [`MultiSelect`]: https://docs.rs/inquire/*/inquire/prompts/multiselect/struct.MultiSelect.html
 [`Confirm`]: https://docs.rs/inquire/*/inquire/prompts/confirm/struct.Confirm.html
+[`Editor`]: https://docs.rs/inquire/*/inquire/prompts/editor/struct.Editor.html
 [`CustomType`]: https://docs.rs/inquire/*/inquire/prompts/customtype/struct.CustomType.html
 [`Password`]: https://docs.rs/inquire/*/inquire/prompts/password/struct.Password.html

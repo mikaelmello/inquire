@@ -128,7 +128,15 @@ pub struct RenderConfig {
     /// Render configuration for calendar
 
     #[cfg(feature = "date")]
+    /// Render configuration for date prompts.
     pub calendar: calendar::CalendarRenderConfig,
+
+    /// Style sheet of the hint in editor prompts.
+    ///
+    /// The hint is formatted as `[(e) to open {}, (enter) to submit]`
+    /// with the editor name.
+    #[cfg(feature = "editor")]
+    pub editor_prompt: StyleSheet,
 }
 
 impl RenderConfig {
@@ -155,6 +163,9 @@ impl RenderConfig {
 
             #[cfg(feature = "date")]
             calendar: calendar::CalendarRenderConfig::empty(),
+
+            #[cfg(feature = "editor")]
+            editor_prompt: StyleSheet::empty(),
         }
     }
 
@@ -170,7 +181,7 @@ impl RenderConfig {
             error_message: ErrorMessageRenderConfig::default_colored(),
             password_mask: '*',
             answer: StyleSheet::empty().with_fg(Color::LightCyan),
-            canceled_prompt_indicator: Styled::new("<canceled>").with_fg(Color::DarkYellow),
+            canceled_prompt_indicator: Styled::new("<canceled>").with_fg(Color::DarkRed),
             highlighted_option_prefix: Styled::new(">").with_fg(Color::LightCyan),
             scroll_up_prefix: Styled::new("^"),
             scroll_down_prefix: Styled::new("v"),
@@ -181,6 +192,9 @@ impl RenderConfig {
 
             #[cfg(feature = "date")]
             calendar: calendar::CalendarRenderConfig::default_colored(),
+
+            #[cfg(feature = "editor")]
+            editor_prompt: StyleSheet::new().with_fg(Color::DarkCyan),
         }
     }
 
@@ -283,10 +297,26 @@ impl RenderConfig {
         self
     }
 
+    /// Sets the indicator for canceled prompts.
+    pub fn with_canceled_prompt_indicator(
+        mut self,
+        canceled_prompt_indicator: Styled<&'static str>,
+    ) -> Self {
+        self.canceled_prompt_indicator = canceled_prompt_indicator;
+        self
+    }
+
     #[cfg(feature = "date")]
     /// Sets the render configuration for calendars.
     pub fn with_calendar_config(mut self, calendar: calendar::CalendarRenderConfig) -> Self {
         self.calendar = calendar;
+        self
+    }
+
+    #[cfg(feature = "editor")]
+    /// Sets the render configuration for editor prompts.
+    pub fn with_editor_prompt(mut self, editor_prompt: StyleSheet) -> Self {
+        self.editor_prompt = editor_prompt;
         self
     }
 }
