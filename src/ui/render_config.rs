@@ -130,6 +130,13 @@ pub struct RenderConfig {
     #[cfg(feature = "date")]
     /// Render configuration for date prompts.
     pub calendar: calendar::CalendarRenderConfig,
+
+    /// Style sheet of the hint in editor prompts.
+    ///
+    /// The hint is formatted as `[(e) to open {}, (esc) to cancel]`
+    /// with the editor name.
+    #[cfg(feature = "editor")]
+    pub editor_prompt: StyleSheet,
 }
 
 impl RenderConfig {
@@ -156,6 +163,9 @@ impl RenderConfig {
 
             #[cfg(feature = "date")]
             calendar: calendar::CalendarRenderConfig::empty(),
+
+            #[cfg(feature = "editor")]
+            editor_prompt: StyleSheet::empty(),
         }
     }
 
@@ -182,6 +192,9 @@ impl RenderConfig {
 
             #[cfg(feature = "date")]
             calendar: calendar::CalendarRenderConfig::default_colored(),
+
+            #[cfg(feature = "editor")]
+            editor_prompt: StyleSheet::new().with_fg(Color::DarkCyan),
         }
     }
 
