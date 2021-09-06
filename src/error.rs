@@ -21,9 +21,14 @@ pub enum InquireError {
     #[error("IO error: {0}")]
     IO(#[from] io::Error),
 
-    /// The user canceled the operation by pressing Ctrl+C or ESC.
+    /// The user canceled the operation by pressing ESC.
     #[error("Operation was canceled by the user")]
     OperationCanceled,
+
+    /// The operation was interrupted by the user after they
+    /// pressed Ctrl+C.
+    #[error("Operation was interrupted by the user")]
+    OperationInterrupted,
 }
 
 /// Result type where errors are of type [InquireError](crate::error::InquireError)
