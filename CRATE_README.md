@@ -54,10 +54,10 @@ Put this line in your `Cargo.toml`, under `[dependencies]`.
 inquire = "0.0.8"
 ```
 
-\* If you'd like to use the date-related features, enable the `date` feature:
+\* This prompt type is gated under a feature flag, e.g.:
 
 ```
-inquire = { version = "0.0.8", features = ["date"] }
+inquire = { version = "0.0.8", features = ["date", "editor"] }
 ```
 
 [`Text`]: https://docs.rs/inquire/*/inquire/prompts/text/struct.Text.html
