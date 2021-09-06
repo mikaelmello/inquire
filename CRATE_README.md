@@ -51,13 +51,13 @@ It provides several different prompts in order to interactively ask the user for
 Put this line in your `Cargo.toml`, under `[dependencies]`.
 
 ```
-inquire = "0.0.8"
+inquire = "0.0.11"
 ```
 
 \* This prompt type is gated under a feature flag, e.g.:
 
 ```
-inquire = { version = "0.0.8", features = ["date", "editor"] }
+inquire = { version = "0.0.11", features = ["date", "editor"] }
 ```
 
 [`Text`]: https://docs.rs/inquire/*/inquire/prompts/text/struct.Text.html
