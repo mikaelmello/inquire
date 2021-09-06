@@ -197,6 +197,23 @@ impl<'a> Password<'a> {
 
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to the defined rules.
+    ///
+    /// This method is intended for flows where the user skipping/cancelling
+    /// the prompt - by pressing ESC - is considered normal behavior. In this case,
+    /// it does not return `Err(InquireError::OperationCanceled)`, but `Ok(None)`.
+    ///
+    /// Meanwhile, if the user does submit an answer, the method wraps the return
+    /// type with `Some`.
+    pub fn prompt_skippable(self) -> InquireResult<Option<String>> {
+        match self.prompt() {
+            Ok(answer) => Ok(Some(answer)),
+            Err(InquireError::OperationCanceled) => Ok(None),
+            Err(err) => Err(err),
+        }
+    }
+
+    /// Parses the provided behavioral and rendering options and prompts
+    /// the CLI user for input according to the defined rules.
     pub fn prompt(self) -> InquireResult<String> {
         let terminal = get_default_terminal()?;
         let mut backend = Backend::new(terminal, self.render_config)?;

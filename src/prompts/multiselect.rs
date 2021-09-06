@@ -266,10 +266,49 @@ where
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to the defined rules.
     ///
-    /// Returns the owned object selected by the user.
+    /// Returns the owned objects selected by the user.
+    ///
+    /// This method is intended for flows where the user skipping/cancelling
+    /// the prompt - by pressing ESC - is considered normal behavior. In this case,
+    /// it does not return `Err(InquireError::OperationCanceled)`, but `Ok(None)`.
+    ///
+    /// Meanwhile, if the user does submit an answer, the method wraps the return
+    /// type with `Some`.
+    pub fn prompt_skippable(self) -> InquireResult<Option<Vec<T>>> {
+        match self.prompt() {
+            Ok(answer) => Ok(Some(answer)),
+            Err(InquireError::OperationCanceled) => Ok(None),
+            Err(err) => Err(err),
+        }
+    }
+
+    /// Parses the provided behavioral and rendering options and prompts
+    /// the CLI user for input according to the defined rules.
+    ///
+    /// Returns the owned objects selected by the user.
     pub fn prompt(self) -> InquireResult<Vec<T>> {
         self.raw_prompt()
             .map(|op| op.into_iter().map(|o| o.value).collect())
+    }
+
+    /// Parses the provided behavioral and rendering options and prompts
+    /// the CLI user for input according to the defined rules.
+    ///
+    /// Returns a vector of [`ListOption`](crate::list_option::ListOption)s containing
+    /// the index of the selections and the owned objects selected by the user.
+    ///
+    /// This method is intended for flows where the user skipping/cancelling
+    /// the prompt - by pressing ESC - is considered normal behavior. In this case,
+    /// it does not return `Err(InquireError::OperationCanceled)`, but `Ok(None)`.
+    ///
+    /// Meanwhile, if the user does submit an answer, the method wraps the return
+    /// type with `Some`.
+    pub fn raw_prompt_skippable(self) -> InquireResult<Option<Vec<ListOption<T>>>> {
+        match self.raw_prompt() {
+            Ok(answer) => Ok(Some(answer)),
+            Err(InquireError::OperationCanceled) => Ok(None),
+            Err(err) => Err(err),
+        }
     }
 
     /// Parses the provided behavioral and rendering options and prompts
