@@ -27,6 +27,10 @@ pub enum InquireError {
 
     /// The operation was interrupted by the user after they
     /// pressed Ctrl+C.
+    ///
+    /// This error will be returned only when using `crossterm`
+    /// or `termion` as the terminal back-end. If using `console`,
+    /// pressing Ctrl+C will trigger SIGINT.
     #[error("Operation was interrupted by the user")]
     OperationInterrupted,
 }
