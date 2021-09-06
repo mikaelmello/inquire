@@ -297,10 +297,26 @@ impl RenderConfig {
         self
     }
 
+    /// Sets the indicator for canceled prompts.
+    pub fn with_canceled_prompt_indicator(
+        mut self,
+        canceled_prompt_indicator: Styled<&'static str>,
+    ) -> Self {
+        self.canceled_prompt_indicator = canceled_prompt_indicator;
+        self
+    }
+
     #[cfg(feature = "date")]
     /// Sets the render configuration for calendars.
     pub fn with_calendar_config(mut self, calendar: calendar::CalendarRenderConfig) -> Self {
         self.calendar = calendar;
+        self
+    }
+
+    #[cfg(feature = "editor")]
+    /// Sets the render configuration for editor prompts.
+    pub fn with_editor_prompt(mut self, editor_prompt: StyleSheet) -> Self {
+        self.editor_prompt = editor_prompt;
         self
     }
 }
