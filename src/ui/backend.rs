@@ -475,7 +475,7 @@ where
 
         self.terminal.write(" ")?;
 
-        let message = format!("[(e) to open {}, (esc) to cancel]", editor_command);
+        let message = format!("[(e) to open {}, (enter) to submit]", editor_command);
         let token = Styled::new(message).with_style_sheet(self.render_config.editor_prompt);
         self.terminal.write_styled(&token)?;
 

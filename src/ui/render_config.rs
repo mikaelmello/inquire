@@ -133,7 +133,7 @@ pub struct RenderConfig {
 
     /// Style sheet of the hint in editor prompts.
     ///
-    /// The hint is formatted as `[(e) to open {}, (esc) to cancel]`
+    /// The hint is formatted as `[(e) to open {}, (enter) to submit]`
     /// with the editor name.
     #[cfg(feature = "editor")]
     pub editor_prompt: StyleSheet,
