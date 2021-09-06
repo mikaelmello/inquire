@@ -260,8 +260,8 @@ impl From<KeyEvent> for Key {
             KeyEvent {
                 code: KeyCode::Char('c'),
                 modifiers: crossterm::event::KeyModifiers::CONTROL,
-            }
-            | KeyEvent {
+            } => Self::Interrupt,
+            KeyEvent {
                 code: KeyCode::Esc,
                 modifiers: _,
             } => Self::Cancel,

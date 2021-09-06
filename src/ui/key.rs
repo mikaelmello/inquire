@@ -14,6 +14,7 @@ bitflags! {
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Key {
     Cancel,
+    Interrupt,
     Submit,
     Backspace,
     Tab,

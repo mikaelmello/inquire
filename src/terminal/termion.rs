@@ -249,7 +249,8 @@ impl From<Key> for crate::ui::Key {
         use crate::ui::KeyModifiers;
 
         match key {
-            Key::Ctrl('c') | Key::Esc => Self::Cancel,
+            Key::Ctrl('c') => Self::Interrupt,
+            Key::Esc => Self::Cancel,
             Key::Char('\n') | Key::Char('\r') => Self::Submit,
             Key::Char('\t') => Self::Tab,
             Key::Backspace => Self::Backspace,
