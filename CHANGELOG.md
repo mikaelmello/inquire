@@ -6,7 +6,10 @@
 ### Features
 
 - Add support to use `console` or `termion` as the library to handle terminals while keeping `crossterm` as the default choice.
-- Add `Prompt::prompt_skippable` method for all prompts.
+- Canceling the prompt by pressing `ESC` is now a different behavior than interrupting the prompt by pressing `Ctrl+C`.
+  - If the prompt is canceled, the final prompt render indicates to the user that it was canceled via a `<canceled>` text, which is customizable via RenderConfig, and the prompt method returns `Err(InquireError::OperationCanceled)`.
+  - If the prompt is interrupted, the only clean-up action done is restoring the cursor position, and the prompt method returns `Err(InquireError::OperationInterrupted)`.
+- Add a `prompt_skippable` method for all prompts.
   - This method is intended for flows where the user skipping/cancelling the prompt - by pressing ESC - is considered normal behavior. In this case, it does not return `Err(InquireError::OperationCanceled)`, but `Ok(None)`. Meanwhile, if the user does submit an answer, the method wraps the return type with `Some`.
 
 ### Improvements
