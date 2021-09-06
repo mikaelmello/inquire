@@ -46,7 +46,11 @@ required-features = ["builtin_validators", "date"]
 
 [[example]]
 name = "date"
-required-features = ["date"]
+required-features = ["builtin_validators", "date"]
+
+[[example]]
+name = "editor"
+required-features = ["editor"]
 
 [[example]]
 name = "expense_tracker"
