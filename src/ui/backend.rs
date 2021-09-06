@@ -33,6 +33,11 @@ pub trait TextBackend: CommonBackend {
     fn render_suggestions<D: Display>(&mut self, page: Page<ListOption<D>>) -> Result<()>;
 }
 
+#[cfg(feature = "editor")]
+pub trait EditorBackend: CommonBackend {
+    fn render_prompt(&mut self, prompt: &str, editor_command: &str) -> Result<()>;
+}
+
 pub trait SelectBackend: CommonBackend {
     fn render_select_prompt(&mut self, prompt: &str, cur_input: &Input) -> Result<()>;
     fn render_options<D: Display>(&mut self, page: Page<ListOption<D>>) -> Result<()>;
@@ -455,6 +460,26 @@ where
 
             self.new_line()?;
         }
+
+        Ok(())
+    }
+}
+
+#[cfg(feature = "editor")]
+impl<'a, T> EditorBackend for Backend<'a, T>
+where
+    T: Terminal,
+{
+    fn render_prompt(&mut self, prompt: &str, editor_command: &str) -> Result<()> {
+        self.print_prompt(prompt)?;
+
+        self.terminal.write(" ")?;
+
+        let message = format!("[(e) to open {}, (esc) to cancel]", editor_command);
+        let token = Styled::new(message).with_style_sheet(self.render_config.editor_prompt);
+        self.terminal.write_styled(&token)?;
+
+        self.new_line()?;
 
         Ok(())
     }
