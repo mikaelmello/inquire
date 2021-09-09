@@ -16,8 +16,6 @@ use super::{Color, StyleSheet, Styled};
 /// let empty: RenderConfig = RenderConfig::empty();
 /// let default: RenderConfig = RenderConfig::default();
 ///
-/// let default_used_in_prompts: &'static RenderConfig = RenderConfig::default();
-///
 /// let prompt_prefix = Styled::new("$").with_fg(Color::DarkRed);
 /// let mine = default.with_prompt_prefix(prompt_prefix);
 /// ```
