@@ -16,6 +16,7 @@
 
 It provides several different prompts in order to interactively ask the user for information via the CLI. With `inquire`, you can use:
 - [`Text`] to get text input from the user, with _built-in auto-completion support_;
+- [`Editor`]* to get longer text inputs by opening a text editor for the user;
 - [`DateSelect`]* to get a date input from the user, selected via an _interactive calendar_;
 - [`Select`] to ask the user to select one option from a given list;
 - [`MultiSelect`] to ask the user to select an arbitrary number of options from a given list;
@@ -46,6 +47,7 @@ It provides several different prompts in order to interactively ask the user for
   - Auto-completion for [`Text`] prompts;
   - Custom list filters for Select and [`MultiSelect`] prompts;
   - Custom parsers for [`Confirm`] and [`CustomType`] prompts;
+  - Custom extensions for files created by [`Editor`] prompts;
   - and many others!
 
 ## Examples
@@ -61,13 +63,13 @@ $ cargo run --example expense_tracker --features date
 Put this line in your `Cargo.toml`, under `[dependencies]`.
 
 ```
-inquire = "0.0.8"
+inquire = "0.0.11"
 ```
 
-\* If you'd like to use the date-related features, enable the `date` feature:
+\* This prompt type is gated under a feature flag, e.g.:
 
 ```
-inquire = { version = "0.0.8", features = ["date"] }
+inquire = { version = "0.0.11", features = ["date"] }
 ```
 
 # Cross-cutting concerns
@@ -114,13 +116,13 @@ Binary Rust applications that intend to manipulate terminals will probably pick 
 However, if your application already uses a dependency other than crossterm, such as console or termion, you can enable another terminal via feature flags. It is also important to disable inquire's default features as it comes with `crossterm` enabled by default. Such as this:
 
 ```toml
-inquire = { version = "0.0.10", default-features = false, features = ["termion", "date"] }
+inquire = { version = "0.0.11", default-features = false, features = ["termion", "date"] }
 ```
 
 or this:
 
 ```toml
-inquire = { version = "0.0.10", default-features = false, features = ["console", "date"] }
+inquire = { version = "0.0.11", default-features = false, features = ["console", "date"] }
 ```
 
 ## Formatting
@@ -291,6 +293,7 @@ Like all others, this prompt also allows you to customize several aspects of it:
 - **Formatter**: Custom formatter in case you need to pre-process the user input before showing it as the final answer.
   - Prints the selected option string value by default.
 - **Page size**: Number of options displayed at once, 7 by default.
+- **Display option indexes**: On long lists, it might be helpful to display the indexes of the options to the user. Via the `RenderConfig`, you can set the display mode of the indexes as a prefix of an option. The default configuration is `None`, to not render any index when displaying the options.
 - **Filter function**: Function that defines if an option is displayed or not based on the current filter input.
 
 ## MultiSelect
@@ -320,8 +323,39 @@ Customizable options:
 - **Validator**: Custom validator to make sure a given submitted input pass the specified requirements, e.g. not allowing 0 selected options or limiting the number of options that the user is allowed to select.
   - No validators are on by default.
 - **Page size**: Number of options displayed at once, 7 by default.
+- **Display option indexes**: On long lists, it might be helpful to display the indexes of the options to the user. Via the `RenderConfig`, you can set the display mode of the indexes as a prefix of an option. The default configuration is `None`, to not render any index when displaying the options.
 - **Filter function**: Function that defines if an option is displayed or not based on the current filter input.
 - **Keep filter flag**: Whether the current filter input should be cleared or not after a selection is made. Defaults to true.
+
+## Editor
+
+![Animated GIF making a demonstration of a simple Editor prompt created with this library. You can replay this recording in your terminal with asciinema play command using the file ./assets/editor.cast](./assets/editor.gif)
+
+The source is too long, find it [here](./examples/editor.rs).
+
+`Editor` prompts are meant for cases where you need the user to write some text that might not fit in a single line, such as long descriptions or commit messages.
+
+This prompt is gated via the `editor` because it depends on the `tempfile` crate.
+
+This prompt's behavior is to ask the user to either open the editor - by pressing the `e` key - or submit the current text - by pressing the `enter` key. The user can freely open and close the editor as they wish, until they either cancel or submit.
+
+The editor opened is set by default to `nano` on Unix environments and `notepad` on Windows environments. Additionally, if there's an editor set in either the `EDITOR` or `VISUAL` environment variables, it is used instead.
+
+If the user presses `esc` while the editor is not open, it will be interpreted as the user canceling (or skipping) the operation, in which case the prompt call will return `Err(InquireError::OperationCanceled)`. 
+
+If the user presses `enter` without ever modyfing the temporary file, it will be treated as an empty submission. If this is unwanted behavior, you can control the user input by using validators.
+
+Finally, this prompt allows a great range of customizable options as all others:
+
+- **Prompt message**: Main message when prompting the user for input, `"What is your name?"` in the example above.
+- **Help message**: Message displayed at the line below the prompt.
+- **Editor command and its args**: If you want to override the selected editor, you can pass over the command and additional args.
+- **File extension**: Custom extension for the temporary file, useful as a proxy for proper syntax highlighting for example.
+- **Predefined text**: Pre-defined text to be written to the temporary file before the user is allowed to edit it.
+- **Validators**: Custom validators to the user's input, displaying an error message if the input does not pass the requirements.
+- **Formatter**: Custom formatter in case you need to pre-process the user input before showing it as the final answer.
+  - By default, a successfully submitted answer is displayed to the user simply as `<received>`.
+
 
 ## Password
 
@@ -453,5 +487,6 @@ Confirm prompts provide several options of configuration:
 [`Select`]: #Select
 [`MultiSelect`]: #MultiSelect
 [`Confirm`]: #Confirm
+[`Editor`]: #Editor
 [`CustomType`]: #CustomType
 [`Password`]: #Password

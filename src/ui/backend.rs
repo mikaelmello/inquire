@@ -2,13 +2,12 @@ use std::{collections::BTreeSet, fmt::Display, io::Result};
 
 use unicode_width::UnicodeWidthChar;
 
-use super::{key::Key, RenderConfig};
 use crate::{
     input::Input,
     list_option::ListOption,
     terminal::{Terminal, TerminalSize},
-    ui::Styled,
-    utils::Page,
+    ui::{IndexPrefix, Key, RenderConfig, Styled},
+    utils::{int_log10, Page},
 };
 
 pub trait CommonBackend {
@@ -17,7 +16,8 @@ pub trait CommonBackend {
     fn frame_setup(&mut self) -> Result<()>;
     fn frame_finish(&mut self) -> Result<()>;
 
-    fn finish_prompt(&mut self, prompt: &str, answer: &str) -> Result<()>;
+    fn render_canceled_prompt(&mut self, prompt: &str) -> Result<()>;
+    fn render_prompt_with_answer(&mut self, prompt: &str, answer: &str) -> Result<()>;
 
     fn render_error_message(&mut self, error: &str) -> Result<()>;
     fn render_help_message(&mut self, help: &str) -> Result<()>;
@@ -31,6 +31,11 @@ pub trait TextBackend: CommonBackend {
         cur_input: &Input,
     ) -> Result<()>;
     fn render_suggestions<D: Display>(&mut self, page: Page<ListOption<D>>) -> Result<()>;
+}
+
+#[cfg(feature = "editor")]
+pub trait EditorBackend: CommonBackend {
+    fn render_prompt(&mut self, prompt: &str, editor_command: &str) -> Result<()>;
 }
 
 pub trait SelectBackend: CommonBackend {
@@ -238,6 +243,28 @@ where
             .write_styled(&Styled::new(&option.value).with_style_sheet(self.render_config.option))
     }
 
+    fn print_option_index_prefix(&mut self, index: usize, max_index: usize) -> Option<Result<()>> {
+        let index = index.saturating_add(1);
+
+        let content = match self.render_config.option_index_prefix {
+            IndexPrefix::None => None,
+            IndexPrefix::Simple => Some(format!("{})", index)),
+            IndexPrefix::SpacePadded => {
+                let width = int_log10(max_index.saturating_add(1));
+                Some(format!("{:width$})", index, width = width))
+            }
+            IndexPrefix::ZeroPadded => {
+                let width = int_log10(max_index.saturating_add(1));
+                Some(format!("{:0width$})", index, width = width))
+            }
+        };
+
+        content.map(|prefix| {
+            self.terminal
+                .write_styled(&Styled::new(prefix).with_style_sheet(self.render_config.option))
+        })
+    }
+
     fn print_default_value(&mut self, value: &str) -> Result<()> {
         let content = format!("({})", value);
         let token = Styled::new(content).with_style_sheet(self.render_config.default_value);
@@ -251,19 +278,6 @@ where
         self.terminal.write(" ")?;
 
         self.print_prompt_token(prompt)?;
-
-        Ok(())
-    }
-
-    fn print_prompt_with_answer(&mut self, prompt: &str, answer: &str) -> Result<()> {
-        self.print_prompt(prompt)?;
-
-        self.terminal.write(" ")?;
-
-        let token = Styled::new(answer).with_style_sheet(self.render_config.answer);
-        self.terminal.write_styled(&token)?;
-
-        self.new_line()?;
 
         Ok(())
     }
@@ -360,9 +374,28 @@ where
         self.flush()
     }
 
-    fn finish_prompt(&mut self, prompt: &str, answer: &str) -> Result<()> {
-        self.reset_prompt()?;
-        self.print_prompt_with_answer(prompt, answer)?;
+    fn render_canceled_prompt(&mut self, prompt: &str) -> Result<()> {
+        self.print_prompt(prompt)?;
+
+        self.terminal.write(" ")?;
+
+        self.terminal
+            .write_styled(&self.render_config.canceled_prompt_indicator)?;
+
+        self.new_line()?;
+
+        Ok(())
+    }
+
+    fn render_prompt_with_answer(&mut self, prompt: &str, answer: &str) -> Result<()> {
+        self.print_prompt(prompt)?;
+
+        self.terminal.write(" ")?;
+
+        let token = Styled::new(answer).with_style_sheet(self.render_config.answer);
+        self.terminal.write_styled(&token)?;
+
+        self.new_line()?;
 
         Ok(())
     }
@@ -432,6 +465,26 @@ where
     }
 }
 
+#[cfg(feature = "editor")]
+impl<T> EditorBackend for Backend<T>
+where
+    T: Terminal,
+{
+    fn render_prompt(&mut self, prompt: &str, editor_command: &str) -> Result<()> {
+        self.print_prompt(prompt)?;
+
+        self.terminal.write(" ")?;
+
+        let message = format!("[(e) to open {}, (enter) to submit]", editor_command);
+        let token = Styled::new(message).with_style_sheet(self.render_config.editor_prompt);
+        self.terminal.write_styled(&token)?;
+
+        self.new_line()?;
+
+        Ok(())
+    }
+}
+
 impl<T> SelectBackend for Backend<T>
 where
     T: Terminal,
@@ -445,6 +498,14 @@ where
             self.print_option_prefix(idx, &page)?;
 
             self.terminal.write(" ")?;
+
+            match self.print_option_index_prefix(option.index, page.total) {
+                Some(res) => {
+                    res?;
+                    self.terminal.write(" ")?;
+                }
+                None => {}
+            };
 
             self.print_option_value(option)?;
 
@@ -472,6 +533,14 @@ where
             self.print_option_prefix(idx, &page)?;
 
             self.terminal.write(" ")?;
+
+            match self.print_option_index_prefix(option.index, page.total) {
+                Some(res) => {
+                    res?;
+                    self.terminal.write(" ")?;
+                }
+                None => {}
+            };
 
             match checked.contains(&option.index) {
                 true => self

@@ -70,6 +70,13 @@ pub struct RenderConfig {
     /// a separator from the prompt message (or default value display).
     pub answer: StyleSheet,
 
+    /// Render configuration of the message printed in the place of an answer
+    /// when the prompt is canceled by the user - by pressing ESC.
+    ///
+    /// Note: a non-styled space character is added before the indicator as
+    /// a separator from the prompt message.
+    pub canceled_prompt_indicator: Styled<&'static str>,
+
     /// Render configuration for error messages.
     pub error_message: ErrorMessageRenderConfig,
 
@@ -107,6 +114,9 @@ pub struct RenderConfig {
     /// option value to the right.
     pub unselected_checkbox: Styled<&'static str>,
 
+    /// Definition of index prefixes in option lists.
+    pub option_index_prefix: IndexPrefix,
+
     /// Style sheet for options.
     ///
     /// Note: a non-styled space character is added before the option value as
@@ -116,7 +126,15 @@ pub struct RenderConfig {
     /// Render configuration for calendar
 
     #[cfg(feature = "date")]
+    /// Render configuration for date prompts.
     pub calendar: calendar::CalendarRenderConfig,
+
+    /// Style sheet of the hint in editor prompts.
+    ///
+    /// The hint is formatted as `[(e) to open {}, (enter) to submit]`
+    /// with the editor name.
+    #[cfg(feature = "editor")]
+    pub editor_prompt: StyleSheet,
 }
 
 impl RenderConfig {
@@ -131,16 +149,21 @@ impl RenderConfig {
             text_input: StyleSheet::empty(),
             error_message: ErrorMessageRenderConfig::empty(),
             answer: StyleSheet::empty(),
+            canceled_prompt_indicator: Styled::new("<canceled>"),
             password_mask: '*',
             highlighted_option_prefix: Styled::new(">"),
             scroll_up_prefix: Styled::new("^"),
             scroll_down_prefix: Styled::new("v"),
             selected_checkbox: Styled::new("[x]"),
             unselected_checkbox: Styled::new("[ ]"),
+            option_index_prefix: IndexPrefix::None,
             option: StyleSheet::empty(),
 
             #[cfg(feature = "date")]
             calendar: calendar::CalendarRenderConfig::empty(),
+
+            #[cfg(feature = "editor")]
+            editor_prompt: StyleSheet::empty(),
         }
     }
 
@@ -156,15 +179,20 @@ impl RenderConfig {
             error_message: ErrorMessageRenderConfig::default_colored(),
             password_mask: '*',
             answer: StyleSheet::empty().with_fg(Color::LightCyan),
+            canceled_prompt_indicator: Styled::new("<canceled>").with_fg(Color::DarkRed),
             highlighted_option_prefix: Styled::new(">").with_fg(Color::LightCyan),
             scroll_up_prefix: Styled::new("^"),
             scroll_down_prefix: Styled::new("v"),
             selected_checkbox: Styled::new("[x]").with_fg(Color::LightGreen),
             unselected_checkbox: Styled::new("[ ]"),
+            option_index_prefix: IndexPrefix::None,
             option: StyleSheet::empty(),
 
             #[cfg(feature = "date")]
             calendar: calendar::CalendarRenderConfig::default_colored(),
+
+            #[cfg(feature = "editor")]
+            editor_prompt: StyleSheet::new().with_fg(Color::DarkCyan),
         }
     }
 
@@ -237,9 +265,24 @@ impl RenderConfig {
         self
     }
 
+    /// Sets the index prefix for option lists.
+    pub fn with_option_index_prefix(mut self, index_prefix: IndexPrefix) -> Self {
+        self.option_index_prefix = index_prefix;
+        self
+    }
+
     /// Sets the style sheet for option values.
     pub fn with_option(mut self, option: StyleSheet) -> Self {
         self.option = option;
+        self
+    }
+
+    /// Sets the indicator for canceled prompts.
+    pub fn with_canceled_prompt_indicator(
+        mut self,
+        canceled_prompt_indicator: Styled<&'static str>,
+    ) -> Self {
+        self.canceled_prompt_indicator = canceled_prompt_indicator;
         self
     }
 
@@ -247,6 +290,13 @@ impl RenderConfig {
     /// Sets the render configuration for calendars.
     pub fn with_calendar_config(mut self, calendar: calendar::CalendarRenderConfig) -> Self {
         self.calendar = calendar;
+        self
+    }
+
+    #[cfg(feature = "editor")]
+    /// Sets the render configuration for editor prompts.
+    pub fn with_editor_prompt(mut self, editor_prompt: StyleSheet) -> Self {
+        self.editor_prompt = editor_prompt;
         self
     }
 }
@@ -258,6 +308,44 @@ impl Default for RenderConfig {
             Err(_) => Self::default_colored(),
         }
     }
+}
+
+/// Definition of index prefixes in option lists.
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum IndexPrefix {
+    /// Lists of options will not display any hints regarding
+    /// the position/index of the positions.
+    None,
+
+    /// A simple index (1-based) will be displayed before the
+    /// option string representation.
+    Simple,
+
+    /// A simple index (1-based) will be displayed before the
+    /// option string representation.
+    ///
+    /// The number representation of the index is padded with
+    /// spaces so that the length is the same of the largest
+    /// index. That is, if the list has 100 options, the first 9
+    /// options will be rendered as `"  1", "  2", ...`. Then all
+    /// indexes with two digits will be padded with one space, and
+    /// finally the last option with index 100 will not need to be
+    /// padded.
+    /// ```
+    SpacePadded,
+
+    /// A simple index (1-based) will be displayed before the
+    /// option string representation.
+    ///
+    /// The number representation of the index is padded with
+    /// zeroes so that the length is the same of the largest
+    /// index. That is, if the list has 100 options, the first 9
+    /// options will be rendered as `"001", "002", ...`. Then all
+    /// indexes with two digits will be padded with one zero, and
+    /// finally the last option with index 100 will not need to be
+    /// padded.
+    /// ```
+    ZeroPadded,
 }
 
 /// Render configuration for error messages.

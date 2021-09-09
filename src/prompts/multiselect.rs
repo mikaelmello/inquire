@@ -34,6 +34,7 @@ use crate::{
 /// - **Validator**: Custom validator to make sure a given submitted input pass the specified requirements, e.g. not allowing 0 selected options or limiting the number of options that the user is allowed to select.
 ///   - No validators are on by default.
 /// - **Page size**: Number of options displayed at once, 7 by default.
+/// - **Display option indexes**: On long lists, it might be helpful to display the indexes of the options to the user. Via the `RenderConfig`, you can set the display mode of the indexes as a prefix of an option. The default configuration is `None`, to not render any index when displaying the options.
 /// - **Filter function**: Function that defines if an option is displayed or not based on the current filter input.
 /// - **Keep filter flag**: Whether the current filter input should be cleared or not after a selection is made. Defaults to true.
 ///
@@ -268,10 +269,49 @@ where
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to the defined rules.
     ///
-    /// Returns the owned object selected by the user.
+    /// Returns the owned objects selected by the user.
+    ///
+    /// This method is intended for flows where the user skipping/cancelling
+    /// the prompt - by pressing ESC - is considered normal behavior. In this case,
+    /// it does not return `Err(InquireError::OperationCanceled)`, but `Ok(None)`.
+    ///
+    /// Meanwhile, if the user does submit an answer, the method wraps the return
+    /// type with `Some`.
+    pub fn prompt_skippable(self) -> InquireResult<Option<Vec<T>>> {
+        match self.prompt() {
+            Ok(answer) => Ok(Some(answer)),
+            Err(InquireError::OperationCanceled) => Ok(None),
+            Err(err) => Err(err),
+        }
+    }
+
+    /// Parses the provided behavioral and rendering options and prompts
+    /// the CLI user for input according to the defined rules.
+    ///
+    /// Returns the owned objects selected by the user.
     pub fn prompt(self) -> InquireResult<Vec<T>> {
         self.raw_prompt()
             .map(|op| op.into_iter().map(|o| o.value).collect())
+    }
+
+    /// Parses the provided behavioral and rendering options and prompts
+    /// the CLI user for input according to the defined rules.
+    ///
+    /// Returns a vector of [`ListOption`](crate::list_option::ListOption)s containing
+    /// the index of the selections and the owned objects selected by the user.
+    ///
+    /// This method is intended for flows where the user skipping/cancelling
+    /// the prompt - by pressing ESC - is considered normal behavior. In this case,
+    /// it does not return `Err(InquireError::OperationCanceled)`, but `Ok(None)`.
+    ///
+    /// Meanwhile, if the user does submit an answer, the method wraps the return
+    /// type with `Some`.
+    pub fn raw_prompt_skippable(self) -> InquireResult<Option<Vec<ListOption<T>>>> {
+        match self.raw_prompt() {
+            Ok(answer) => Ok(Some(answer)),
+            Err(InquireError::OperationCanceled) => Ok(None),
+            Err(err) => Err(err),
+        }
     }
 
     /// Parses the provided behavioral and rendering options and prompts
@@ -533,7 +573,8 @@ where
             let key = backend.read_key()?;
 
             match key {
-                Key::Cancel => return Err(InquireError::OperationCanceled),
+                Key::Interrupt => interrupt_prompt!(),
+                Key::Cancel => cancel_prompt!(backend, &self.message),
                 Key::Submit => match self.validate_current_answer() {
                     Ok(()) => break,
                     Err(err) => self.error = Some(err),
@@ -546,9 +587,7 @@ where
         let refs: Vec<ListOption<&T>> = final_answer.iter().map(ListOption::as_ref).collect();
         let formatted = (self.formatter)(&refs);
 
-        backend.finish_prompt(&self.message, &formatted)?;
-
-        Ok(final_answer)
+        finish_prompt_with_answer!(backend, &self.message, &formatted, final_answer);
     }
 }
 

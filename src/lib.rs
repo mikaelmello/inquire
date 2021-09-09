@@ -4,6 +4,7 @@
 //! for information via the CLI. With `inquire`, you can use:
 //!
 //! - [`Text`] to get text input from the user, with _built-in auto-completion support_;
+//! - [`Editor`]* to get longer text inputs by opening a text editor for the user;
 //! - [`DateSelect`]* to get a date input from the user, selected via an _interactive calendar_;
 //! - [`Select`] to ask the user to select one option from a given list;
 //! - [`MultiSelect`] to ask the user to select an arbitrary number of options from a given list;
@@ -25,6 +26,7 @@
 //!   - Auto-completion for [`Text`] prompts;
 //!   - Custom list filters for Select and [`MultiSelect`] prompts;
 //!   - Custom parsers for [`Confirm`] and [`CustomType`] prompts;
+//!   - Custom extensions for files created by [`Editor`] prompts;
 //!   - and many others!
 //!
 //! \* Date-related features are available by enabling the `date` feature.
@@ -59,6 +61,7 @@
 //! [`Confirm`]: crate::Confirm
 //! [`CustomType`]: crate::CustomType
 //! [`Password`]: crate::Password
+//! [`Editor`]: crate::Editor
 
 #![warn(missing_docs)]
 #![cfg_attr(docsrs, feature(doc_cfg))]

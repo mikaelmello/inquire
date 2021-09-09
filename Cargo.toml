@@ -1,6 +1,6 @@
 [package]
 name = "inquire"
-version = "0.0.11-alpha.0"
+version = "0.0.12-alpha.0"
 description = "inquire is a library for building interactive prompts on terminals"
 repository = "https://github.com/mikaelmello/inquire"
 license = "MIT"
@@ -17,6 +17,7 @@ include = ["/examples", "/src", "/LICENSE"]
 default = ["builtin_validators", "crossterm"]
 builtin_validators = []
 date = ["chrono"]
+editor = ["tempfile"]
 
 [package.metadata.docs.rs]
 all-features = true
@@ -24,18 +25,20 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 crossterm = { version = "0.21", optional = true }
-termion = { version = "1.5.6", optional = true }
-console = { version = "0.14.1", optional = true, features = ["windows-console-colors"] }
+termion = { version = "1.5", optional = true }
+console = { version = "0.14", optional = true, features = ["windows-console-colors"] }
 
 chrono = { version = "0.4", optional = true }
 
+tempfile = { version = "3", optional = true }
+
 thiserror = "1"
-bitflags = "1.0"
-lazy_static = "1.4.0"
-newline-converter = "0.2.0"
+bitflags = "1"
+lazy_static = "1.4"
+newline-converter = "0.2"
 
 unicode-segmentation = "1"
-unicode-width = "0.1.8"
+unicode-width = "0.1"
 
 [[example]]
 name = "form"
@@ -43,7 +46,11 @@ required-features = ["builtin_validators", "date"]
 
 [[example]]
 name = "date"
-required-features = ["date"]
+required-features = ["builtin_validators", "date"]
+
+[[example]]
+name = "editor"
+required-features = ["editor"]
 
 [[example]]
 name = "expense_tracker"

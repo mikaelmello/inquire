@@ -3,9 +3,17 @@
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
 
+## [0.0.11] - 2021-09-06
+
 ### Features
 
+- Add [`Editor`](https://docs.rs/inquire/0.0.11/inquire/prompts/editor/struct.Editor.html) prompt.
 - Add support to use `console` or `termion` as the library to handle terminals while keeping `crossterm` as the default choice.
+- Canceling the prompt by pressing `ESC` is now a different behavior than interrupting the prompt by pressing `Ctrl+C`.
+  - If the prompt is canceled, the final prompt render indicates to the user that it was canceled via a `<canceled>` text, which is customizable via RenderConfig, and the prompt method returns `Err(InquireError::OperationCanceled)`.
+  - If the prompt is interrupted, the only clean-up action done is restoring the cursor position, and the prompt method returns `Err(InquireError::OperationInterrupted)`.
+- Add a `prompt_skippable` method for all prompts.
+  - This method is intended for flows where the user skipping/cancelling the prompt - by pressing ESC - is considered normal behavior. In this case, it does not return `Err(InquireError::OperationCanceled)`, but `Ok(None)`. Meanwhile, if the user does submit an answer, the method wraps the return type with `Some`.
 
 ### Improvements
 
@@ -94,7 +102,8 @@
 - Add DateSelect prompt
 
 <!-- next-url -->
-[Unreleased]: https://github.com/mikaelmello/inquire/compare/v0.17.1...HEAD
+[Unreleased]: https://github.com/mikaelmello/inquire/compare/v0.0.11...HEAD
+[0.0.11]: https://github.com/mikaelmello/inquire/compare/v0.0.10...v0.0.11
 [0.0.10]: https://github.com/mikaelmello/inquire/compare/v0.0.9...v0.0.10
 [0.0.9]: https://github.com/mikaelmello/inquire/compare/v0.0.8...v0.0.9
 [0.0.8]: https://github.com/mikaelmello/inquire/compare/v0.0.7...v0.0.8

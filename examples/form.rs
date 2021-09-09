@@ -1,6 +1,8 @@
-use inquire::{min_length, Confirm, DateSelect, MultiSelect, Password, Select, Text};
+use inquire::{
+    error::InquireResult, min_length, Confirm, DateSelect, MultiSelect, Password, Select, Text,
+};
 
-fn main() {
+fn main() -> InquireResult<()> {
     let fruits = vec![
         "Banana",
         "Apple",
@@ -31,33 +33,28 @@ fn main() {
         .with_help_message("Don't worry, this will not be sold to third-party advertisers.")
         .with_validator(min_length!(5, "Minimum of 5 characters"))
         .with_default("Unemployed")
-        .prompt()
-        .unwrap();
+        .prompt_skippable()?;
 
     let _eats_pineapple = MultiSelect::new("What are your favorite fruits?", fruits)
-        .raw_prompt()
-        .unwrap()
+        .raw_prompt()?
         .into_iter()
         .find(|o| o.index == pineapple_index)
         .is_some();
 
     let _eats_pizza = Confirm::new("Do you eat pizza?")
         .with_default(true)
-        .prompt()
-        .unwrap();
+        .prompt_skippable()?;
 
-    let _language = Select::new("What is your favorite programming language?", languages)
-        .prompt()
-        .unwrap();
+    let _language =
+        Select::new("What is your favorite programming language?", languages).prompt_skippable()?;
 
     let _password = Password::new("Password:")
         .with_validator(min_length!(8, "Minimum of 8 characters"))
-        .prompt()
-        .unwrap();
+        .prompt_skippable()?;
 
-    let _when = DateSelect::new("When are you going to travel?")
-        .prompt()
-        .unwrap();
+    let _when = DateSelect::new("When are you going to travel?").prompt_skippable()?;
 
-    println!("Based on our ML-powered analysis, we were able to conclude absolutely nothing.")
+    println!("Based on our ML-powered analysis, we were able to conclude absolutely nothing.");
+
+    Ok(())
 }
