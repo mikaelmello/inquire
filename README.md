@@ -80,11 +80,11 @@ There are several features that are shared among different types of prompts. Thi
 
 All prompts allow you to set a custom `RenderConfig`, a struct that contains lots of style customization options.
 
-With `RenderConfig`, you can customize foreground color, background color and attributes (e.g. bold) of most components that are part of a prompt. Additionally, you can also customize the content of special tokens, such as prompt prefixes, highlighted-option prefixes, selected and unselected checkboxes, etc.
+With `RenderConfig`, you can customize foreground color, background color and attributes (e.g. bold) of most components that are part of a prompt. Additionally, you can also customize the content of special tokens, such as prompt prefixes, highlighted-option prefixes, selected and unselected checkboxes, etc. If you do not want to re-set the render config object for each new prompt you create, you can call `inquire::set_global_render_config` to set a global RenderConfig object to be used as the default one for all future prompts.
 
 This allows you to have greater control over the style of your application while continuing to have a clean API to create prompts as smoothly as possible.
 
-In the [`render_config.rs`](./examples/render_config.gif) example, you can take a look at the capabilities of this API. The example is exactly the same one as [`expense_tracker.rs`](./examples/expense_tracker.gif), but with several style aspects customized (Warning: the modifications did not have "looks good" as their goal :) ). Take a look at the differences:
+In the [`render_config.rs`](./examples/render_config.rs) example, you can take a look at the capabilities of this API. The example is exactly the same one as [`expense_tracker.rs`](./examples/expense_tracker.rs), but with several style aspects customized. Take a look at their differences:
 
 ![Animated GIF making a demonstration of the expense_tracker example. You can replay this recording in your terminal with asciinema play command - asciinema play ./assets/expense_tracker.cast](./assets/expense_tracker_gifcast.gif)
 [Source](./examples/expense_tracker.rs)
