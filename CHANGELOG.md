@@ -3,6 +3,10 @@
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
 
+### Features
+
+- Add `inquire::set_global_render_config` method to set a global RenderConfig object to be used as the default one for all prompts created after the call.
+
 ## [0.1.0] - 2021-09-14
 
 No changes in this version.
