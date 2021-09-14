@@ -40,9 +40,3 @@ pub type Filter<'a, T> = &'a dyn Fn(&str, &T, &str, usize) -> bool;
 /// The function receives the current input and should return a collection of strings
 /// containing the suggestions to be made to the user.
 pub type Suggester<'a> = &'a dyn Fn(&str) -> Vec<String>;
-
-/// Default page size when displaying options to the user.
-pub const DEFAULT_PAGE_SIZE: usize = 7;
-
-/// Default value of vim mode.
-pub const DEFAULT_VIM_MODE: bool = false;

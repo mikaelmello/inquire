@@ -1,14 +1,12 @@
 use std::fmt::{Display, Formatter};
 
 use inquire::{
-    config::InquireConfiguration, error::InquireResult, required, ui::RenderConfig, CustomType,
-    DateSelect, MultiSelect, Select, Text,
+    error::InquireResult, required, ui::RenderConfig, CustomType, DateSelect, MultiSelect, Select,
+    Text,
 };
 
 fn main() -> InquireResult<()> {
-    let mut configuration = InquireConfiguration::default();
-    configuration.render_config = RenderConfig::empty();
-    inquire::config::set_configuration(configuration);
+    inquire::set_global_render_config(RenderConfig::empty());
 
     let _date = DateSelect::new("Date:").prompt()?;
 

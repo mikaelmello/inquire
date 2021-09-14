@@ -181,7 +181,7 @@ where
         let position = current.chars().count();
         let position = position.saturating_add(offset);
 
-        self.prompt_cursor_offset.insert(position);
+        self.prompt_cursor_offset = Some(position);
     }
 
     fn reset_prompt(&mut self) -> Result<()> {

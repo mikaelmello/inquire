@@ -109,8 +109,6 @@ impl<'a> Confirm<'a> {
 
     /// Creates a [Confirm] with the provided message and default configuration values.
     pub fn new(message: &'a str) -> Self {
-        let config = get_configuration();
-
         Self {
             message,
             default: None,
@@ -120,7 +118,7 @@ impl<'a> Confirm<'a> {
             parser: Self::DEFAULT_PARSER,
             default_value_formatter: Self::DEFAULT_DEFAULT_VALUE_FORMATTER,
             error_message: String::from(Self::DEFAULT_ERROR_MESSAGE),
-            render_config: config.render_config,
+            render_config: get_configuration(),
         }
     }
 

@@ -1,13 +1,13 @@
 use std::cmp::min;
 
 use crate::{
-    config::get_configuration,
+    config::{self, get_configuration},
     error::{InquireError, InquireResult},
     formatter::{StringFormatter, DEFAULT_STRING_FORMATTER},
     input::Input,
     list_option::ListOption,
     terminal::get_default_terminal,
-    type_aliases::{self, Suggester},
+    type_aliases::Suggester,
     ui::{Backend, Key, KeyModifiers, RenderConfig, TextBackend},
     utils::paginate,
     validator::StringValidator,
@@ -107,7 +107,7 @@ impl<'a> Text<'a> {
     pub const DEFAULT_FORMATTER: StringFormatter<'a> = DEFAULT_STRING_FORMATTER;
 
     /// Default page size, equal to the global default page size [config::DEFAULT_PAGE_SIZE]
-    pub const DEFAULT_PAGE_SIZE: usize = type_aliases::DEFAULT_PAGE_SIZE;
+    pub const DEFAULT_PAGE_SIZE: usize = config::DEFAULT_PAGE_SIZE;
 
     /// Default validators added to the [Text] prompt, none.
     pub const DEFAULT_VALIDATORS: Vec<StringValidator<'a>> = vec![];
@@ -117,8 +117,6 @@ impl<'a> Text<'a> {
 
     /// Creates a [Text] with the provided message and default options.
     pub fn new(message: &'a str) -> Self {
-        let config = get_configuration();
-
         Self {
             message,
             placeholder: None,
@@ -126,9 +124,9 @@ impl<'a> Text<'a> {
             help_message: Self::DEFAULT_HELP_MESSAGE,
             validators: Self::DEFAULT_VALIDATORS,
             formatter: Self::DEFAULT_FORMATTER,
-            page_size: config.page_size,
+            page_size: Self::DEFAULT_PAGE_SIZE,
             suggester: None,
-            render_config: config.render_config,
+            render_config: get_configuration(),
         }
     }
 

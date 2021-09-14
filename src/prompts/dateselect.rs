@@ -127,8 +127,6 @@ impl<'a> DateSelect<'a> {
 
     /// Creates a [DateSelect] with the provided message, along with default configuration values.
     pub fn new(message: &'a str) -> Self {
-        let config = get_configuration();
-
         Self {
             message,
             starting_date: get_current_date(),
@@ -139,7 +137,7 @@ impl<'a> DateSelect<'a> {
             formatter: Self::DEFAULT_FORMATTER,
             validators: Self::DEFAULT_VALIDATORS,
             week_start: Self::DEFAULT_WEEK_START,
-            render_config: config.render_config,
+            render_config: get_configuration(),
         }
     }
 

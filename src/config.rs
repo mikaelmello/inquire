@@ -7,44 +7,23 @@ use lazy_static::lazy_static;
 use crate::ui::RenderConfig;
 
 lazy_static! {
-    static ref INQUIRE_CONFIGURATION: Mutex<InquireConfiguration> =
-        Mutex::new(InquireConfiguration::default());
+    static ref GLOBAL_RENDER_CONFIGURATION: Mutex<RenderConfig> =
+        Mutex::new(RenderConfig::default());
 }
 
-pub(in crate) fn get_configuration() -> InquireConfiguration {
-    INQUIRE_CONFIGURATION.lock().unwrap().clone()
+pub fn get_configuration() -> RenderConfig {
+    GLOBAL_RENDER_CONFIGURATION.lock().unwrap().clone()
 }
 
-/// Acquires a write lock to the global InquireConfiguration object
+/// Acquires a write lock to the global RenderConfig object
 /// and updates the inner value with the provided argument.
-pub fn set_configuration(config: InquireConfiguration) {
-    let mut guard = INQUIRE_CONFIGURATION.lock().unwrap();
+pub fn set_global_render_config(config: RenderConfig) {
+    let mut guard = GLOBAL_RENDER_CONFIGURATION.lock().unwrap();
     *guard = config;
 }
 
-/// Struct containing all inquire-relevant configuration to be stored
-/// globally on a binary's context.
-#[derive(Copy, Clone, Debug)]
-pub struct InquireConfiguration {
-    /// Settings specific to render operations, such as
-    /// which colors or prefixes to use when rendering a
-    /// prompt.
-    pub render_config: RenderConfig,
+/// Default page size when displaying options to the user.
+pub const DEFAULT_PAGE_SIZE: usize = 7;
 
-    /// Page size in prompts which may display a list
-    /// of options: [`Text`], [`Select`] and [`MultiSelect`]
-    ///
-    /// [`Text`]: crate::Text
-    /// [`Select`]: crate::Select
-    /// [`MultiSelect`]: crate::MultiSelect
-    pub page_size: usize,
-}
-
-impl Default for InquireConfiguration {
-    fn default() -> Self {
-        Self {
-            render_config: RenderConfig::default(),
-            page_size: 7,
-        }
-    }
-}
+/// Default value of vim mode.
+pub const DEFAULT_VIM_MODE: bool = false;

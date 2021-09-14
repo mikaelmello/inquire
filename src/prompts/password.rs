@@ -122,8 +122,6 @@ impl<'a> Password<'a> {
 
     /// Creates a [Password] with the provided message and default options.
     pub fn new(message: &'a str) -> Self {
-        let config = get_configuration();
-
         Self {
             message,
             enable_display_toggle: Self::DEFAULT_ENABLE_DISPLAY_TOGGLE,
@@ -131,7 +129,7 @@ impl<'a> Password<'a> {
             help_message: Self::DEFAULT_HELP_MESSAGE,
             formatter: Self::DEFAULT_FORMATTER,
             validators: Self::DEFAULT_VALIDATORS,
-            render_config: config.render_config,
+            render_config: get_configuration(),
         }
     }
 

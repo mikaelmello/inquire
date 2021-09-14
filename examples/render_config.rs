@@ -1,7 +1,6 @@
 use std::fmt::{Display, Formatter};
 
 use inquire::{
-    config::InquireConfiguration,
     error::InquireResult,
     required,
     ui::{Attributes, Color, RenderConfig, StyleSheet, Styled},
@@ -9,9 +8,7 @@ use inquire::{
 };
 
 fn main() -> InquireResult<()> {
-    let mut configuration = InquireConfiguration::default();
-    configuration.render_config = get_render_config();
-    inquire::config::set_configuration(configuration);
+    inquire::set_global_render_config(get_render_config());
 
     let _date = DateSelect::new("Date:").prompt()?;
 

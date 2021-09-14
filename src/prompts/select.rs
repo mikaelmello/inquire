@@ -1,13 +1,13 @@
 use std::fmt::Display;
 
 use crate::{
-    config::get_configuration,
+    config::{self, get_configuration},
     error::{InquireError, InquireResult},
     formatter::OptionFormatter,
     input::Input,
     list_option::ListOption,
     terminal::get_default_terminal,
-    type_aliases::{self, Filter},
+    type_aliases::Filter,
     ui::{Backend, Key, KeyModifiers, RenderConfig, SelectBackend},
     utils::paginate,
 };
@@ -141,10 +141,10 @@ where
     };
 
     /// Default page size.
-    pub const DEFAULT_PAGE_SIZE: usize = type_aliases::DEFAULT_PAGE_SIZE;
+    pub const DEFAULT_PAGE_SIZE: usize = config::DEFAULT_PAGE_SIZE;
 
     /// Default value of vim mode.
-    pub const DEFAULT_VIM_MODE: bool = type_aliases::DEFAULT_VIM_MODE;
+    pub const DEFAULT_VIM_MODE: bool = config::DEFAULT_VIM_MODE;
 
     /// Default starting cursor index.
     pub const DEFAULT_STARTING_CURSOR: usize = 0;
@@ -155,18 +155,16 @@ where
 
     /// Creates a [Select] with the provided message and options, along with default configuration values.
     pub fn new(message: &'a str, options: Vec<T>) -> Self {
-        let config = get_configuration();
-
         Self {
             message,
             options,
             help_message: Self::DEFAULT_HELP_MESSAGE,
-            page_size: config.page_size,
+            page_size: Self::DEFAULT_PAGE_SIZE,
             vim_mode: Self::DEFAULT_VIM_MODE,
             starting_cursor: Self::DEFAULT_STARTING_CURSOR,
             filter: Self::DEFAULT_FILTER,
             formatter: Self::DEFAULT_FORMATTER,
-            render_config: config.render_config,
+            render_config: get_configuration(),
         }
     }
 
