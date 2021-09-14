@@ -7,6 +7,10 @@
 
 - Add `inquire::set_global_render_config` method to set a global RenderConfig object to be used as the default one for all prompts created after the call.
 
+### Breaking changes
+
+- `RenderConfig` was made `Copy`-able and prompts now contain a `RenderConfig` field where it previously held a `&'a RenderConfig`. Consequently, `with_render_config()` methods now accept a `RenderConfig` argument instead of `&'a RenderConfig`.
+
 ## [0.1.0] - 2021-09-14
 
 No changes in this version.
