@@ -1,45 +1,26 @@
-//! General type aliases and default values used by multiple prompts.
+//! Global config definitions.
 
-/// Type alias to represent the function used to filter options.
-///
-/// The function receives:
-/// - Current user input, filter value
-/// - Current option being evaluated, with type preserved
-/// - String value of the current option
-/// - Index of the current option in the original list
-///
-/// The return type should be whether the current option should be displayed to the user.
-///
-/// # Examples
-///
-/// ```
-/// use inquire::config::Filter;
-///
-/// let filter: Filter<str> = &|filter, _, string_value, _| -> bool {
-///     let filter = filter.to_lowercase();
-///
-///     string_value.to_lowercase().starts_with(&filter)
-/// };
-/// assert_eq!(false, filter("san", "New York",      "New York",      0));
-/// assert_eq!(false, filter("san", "Los Angeles",   "Los Angeles",   1));
-/// assert_eq!(false, filter("san", "Chicago",       "Chicago",       2));
-/// assert_eq!(false, filter("san", "Houston",       "Houston",       3));
-/// assert_eq!(false, filter("san", "Phoenix",       "Phoenix",       4));
-/// assert_eq!(false, filter("san", "Philadelphia",  "Philadelphia",  5));
-/// assert_eq!(true,  filter("san", "San Antonio",   "San Antonio",   6));
-/// assert_eq!(true,  filter("san", "San Diego",     "San Diego",     7));
-/// assert_eq!(false, filter("san", "Dallas",        "Dallas",        8));
-/// assert_eq!(true,  filter("san", "San Francisco", "San Francisco", 9));
-/// assert_eq!(false, filter("san", "Austin",        "Austin",       10));
-/// assert_eq!(false, filter("san", "Jacksonville",  "Jacksonville", 11));
-/// assert_eq!(true,  filter("san", "San Jose",      "San Jose",     12));
-/// ```
-pub type Filter<'a, T> = &'a dyn Fn(&str, &T, &str, usize) -> bool;
+use std::sync::Mutex;
 
-/// Type alias to represent the function used to retrieve text input suggestions.
-/// The function receives the current input and should return a collection of strings
-/// containing the suggestions to be made to the user.
-pub type Suggester<'a> = &'a dyn Fn(&str) -> Vec<String>;
+use lazy_static::lazy_static;
+
+use crate::ui::RenderConfig;
+
+lazy_static! {
+    static ref GLOBAL_RENDER_CONFIGURATION: Mutex<RenderConfig> =
+        Mutex::new(RenderConfig::default());
+}
+
+pub fn get_configuration() -> RenderConfig {
+    GLOBAL_RENDER_CONFIGURATION.lock().unwrap().clone()
+}
+
+/// Acquires a write lock to the global RenderConfig object
+/// and updates the inner value with the provided argument.
+pub fn set_global_render_config(config: RenderConfig) {
+    let mut guard = GLOBAL_RENDER_CONFIGURATION.lock().unwrap();
+    *guard = config;
+}
 
 /// Default page size when displaying options to the user.
 pub const DEFAULT_PAGE_SIZE: usize = 7;

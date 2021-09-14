@@ -6,45 +6,36 @@ use inquire::{
 };
 
 fn main() -> InquireResult<()> {
-    let _date = DateSelect::new("Date:")
-        .with_render_config(RenderConfig::empty_static_ref())
-        .prompt()?;
+    inquire::set_global_render_config(RenderConfig::empty());
 
-    let _category = Select::new("Category:", get_categories())
-        .with_render_config(RenderConfig::empty_static_ref())
-        .prompt()?;
+    let _date = DateSelect::new("Date:").prompt()?;
+
+    let _category = Select::new("Category:", get_categories()).prompt()?;
 
     let _payee = Text::new("Payee:")
         .with_validator(required!("This field is required"))
         .with_suggester(&payee_suggestor)
         .with_help_message("e.g. Music Store")
         .with_page_size(5)
-        .with_render_config(RenderConfig::empty_static_ref())
         .prompt()?;
 
     let amount: f64 = CustomType::new("Amount:")
         .with_formatter(&|i| format!("${}", i))
         .with_error_message("Please type a valid number")
         .with_help_message("Type the amount in US dollars using a decimal point as a separator")
-        .with_render_config(RenderConfig::empty_static_ref())
         .prompt()
         .unwrap();
 
     let _description = Text::new("Description:")
         .with_help_message("Optional notes")
-        .with_render_config(RenderConfig::empty_static_ref())
         .prompt()?;
 
     let mut accounts = get_accounts();
     let accounts_mut = accounts.iter_mut().collect();
-    let account = Select::new("Account:", accounts_mut)
-        .with_render_config(RenderConfig::empty_static_ref())
-        .prompt()?;
+    let account = Select::new("Account:", accounts_mut).prompt()?;
     account.balance -= amount;
 
-    let _tags = MultiSelect::new("Tags:", get_tags())
-        .with_render_config(RenderConfig::empty_static_ref())
-        .prompt()?;
+    let _tags = MultiSelect::new("Tags:", get_tags()).prompt()?;
 
     println!("Your transaction has been successfully recorded.");
     println!("The balance of {} is now $311.09", account);

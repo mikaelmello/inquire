@@ -66,7 +66,7 @@
 #![warn(missing_docs)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
-pub mod config;
+mod config;
 #[cfg(feature = "date")]
 mod date_utils;
 pub mod error;
@@ -76,8 +76,10 @@ pub mod list_option;
 pub mod parser;
 mod prompts;
 mod terminal;
+pub mod type_aliases;
 pub mod ui;
 mod utils;
 pub mod validator;
 
+pub use crate::config::set_global_render_config;
 pub use crate::prompts::*;

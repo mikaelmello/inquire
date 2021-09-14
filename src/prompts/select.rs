@@ -1,12 +1,13 @@
 use std::fmt::Display;
 
 use crate::{
-    config::{self, Filter},
+    config::{self, get_configuration},
     error::{InquireError, InquireResult},
     formatter::OptionFormatter,
     input::Input,
     list_option::ListOption,
     terminal::get_default_terminal,
+    type_aliases::Filter,
     ui::{Backend, Key, KeyModifiers, RenderConfig, SelectBackend},
     utils::paginate,
 };
@@ -88,7 +89,7 @@ pub struct Select<'a, T> {
     /// When overriding the config in a prompt, NO_COLOR is no longer considered and your
     /// config is treated as the only source of truth. If you want to customize colors
     /// and still suport NO_COLOR, you will have to do this on your end.
-    pub render_config: &'a RenderConfig,
+    pub render_config: RenderConfig,
 }
 
 impl<'a, T> Select<'a, T>
@@ -163,7 +164,7 @@ where
             starting_cursor: Self::DEFAULT_STARTING_CURSOR,
             filter: Self::DEFAULT_FILTER,
             formatter: Self::DEFAULT_FORMATTER,
-            render_config: RenderConfig::default_static_ref(),
+            render_config: get_configuration(),
         }
     }
 
@@ -217,7 +218,7 @@ where
     /// When overriding the config in a prompt, NO_COLOR is no longer considered and your
     /// config is treated as the only source of truth. If you want to customize colors
     /// and still suport NO_COLOR, you will have to do this on your end.
-    pub fn with_render_config(mut self, render_config: &'a RenderConfig) -> Self {
+    pub fn with_render_config(mut self, render_config: RenderConfig) -> Self {
         self.render_config = render_config;
         self
     }
@@ -475,7 +476,7 @@ mod test {
 
         let mut write: Vec<u8> = Vec::new();
         let terminal = CrosstermTerminal::new_with_io(&mut write, &mut read);
-        let mut backend = Backend::new(terminal, RenderConfig::default_static_ref()).unwrap();
+        let mut backend = Backend::new(terminal, RenderConfig::default()).unwrap();
 
         let ans = Select::new("Question", options)
             .with_formatter(formatter)
@@ -505,7 +506,7 @@ mod test {
 
         let mut write: Vec<u8> = Vec::new();
         let terminal = CrosstermTerminal::new_with_io(&mut write, &mut read);
-        let mut backend = Backend::new(terminal, RenderConfig::default_static_ref()).unwrap();
+        let mut backend = Backend::new(terminal, RenderConfig::default()).unwrap();
 
         let ans = Select::new("Question", options)
             .prompt_with_backend(&mut backend)
@@ -536,7 +537,7 @@ mod test {
 
         let mut write: Vec<u8> = Vec::new();
         let terminal = CrosstermTerminal::new_with_io(&mut write, &mut read);
-        let mut backend = Backend::new(terminal, RenderConfig::default_static_ref()).unwrap();
+        let mut backend = Backend::new(terminal, RenderConfig::default()).unwrap();
 
         let ans = Select::new("Question", options)
             .prompt_with_backend(&mut backend)

@@ -181,3 +181,5 @@ where
         self
     }
 }
+
+impl<T> Copy for Styled<T> where T: Copy + Display {}

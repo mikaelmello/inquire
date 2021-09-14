@@ -20,7 +20,7 @@ fn main() -> InquireResult<()> {
                 substr
             }
         })
-        .with_render_config(&description_render_config())
+        .with_render_config(description_render_config())
         .prompt()?;
 
     Ok(())

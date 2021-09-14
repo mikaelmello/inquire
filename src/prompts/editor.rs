@@ -85,7 +85,7 @@ pub struct Editor<'a> {
     /// When overriding the config in a prompt, NO_COLOR is no longer considered and your
     /// config is treated as the only source of truth. If you want to customize colors
     /// and still suport NO_COLOR, you will have to do this on your end.
-    pub render_config: &'a RenderConfig,
+    pub render_config: RenderConfig,
 }
 
 impl<'a> Editor<'a> {
@@ -109,7 +109,7 @@ impl<'a> Editor<'a> {
             help_message: Self::DEFAULT_HELP_MESSAGE,
             validators: Self::DEFAULT_VALIDATORS,
             formatter: Self::DEFAULT_FORMATTER,
-            render_config: RenderConfig::default_static_ref(),
+            render_config: RenderConfig::default(),
         }
     }
 
@@ -185,7 +185,7 @@ impl<'a> Editor<'a> {
     /// When overriding the config in a prompt, NO_COLOR is no longer considered and your
     /// config is treated as the only source of truth. If you want to customize colors
     /// and still suport NO_COLOR, you will have to do this on your end.
-    pub fn with_render_config(mut self, render_config: &'a RenderConfig) -> Self {
+    pub fn with_render_config(mut self, render_config: RenderConfig) -> Self {
         self.render_config = render_config;
         self
     }
