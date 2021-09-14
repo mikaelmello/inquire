@@ -167,6 +167,10 @@ Error handling when using `inquire` is pretty simple. Instantiating prompt struc
 - **IO(io::Error)**: There was an error when performing IO operations. IO errors are not handled inside `inquire` to keep the library simple.
 - **OperationCanceled**: The user canceled the prompt before submitting a response. The user might cancel the operation by pressing `Ctrl-C` or `ESC`.
 
+## Keybindings
+
+To see all of the keybindings registered by prompts, check the [`KEY_BINDINGS.md` file](KEY_BINDINGS.md).
+
 # Prompts
 
 Currently, there are 5 different prompt types supported.
