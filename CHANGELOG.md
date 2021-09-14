@@ -3,6 +3,8 @@
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
 
+## [0.2.0] - 2021-09-14
+
 ### Features
 
 - Add `inquire::set_global_render_config` method to set a global RenderConfig object to be used as the default one for all prompts created after the call.
@@ -119,7 +121,8 @@ The library is already featureful enough to warrant a higher version number, bum
 - Add DateSelect prompt
 
 <!-- next-url -->
-[Unreleased]: https://github.com/mikaelmello/inquire/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/mikaelmello/inquire/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/mikaelmello/inquire/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/mikaelmello/inquire/compare/v0.0.11...v0.1.0
 [0.0.11]: https://github.com/mikaelmello/inquire/compare/v0.0.10...v0.0.11
 [0.0.10]: https://github.com/mikaelmello/inquire/compare/v0.0.9...v0.0.10
