@@ -6,6 +6,7 @@
 ### Features
 
 - Add `inquire::set_global_render_config` method to set a global RenderConfig object to be used as the default one for all prompts created after the call.
+- Add [KEY_BINDINGS.md](KEY_BINDINGS.md) to register all key bindings registered by `inquire` prompts.
 
 ### Breaking changes
 
