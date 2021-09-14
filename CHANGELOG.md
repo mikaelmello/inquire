@@ -3,6 +3,12 @@
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
 
+No changes in this version.
+
+This is a bump to v0.1.0 as per @jam1garner's advice on the Virtual RustConf Discord server.
+
+The library is already featureful enough to warrant a higher version number, bumping us to a minor release while we are still on our path to stabilization.
+
 ## [0.0.11] - 2021-09-06
 
 ### Features
