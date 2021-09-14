@@ -3,6 +3,8 @@
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
 
+## [0.1.0] - 2021-09-14
+
 No changes in this version.
 
 This is a bump to v0.1.0 as per @jam1garner's advice on the Virtual RustConf Discord server.
@@ -108,7 +110,8 @@ The library is already featureful enough to warrant a higher version number, bum
 - Add DateSelect prompt
 
 <!-- next-url -->
-[Unreleased]: https://github.com/mikaelmello/inquire/compare/v0.0.11...HEAD
+[Unreleased]: https://github.com/mikaelmello/inquire/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/mikaelmello/inquire/compare/v0.0.11...v0.1.0
 [0.0.11]: https://github.com/mikaelmello/inquire/compare/v0.0.10...v0.0.11
 [0.0.10]: https://github.com/mikaelmello/inquire/compare/v0.0.9...v0.0.10
 [0.0.9]: https://github.com/mikaelmello/inquire/compare/v0.0.8...v0.0.9
