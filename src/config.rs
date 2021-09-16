@@ -12,7 +12,7 @@ lazy_static! {
 }
 
 pub fn get_configuration() -> RenderConfig {
-    GLOBAL_RENDER_CONFIGURATION.lock().unwrap().clone()
+    *GLOBAL_RENDER_CONFIGURATION.lock().unwrap()
 }
 
 /// Acquires a write lock to the global RenderConfig object
