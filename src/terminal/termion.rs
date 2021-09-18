@@ -155,7 +155,7 @@ impl<'a> Terminal for TermionTerminal<'a> {
         write!(self.get_writer(), "{}", converted)
     }
 
-    fn write_styled<'s, T: std::fmt::Display>(&mut self, val: &'s Styled<T>) -> Result<()> {
+    fn write_styled<T: std::fmt::Display>(&mut self, val: &Styled<T>) -> Result<()> {
         if let Some(color) = val.style.fg {
             self.set_fg_color(color)?;
         }

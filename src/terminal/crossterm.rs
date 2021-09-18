@@ -150,7 +150,7 @@ impl<'a> Terminal for CrosstermTerminal<'a> {
         self.write_command(Print(converted))
     }
 
-    fn write_styled<'s, T: std::fmt::Display>(&mut self, val: &'s Styled<T>) -> Result<()> {
+    fn write_styled<T: std::fmt::Display>(&mut self, val: &Styled<T>) -> Result<()> {
         if let Some(color) = val.style.fg {
             self.set_fg_color(color)?;
         }

@@ -60,7 +60,7 @@ impl Terminal for ConsoleTerminal {
         write!(self.term, "{}", converted)
     }
 
-    fn write_styled<'s, T: std::fmt::Display>(&mut self, val: &'s Styled<T>) -> Result<()> {
+    fn write_styled<T: std::fmt::Display>(&mut self, val: &Styled<T>) -> Result<()> {
         let formatted = format!("{}", val.content);
         let converted = newline_converter::unix2dos(&formatted);
 

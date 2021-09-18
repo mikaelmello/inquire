@@ -8,7 +8,7 @@ pub struct Page<'a, T> {
     pub total: usize,
 }
 
-pub fn paginate<'a, T>(page_size: usize, choices: &[T], sel: usize) -> Page<T> {
+pub fn paginate<T>(page_size: usize, choices: &[T], sel: usize) -> Page<T> {
     let (start, end, cursor) = if choices.len() <= page_size {
         (0, choices.len(), sel)
     } else if sel < page_size / 2 {

@@ -37,7 +37,7 @@ pub trait Terminal: Sized {
     fn clear_in_memory_content(&mut self);
 
     fn write<T: Display>(&mut self, val: T) -> Result<()>;
-    fn write_styled<'s, T: Display>(&mut self, val: &'s Styled<T>) -> Result<()>;
+    fn write_styled<T: Display>(&mut self, val: &Styled<T>) -> Result<()>;
 
     fn clear_current_line(&mut self) -> Result<()>;
 
