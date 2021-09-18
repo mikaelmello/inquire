@@ -499,13 +499,10 @@ where
 
             self.terminal.write(" ")?;
 
-            match self.print_option_index_prefix(option.index, page.total) {
-                Some(res) => {
-                    res?;
-                    self.terminal.write(" ")?;
-                }
-                None => {}
-            };
+            if let Some(res) = self.print_option_index_prefix(option.index, page.total) {
+                res?;
+                self.terminal.write(" ")?;
+            }
 
             self.print_option_value(option)?;
 
@@ -534,13 +531,10 @@ where
 
             self.terminal.write(" ")?;
 
-            match self.print_option_index_prefix(option.index, page.total) {
-                Some(res) => {
-                    res?;
-                    self.terminal.write(" ")?;
-                }
-                None => {}
-            };
+            if let Some(res) = self.print_option_index_prefix(option.index, page.total) {
+                res?;
+                self.terminal.write(" ")?;
+            }
 
             match checked.contains(&option.index) {
                 true => self

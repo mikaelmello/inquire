@@ -196,9 +196,12 @@ pub const DEFAULT_STRING_FORMATTER: StringFormatter = &|val| String::from(val);
 /// assert_eq!(String::from("Yes"), formatter(true));
 /// assert_eq!(String::from("No"), formatter(false));
 /// ```
-pub const DEFAULT_BOOL_FORMATTER: BoolFormatter = &|ans| match ans {
-    true => String::from("Yes"),
-    false => String::from("No"),
+pub const DEFAULT_BOOL_FORMATTER: BoolFormatter = &|ans| {
+    if ans {
+        String::from("Yes")
+    } else {
+        String::from("No")
+    }
 };
 
 #[cfg(feature = "date")]

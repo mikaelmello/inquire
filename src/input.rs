@@ -136,22 +136,22 @@ impl Input {
     }
 
     fn move_forward(&mut self, kind: MoveKind) -> bool {
-        if self.cursor == self.length {
-            return false;
-        } else if self.cursor > self.length {
-            // should never arrive here
-            // but if it does, let's correct it.
-            self.cursor = self.length;
-            return true;
-        }
+        match self.cursor.cmp(&self.length) {
+            std::cmp::Ordering::Equal => false,
+            std::cmp::Ordering::Less => {
+                match kind {
+                    MoveKind::Char => self.cursor = self.cursor.saturating_add(1),
+                    MoveKind::Word => self.cursor = self.next_word_index(),
+                    MoveKind::Line => self.cursor = self.length,
+                }
 
-        match kind {
-            MoveKind::Char => self.cursor = self.cursor.saturating_add(1),
-            MoveKind::Word => self.cursor = self.next_word_index(),
-            MoveKind::Line => self.cursor = self.length,
+                true
+            }
+            std::cmp::Ordering::Greater => {
+                self.cursor = self.length;
+                true
+            }
         }
-
-        true
     }
 
     fn next_word_index(&mut self) -> usize {

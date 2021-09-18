@@ -288,12 +288,9 @@ impl<'a> From<&'a str> for Text<'a> {
 
 impl<'a> TextPrompt<'a> {
     fn update_suggestions(&mut self) {
-        match self.suggester {
-            Some(suggester) => {
-                self.suggested_options = suggester(self.input.content());
-                self.cursor_index = 0;
-            }
-            None => {}
+        if let Some(suggester) = self.suggester {
+            self.suggested_options = suggester(self.input.content());
+            self.cursor_index = 0;
         }
     }
 
@@ -351,9 +348,8 @@ impl<'a> TextPrompt<'a> {
 
     fn get_final_answer(&self) -> Result<String, String> {
         if self.input.content().is_empty() {
-            match self.default {
-                Some(val) => return Ok(val.to_string()),
-                None => {}
+            if let Some(val) = self.default {
+                return Ok(val.to_string());
             }
         }
 

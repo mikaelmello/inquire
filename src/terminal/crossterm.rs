@@ -163,10 +163,10 @@ impl<'a> Terminal for CrosstermTerminal<'a> {
 
         self.write(&val.content)?;
 
-        if let Some(_) = val.style.fg.as_ref() {
+        if val.style.fg.as_ref().is_some() {
             self.reset_fg_color()?;
         }
-        if let Some(_) = val.style.bg.as_ref() {
+        if val.style.bg.as_ref().is_some() {
             self.reset_bg_color()?;
         }
         if !val.style.att.is_empty() {
