@@ -10,6 +10,7 @@ pub struct Input {
     length: usize,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq)]
 enum MoveKind {
     Char,
     Word,
