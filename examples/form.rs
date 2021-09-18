@@ -38,8 +38,7 @@ fn main() -> InquireResult<()> {
     let _eats_pineapple = MultiSelect::new("What are your favorite fruits?", fruits)
         .raw_prompt()?
         .into_iter()
-        .find(|o| o.index == pineapple_index)
-        .is_some();
+        .any(|o| o.index == pineapple_index);
 
     let _eats_pizza = Confirm::new("Do you eat pizza?")
         .with_default(true)

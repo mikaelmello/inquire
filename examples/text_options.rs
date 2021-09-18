@@ -25,33 +25,28 @@ fn main() {
 }
 
 fn suggester(val: &str) -> Vec<String> {
-    let mut suggestions = [
-        "Johnny",
-        "John",
-        "Paul",
-        "Mark",
-        "James",
-        "Robert",
-        "John",
-        "Michael",
-        "William",
-        "David",
-        "Richard",
-        "Thomas",
+    let suggestions = [
+        "Andrew",
         "Charles",
         "Christopher",
         "Daniel",
-        "Mark",
+        "David",
         "Donald",
-        "Steven",
-        "Paul",
-        "Andrew",
-        "Kevin",
-        "George",
         "Edward",
+        "George",
+        "James",
+        "John",
+        "Johnny",
+        "Kevin",
+        "Mark",
+        "Michael",
+        "Paul",
+        "Richard",
+        "Robert",
+        "Steven",
+        "Thomas",
+        "William",
     ];
-
-    suggestions.sort();
 
     let val_lower = val.to_lowercase();
 

@@ -26,6 +26,7 @@ fn crypto_transfer() {
 }
 
 #[derive(Debug, Copy, Clone)]
+#[allow(clippy::upper_case_acronyms)]
 enum Currency {
     BRL,
     USD,
