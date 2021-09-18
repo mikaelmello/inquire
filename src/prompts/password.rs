@@ -370,7 +370,7 @@ mod test {
 
     macro_rules! text_to_events {
         ($text:expr) => {{
-            $text.chars().map(|c| KeyCode::Char(c))
+            $text.chars().map(KeyCode::Char)
         }};
     }
 

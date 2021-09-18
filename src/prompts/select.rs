@@ -336,7 +336,7 @@ where
             self.cursor_index = self
                 .cursor_index
                 .checked_sub(qty)
-                .unwrap_or(self.filtered_options.len().saturating_sub(after_wrap))
+                .unwrap_or_else(|| self.filtered_options.len().saturating_sub(after_wrap))
         } else {
             self.cursor_index = self.cursor_index.saturating_sub(qty);
         }

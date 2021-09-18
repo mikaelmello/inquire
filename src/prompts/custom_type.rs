@@ -227,7 +227,7 @@ where
             input: co
                 .placeholder
                 .map(|p| Input::new().with_placeholder(p))
-                .unwrap_or_else(|| Input::new()),
+                .unwrap_or_else(Input::new),
             error_message: co.error_message,
         }
     }

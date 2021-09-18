@@ -375,7 +375,7 @@ where
         let filtered_options = (0..mso.options.len()).collect();
         let checked_options = mso
             .default
-            .map_or_else(|| BTreeSet::new(), |d| d.iter().cloned().collect());
+            .map_or_else(BTreeSet::new, |d| d.iter().cloned().collect());
 
         Ok(Self {
             message: mso.message,
@@ -414,7 +414,7 @@ where
             self.cursor_index = self
                 .cursor_index
                 .checked_sub(qty)
-                .unwrap_or(self.filtered_options.len().saturating_sub(after_wrap))
+                .unwrap_or_else(|| self.filtered_options.len().saturating_sub(after_wrap))
         } else {
             self.cursor_index = self.cursor_index.saturating_sub(qty);
         }

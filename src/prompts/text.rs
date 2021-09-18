@@ -267,7 +267,7 @@ impl<'a> From<Text<'a>> for TextPrompt<'a> {
             input: so
                 .placeholder
                 .map(|p| Input::new().with_placeholder(p))
-                .unwrap_or_else(|| Input::new()),
+                .unwrap_or_else(Input::new),
             original_input: None,
             error: None,
             cursor_index: 0,
@@ -446,7 +446,7 @@ mod test {
 
     macro_rules! text_to_events {
         ($text:expr) => {{
-            $text.chars().map(|c| KeyCode::Char(c))
+            $text.chars().map(KeyCode::Char)
         }};
     }
 
