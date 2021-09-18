@@ -267,7 +267,7 @@ where
             .as_ref()
             .map(|(val, formatter)| formatter(val.clone()));
 
-        backend.render_prompt(&prompt, default_message.as_deref(), &self.input)?;
+        backend.render_prompt(prompt, default_message.as_deref(), &self.input)?;
 
         if let Some(message) = self.help_message {
             backend.render_help_message(message)?;
@@ -288,7 +288,7 @@ where
 
             match key {
                 Key::Interrupt => interrupt_prompt!(),
-                Key::Cancel => cancel_prompt!(backend, &self.message),
+                Key::Cancel => cancel_prompt!(backend, self.message),
                 Key::Submit => match self.get_final_answer() {
                     Ok(answer) => {
                         final_answer = answer;
@@ -305,6 +305,6 @@ where
 
         let formatted = (self.formatter)(final_answer.clone());
 
-        finish_prompt_with_answer!(backend, &self.message, &formatted, final_answer);
+        finish_prompt_with_answer!(backend, self.message, &formatted, final_answer);
     }
 }

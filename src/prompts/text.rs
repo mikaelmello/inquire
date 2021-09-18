@@ -372,7 +372,7 @@ impl<'a> TextPrompt<'a> {
             backend.render_error_message(err)?;
         }
 
-        backend.render_prompt(&prompt, self.default, &self.input)?;
+        backend.render_prompt(prompt, self.default, &self.input)?;
 
         let choices = self
             .suggested_options
@@ -412,7 +412,7 @@ impl<'a> TextPrompt<'a> {
 
             match key {
                 Key::Interrupt => interrupt_prompt!(),
-                Key::Cancel => cancel_prompt!(backend, &self.message),
+                Key::Cancel => cancel_prompt!(backend, self.message),
                 Key::Submit => match self.get_final_answer() {
                     Ok(answer) => {
                         final_answer = answer;
@@ -426,7 +426,7 @@ impl<'a> TextPrompt<'a> {
 
         let formatted = (self.formatter)(&final_answer);
 
-        finish_prompt_with_answer!(backend, &self.message, &formatted, final_answer);
+        finish_prompt_with_answer!(backend, self.message, &formatted, final_answer);
     }
 }
 

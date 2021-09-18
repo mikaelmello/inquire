@@ -392,7 +392,7 @@ impl<'a> DateSelectPrompt<'a> {
             backend.render_error_message(err)?;
         }
 
-        backend.render_calendar_prompt(&prompt)?;
+        backend.render_calendar_prompt(prompt)?;
 
         backend.render_calendar(
             get_month(self.current_date.month()),
@@ -423,7 +423,7 @@ impl<'a> DateSelectPrompt<'a> {
 
             match key {
                 Key::Interrupt => interrupt_prompt!(),
-                Key::Cancel => cancel_prompt!(backend, &self.message),
+                Key::Cancel => cancel_prompt!(backend, self.message),
                 Key::Submit | Key::Char(' ', _) => match self.get_final_answer() {
                     Ok(answer) => {
                         final_answer = answer;
@@ -437,7 +437,7 @@ impl<'a> DateSelectPrompt<'a> {
 
         let formatted = (self.formatter)(final_answer);
 
-        finish_prompt_with_answer!(backend, &self.message, &formatted, final_answer);
+        finish_prompt_with_answer!(backend, self.message, &formatted, final_answer);
     }
 }
 

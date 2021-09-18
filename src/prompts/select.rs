@@ -324,7 +324,7 @@ where
             .enumerate()
             .filter_map(|(i, opt)| match self.input.content() {
                 val if val.is_empty() => Some(i),
-                val if (self.filter)(&val, opt, self.string_options.get(i).unwrap(), i) => Some(i),
+                val if (self.filter)(val, opt, self.string_options.get(i).unwrap(), i) => Some(i),
                 _ => None,
             })
             .collect()
@@ -401,7 +401,7 @@ where
 
         backend.frame_setup()?;
 
-        backend.render_select_prompt(&prompt, &self.input)?;
+        backend.render_select_prompt(prompt, &self.input)?;
 
         let choices = self
             .filtered_options
@@ -431,7 +431,7 @@ where
 
             match key {
                 Key::Interrupt => interrupt_prompt!(),
-                Key::Cancel => cancel_prompt!(backend, &self.message),
+                Key::Cancel => cancel_prompt!(backend, self.message),
                 Key::Submit => match self.has_answer_highlighted() {
                     true => break,
                     false => {}
@@ -443,7 +443,7 @@ where
         let final_answer = self.get_final_answer();
         let formatted = (self.formatter)(final_answer.as_ref());
 
-        finish_prompt_with_answer!(backend, &self.message, &formatted, final_answer);
+        finish_prompt_with_answer!(backend, self.message, &formatted, final_answer);
     }
 }
 

@@ -402,7 +402,7 @@ where
             .enumerate()
             .filter_map(|(i, opt)| match self.input.content() {
                 val if val.is_empty() => Some(i),
-                val if (self.filter)(&val, opt, self.string_options.get(i).unwrap(), i) => Some(i),
+                val if (self.filter)(val, opt, self.string_options.get(i).unwrap(), i) => Some(i),
                 _ => None,
             })
             .collect()
@@ -539,7 +539,7 @@ where
             backend.render_error_message(err)?;
         }
 
-        backend.render_multiselect_prompt(&prompt, &self.input)?;
+        backend.render_multiselect_prompt(prompt, &self.input)?;
 
         let choices = self
             .filtered_options
@@ -572,7 +572,7 @@ where
 
             match key {
                 Key::Interrupt => interrupt_prompt!(),
-                Key::Cancel => cancel_prompt!(backend, &self.message),
+                Key::Cancel => cancel_prompt!(backend, self.message),
                 Key::Submit => match self.validate_current_answer() {
                     Ok(()) => break,
                     Err(err) => self.error = Some(err),
@@ -585,7 +585,7 @@ where
         let refs: Vec<ListOption<&T>> = final_answer.iter().map(ListOption::as_ref).collect();
         let formatted = (self.formatter)(&refs);
 
-        finish_prompt_with_answer!(backend, &self.message, &formatted, final_answer);
+        finish_prompt_with_answer!(backend, self.message, &formatted, final_answer);
     }
 }
 

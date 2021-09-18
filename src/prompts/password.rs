@@ -307,13 +307,13 @@ impl<'a> PasswordPrompt<'a> {
 
         match self.display_mode {
             PasswordDisplayMode::Hidden => {
-                backend.render_prompt(&prompt)?;
+                backend.render_prompt(prompt)?;
             }
             PasswordDisplayMode::Masked => {
-                backend.render_prompt_with_masked_input(&prompt, &self.input)?;
+                backend.render_prompt_with_masked_input(prompt, &self.input)?;
             }
             PasswordDisplayMode::Full => {
-                backend.render_prompt_with_full_input(&prompt, &self.input)?;
+                backend.render_prompt_with_full_input(prompt, &self.input)?;
             }
         };
 
@@ -336,7 +336,7 @@ impl<'a> PasswordPrompt<'a> {
 
             match key {
                 Key::Interrupt => interrupt_prompt!(),
-                Key::Cancel => cancel_prompt!(backend, &self.message),
+                Key::Cancel => cancel_prompt!(backend, self.message),
                 Key::Submit => match self.get_final_answer() {
                     Ok(answer) => {
                         final_answer = answer;
@@ -350,7 +350,7 @@ impl<'a> PasswordPrompt<'a> {
 
         let formatted = (self.formatter)(&final_answer);
 
-        finish_prompt_with_answer!(backend, &self.message, &formatted, final_answer);
+        finish_prompt_with_answer!(backend, self.message, &formatted, final_answer);
     }
 }
 
