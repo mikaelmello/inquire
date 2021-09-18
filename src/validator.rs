@@ -44,7 +44,7 @@ use crate::list_option::ListOption;
 /// ```
 pub type StringValidator<'a> = &'a dyn Fn(&str) -> Result<(), String>;
 
-/// Type alias for validators used in [DateSelect](crate::DateSelect) prompts.
+/// Type alias for validators used in [`DateSelect`](crate::DateSelect) prompts.
 ///
 /// If the input provided by the user is valid, your validator should return `Ok(())`.
 ///
@@ -76,7 +76,7 @@ pub type StringValidator<'a> = &'a dyn Fn(&str) -> Result<(), String>;
 #[cfg(feature = "date")]
 pub type DateValidator<'a> = &'a dyn Fn(chrono::NaiveDate) -> Result<(), String>;
 
-/// Type alias for validators used in [MultiSelect](crate::MultiSelect) prompts.
+/// Type alias for validators used in [`MultiSelect`](crate::MultiSelect) prompts.
 ///
 /// If the input provided by the user is valid, your validator should return `Ok(())`.
 ///

@@ -101,7 +101,7 @@ pub type BoolFormatter<'a> = &'a dyn Fn(bool) -> String;
 /// ```
 pub type OptionFormatter<'a, T> = &'a dyn Fn(ListOption<&T>) -> String;
 
-/// Type alias for formatters used in [MultiSelect](crate::MultiSelect) prompts.
+/// Type alias for formatters used in [`MultiSelect`](crate::MultiSelect) prompts.
 ///
 /// Formatters receive the user input and return a [String] to be displayed
 /// to the user as the final answer.
@@ -129,7 +129,7 @@ pub type OptionFormatter<'a, T> = &'a dyn Fn(ListOption<&T>) -> String;
 /// ```
 pub type MultiOptionFormatter<'a, T> = &'a dyn Fn(&[ListOption<&T>]) -> String;
 
-/// Type alias for formatters used in [CustomType](crate::CustomType) prompts.
+/// Type alias for formatters used in [`CustomType`](crate::CustomType) prompts.
 ///
 /// Formatters receive the user input and return a [String] to be displayed
 /// to the user as the final answer.
@@ -150,7 +150,7 @@ pub type CustomTypeFormatter<'a, T> = &'a dyn Fn(T) -> String;
 
 #[cfg(feature = "date")]
 
-/// Type alias for formatters used in [DateSelect](crate::DateSelect) prompts.
+/// Type alias for formatters used in [`DateSelect`](crate::DateSelect) prompts.
 ///
 /// Formatters receive the user input and return a [String] to be displayed
 /// to the user as the final answer.
@@ -202,7 +202,7 @@ pub const DEFAULT_BOOL_FORMATTER: BoolFormatter = &|ans| match ans {
 };
 
 #[cfg(feature = "date")]
-/// String formatter used by default in [DateSelect](crate::DateSelect) prompts.
+/// String formatter used by default in [`DateSelect`](crate::DateSelect) prompts.
 /// Prints the selected date in the format: Month Day, Year.
 ///
 /// # Examples

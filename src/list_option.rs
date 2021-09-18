@@ -1,5 +1,5 @@
 //! Utilities used to wrap user selections in [Select](crate::Select) and
-//! [MultiSelect](crate::MultiSelect) prompts.
+//! [`MultiSelect`](crate::MultiSelect) prompts.
 
 use std::fmt::{self, Display};
 
@@ -15,7 +15,7 @@ pub struct ListOption<T> {
 }
 
 impl<T> ListOption<T> {
-    /// Constructor for ListOption.
+    /// Constructor for `ListOption`.
     ///
     /// # Arguments
     ///

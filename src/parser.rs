@@ -1,6 +1,6 @@
 //! Type aliases and default implementations for parsers called in prompts
 //! that need to parse user input, such as [Confirm](crate::Confirm) or
-//! [CustomType](crate::CustomType).
+//! [`CustomType`](crate::CustomType).
 //!
 //! Parsers receive the user input to a given prompt and return either
 //! a successful result ([Ok]) containing the parsed value or an empty [Err]
@@ -8,7 +8,7 @@
 
 /// Type alias for parsers used in [Confirm](crate::Confirm) prompts.
 ///
-/// BoolParsers receive the user input to a given prompt and return either
+/// [`BoolParser`]s receive the user input to a given prompt and return either
 /// a successful result ([Ok]) containing the parsed `bool` or an empty [Err]
 /// if a value could not be parsed.
 ///
@@ -31,7 +31,7 @@ pub type BoolParser<'a> = &'a dyn Fn(&str) -> Result<bool, ()>;
 
 /// Type alias for parsers used in [Confirm](crate::Confirm) prompts.
 ///
-/// BoolParsers receive the user input to a given prompt and return either
+/// [`CustomTypeParser`]s receive the user input to a given prompt and return either
 /// a successful result ([Ok]) containing the parsed `bool` or an empty [Err]
 /// if a value could not be parsed.
 ///
@@ -53,30 +53,6 @@ pub type BoolParser<'a> = &'a dyn Fn(&str) -> Result<bool, ()>;
 pub type CustomTypeParser<'a, T> = &'a dyn Fn(&str) -> Result<T, ()>;
 
 /// Bool formatter used  by default in [Confirm](crate::Confirm) prompts.
-///
-/// BoolParsers receive the user input to a given prompt and return either
-/// a successful result ([Ok]) containing the parsed `bool` or an empty [Err]
-/// if a value could not be parsed.
-///
-/// # Examples
-///
-/// ```
-/// use inquire::parser::DEFAULT_BOOL_PARSER;
-///
-/// let parser = DEFAULT_BOOL_PARSER;
-/// assert_eq!(Ok(true), parser("Yes"));
-/// assert_eq!(Ok(true), parser("yes"));
-/// assert_eq!(Ok(true), parser("Y"));
-/// assert_eq!(Ok(true), parser("y"));
-/// assert_eq!(Ok(false), parser("No"));
-/// assert_eq!(Ok(false), parser("no"));
-/// assert_eq!(Ok(false), parser("N"));
-/// assert_eq!(Ok(false), parser("n"));
-/// assert_eq!(Err(()), parser("yy"));
-/// assert_eq!(Err(()), parser("nn"));
-/// assert_eq!(Err(()), parser(""));
-/// assert_eq!(Err(()), parser("s"));
-/// ```
 pub const DEFAULT_BOOL_PARSER: BoolParser = &|ans| {
     if ans.len() > 3 {
         return Err(());
