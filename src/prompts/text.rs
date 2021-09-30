@@ -65,6 +65,11 @@ pub struct Text<'a> {
     /// Message to be presented to the user.
     pub message: &'a str,
 
+    /// Initial value of the prompt's text input.
+    ///
+    /// If you want to set a default value for the prompt, returned when the user's submission is empty, see [default].
+    pub initial_value: Option<&'a str>,
+
     /// Default value, returned when the user input is empty.
     pub default: Option<&'a str>,
 
@@ -120,6 +125,7 @@ impl<'a> Text<'a> {
         Self {
             message,
             placeholder: None,
+            initial_value: None,
             default: None,
             help_message: Self::DEFAULT_HELP_MESSAGE,
             validators: Self::DEFAULT_VALIDATORS,
@@ -133,6 +139,14 @@ impl<'a> Text<'a> {
     /// Sets the help message of the prompt.
     pub fn with_help_message(mut self, message: &'a str) -> Self {
         self.help_message = Some(message);
+        self
+    }
+
+    /// Sets the initial value of the prompt's text input.
+    ///
+    /// If you want to set a default value for the prompt, returned when the user's submission is empty, see [with_default].
+    pub fn with_initial_value(mut self, message: &'a str) -> Self {
+        self.initial_value = Some(message);
         self
     }
 
@@ -257,17 +271,20 @@ struct TextPrompt<'a> {
 
 impl<'a> From<Text<'a>> for TextPrompt<'a> {
     fn from(so: Text<'a>) -> Self {
+        let input = Input::new_with(so.initial_value.unwrap_or_default());
+        let input = if let Some(placeholder) = so.placeholder {
+            input.with_placeholder(placeholder)
+        } else {
+            input
+        };
+
         Self {
             message: so.message,
             default: so.default,
             help_message: so.help_message,
             formatter: so.formatter,
-            validators: so.validators,
             suggester: so.suggester,
-            input: so
-                .placeholder
-                .map(|p| Input::new().with_placeholder(p))
-                .unwrap_or_else(Input::new),
+            input,
             original_input: None,
             error: None,
             cursor_index: 0,
@@ -276,6 +293,7 @@ impl<'a> From<Text<'a>> for TextPrompt<'a> {
                 Some(s) => s(""),
                 None => vec![],
             },
+            validators: so.validators,
         }
     }
 }
@@ -404,6 +422,9 @@ impl<'a> TextPrompt<'a> {
 
     fn prompt<B: TextBackend>(mut self, backend: &mut B) -> InquireResult<String> {
         let final_answer: String;
+        if !self.input.is_empty() {
+            self.update_suggestions();
+        }
 
         loop {
             self.render(backend)?;
