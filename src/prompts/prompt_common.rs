@@ -9,7 +9,7 @@ macro_rules! cancel_prompt {
 
 macro_rules! interrupt_prompt {
     () => {
-        return Err(InquireError::OperationInterrupted);
+        return Err(InquireError::OperationInterrupted)
     };
 }
 
