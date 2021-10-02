@@ -195,6 +195,7 @@ With `Text`, you can customize several aspects:
 - **Prompt message**: Main message when prompting the user for input, `"What is your name?"` in the example above.
 - **Help message**: Message displayed at the line below the prompt.
 - **Default value**: Default value returned when the user submits an empty response.
+- **Initial value**: Initial value of the prompt's text input, in case you want to display the prompt with something already filled in.
 - **Placeholder**: Short hint that describes the expected value of the input.
 - **Validators**: Custom validators to the user's input, displaying an error message if the input does not pass the requirements.
 - **Formatter**: Custom formatter in case you need to pre-process the user input before showing it as the final answer.
