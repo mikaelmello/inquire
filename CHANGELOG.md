@@ -3,6 +3,8 @@
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
 
+## [0.2.1] - 2021-10-01
+
 ### Features
 
 - Add `initial_value` property to `Text` prompts, which sets an initial value for the prompt's text input. Huge thanks to [@irevoire](https://github.com/irevoire) for the suggestion **and** implementation. [#34](https://github.com/mikaelmello/inquire/pull/34).
@@ -129,7 +131,8 @@ The library is already featureful enough to warrant a higher version number, bum
 - Add DateSelect prompt
 
 <!-- next-url -->
-[Unreleased]: https://github.com/mikaelmello/inquire/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/mikaelmello/inquire/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/mikaelmello/inquire/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/mikaelmello/inquire/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/mikaelmello/inquire/compare/v0.0.11...v0.1.0
 [0.0.11]: https://github.com/mikaelmello/inquire/compare/v0.0.10...v0.0.11
