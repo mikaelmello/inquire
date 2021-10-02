@@ -291,10 +291,7 @@ impl<'a> From<Text<'a>> for TextPrompt<'a> {
             error: None,
             cursor_index: 0,
             page_size: so.page_size,
-            suggested_options: match so.suggester {
-                Some(s) => s(""),
-                None => vec![],
-            },
+            suggested_options: vec![],
             validators: so.validators,
         }
     }
@@ -307,11 +304,13 @@ impl<'a> From<&'a str> for Text<'a> {
 }
 
 impl<'a> TextPrompt<'a> {
-    fn update_suggestions(&mut self) {
+    fn update_suggestions(&mut self) -> InquireResult<()> {
         if let Some(suggester) = self.suggester {
-            self.suggested_options = suggester(self.input.content());
+            self.suggested_options = suggester(self.input.content())?;
             self.cursor_index = 0;
         }
+
+        Ok(())
     }
 
     fn move_cursor_up(&mut self, qty: usize) {
@@ -325,7 +324,7 @@ impl<'a> TextPrompt<'a> {
         );
     }
 
-    fn on_change(&mut self, key: Key) {
+    fn on_change(&mut self, key: Key) -> InquireResult<()> {
         match key {
             Key::Up(KeyModifiers::NONE) => self.move_cursor_up(1),
             Key::PageUp => self.move_cursor_up(self.page_size),
@@ -338,12 +337,14 @@ impl<'a> TextPrompt<'a> {
 
                 if dirty {
                     self.original_input.take();
-                    self.update_suggestions();
+                    self.update_suggestions()?;
                 }
             }
         }
 
         self.update_current_input();
+
+        Ok(())
     }
 
     fn update_current_input(&mut self) {
@@ -431,7 +432,7 @@ impl<'a> TextPrompt<'a> {
     fn prompt<B: TextBackend>(mut self, backend: &mut B) -> InquireResult<String> {
         let final_answer: String;
         if !self.input.is_empty() {
-            self.update_suggestions();
+            self.update_suggestions()?;
         }
 
         loop {
@@ -449,7 +450,7 @@ impl<'a> TextPrompt<'a> {
                     }
                     Validation::Invalid(msg) => self.error = Some(msg),
                 },
-                key => self.on_change(key),
+                key => self.on_change(key)?,
             }
         }
 

@@ -1,5 +1,7 @@
 //! General type aliases.
 
+use crate::error::CustomUserError;
+
 /// Type alias to represent the function used to filter options.
 ///
 /// The function receives:
@@ -39,4 +41,4 @@ pub type Filter<'a, T> = &'a dyn Fn(&str, &T, &str, usize) -> bool;
 /// Type alias to represent the function used to retrieve text input suggestions.
 /// The function receives the current input and should return a collection of strings
 /// containing the suggestions to be made to the user.
-pub type Suggester<'a> = &'a dyn Fn(&str) -> Vec<String>;
+pub type Suggester<'a> = &'a dyn Fn(&str) -> Result<Vec<String>, CustomUserError>;

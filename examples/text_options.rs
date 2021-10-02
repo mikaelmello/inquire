@@ -1,4 +1,4 @@
-use inquire::{length, required, ui::RenderConfig, Text};
+use inquire::{error::CustomUserError, length, required, ui::RenderConfig, Text};
 
 fn main() {
     let answer = Text::new("What's your name?")
@@ -25,7 +25,7 @@ fn main() {
     .unwrap();
 }
 
-fn suggester(val: &str) -> Vec<String> {
+fn suggester(val: &str) -> Result<Vec<String>, CustomUserError> {
     let suggestions = [
         "Andrew",
         "Charles",
@@ -51,9 +51,9 @@ fn suggester(val: &str) -> Vec<String> {
 
     let val_lower = val.to_lowercase();
 
-    suggestions
+    Ok(suggestions
         .iter()
         .filter(|s| s.to_lowercase().contains(&val_lower))
         .map(|s| String::from(*s))
-        .collect()
+        .collect())
 }

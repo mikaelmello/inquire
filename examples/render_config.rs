@@ -1,7 +1,7 @@
 use std::fmt::{Display, Formatter};
 
 use inquire::{
-    error::InquireResult,
+    error::{CustomUserError, InquireResult},
     required,
     ui::{Attributes, Color, RenderConfig, StyleSheet, Styled},
     CustomType, DateSelect, MultiSelect, Select, Text,
@@ -112,15 +112,15 @@ fn get_categories() -> Vec<&'static str> {
 }
 
 /// This could be faster by using smarter ways to check for matches, when dealing with larger datasets.
-fn payee_suggestor(input: &str) -> Vec<String> {
+fn payee_suggestor(input: &str) -> Result<Vec<String>, CustomUserError> {
     let input = input.to_lowercase();
 
-    get_existing_payees()
+    Ok(get_existing_payees()
         .iter()
         .filter(|p| p.to_lowercase().contains(&input))
         .take(5)
         .map(|p| String::from(*p))
-        .collect()
+        .collect())
 }
 
 /// This could be retrieved from a database, for example.
