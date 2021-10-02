@@ -3,6 +3,14 @@
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
 
+### Features
+
+- Add `initial_value` property to `Text` prompts, which sets an initial value for the prompt's text input. Huge thanks to [@irevoire](https://github.com/irevoire) for the suggestion **and** implementation. [#34](https://github.com/mikaelmello/inquire/pull/34).
+
+### Internals
+
+- Multiple changes to fix general warnings appearing throughout the code.
+
 ## [0.2.0] - 2021-09-14
 
 ### Features
