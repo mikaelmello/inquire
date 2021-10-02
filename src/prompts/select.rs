@@ -373,7 +373,7 @@ where
 
                 if dirty {
                     let options = self.filter_options();
-                    if options.len() > 0 && options.len() <= self.cursor_index {
+                    if options.len() <= self.cursor_index {
                         self.cursor_index = options.len().saturating_sub(1);
                     }
                     self.filtered_options = options;

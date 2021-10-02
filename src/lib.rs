@@ -34,13 +34,13 @@
 //! # Simple Example
 //!
 //! ```rust no_run
-//! use inquire::{Text, validator::StringValidator};
+//! use inquire::{Text, validator::{StringValidator, Validation}};
 //!
 //! fn main() {
 //!     let validator: StringValidator = &|input| if input.chars().count() > 140 {
-//!         Err(String::from("You're only allowed 140 characters."))
+//!         Ok(Validation::Invalid("You're only allowed 140 characters.".into()))
 //!     } else {
-//!         Ok(())
+//!         Ok(Validation::Valid)
 //!     };
 //!
 //!     let status = Text::new("What are you thinking about?")

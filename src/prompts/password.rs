@@ -5,7 +5,7 @@ use crate::{
     input::Input,
     terminal::get_default_terminal,
     ui::{Backend, Key, KeyModifiers, PasswordBackend, RenderConfig},
-    validator::StringValidator,
+    validator::{ErrorMessage, StringValidator, Validation},
 };
 
 /// Display modes of the text input of a password prompt.
@@ -47,12 +47,12 @@ pub enum PasswordDisplayMode {
 /// # Example
 ///
 /// ```no_run
-///  use inquire::{validator::StringValidator, Password, PasswordDisplayMode};
+///  use inquire::{validator::{StringValidator, Validation}, Password, PasswordDisplayMode};
 ///
 ///  let validator: StringValidator = &|input| if input.chars().count() < 10 {
-///      Err(String::from("Keys must have at least 10 characters."))
+///      Ok(Validation::Invalid("Keys must have at least 10 characters.".into()))
 ///  } else {
-///      Ok(())
+///      Ok(Validation::Valid)
 ///  };
 ///
 ///  let name = Password::new("Encryption Key:")
@@ -239,7 +239,7 @@ struct PasswordPrompt<'a> {
     enable_display_toggle: bool,
     formatter: StringFormatter<'a>,
     validators: Vec<StringValidator<'a>>,
-    error: Option<String>,
+    error: Option<ErrorMessage>,
 }
 
 impl<'a> From<Password<'a>> for PasswordPrompt<'a> {
@@ -286,15 +286,20 @@ impl<'a> PasswordPrompt<'a> {
         }
     }
 
-    fn get_final_answer(&self) -> Result<String, String> {
+    fn validate_current_answer(&self) -> InquireResult<Validation> {
         for validator in &self.validators {
             match validator(self.input.content()) {
-                Ok(_) => {}
-                Err(err) => return Err(err),
+                Ok(Validation::Valid) => {}
+                Ok(Validation::Invalid(msg)) => return Ok(Validation::Invalid(msg)),
+                Err(err) => return Err(InquireError::Custom(err)),
             }
         }
 
-        Ok(self.input.content().into())
+        Ok(Validation::Valid)
+    }
+
+    fn cur_answer(&self) -> String {
+        self.input.content().into()
     }
 
     fn render<B: PasswordBackend>(&mut self, backend: &mut B) -> InquireResult<()> {
@@ -338,12 +343,12 @@ impl<'a> PasswordPrompt<'a> {
             match key {
                 Key::Interrupt => interrupt_prompt!(),
                 Key::Cancel => cancel_prompt!(backend, self.message),
-                Key::Submit => match self.get_final_answer() {
-                    Ok(answer) => {
-                        final_answer = answer;
+                Key::Submit => match self.validate_current_answer()? {
+                    Validation::Valid => {
+                        final_answer = self.cur_answer();
                         break;
                     }
-                    Err(err) => self.error = Some(err),
+                    Validation::Invalid(msg) => self.error = Some(msg),
                 },
                 key => self.on_change(key),
             }
@@ -362,6 +367,7 @@ mod test {
     use crate::{
         terminal::crossterm::CrosstermTerminal,
         ui::{Backend, RenderConfig},
+        validator::{ErrorMessage, Validation},
     };
     use crossterm::event::{KeyCode, KeyEvent};
 
@@ -468,8 +474,8 @@ mod test {
         },
         "12345yes",
         Password::new("").with_validator(&|ans| match ans.len() {
-            len if len > 5 && len < 10 => Ok(()),
-            _ => Err("Invalid".to_string()),
+            len if len > 5 && len < 10 => Ok(Validation::Valid),
+            _ => Ok(Validation::Invalid(ErrorMessage::Default)),
         })
     );
 }

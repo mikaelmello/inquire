@@ -360,6 +360,9 @@ pub struct ErrorMessageRenderConfig {
 
     /// Message style.
     pub message: StyleSheet,
+
+    /// Default message used for validators that do not defined custom error messages.
+    pub default_message: &'static str,
 }
 
 impl ErrorMessageRenderConfig {
@@ -369,6 +372,7 @@ impl ErrorMessageRenderConfig {
             prefix: Styled::new("#"),
             separator: StyleSheet::empty(),
             message: StyleSheet::empty(),
+            default_message: "Invalid input.",
         }
     }
 
@@ -378,6 +382,7 @@ impl ErrorMessageRenderConfig {
             prefix: Styled::new("#").with_fg(Color::LightRed),
             separator: StyleSheet::empty(),
             message: StyleSheet::empty().with_fg(Color::LightRed),
+            default_message: "Invalid input.",
         }
     }
 

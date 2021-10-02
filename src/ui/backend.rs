@@ -8,6 +8,7 @@ use crate::{
     terminal::{Terminal, TerminalSize},
     ui::{IndexPrefix, Key, RenderConfig, Styled},
     utils::{int_log10, Page},
+    validator::ErrorMessage,
 };
 
 pub trait CommonBackend {
@@ -19,7 +20,7 @@ pub trait CommonBackend {
     fn render_canceled_prompt(&mut self, prompt: &str) -> Result<()>;
     fn render_prompt_with_answer(&mut self, prompt: &str, answer: &str) -> Result<()>;
 
-    fn render_error_message(&mut self, error: &str) -> Result<()>;
+    fn render_error_message(&mut self, error: &ErrorMessage) -> Result<()>;
     fn render_help_message(&mut self, help: &str) -> Result<()>;
 }
 
@@ -404,7 +405,7 @@ where
         self.terminal.read_key()
     }
 
-    fn render_error_message(&mut self, error: &str) -> Result<()> {
+    fn render_error_message(&mut self, error: &ErrorMessage) -> Result<()> {
         self.terminal
             .write_styled(&self.render_config.error_message.prefix)?;
 
@@ -412,8 +413,13 @@ where
             &Styled::new(" ").with_style_sheet(self.render_config.error_message.separator),
         )?;
 
+        let message = match error {
+            ErrorMessage::Default => self.render_config.error_message.default_message,
+            ErrorMessage::Custom(msg) => msg,
+        };
+
         self.terminal.write_styled(
-            &Styled::new(error).with_style_sheet(self.render_config.error_message.message),
+            &Styled::new(message).with_style_sheet(self.render_config.error_message.message),
         )?;
 
         self.new_line()?;

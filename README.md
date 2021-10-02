@@ -95,17 +95,21 @@ In the [`render_config.rs`](./examples/render_config.rs) example, you can take a
 
 Almost all prompts provide an API to set custom validators.
 
-The validators provided to a given prompt are called whenever the user submits their input. These validators vary by prompt type, receiving different types of variables as arguments, such as `&str`, `&[ListOption]`, or `NaiveDate`, but their return type are always the same: `Result<(), String>`.
+The validators provided to a given prompt are called whenever the user submits their input. These validators vary by prompt type, receiving different types of variables as arguments, such as `&str`, `&[ListOption]`, or `NaiveDate`, but their return type are always the same: `Result<Validation, CustomUserError>`.
 
-If the input provided by the user is invalid, your validator should return `Ok(())`.
+The `Validation` type is an enum that indicates whether the user input is valid, in which you should return `Ok(Validation::Invalid)`, or invalid, where you should return `Ok(Validation::Invalid(ErrorMessage))`. The `ErrorMessage` type is another enum, containing the `Default` and `Custom(String)` variants, indicating the message to indicate the user that their input is invalid.
 
-If the input is not valid, your validator should return `Err(String)`, where the content of `Err` is a string whose content will be displayed to the user as an error message. It is recommended that this value gives a helpful feedback to the user, e.g. "This field should contain at least 5 characters".
+With an Invalid result, it is recommended that you set the `ErrorMessage` field to a custom message containing helpful feedback to the user, e.g. "This field should contain at least 5 characters".
+
+The `CustomUserError` type is an alias to `Box<dyn std::error::Error + Send + Sync + 'static>`. Added to support validators with fallible operations, such as HTTP requests or database queries. If the validator returns `Err(CustomUserError)`, the prompt will return `Err(InquireError::Custom(CustomUserError))` as its result, containing the error you returned wrapped around the enums mentioned.
 
 The validators are typed as a reference to `dyn Fn`. This allows both functions and closures to be used as validators, but it also means that the functions can not hold any mutable references.
 
 Finally, `inquire` has a feature called `builtin_validators` that is included by default. When the feature is on, several built-in validators are exported at the root-level of the library in the form of macros. Check their documentation to see more details, they provide full-featured examples.
 
 In the [demo](#Demo) you can see the behavior of an input not passing the requirements in the _amount_ prompt, when the error message "Please type a valid number" is displayed. _Full disclosure, this error message was displayed due to a parsing, not validation, error, but the user experience is the same for both cases._
+
+If you'd like to see more examples, the [`date.rs`](examples/date.rs) and [`multiselect.rs`](examples/multiselect.rs) files contain custom validators.
 
 ## Terminal Back-end
 

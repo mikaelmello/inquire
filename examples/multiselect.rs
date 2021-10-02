@@ -1,4 +1,8 @@
-use inquire::{formatter::MultiOptionFormatter, validator::MultiOptionValidator, MultiSelect};
+use inquire::{
+    formatter::MultiOptionFormatter,
+    validator::{MultiOptionValidator, Validation},
+    MultiSelect,
+};
 
 fn main() {
     let options = vec![
@@ -17,14 +21,14 @@ fn main() {
 
     let validator: MultiOptionValidator<&str> = &|a| {
         if a.len() < 2 {
-            return Err("This list is too small!".into());
+            return Ok(Validation::Invalid("This list is too small!".into()));
         }
 
         let x = a.iter().any(|o| *o.value == "Pineapple");
 
         match x {
-            true => Ok(()),
-            false => Err("Remember to buy pineapples".into()),
+            true => Ok(Validation::Valid),
+            false => Ok(Validation::Invalid("Remember to buy pineapples".into())),
         }
     };
 

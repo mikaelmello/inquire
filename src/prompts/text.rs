@@ -10,7 +10,7 @@ use crate::{
     type_aliases::Suggester,
     ui::{Backend, Key, KeyModifiers, RenderConfig, TextBackend},
     utils::paginate,
-    validator::StringValidator,
+    validator::{ErrorMessage, StringValidator, Validation},
 };
 
 const DEFAULT_HELP_MESSAGE: &str = "↑↓ to move, tab to auto-complete, enter to submit";
@@ -264,7 +264,7 @@ struct TextPrompt<'a> {
     original_input: Option<Input>,
     formatter: StringFormatter<'a>,
     validators: Vec<StringValidator<'a>>,
-    error: Option<String>,
+    error: Option<ErrorMessage>,
     suggester: Option<Suggester<'a>>,
     suggested_options: Vec<String>,
     cursor_index: usize,
@@ -366,21 +366,27 @@ impl<'a> TextPrompt<'a> {
         }
     }
 
-    fn get_final_answer(&self) -> Result<String, String> {
-        if self.input.content().is_empty() {
-            if let Some(val) = self.default {
-                return Ok(val.to_string());
-            }
-        }
-
+    fn validate_current_answer(&self) -> InquireResult<Validation> {
         for validator in &self.validators {
             match validator(self.input.content()) {
-                Ok(_) => {}
-                Err(err) => return Err(err),
+                Ok(Validation::Valid) => {}
+                Ok(Validation::Invalid(msg)) => return Ok(Validation::Invalid(msg)),
+                Err(err) => return Err(InquireError::Custom(err)),
             }
         }
 
-        Ok(self.input.content().into())
+        Ok(Validation::Valid)
+    }
+
+    fn cur_answer(&self) -> String {
+        // Empty input with default values override any validators.
+        if self.input.content().is_empty() {
+            if let Some(val) = self.default {
+                return val.to_string();
+            }
+        }
+
+        self.input.content().into()
     }
 
     fn render<B: TextBackend>(&mut self, backend: &mut B) -> InquireResult<()> {
@@ -436,12 +442,12 @@ impl<'a> TextPrompt<'a> {
             match key {
                 Key::Interrupt => interrupt_prompt!(),
                 Key::Cancel => cancel_prompt!(backend, self.message),
-                Key::Submit => match self.get_final_answer() {
-                    Ok(answer) => {
-                        final_answer = answer;
+                Key::Submit => match self.validate_current_answer()? {
+                    Validation::Valid => {
+                        final_answer = self.cur_answer();
                         break;
                     }
-                    Err(err) => self.error = Some(err),
+                    Validation::Invalid(msg) => self.error = Some(msg),
                 },
                 key => self.on_change(key),
             }
@@ -460,6 +466,7 @@ mod test {
     use crate::{
         terminal::crossterm::CrosstermTerminal,
         ui::{Backend, RenderConfig},
+        validator::{ErrorMessage, Validation},
     };
     use crossterm::event::{KeyCode, KeyEvent};
 
@@ -567,8 +574,8 @@ mod test {
         },
         "12345yes",
         Text::new("").with_validator(&|ans| match ans.len() {
-            len if len > 5 && len < 10 => Ok(()),
-            _ => Err("Invalid".to_string()),
+            len if len > 5 && len < 10 => Ok(Validation::Valid),
+            _ => Ok(Validation::Invalid(ErrorMessage::Default)),
         })
     );
 }

@@ -10,7 +10,7 @@ use crate::{
     type_aliases::Filter,
     ui::{Backend, Key, KeyModifiers, MultiSelectBackend, RenderConfig},
     utils::paginate,
-    validator::MultiOptionValidator,
+    validator::{ErrorMessage, MultiOptionValidator, Validation},
 };
 
 /// Prompt suitable for when you need the user to select many options (including none if applicable) among a list of them.
@@ -346,7 +346,7 @@ struct MultiSelectPrompt<'a, T> {
     filter: Filter<'a, T>,
     formatter: MultiOptionFormatter<'a, T>,
     validator: Option<MultiOptionValidator<'a, T>>,
-    error: Option<String>,
+    error: Option<ErrorMessage>,
 }
 
 impl<'a, T> MultiSelectPrompt<'a, T>
@@ -486,7 +486,7 @@ where
 
                 if dirty {
                     let options = self.filter_options();
-                    if options.len() > 0 && options.len() <= self.cursor_index {
+                    if options.len() <= self.cursor_index {
                         self.cursor_index = options.len().saturating_sub(1);
                     }
                     self.filtered_options = options;
@@ -495,7 +495,7 @@ where
         };
     }
 
-    fn validate_current_answer(&self) -> Result<(), String> {
+    fn validate_current_answer(&self) -> InquireResult<Validation> {
         if let Some(validator) = self.validator {
             let selected_options = self
                 .options
@@ -507,9 +507,10 @@ where
                 })
                 .collect::<Vec<ListOption<&T>>>();
 
-            validator(&selected_options)
+            let res = validator(&selected_options)?;
+            Ok(res)
         } else {
-            Ok(())
+            Ok(Validation::Valid)
         }
     }
 
@@ -573,9 +574,9 @@ where
             match key {
                 Key::Interrupt => interrupt_prompt!(),
                 Key::Cancel => cancel_prompt!(backend, self.message),
-                Key::Submit => match self.validate_current_answer() {
-                    Ok(()) => break,
-                    Err(err) => self.error = Some(err),
+                Key::Submit => match self.validate_current_answer()? {
+                    Validation::Valid => break,
+                    Validation::Invalid(msg) => self.error = Some(msg),
                 },
                 key => self.on_change(key),
             }

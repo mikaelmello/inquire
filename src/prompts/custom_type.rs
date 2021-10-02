@@ -8,6 +8,7 @@ use crate::{
     parser::CustomTypeParser,
     terminal::get_default_terminal,
     ui::{Backend, CustomTypeBackend, Key, RenderConfig},
+    validator::ErrorMessage,
 };
 
 /// Generic prompt suitable for when you need to parse the user input into a specific type, for example an `f64` or a `rust_decimal`, maybe even an `uuid`.
@@ -203,7 +204,7 @@ where
 
 struct CustomTypePrompt<'a, T> {
     message: &'a str,
-    error: Option<String>,
+    error: Option<ErrorMessage>,
     help_message: Option<&'a str>,
     default: Option<(T, CustomTypeFormatter<'a, T>)>,
     input: Input,
@@ -258,8 +259,8 @@ where
 
         backend.frame_setup()?;
 
-        if let Some(error_message) = &self.error {
-            backend.render_error_message(error_message)?;
+        if let Some(error) = &self.error {
+            backend.render_error_message(error)?;
         }
 
         let default_message = self
@@ -295,7 +296,7 @@ where
                         break;
                     }
                     Err(message) => {
-                        self.error = Some(message);
+                        self.error = Some(message.into());
                         self.input.clear();
                     }
                 },

@@ -11,7 +11,7 @@ use crate::{
     formatter::{self, DateFormatter},
     terminal::{get_default_terminal, Terminal},
     ui::{date::DateSelectBackend, Backend, Key, KeyModifiers, RenderConfig},
-    validator::DateValidator,
+    validator::{DateValidator, ErrorMessage, Validation},
 };
 
 /// Prompt that allows user to select a date (time not supported) from an interactive calendar. Available via the `date` feature.
@@ -273,7 +273,7 @@ struct DateSelectPrompt<'a> {
     vim_mode: bool,
     formatter: DateFormatter<'a>,
     validators: Vec<DateValidator<'a>>,
-    error: Option<String>,
+    error: Option<ErrorMessage>,
 }
 
 impl<'a> DateSelectPrompt<'a> {
@@ -373,15 +373,20 @@ impl<'a> DateSelectPrompt<'a> {
         }
     }
 
-    fn get_final_answer(&self) -> Result<NaiveDate, String> {
+    fn validate_current_answer(&self) -> InquireResult<Validation> {
         for validator in &self.validators {
             match validator(self.current_date) {
-                Ok(_) => {}
-                Err(err) => return Err(err),
+                Ok(Validation::Valid) => {}
+                Ok(Validation::Invalid(msg)) => return Ok(Validation::Invalid(msg)),
+                Err(err) => return Err(InquireError::Custom(err)),
             }
         }
 
-        Ok(self.current_date)
+        Ok(Validation::Valid)
+    }
+
+    fn cur_answer(&self) -> NaiveDate {
+        self.current_date
     }
 
     fn render<B: DateSelectBackend>(&mut self, backend: &mut B) -> InquireResult<()> {
@@ -425,12 +430,14 @@ impl<'a> DateSelectPrompt<'a> {
             match key {
                 Key::Interrupt => interrupt_prompt!(),
                 Key::Cancel => cancel_prompt!(backend, self.message),
-                Key::Submit | Key::Char(' ', _) => match self.get_final_answer() {
-                    Ok(answer) => {
-                        final_answer = answer;
+                Key::Submit | Key::Char(' ', _) => match self.validate_current_answer()? {
+                    Validation::Valid => {
+                        final_answer = self.cur_answer();
                         break;
                     }
-                    Err(err) => self.error = Some(err),
+                    Validation::Invalid(msg) => {
+                        self.error = Some(msg);
+                    }
                 },
                 key => self.on_change(key),
             }
@@ -449,6 +456,7 @@ mod test {
         date_utils::get_current_date,
         terminal::crossterm::CrosstermTerminal,
         ui::{Backend, RenderConfig},
+        validator::Validation,
         DateSelect,
     };
     use chrono::NaiveDate;
@@ -503,9 +511,9 @@ mod test {
 
         let validator = |d| {
             if today_date > d {
-                Ok(())
+                Ok(Validation::Valid)
             } else {
-                Err(String::from("Date must be in the past"))
+                Ok(Validation::Invalid("Date must be in the past".into()))
             }
         };
 

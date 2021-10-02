@@ -15,7 +15,7 @@ use crate::{
     formatter::StringFormatter,
     terminal::get_default_terminal,
     ui::{Backend, EditorBackend, Key, RenderConfig},
-    validator::StringValidator,
+    validator::{ErrorMessage, StringValidator, Validation},
 };
 
 lazy_static! {
@@ -172,6 +172,7 @@ impl<'a> Editor<'a> {
     /// The possible error is displayed to the user one line above the prompt.
     pub fn with_validators(mut self, validators: &[StringValidator<'a>]) -> Self {
         for validator in validators {
+            #[allow(clippy::clone_double_ref)]
             self.validators.push(validator.clone());
         }
         self
@@ -230,7 +231,7 @@ struct EditorPrompt<'a> {
     help_message: Option<&'a str>,
     formatter: StringFormatter<'a>,
     validators: Vec<StringValidator<'a>>,
-    error: Option<String>,
+    error: Option<ErrorMessage>,
     tmp_file: NamedTempFile,
 }
 
@@ -292,12 +293,12 @@ impl<'a> EditorPrompt<'a> {
         }
 
         let path = Path::new(self.editor_command);
-        let editor_name = match path.file_stem().and_then(|f| f.to_str()) {
-            Some(file_stem) => file_stem,
-            None => "editor",
-        };
+        let editor_name = path
+            .file_stem()
+            .and_then(|f| f.to_str())
+            .unwrap_or("editor");
 
-        backend.render_prompt(&prompt, editor_name)?;
+        backend.render_prompt(prompt, editor_name)?;
 
         if let Some(message) = self.help_message {
             backend.render_help_message(message)?;
@@ -308,7 +309,20 @@ impl<'a> EditorPrompt<'a> {
         Ok(())
     }
 
-    fn get_final_answer(&self) -> InquireResult<Result<String, String>> {
+    fn validate_current_answer(&self) -> InquireResult<Validation> {
+        let cur_answer = self.cur_answer()?;
+        for validator in &self.validators {
+            match validator(&cur_answer) {
+                Ok(Validation::Valid) => {}
+                Ok(Validation::Invalid(msg)) => return Ok(Validation::Invalid(msg)),
+                Err(err) => return Err(InquireError::Custom(err)),
+            }
+        }
+
+        Ok(Validation::Valid)
+    }
+
+    fn cur_answer(&self) -> InquireResult<String> {
         let mut read_handler = fs::File::open(self.tmp_file.path())?;
         let mut submission = String::new();
         read_handler.read_to_string(&mut submission)?;
@@ -316,14 +330,7 @@ impl<'a> EditorPrompt<'a> {
         let len = submission.trim_end_matches(&['\n', '\r'][..]).len();
         submission.truncate(len);
 
-        for validator in &self.validators {
-            match validator(&submission) {
-                Ok(_) => {}
-                Err(err) => return Ok(Err(err)),
-            }
-        }
-
-        Ok(Ok(submission))
+        Ok(submission)
     }
 
     fn prompt<B: EditorBackend>(mut self, backend: &mut B) -> InquireResult<String> {
@@ -334,20 +341,19 @@ impl<'a> EditorPrompt<'a> {
 
             match key {
                 Key::Interrupt => interrupt_prompt!(),
-                Key::Cancel => cancel_prompt!(backend, &self.message),
+                Key::Cancel => cancel_prompt!(backend, self.message),
                 Key::Char('e', _) => self.run_editor()?,
-                Key::Submit => match self.get_final_answer() {
-                    Ok(Ok(answer)) => break Ok(answer),
-                    Ok(Err(err)) => self.error = Some(err),
-                    Err(err) => break Err(err),
+                Key::Submit => match self.validate_current_answer()? {
+                    Validation::Valid => break self.cur_answer()?,
+                    Validation::Invalid(msg) => self.error = Some(msg),
                 },
                 _ => {}
             }
-        }?;
+        };
 
         let formatted = (self.formatter)(&final_answer);
 
-        finish_prompt_with_answer!(backend, &self.message, &formatted, final_answer);
+        finish_prompt_with_answer!(backend, self.message, &formatted, final_answer);
     }
 }
 

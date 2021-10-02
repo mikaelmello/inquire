@@ -4,6 +4,10 @@ use std::io;
 
 use thiserror::Error;
 
+/// Type alias to define errors that might be thrown by the library user
+/// on callbacks such as validators.
+pub type CustomUserError = Box<dyn std::error::Error + Send + Sync + 'static>;
+
 /// Possible errors returned by `inquire` prompts.
 #[derive(Error, Debug)]
 pub enum InquireError {
@@ -33,6 +37,10 @@ pub enum InquireError {
     /// pressing Ctrl+C will trigger SIGINT.
     #[error("Operation was interrupted by the user")]
     OperationInterrupted,
+
+    /// Error while executing IO operations.
+    #[error("User-provided error: {0}")]
+    Custom(#[from] CustomUserError),
 }
 
 /// Result type where errors are of type [InquireError](crate::error::InquireError)

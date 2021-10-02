@@ -1,5 +1,5 @@
 use chrono::NaiveDate;
-use inquire::DateSelect;
+use inquire::{validator::Validation, DateSelect};
 
 fn main() {
     let date = DateSelect::new("Simple input").prompt().unwrap();
@@ -23,9 +23,9 @@ fn main() {
             let now = chrono::Utc::now().naive_utc().date();
 
             if d.ge(&now) {
-                Err("Date must be in the past".into())
+                Ok(Validation::Invalid("Date must be in the past".into()))
             } else {
-                Ok(())
+                Ok(Validation::Valid)
             }
         })
         .prompt()
