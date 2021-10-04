@@ -3,6 +3,15 @@
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
 
+### Features
+
+- **(Breaking Change)** The function signature for validators has been changed to `Result<Validation, CustomUserError>`. This means that validating the input can now be a fallible operation.
+  - Successful executions of the validator function should return a variant of the `Validation` enum, which can be either `Valid` or `Invalid(ErrorMessage)`.
+  - Unsuccessful executions return a `CustomUserError` type, which is an alias for `Box<dyn std::error::Error + Send + Sync + 'static>`.
+- **(Breaking Change)** The function signature for suggesters has also been changed to allow fallible executions. The return type in successful executions continues to be `Vec<String>`, while `CustomUserError` is used with errors.
+
+The docs contain more through explanations and full-featured examples.
+
 ## [0.2.1] - 2021-10-01
 
 ### Features
