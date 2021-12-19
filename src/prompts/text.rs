@@ -45,7 +45,7 @@ const DEFAULT_HELP_MESSAGE: &str = "↑↓ to move, tab to auto-complete, enter 
 ///
 /// With `Text` inputs, it is also possible to set-up an auto-completion system to provide a better UX when necessary.
 ///
-/// You can set-up a custom [`Suggester`](crate::config::Suggester) function, which receives the current input as the only argument and should return a vector of strings, the suggested values.
+/// You can set-up a custom [`Suggester`](crate::type_aliases::Suggester) function, which receives the current input as the only argument and should return a vector of strings, the suggested values.
 ///
 /// The user is then able to select one of them by moving up and down the list, possibly further modifying a selected suggestion.
 ///
