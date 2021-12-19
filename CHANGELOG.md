@@ -12,6 +12,10 @@
 
 The docs contain more through explanations and full-featured examples.
 
+### Fixes
+
+- Fix a broken link in the `struct.Text` documentation.
+
 ## [0.2.1] - 2021-10-01
 
 ### Features
