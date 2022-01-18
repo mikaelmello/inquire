@@ -42,7 +42,7 @@ impl<'a> TermionTerminal<'a> {
             .into_raw_mode()
             .map_err(|e| match e.raw_os_error() {
                 Some(25) | Some(6) => InquireError::NotTTY,
-                _ => std::io::Error::from(e).into(),
+                _ => e.into(),
             });
 
         Ok(Self {
@@ -168,10 +168,10 @@ impl<'a> Terminal for TermionTerminal<'a> {
 
         self.write(&val.content)?;
 
-        if let Some(_) = val.style.fg.as_ref() {
+        if val.style.fg.as_ref().is_some() {
             self.reset_fg_color()?;
         }
-        if let Some(_) = val.style.bg.as_ref() {
+        if val.style.bg.as_ref().is_some() {
             self.reset_bg_color()?;
         }
         if !val.style.att.is_empty() {

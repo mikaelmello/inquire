@@ -68,16 +68,10 @@ pub trait PasswordBackend: CommonBackend {
     fn render_prompt_with_full_input(&mut self, prompt: &str, cur_input: &Input) -> Result<()>;
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy, Debug, Default)]
 pub struct Position {
     pub row: u16,
     pub col: u16,
-}
-
-impl Default for Position {
-    fn default() -> Self {
-        Self { row: 0, col: 0 }
-    }
 }
 
 pub struct Backend<T>
@@ -574,6 +568,8 @@ pub mod date {
 
     pub trait DateSelectBackend: CommonBackend {
         fn render_calendar_prompt(&mut self, prompt: &str) -> Result<()>;
+
+        #[allow(clippy::too_many_arguments)]
         fn render_calendar(
             &mut self,
             month: chrono::Month,
