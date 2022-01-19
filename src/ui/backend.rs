@@ -202,17 +202,6 @@ where
         Ok(())
     }
 
-    fn print_prompt_prefix(&mut self) -> Result<()> {
-        self.terminal
-            .write_styled(&self.render_config.prompt_prefix)
-    }
-
-    fn print_prompt_token(&mut self, prompt: &str) -> Result<()> {
-        let token = Styled::new(prompt).with_style_sheet(self.render_config.prompt);
-
-        self.terminal.write_styled(&token)
-    }
-
     fn print_option_prefix<D: Display>(
         &mut self,
         idx: usize,
@@ -267,14 +256,19 @@ where
         self.terminal.write_styled(&token)
     }
 
-    fn print_prompt(&mut self, prompt: &str) -> Result<()> {
-        self.print_prompt_prefix()?;
+    fn print_prompt_with_prefix(&mut self, prefix: Styled<&str>, prompt: &str) -> Result<()> {
+        self.terminal.write_styled(&prefix)?;
 
         self.terminal.write(" ")?;
 
-        self.print_prompt_token(prompt)?;
+        self.terminal
+            .write_styled(&Styled::new(prompt).with_style_sheet(self.render_config.prompt))?;
 
         Ok(())
+    }
+
+    fn print_prompt(&mut self, prompt: &str) -> Result<()> {
+        self.print_prompt_with_prefix(self.render_config.prompt_prefix, prompt)
     }
 
     fn print_input(&mut self, input: &Input) -> Result<()> {
@@ -383,7 +377,7 @@ where
     }
 
     fn render_prompt_with_answer(&mut self, prompt: &str, answer: &str) -> Result<()> {
-        self.print_prompt(prompt)?;
+        self.print_prompt_with_prefix(self.render_config.answered_prompt_prefix, prompt)?;
 
         self.terminal.write(" ")?;
 

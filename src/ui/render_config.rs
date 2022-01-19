@@ -27,6 +27,12 @@ pub struct RenderConfig {
     /// and the prompt message.
     pub prompt_prefix: Styled<&'static str>,
 
+    /// Prefix added before answered prompts.
+    ///
+    /// Note: a space character will be added to separate the prefix
+    /// and the prompt message.
+    pub answered_prompt_prefix: Styled<&'static str>,
+
     /// Style of the prompt message, applicable to all prompt types.
     pub prompt: StyleSheet,
 
@@ -140,6 +146,7 @@ impl RenderConfig {
     pub fn empty() -> Self {
         Self {
             prompt_prefix: Styled::new("?"),
+            answered_prompt_prefix: Styled::new("?"),
             prompt: StyleSheet::empty(),
             default_value: StyleSheet::empty(),
             placeholder: StyleSheet::empty(),
@@ -169,6 +176,7 @@ impl RenderConfig {
     pub fn default_colored() -> Self {
         Self {
             prompt_prefix: Styled::new("?").with_fg(Color::LightGreen),
+            answered_prompt_prefix: Styled::new("?").with_fg(Color::LightGreen),
             prompt: StyleSheet::empty(),
             default_value: StyleSheet::empty(),
             placeholder: StyleSheet::new().with_fg(Color::DarkGrey),
