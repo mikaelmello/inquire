@@ -64,6 +64,8 @@ where
 
 #[cfg(test)]
 mod test {
+    #![allow(clippy::bool_assert_comparison)]
+
     use crate::{
         list_option::ListOption,
         utils::{int_log10, paginate},
