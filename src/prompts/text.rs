@@ -7,7 +7,7 @@ use crate::{
     input::Input,
     list_option::ListOption,
     terminal::get_default_terminal,
-    type_aliases::Suggester,
+    type_aliases::{Completer, Suggester},
     ui::{Backend, Key, KeyModifiers, RenderConfig, TextBackend},
     utils::paginate,
     validator::{ErrorMessage, StringValidator, Validation},
@@ -83,6 +83,9 @@ pub struct Text<'a> {
     /// Function that formats the user input and presents it to the user as the final rendering of the prompt.
     pub formatter: StringFormatter<'a>,
 
+    /// Function that provides an optional suggestion to replace the input with, based on the current input.
+    pub completer: Option<Completer<'a>>,
+
     /// Collection of validators to apply to the user input.
     ///
     /// Validators are executed in the order they are stored, stopping at and displaying to the user
@@ -133,6 +136,7 @@ impl<'a> Text<'a> {
             formatter: Self::DEFAULT_FORMATTER,
             page_size: Self::DEFAULT_PAGE_SIZE,
             suggester: None,
+            completer: None,
             render_config: get_configuration(),
         }
     }
@@ -166,6 +170,12 @@ impl<'a> Text<'a> {
     /// Sets the suggester.
     pub fn with_suggester(mut self, suggester: Suggester<'a>) -> Self {
         self.suggester = Some(suggester);
+        self
+    }
+
+    /// Sets the completer.
+    pub fn with_completer(mut self, completer: Completer<'a>) -> Self {
+        self.completer = Some(completer);
         self
     }
 
@@ -267,6 +277,7 @@ struct TextPrompt<'a> {
     error: Option<ErrorMessage>,
     suggester: Option<Suggester<'a>>,
     suggested_options: Vec<String>,
+    completer: Option<Completer<'a>>,
     cursor_index: usize,
     page_size: usize,
 }
@@ -286,6 +297,7 @@ impl<'a> From<Text<'a>> for TextPrompt<'a> {
             help_message: so.help_message,
             formatter: so.formatter,
             suggester: so.suggester,
+            completer: so.completer,
             input,
             original_input: None,
             error: None,
@@ -324,6 +336,20 @@ impl<'a> TextPrompt<'a> {
         );
     }
 
+    fn handle_tab_key(&mut self) -> InquireResult<()> {
+        if let Some(completer) = self.completer {
+            if let Some(suggestion) = completer(self.input.content())? {
+                self.cursor_index = 0;
+                self.input = Input::new_with(&suggestion);
+            }
+        }
+
+        self.original_input.take();
+        self.update_suggestions()?;
+
+        Ok(())
+    }
+
     fn on_change(&mut self, key: Key) -> InquireResult<()> {
         match key {
             Key::Up(KeyModifiers::NONE) => self.move_cursor_up(1),
@@ -331,6 +357,8 @@ impl<'a> TextPrompt<'a> {
 
             Key::Down(KeyModifiers::NONE) => self.move_cursor_down(1),
             Key::PageDown => self.move_cursor_down(self.page_size),
+
+            Key::Tab => self.handle_tab_key()?,
 
             key => {
                 let dirty = self.input.handle_key(key);
