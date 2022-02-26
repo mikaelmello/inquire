@@ -3,20 +3,53 @@
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
 
+### Breaking Changes
+
+Features #1 to #3 are all breaking changes and could break the compilation of your program.
+
+Fix #2 representes a change in usability and might be an unexpected behavior.
+
 ### Features
 
-- **(Breaking Change)** Added `answered_prompt_prefix` configuration on `RenderConfig`, allowing users to set custom prefixes (e.g. a check mark) to prompts that have already been answered. Cheers to @href for the suggestion! [#44](https://github.com/mikaelmello/inquire/pull/44)
-- **(Breaking Change)** If a `Text` prompt is created with a suggester, the suggestion list is now displayed from the beginning.
-  - Previously, the suggestion list wasn't displayed if the prompt's hadn't any input from the user yet.
-- **(Breaking Change)** The function signature for validators has been changed to `Result<Validation, CustomUserError>`. This means that validating the input can now be a fallible operation. The docs contain more thorough explanations and full-featured examples.
+#### 1. Completer
+
+`Completer` for `Text` prompts, allowing users to auto-update their text input by pressing `tab` and not having to navigate through a suggestion list.
+
+It takes the current input and return an optional suggestion. If any, the prompter will replace the current input with the received suggestion. `Completer` is an alias for `&'a dyn Fn(&str) -> Result<Option<String>, CustomUserError>`.
+
+---
+
+#### 2. Support for custom prompt prefix in finished prompts.
+
+Added `answered_prompt_prefix` configuration on `RenderConfig`, allowing users to set custom prefixes (e.g. a check mark) to prompts that have already been answered.
+
+Cheers to @href for the suggestion! [#44](https://github.com/mikaelmello/inquire/pull/44)
+
+---
+
+#### 3. User-provided operations can be fallible.
+
+Input validation, suggestions and completions are now fallible operations.
+
+`Completer` is an alias for `&'a dyn Fn(&str) -> Result<Option<String>, CustomUserError>`.
+
+The function signature for validators has been changed to `Result<Validation, CustomUserError>`. This means that validating the input can now be a fallible operation. The docs contain more thorough explanations and full-featured examples.
   - Successful executions of the validator function should return a variant of the `Validation` enum, which can be either `Valid` or `Invalid(ErrorMessage)`.
-  - Unsuccessful executions return a `CustomUserError` type, which is an alias for `Box<dyn std::error::Error + Send + Sync + 'static>`. 
-- **(Breaking Change)** The function signature for suggesters has also been changed to allow fallible executions. The return type in successful executions continues to be `Vec<String>`, while `CustomUserError` is used with errors. The docs contain more thorough explanations and full-featured examples.
-- Added `Completer` parameter on `Text` prompt to handle `tab` key events. It takes the current input and return an optional suggestion. If any, the prompter will replace the current input with the received suggestion. `Completer` is an alias for `&'a dyn Fn(&str) -> Result<Option<String>, CustomUserError>`.
+  - Unsuccessful executions return a `CustomUserError` type, which is an alias for `Box<dyn std::error::Error + Send + Sync + 'static>`.
+
+The function signature for suggesters has also been changed to allow fallible executions. The return type in successful executions continues to be `Vec<String>`, while `CustomUserError` is used with errors. The docs contain more thorough explanations and full-featured examples.
 
 ### Fixes
 
-- Fix a broken link in the `struct.Text` documentation.
+#### 1. Fix a broken link in the `struct.Text` documentation.
+
+---
+
+#### 2. Suggestions are now always loaded at the start of a `Text` prompt.
+
+Previously, suggestions were only loaded and displayed if the `Text` prompt was created with a pre-existing input value or after the user entered any input.
+
+Now, even if the prompt is started without any input and the user hasn't done anything, suggestions are displayed.
 
 ## [0.2.1] - 2021-10-01
 
