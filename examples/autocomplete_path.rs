@@ -1,7 +1,7 @@
 use inquire::{CustomUserError, Text};
 
 fn main() {
-    let ans = Text::new("Profil picture:")
+    let ans = Text::new("Profile picture:")
         .with_suggester(&suggest_file_paths)
         .with_completer(&complete_file_path)
         .prompt();
