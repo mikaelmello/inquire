@@ -12,6 +12,8 @@
   - Successful executions of the validator function should return a variant of the `Validation` enum, which can be either `Valid` or `Invalid(ErrorMessage)`.
   - Unsuccessful executions return a `CustomUserError` type, which is an alias for `Box<dyn std::error::Error + Send + Sync + 'static>`. 
 - **(Breaking Change)** The function signature for suggesters has also been changed to allow fallible executions. The return type in successful executions continues to be `Vec<String>`, while `CustomUserError` is used with errors. The docs contain more thorough explanations and full-featured examples.
+- Added `Completer` parameter on `Text` prompt to handle `tab` key events. It takes the current input and return an optional suggestion. If any, the prompter will replace the current input with the received suggestion. `Completer` is an alias for `&'a dyn Fn(&str) -> Result<Option<String>, CustomUserError>`.
+
 ### Fixes
 
 - Fix a broken link in the `struct.Text` documentation.

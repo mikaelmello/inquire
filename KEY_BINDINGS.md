@@ -45,6 +45,7 @@ These key bindings may be used in [`Text`] prompts.
 | <kbd>down</kbd>      | When suggestions are displayed, move cursor one row down.     |
 | <kbd>page up</kbd>   | When suggestions are displayed, move cursor one page up.      |
 | <kbd>page down</kbd> | When suggestions are displayed, move cursor one page down.    |
+| <kbd>tab</kbd>       | Replace current input with the resulting suggestion if any.   |
 | others               | See [Text Input](#text-input) and [All Prompts](#all-prompts) |
 
 ## Select Prompts

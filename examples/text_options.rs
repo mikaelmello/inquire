@@ -19,6 +19,7 @@ fn main() {
         validators: Vec::new(),
         page_size: Text::DEFAULT_PAGE_SIZE,
         suggester: None,
+        completer: None,
         render_config: RenderConfig::default(),
     }
     .prompt()
