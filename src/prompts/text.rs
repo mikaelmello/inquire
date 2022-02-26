@@ -459,9 +459,7 @@ impl<'a> TextPrompt<'a> {
 
     fn prompt<B: TextBackend>(mut self, backend: &mut B) -> InquireResult<String> {
         let final_answer: String;
-        if !self.input.is_empty() {
-            self.update_suggestions()?;
-        }
+        self.update_suggestions()?;
 
         loop {
             self.render(backend)?;
