@@ -43,7 +43,7 @@ pub type Filter<'a, T> = &'a dyn Fn(&str, &T, &str, usize) -> bool;
 /// containing the suggestions to be made to the user.
 pub type Suggester<'a> = &'a dyn Fn(&str) -> Result<Vec<String>, CustomUserError>;
 
-/// Type alias to represent the function used to retreive an optional autocompletion suggestion.
+/// Type alias to represent the function used to retrieve an optional autocompletion suggestion.
 /// The function receives the current input and should return the suggestion (if any)
 /// that will replace the current input.
 pub type Completer<'a> = &'a dyn Fn(&str) -> Result<Option<String>, CustomUserError>;
