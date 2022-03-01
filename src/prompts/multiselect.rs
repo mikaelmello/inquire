@@ -205,7 +205,7 @@ where
         self
     }
 
-    /// Enables or disabled vim_mode.
+    /// Enables or disables vim_mode.
     pub fn with_vim_mode(mut self, vim_mode: bool) -> Self {
         self.vim_mode = vim_mode;
         self
