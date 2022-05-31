@@ -51,6 +51,10 @@ Previously, suggestions were only loaded and displayed if the `Text` prompt was 
 
 Now, even if the prompt is started without any input and the user hasn't done anything, suggestions are displayed.
 
+### Changes
+
+- Update `crossterm` and `console` to their latest version.
+
 ## [0.2.1] - 2021-10-01
 
 ### Features
@@ -113,9 +117,9 @@ The library is already featureful enough to warrant a higher version number, bum
 ### Fixes
 
 - By using a new method to identify the length of the rendered prompt, we avoid possible rendering errors (edge cases) when a string can not render into a single line in the terminal due to a smaller width. Inner calculations could previously predict that the rendered string would fit, by considering that 1 grapheme = 1 column width, but this is not true for e.g. emojis. Now we use unicode_width to fix this behavior.
-- Fixed case where Select/MultiSelect prompts were panicking when a user pressed the down arrow on an empty list, which happens when a filter input does not match any options. #30 
-- Fixed incorrect indexes on the output of MultiSelect prompts, where the indexes inside a `ListOption` struct were relative to the output instead of the original input vector. #31 
-- Fixed case where IO errors due to not finding a tty devices were not being catched and transformed to `InquireError::NotTTY`. #28 
+- Fixed case where Select/MultiSelect prompts were panicking when a user pressed the down arrow on an empty list, which happens when a filter input does not match any options. #30
+- Fixed incorrect indexes on the output of MultiSelect prompts, where the indexes inside a `ListOption` struct were relative to the output instead of the original input vector. #31
+- Fixed case where IO errors due to not finding a tty devices were not being catched and transformed to `InquireError::NotTTY`. #28
 
 ## [0.0.9] - 2021-08-28
 
@@ -132,11 +136,11 @@ The library is already featureful enough to warrant a higher version number, bum
 
 ### Features
 
-- **Password display toggle**: By enabling this option in `Password` prompts via `with_display_toggle_enabled()`, the application user can choose to display the current text input for the password by pressing `Ctrl+R`, and hide it back by pressing the hotkey again. #18 
-- **Render mask of password input**: `Password` prompts now support another render mode of the text input. Before, the only behavior was to not render anything about the current password input. Now, if the developer so chooses, they can activate the `Masked` mode where the current text input will be masked with special characters such as `'*'`. #19 
-- **PageUp, PageDown, Home and End hotkeys**: PageUp and PageDown are now supported in `Select`, `MultiSelect` and `Text` (suggestions list) prompts, where they go a page up or down in the current list. Also, for `Select` and `MultiSelect` prompts, the Home and End keys were mapped to go to the start or end of the list, respectively. #17 
-- **Indication that list is scrollable**: Now option lists, present in `Select`, `MultiSelect` and `Text` prompts, indicate whether there are more options other than the ones currently displayed. Little arrows are displayed at the top or bottom of the list indicating to which positions the user can scroll. #8 
-- **Generic option types for Select and MultiSelect prompts**: Now, `Select` and `MultiSelect` prompts accept any type of options as input, allowing developers to pass a vector of owned objects and get back the full object picked by the user. #9 
+- **Password display toggle**: By enabling this option in `Password` prompts via `with_display_toggle_enabled()`, the application user can choose to display the current text input for the password by pressing `Ctrl+R`, and hide it back by pressing the hotkey again. #18
+- **Render mask of password input**: `Password` prompts now support another render mode of the text input. Before, the only behavior was to not render anything about the current password input. Now, if the developer so chooses, they can activate the `Masked` mode where the current text input will be masked with special characters such as `'*'`. #19
+- **PageUp, PageDown, Home and End hotkeys**: PageUp and PageDown are now supported in `Select`, `MultiSelect` and `Text` (suggestions list) prompts, where they go a page up or down in the current list. Also, for `Select` and `MultiSelect` prompts, the Home and End keys were mapped to go to the start or end of the list, respectively. #17
+- **Indication that list is scrollable**: Now option lists, present in `Select`, `MultiSelect` and `Text` prompts, indicate whether there are more options other than the ones currently displayed. Little arrows are displayed at the top or bottom of the list indicating to which positions the user can scroll. #8
+- **Generic option types for Select and MultiSelect prompts**: Now, `Select` and `MultiSelect` prompts accept any type of options as input, allowing developers to pass a vector of owned objects and get back the full object picked by the user. #9
 
 ### Fixes
 
