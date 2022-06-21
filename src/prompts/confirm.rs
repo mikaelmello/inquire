@@ -202,7 +202,7 @@ impl<'a> Confirm<'a> {
         self.prompt_with_backend(&mut backend)
     }
 
-    pub(in crate) fn prompt_with_backend<T: Terminal>(
+    pub(crate) fn prompt_with_backend<T: Terminal>(
         self,
         backend: &mut Backend<T>,
     ) -> InquireResult<bool> {

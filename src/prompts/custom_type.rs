@@ -194,7 +194,7 @@ where
         self.prompt_with_backend(&mut backend)
     }
 
-    pub(in crate) fn prompt_with_backend<B: CustomTypeBackend>(
+    pub(crate) fn prompt_with_backend<B: CustomTypeBackend>(
         self,
         backend: &mut B,
     ) -> InquireResult<T> {

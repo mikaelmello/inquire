@@ -92,7 +92,7 @@ pub struct Text<'a> {
     /// only the first validation error that might appear.
     ///
     /// The possible error is displayed to the user one line above the prompt.
-    pub validators: Vec<StringValidator<'a>>,
+    pub validators: Vec<Box<dyn StringValidator>>,
 
     /// Page size of the suggestions displayed to the user, when applicable.
     pub page_size: usize,
@@ -119,7 +119,7 @@ impl<'a> Text<'a> {
     pub const DEFAULT_PAGE_SIZE: usize = config::DEFAULT_PAGE_SIZE;
 
     /// Default validators added to the [Text] prompt, none.
-    pub const DEFAULT_VALIDATORS: Vec<StringValidator<'a>> = vec![];
+    pub const DEFAULT_VALIDATORS: Vec<Box<dyn StringValidator>> = vec![];
 
     /// Default help message.
     pub const DEFAULT_HELP_MESSAGE: Option<&'a str> = None;
@@ -199,8 +199,11 @@ impl<'a> Text<'a> {
     /// only the first validation error that might appear.
     ///
     /// The possible error is displayed to the user one line above the prompt.
-    pub fn with_validator(mut self, validator: StringValidator<'a>) -> Self {
-        self.validators.push(validator);
+    pub fn with_validator<V>(mut self, validator: V) -> Self
+    where
+        V: StringValidator + 'static,
+    {
+        self.validators.push(Box::new(validator));
         self
     }
 
@@ -212,7 +215,7 @@ impl<'a> Text<'a> {
     /// only the first validation error that might appear.
     ///
     /// The possible error is displayed to the user one line above the prompt.
-    pub fn with_validators(mut self, validators: &[StringValidator<'a>]) -> Self {
+    pub fn with_validators(mut self, validators: &[Box<dyn StringValidator>]) -> Self {
         for validator in validators {
             #[allow(clippy::clone_double_ref)]
             self.validators.push(validator.clone());
@@ -258,7 +261,7 @@ impl<'a> Text<'a> {
         self.prompt_with_backend(&mut backend)
     }
 
-    pub(in crate) fn prompt_with_backend<B: TextBackend>(
+    pub(crate) fn prompt_with_backend<B: TextBackend>(
         self,
         backend: &mut B,
     ) -> InquireResult<String> {
@@ -273,7 +276,7 @@ struct TextPrompt<'a> {
     input: Input,
     original_input: Option<Input>,
     formatter: StringFormatter<'a>,
-    validators: Vec<StringValidator<'a>>,
+    validators: Vec<Box<dyn StringValidator>>,
     error: Option<ErrorMessage>,
     suggester: Option<Suggester<'a>>,
     suggested_options: Vec<String>,
@@ -397,7 +400,7 @@ impl<'a> TextPrompt<'a> {
 
     fn validate_current_answer(&self) -> InquireResult<Validation> {
         for validator in &self.validators {
-            match validator(self.input.content()) {
+            match validator.validate(self.input.content()) {
                 Ok(Validation::Valid) => {}
                 Ok(Validation::Invalid(msg)) => return Ok(Validation::Invalid(msg)),
                 Err(err) => return Err(InquireError::Custom(err)),
@@ -600,9 +603,9 @@ mod test {
             events
         },
         "12345yes",
-        Text::new("").with_validator(&|ans| match ans.len() {
+        Text::new("").with_validator(Box::new(|ans: &str| match ans.len() {
             len if len > 5 && len < 10 => Ok(Validation::Valid),
             _ => Ok(Validation::Invalid(ErrorMessage::Default)),
-        })
+        }))
     );
 }
