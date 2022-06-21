@@ -1,9 +1,17 @@
-use inquire::{error::CustomUserError, length, required, ui::RenderConfig, Text};
+use inquire::{
+    error::CustomUserError,
+    ui::RenderConfig,
+    validator::{ExactLengthValidator, ValueRequiredValidator},
+    Text,
+};
 
 fn main() {
     let answer = Text::new("What's your name?")
         .with_suggester(&suggester)
-        .with_validators(&[required!(), length!(10)])
+        .with_validators(&[
+            Box::new(ValueRequiredValidator::new()),
+            Box::new(ExactLengthValidator::new(10)),
+        ])
         .prompt()
         .unwrap();
 

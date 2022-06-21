@@ -89,7 +89,7 @@ pub struct DateSelect<'a> {
     /// only the first validation error that might appear.
     ///
     /// The possible error is displayed to the user one line above the prompt.
-    pub validators: Vec<DateValidator<'a>>,
+    pub validators: Vec<Box<dyn DateValidator>>,
 
     /// RenderConfig to apply to the rendered interface.
     ///
@@ -114,7 +114,7 @@ impl<'a> DateSelect<'a> {
         Some("arrows to move, with ctrl to move months and years, enter to select");
 
     /// Default validators added to the [DateSelect] prompt, none.
-    pub const DEFAULT_VALIDATORS: Vec<DateValidator<'a>> = vec![];
+    pub const DEFAULT_VALIDATORS: Vec<Box<dyn DateValidator>> = vec![];
 
     /// Default week start.
     pub const DEFAULT_WEEK_START: chrono::Weekday = chrono::Weekday::Sun;
@@ -184,8 +184,11 @@ impl<'a> DateSelect<'a> {
     /// only the first validation error that might appear.
     ///
     /// The possible error is displayed to the user one line above the prompt.
-    pub fn with_validator(mut self, validator: DateValidator<'a>) -> Self {
-        self.validators.push(validator);
+    pub fn with_validator<V>(mut self, validator: V) -> Self
+    where
+        V: DateValidator + 'static,
+    {
+        self.validators.push(Box::new(validator));
         self
     }
 
@@ -197,9 +200,8 @@ impl<'a> DateSelect<'a> {
     /// only the first validation error that might appear.
     ///
     /// The possible error is displayed to the user one line above the prompt.
-    pub fn with_validators(mut self, validators: &[DateValidator<'a>]) -> Self {
+    pub fn with_validators(mut self, validators: &[Box<dyn DateValidator>]) -> Self {
         for validator in validators {
-            #[allow(clippy::clone_double_ref)]
             self.validators.push(validator.clone());
         }
         self
@@ -255,7 +257,7 @@ impl<'a> DateSelect<'a> {
         self.prompt_with_backend(&mut backend)
     }
 
-    pub(in crate) fn prompt_with_backend<T: Terminal>(
+    pub(crate) fn prompt_with_backend<T: Terminal>(
         self,
         backend: &mut Backend<T>,
     ) -> InquireResult<NaiveDate> {
@@ -272,7 +274,7 @@ struct DateSelectPrompt<'a> {
     help_message: Option<&'a str>,
     vim_mode: bool,
     formatter: DateFormatter<'a>,
-    validators: Vec<DateValidator<'a>>,
+    validators: Vec<Box<dyn DateValidator>>,
     error: Option<ErrorMessage>,
 }
 
@@ -375,7 +377,7 @@ impl<'a> DateSelectPrompt<'a> {
 
     fn validate_current_answer(&self) -> InquireResult<Validation> {
         for validator in &self.validators {
-            match validator(self.current_date) {
+            match validator.validate(self.current_date) {
                 Ok(Validation::Valid) => {}
                 Ok(Validation::Invalid(msg)) => return Ok(Validation::Invalid(msg)),
                 Err(err) => return Err(InquireError::Custom(err)),
@@ -509,7 +511,7 @@ mod test {
 
         let today_date = get_current_date();
 
-        let validator = |d| {
+        let validator = move |d| {
             if today_date > d {
                 Ok(Validation::Valid)
             } else {
@@ -522,7 +524,7 @@ mod test {
         let mut backend = Backend::new(terminal, RenderConfig::default()).unwrap();
 
         let ans = DateSelect::new("Question")
-            .with_validator(&validator)
+            .with_validator(validator)
             .prompt_with_backend(&mut backend)
             .unwrap();
 

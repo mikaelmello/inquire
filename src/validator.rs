@@ -16,6 +16,8 @@
 //! This module also provides several built-in validators generated through macros,
 //! exported with the `builtin_validators` feature.
 
+use dyn_clone::DynClone;
+
 use crate::{error::CustomUserError, list_option::ListOption};
 
 /// Error message that is displayed to the users when their input is considered not
@@ -60,8 +62,8 @@ pub enum Validation {
     Invalid(ErrorMessage),
 }
 
-/// Type alias for validators that receive a string slice as the input,
-/// such as [Text](crate::Text) and [Password](crate::Password).
+/// Validator that receives a string slice as the input, such as [Text](crate::Text) and
+/// [Password](crate::Password).
 ///
 /// If the input provided by the user is valid, your validator should return `Ok(Validation::Valid)`.
 ///
@@ -74,23 +76,41 @@ pub enum Validation {
 /// ```
 /// use inquire::validator::{StringValidator, Validation};
 ///
-/// let validator: StringValidator = &|input| match input.chars().find(|c| c.is_numeric()) {
+/// let validator = |input: &str| match input.chars().find(|c| c.is_numeric()) {
 ///     Some(_) => Ok(Validation::Valid),
 ///     None => Ok(Validation::Invalid(
 ///         "Your password should contain at least 1 digit".into(),
 ///     )),
 /// };
 ///
-/// assert_eq!(Validation::Valid, validator("hunter2")?);
+/// assert_eq!(Validation::Valid, validator.validate("hunter2")?);
 /// assert_eq!(
 ///     Validation::Invalid("Your password should contain at least 1 digit".into()),
-///     validator("password")?
+///     validator.validate("password")?
 /// );
 /// # Ok::<(), inquire::error::CustomUserError>(())
 /// ```
-pub type StringValidator<'a> = &'a dyn Fn(&str) -> Result<Validation, CustomUserError>;
+pub trait StringValidator: DynClone {
+    /// Confirm the given input string is a valid value.
+    fn validate(&self, input: &str) -> Result<Validation, CustomUserError>;
+}
 
-/// Type alias for validators used in [`DateSelect`](crate::DateSelect) prompts.
+impl Clone for Box<dyn StringValidator> {
+    fn clone(&self) -> Self {
+        dyn_clone::clone_box(&**self)
+    }
+}
+
+impl<F> StringValidator for F
+where
+    F: Fn(&str) -> Result<Validation, CustomUserError> + Clone,
+{
+    fn validate(&self, input: &str) -> Result<Validation, CustomUserError> {
+        (self)(input)
+    }
+}
+
+/// Validator used in [`DateSelect`](crate::DateSelect) prompts.
 ///
 /// If the input provided by the user is valid, your validator should return `Ok(Validation::Valid)`.
 ///
@@ -104,7 +124,7 @@ pub type StringValidator<'a> = &'a dyn Fn(&str) -> Result<Validation, CustomUser
 /// use chrono::{Datelike, NaiveDate, Weekday};
 /// use inquire::validator::{DateValidator, Validation};
 ///
-/// let validator: DateValidator = &|input| {
+/// let validator = |input: NaiveDate| {
 ///     if input.weekday() == Weekday::Sat || input.weekday() == Weekday::Sun {
 ///         Ok(Validation::Invalid("Weekends are not allowed".into()))
 ///     } else {
@@ -112,17 +132,37 @@ pub type StringValidator<'a> = &'a dyn Fn(&str) -> Result<Validation, CustomUser
 ///     }
 /// };
 ///
-/// assert_eq!(Validation::Valid, validator(NaiveDate::from_ymd(2021, 7, 26))?);
+/// assert_eq!(Validation::Valid, validator.validate(NaiveDate::from_ymd(2021, 7, 26))?);
 /// assert_eq!(
 ///     Validation::Invalid("Weekends are not allowed".into()),
-///     validator(NaiveDate::from_ymd(2021, 7, 25))?
+///     validator.validate(NaiveDate::from_ymd(2021, 7, 25))?
 /// );
 /// # Ok::<(), inquire::error::CustomUserError>(())
 /// ```
 #[cfg(feature = "date")]
-pub type DateValidator<'a> = &'a dyn Fn(chrono::NaiveDate) -> Result<Validation, CustomUserError>;
+pub trait DateValidator: DynClone {
+    /// Confirm the given input date is a valid value.
+    fn validate(&self, input: chrono::NaiveDate) -> Result<Validation, CustomUserError>;
+}
 
-/// Type alias for validators used in [`MultiSelect`](crate::MultiSelect) prompts.
+#[cfg(feature = "date")]
+impl Clone for Box<dyn DateValidator> {
+    fn clone(&self) -> Self {
+        dyn_clone::clone_box(&**self)
+    }
+}
+
+#[cfg(feature = "date")]
+impl<F> DateValidator for F
+where
+    F: Fn(chrono::NaiveDate) -> Result<Validation, CustomUserError> + Clone,
+{
+    fn validate(&self, input: chrono::NaiveDate) -> Result<Validation, CustomUserError> {
+        (self)(input)
+    }
+}
+
+/// Validator used in [`MultiSelect`](crate::MultiSelect) prompts.
 ///
 /// If the input provided by the user is valid, your validator should return `Ok(Validation::Valid)`.
 ///
@@ -136,7 +176,7 @@ pub type DateValidator<'a> = &'a dyn Fn(chrono::NaiveDate) -> Result<Validation,
 /// use inquire::list_option::ListOption;
 /// use inquire::validator::{MultiOptionValidator, Validation};
 ///
-/// let validator: MultiOptionValidator<&str> = &|input| {
+/// let validator = |input: &[ListOption<&&str>]| {
 ///     if input.len() <= 2 {
 ///         Ok(Validation::Valid)
 ///     } else {
@@ -146,17 +186,35 @@ pub type DateValidator<'a> = &'a dyn Fn(chrono::NaiveDate) -> Result<Validation,
 ///
 /// let mut ans = vec![ListOption::new(0, &"a"), ListOption::new(1, &"b")];
 ///
-/// assert_eq!(Validation::Valid, validator(&ans)?);
+/// assert_eq!(Validation::Valid, validator.validate(&ans[..])?);
 ///
 /// ans.push(ListOption::new(3, &"d"));
 /// assert_eq!(
 ///     Validation::Invalid("You should select at most two options".into()),
-///     validator(&ans)?
+///     validator.validate(&ans[..])?
 /// );
 /// # Ok::<(), inquire::error::CustomUserError>(())
 /// ```
-pub type MultiOptionValidator<'a, T> =
-    &'a dyn Fn(&[ListOption<&T>]) -> Result<Validation, CustomUserError>;
+pub trait MultiOptionValidator<T: ?Sized>: DynClone {
+    /// Confirm the given input list is a valid value.
+    fn validate(&self, input: &[ListOption<&T>]) -> Result<Validation, CustomUserError>;
+}
+
+impl<T> Clone for Box<dyn MultiOptionValidator<T>> {
+    fn clone(&self) -> Self {
+        dyn_clone::clone_box(&**self)
+    }
+}
+
+impl<F, T> MultiOptionValidator<T> for F
+where
+    F: Fn(&[ListOption<&T>]) -> Result<Validation, CustomUserError> + Clone,
+    T: ?Sized,
+{
+    fn validate(&self, input: &[ListOption<&T>]) -> Result<Validation, CustomUserError> {
+        (self)(input)
+    }
+}
 
 /// Custom trait to call correct method to retrieve input length.
 ///
@@ -188,39 +246,50 @@ impl<T> InquireLength for &[T] {
 
 /// Built-in validator that checks whether the answer is not empty.
 ///
-/// # Arguments
-///
-/// * `$message` - optional - Error message returned by the validator.
-///   Defaults to "A response is required."
-///
 /// # Examples
 ///
 /// ```
-/// use inquire::{required, validator::{StringValidator, Validation}};
+/// use inquire::validator::{StringValidator, Validation, ValueRequiredValidator};
 ///
-/// let validator: StringValidator = required!();
-/// assert_eq!(Validation::Valid, validator("Generic input")?);
-/// assert_eq!(Validation::Invalid("A response is required.".into()), validator("")?);
+/// let validator = ValueRequiredValidator::new();
+/// assert_eq!(Validation::Valid, validator.validate("Generic input")?);
+/// assert_eq!(Validation::Invalid("A response is required.".into()), validator.validate("")?);
 ///
-/// let validator: StringValidator = required!("No empty!");
-/// assert_eq!(Validation::Valid, validator("Generic input")?);
-/// assert_eq!(Validation::Invalid("No empty!".into()), validator("")?);
+/// let validator = ValueRequiredValidator::new().with_message("No empty!");
+/// assert_eq!(Validation::Valid, validator.validate("Generic input")?);
+/// assert_eq!(Validation::Invalid("No empty!".into()), validator.validate("")?);
 /// # Ok::<(), inquire::error::CustomUserError>(())
 /// ```
-#[macro_export]
-#[cfg(feature = "builtin_validators")]
-macro_rules! required {
-    () => {
-        $crate::required! {"A response is required."}
-    };
+#[derive(Clone, Default)]
+pub struct ValueRequiredValidator {
+    message: Option<String>,
+}
 
-    ($message:expr) => {{
-        use $crate::validator::{ErrorMessage, Validation};
-        &|a| match a.is_empty() {
-            false => Ok(Validation::Valid),
-            true => Ok(Validation::Invalid(String::from($message).into())),
-        }
-    }};
+impl ValueRequiredValidator {
+    /// Create a new instance of this validator with default error message.
+    pub fn new() -> Self {
+        Self { message: None }
+    }
+
+    /// Define a custom error message returned by the validator.
+    /// Defaults to `A response is required.`.
+    pub fn with_message(mut self, message: impl Into<String>) -> Self {
+        self.message = Some(message.into());
+        self
+    }
+}
+
+impl StringValidator for ValueRequiredValidator {
+    fn validate(&self, input: &str) -> Result<Validation, CustomUserError> {
+        Ok(if input.is_empty() {
+            Validation::Invalid(match &self.message {
+                Some(msg) => msg.into(),
+                None => "A response is required.".into(),
+            })
+        } else {
+            Validation::Valid
+        })
+    }
 }
 
 /// Built-in validator that checks whether the answer length is smaller than
@@ -230,40 +299,75 @@ macro_rules! required {
 /// has a special implementation for strings which counts the number of
 /// graphemes. See this [StackOverflow question](https://stackoverflow.com/questions/46290655/get-the-string-length-in-characters-in-rust).
 ///
-/// # Arguments
-///
-/// * `$length` - Maximum length of the input.
-/// * `$message` - optional - Error message returned by the validator.
-///   Defaults to "The length of the response should be at most $length"
-///
 /// # Examples
 ///
 /// ```
-/// use inquire::{max_length, validator::{StringValidator, Validation}};
+/// use inquire::validator::{MaxLengthValidator, StringValidator, Validation};
 ///
-/// let validator: StringValidator = max_length!(5);
-/// assert_eq!(Validation::Valid, validator("Good")?);
-/// assert_eq!(Validation::Invalid("The length of the response should be at most 5".into()), validator("Terrible")?);
+/// let validator = MaxLengthValidator::new(5);
+/// assert_eq!(Validation::Valid, validator.validate("Good")?);
+/// assert_eq!(
+///     Validation::Invalid("The length of the response should be at most 5".into()),
+///     validator.validate("Terrible")?,
+/// );
 ///
-/// let validator: StringValidator = max_length!(5, "Not too large!");
-/// assert_eq!(Validation::Valid, validator("Good")?);
-/// assert_eq!(Validation::Invalid("Not too large!".into()), validator("Terrible")?);
+/// let validator = MaxLengthValidator::new(5).with_message("Not too large!");
+/// assert_eq!(Validation::Valid, validator.validate("Good")?);
+/// assert_eq!(Validation::Invalid("Not too large!".into()), validator.validate("Terrible")?);
 /// # Ok::<(), inquire::error::CustomUserError>(())
 /// ```
-#[macro_export]
-#[cfg(feature = "builtin_validators")]
-macro_rules! max_length {
-    ($length:expr) => {
-        $crate::max_length! {$length, format!("The length of the response should be at most {}", $length)}
-    };
+#[derive(Clone)]
+pub struct MaxLengthValidator {
+    limit: usize,
+    message: Option<String>,
+}
 
-    ($length:expr, $message:expr) => {{
-        use $crate::validator::{InquireLength, Validation};
-        &|a| match a.inquire_length() {
-            _len if _len <= $length => Ok(Validation::Valid),
-            _ => Ok(Validation::Invalid($message.into())),
+impl MaxLengthValidator {
+    /// Create a new instance of this validator, requiring at most the given length, otherwise
+    /// returning an error with default message.
+    pub fn new(limit: usize) -> Self {
+        Self {
+            limit,
+            message: None,
         }
-    }};
+    }
+
+    /// Define a custom error message returned by the validator.
+    /// Defaults to `The length of the response should be at most $length`.
+    pub fn with_message(mut self, message: impl Into<String>) -> Self {
+        self.message = Some(message.into());
+        self
+    }
+
+    fn validate_inquire_length<T: InquireLength>(
+        &self,
+        input: T,
+    ) -> Result<Validation, CustomUserError> {
+        Ok(if input.inquire_length() <= self.limit {
+            Validation::Valid
+        } else {
+            Validation::Invalid(match &self.message {
+                Some(msg) => msg.into(),
+                None => format!(
+                    "The length of the response should be at most {}",
+                    self.limit
+                )
+                .into(),
+            })
+        })
+    }
+}
+
+impl StringValidator for MaxLengthValidator {
+    fn validate(&self, input: &str) -> Result<Validation, CustomUserError> {
+        self.validate_inquire_length(input)
+    }
+}
+
+impl<T: ?Sized> MultiOptionValidator<T> for MaxLengthValidator {
+    fn validate(&self, input: &[ListOption<&T>]) -> Result<Validation, CustomUserError> {
+        self.validate_inquire_length(input)
+    }
 }
 
 /// Built-in validator that checks whether the answer length is larger than
@@ -273,40 +377,78 @@ macro_rules! max_length {
 /// has a special implementation for strings which counts the number of
 /// graphemes. See this [StackOverflow question](https://stackoverflow.com/questions/46290655/get-the-string-length-in-characters-in-rust).
 ///
-/// # Arguments
-///
-/// * `$length` - Minimum length of the input.
-/// * `$message` - optional - Error message returned by the validator.
-///   Defaults to "The length of the response should be at least $length"
-///
 /// # Examples
 ///
 /// ```
-/// use inquire::{min_length, validator::{StringValidator, Validation}};
+/// use inquire::validator::{MinLengthValidator, StringValidator, Validation};
 ///
-/// let validator: StringValidator = min_length!(3);
-/// assert_eq!(Validation::Valid, validator("Yes")?);
-/// assert_eq!(Validation::Invalid("The length of the response should be at least 3".into()), validator("No")?);
+/// let validator = MinLengthValidator::new(3);
+/// assert_eq!(Validation::Valid, validator.validate("Yes")?);
+/// assert_eq!(
+///     Validation::Invalid("The length of the response should be at least 3".into()),
+///     validator.validate("No")?,
+/// );
 ///
-/// let validator: StringValidator = min_length!(3, "You have to give me more than that!");
-/// assert_eq!(Validation::Valid, validator("Yes")?);
-/// assert_eq!(Validation::Invalid("You have to give me more than that!".into()), validator("No")?);
+/// let validator = MinLengthValidator::new(3).with_message("You have to give me more than that!");
+/// assert_eq!(Validation::Valid, validator.validate("Yes")?);
+/// assert_eq!(
+///     Validation::Invalid("You have to give me more than that!".into()),
+///     validator.validate("No")?,
+/// );
 /// # Ok::<(), inquire::error::CustomUserError>(())
 /// ```
-#[macro_export]
-#[cfg(feature = "builtin_validators")]
-macro_rules! min_length {
-    ($length:expr) => {
-        $crate::min_length! {$length, format!("The length of the response should be at least {}", $length)}
-    };
+#[derive(Clone)]
+pub struct MinLengthValidator {
+    limit: usize,
+    message: Option<String>,
+}
 
-    ($length:expr, $message:expr) => {{
-        use $crate::validator::{InquireLength, Validation};
-        &|a| match a.inquire_length() {
-            _len if _len >= $length => Ok(Validation::Valid),
-            _ => Ok(Validation::Invalid($message.into())),
+impl MinLengthValidator {
+    /// Create a new instance of this validator, requiring at least the given length, otherwise
+    /// returning an error with default message.
+    pub fn new(limit: usize) -> Self {
+        Self {
+            limit,
+            message: None,
         }
-    }};
+    }
+
+    /// Define a custom error message returned by the validator.
+    /// Defaults to `The length of the response should be at least $length`.
+    pub fn with_message(mut self, message: impl Into<String>) -> Self {
+        self.message = Some(message.into());
+        self
+    }
+
+    fn validate_inquire_length<T: InquireLength>(
+        &self,
+        input: T,
+    ) -> Result<Validation, CustomUserError> {
+        Ok(if input.inquire_length() >= self.limit {
+            Validation::Valid
+        } else {
+            Validation::Invalid(match &self.message {
+                Some(msg) => msg.into(),
+                None => format!(
+                    "The length of the response should be at least {}",
+                    self.limit
+                )
+                .into(),
+            })
+        })
+    }
+}
+
+impl StringValidator for MinLengthValidator {
+    fn validate(&self, input: &str) -> Result<Validation, CustomUserError> {
+        self.validate_inquire_length(input)
+    }
+}
+
+impl<T: ?Sized> MultiOptionValidator<T> for MinLengthValidator {
+    fn validate(&self, input: &[ListOption<&T>]) -> Result<Validation, CustomUserError> {
+        self.validate_inquire_length(input)
+    }
 }
 
 /// Built-in validator that checks whether the answer length is equal to
@@ -316,40 +458,71 @@ macro_rules! min_length {
 /// has a special implementation for strings which counts the number of
 /// graphemes. See this [StackOverflow question](https://stackoverflow.com/questions/46290655/get-the-string-length-in-characters-in-rust).
 ///
-/// # Arguments
-///
-/// * `$length` - Expected length of the input.
-/// * `$message` - optional - Error message returned by the validator.
-///   Defaults to "The length of the response should be $length"
-///
 /// # Examples
 ///
 /// ```
-/// use inquire::{length, validator::{StringValidator, Validation}};
+/// use inquire::validator::{ExactLengthValidator, StringValidator, Validation};
 ///
-/// let validator: StringValidator = length!(3);
-/// assert_eq!(Validation::Valid, validator("Yes")?);
-/// assert_eq!(Validation::Invalid("The length of the response should be 3".into()), validator("No")?);
+/// let validator = ExactLengthValidator::new(3);
+/// assert_eq!(Validation::Valid, validator.validate("Yes")?);
+/// assert_eq!(
+///     Validation::Invalid("The length of the response should be 3".into()),
+///     validator.validate("No")?,
+/// );
 ///
-/// let validator: StringValidator = length!(3, "Three characters please.");
-/// assert_eq!(Validation::Valid, validator("Yes")?);
-/// assert_eq!(Validation::Invalid("Three characters please.".into()), validator("No")?);
+/// let validator = ExactLengthValidator::new(3).with_message("Three characters please.");
+/// assert_eq!(Validation::Valid, validator.validate("Yes")?);
+/// assert_eq!(Validation::Invalid("Three characters please.".into()), validator.validate("No")?);
 /// # Ok::<(), inquire::error::CustomUserError>(())
 /// ```
-#[macro_export]
-#[cfg(feature = "builtin_validators")]
-macro_rules! length {
-    ($length:expr) => {
-        $crate::length! {$length, format!("The length of the response should be {}", $length)}
-    };
+#[derive(Clone)]
+pub struct ExactLengthValidator {
+    length: usize,
+    message: Option<String>,
+}
 
-    ($length:expr, $message:expr) => {{
-        use $crate::validator::{InquireLength, Validation};
-        &|a| match a.inquire_length() {
-            _len if _len == $length => Ok(Validation::Valid),
-            _ => Ok(Validation::Invalid($message.into())),
+impl ExactLengthValidator {
+    /// Create a new instance of this validator, requiring exactly the given length, otherwise
+    /// returning an error with default message.
+    pub fn new(length: usize) -> Self {
+        Self {
+            length,
+            message: None,
         }
-    }};
+    }
+
+    /// Define a custom error message returned by the validator.
+    /// Defaults to `The length of the response should be $length`.
+    pub fn with_message(mut self, message: impl Into<String>) -> Self {
+        self.message = Some(message.into());
+        self
+    }
+
+    fn validate_inquire_length<T: InquireLength>(
+        &self,
+        input: T,
+    ) -> Result<Validation, CustomUserError> {
+        Ok(if input.inquire_length() == self.length {
+            Validation::Valid
+        } else {
+            Validation::Invalid(match &self.message {
+                Some(msg) => msg.into(),
+                None => format!("The length of the response should be {}", self.length).into(),
+            })
+        })
+    }
+}
+
+impl StringValidator for ExactLengthValidator {
+    fn validate(&self, input: &str) -> Result<Validation, CustomUserError> {
+        self.validate_inquire_length(input)
+    }
+}
+
+impl<T: ?Sized> MultiOptionValidator<T> for ExactLengthValidator {
+    fn validate(&self, input: &[ListOption<&T>]) -> Result<Validation, CustomUserError> {
+        self.validate_inquire_length(input)
+    }
 }
 
 #[cfg(test)]
@@ -358,7 +531,10 @@ mod builtin_validators_test {
     use crate::{
         error::CustomUserError,
         list_option::ListOption,
-        validator::{MultiOptionValidator, StringValidator, Validation},
+        validator::{
+            ExactLengthValidator, MaxLengthValidator, MinLengthValidator, MultiOptionValidator,
+            StringValidator, Validation,
+        },
     };
 
     fn build_option_vec(len: usize) -> Vec<ListOption<&'static str>> {
@@ -373,22 +549,26 @@ mod builtin_validators_test {
 
     #[test]
     fn string_length_counts_graphemes() -> Result<(), CustomUserError> {
-        let validator: StringValidator = length!(5);
+        let validator = ExactLengthValidator::new(5);
+        let validator: &dyn StringValidator = &validator;
 
-        assert!(matches!(validator("five!")?, Validation::Valid));
-        assert!(matches!(validator("♥️♥️♥️♥️♥️")?, Validation::Valid));
+        assert!(matches!(validator.validate("five!")?, Validation::Valid));
+        assert!(matches!(validator.validate("♥️♥️♥️♥️♥️")?, Validation::Valid));
         assert!(matches!(
-            validator("🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️")?,
+            validator.validate("🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️")?,
             Validation::Valid
         ));
 
-        assert!(matches!(validator("five!!!")?, Validation::Invalid(_)));
         assert!(matches!(
-            validator("🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️")?,
+            validator.validate("five!!!")?,
             Validation::Invalid(_)
         ));
         assert!(matches!(
-            validator("🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️")?,
+            validator.validate("🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️")?,
+            Validation::Invalid(_)
+        ));
+        assert!(matches!(
+            validator.validate("🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️")?,
             Validation::Invalid(_)
         ));
 
@@ -397,18 +577,19 @@ mod builtin_validators_test {
 
     #[test]
     fn slice_length() -> Result<(), CustomUserError> {
-        let validator: MultiOptionValidator<str> = length!(5);
+        let validator = ExactLengthValidator::new(5);
+        let validator: &dyn MultiOptionValidator<str> = &validator;
 
         assert!(matches!(
-            validator(&build_option_vec(5))?,
+            validator.validate(&build_option_vec(5))?,
             Validation::Valid
         ));
         assert!(matches!(
-            validator(&build_option_vec(4))?,
+            validator.validate(&build_option_vec(4))?,
             Validation::Invalid(_)
         ));
         assert!(matches!(
-            validator(&build_option_vec(6))?,
+            validator.validate(&build_option_vec(6))?,
             Validation::Invalid(_)
         ));
 
@@ -417,20 +598,27 @@ mod builtin_validators_test {
 
     #[test]
     fn string_max_length_counts_graphemes() -> Result<(), CustomUserError> {
-        let validator: StringValidator = max_length!(5);
+        let validator = MaxLengthValidator::new(5);
+        let validator: &dyn StringValidator = &validator;
 
-        assert!(matches!(validator("")?, Validation::Valid));
-        assert!(matches!(validator("five!")?, Validation::Valid));
-        assert!(matches!(validator("♥️♥️♥️♥️♥️")?, Validation::Valid));
+        assert!(matches!(validator.validate("")?, Validation::Valid));
+        assert!(matches!(validator.validate("five!")?, Validation::Valid));
+        assert!(matches!(validator.validate("♥️♥️♥️♥️♥️")?, Validation::Valid));
         assert!(matches!(
-            validator("🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️")?,
+            validator.validate("🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️")?,
             Validation::Valid
         ));
 
-        assert!(matches!(validator("five!!!")?, Validation::Invalid(_)));
-        assert!(matches!(validator("♥️♥️♥️♥️♥️♥️")?, Validation::Invalid(_)));
         assert!(matches!(
-            validator("🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️")?,
+            validator.validate("five!!!")?,
+            Validation::Invalid(_)
+        ));
+        assert!(matches!(
+            validator.validate("♥️♥️♥️♥️♥️♥️")?,
+            Validation::Invalid(_)
+        ));
+        assert!(matches!(
+            validator.validate("🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️")?,
             Validation::Invalid(_)
         ));
 
@@ -439,42 +627,43 @@ mod builtin_validators_test {
 
     #[test]
     fn slice_max_length() -> Result<(), CustomUserError> {
-        let validator: MultiOptionValidator<str> = max_length!(5);
+        let validator = MaxLengthValidator::new(5);
+        let validator: &dyn MultiOptionValidator<str> = &validator;
 
         assert!(matches!(
-            validator(&build_option_vec(0))?,
+            validator.validate(&build_option_vec(0))?,
             Validation::Valid
         ));
         assert!(matches!(
-            validator(&build_option_vec(1))?,
+            validator.validate(&build_option_vec(1))?,
             Validation::Valid
         ));
         assert!(matches!(
-            validator(&build_option_vec(2))?,
+            validator.validate(&build_option_vec(2))?,
             Validation::Valid
         ));
         assert!(matches!(
-            validator(&build_option_vec(3))?,
+            validator.validate(&build_option_vec(3))?,
             Validation::Valid
         ));
         assert!(matches!(
-            validator(&build_option_vec(4))?,
+            validator.validate(&build_option_vec(4))?,
             Validation::Valid
         ));
         assert!(matches!(
-            validator(&build_option_vec(5))?,
+            validator.validate(&build_option_vec(5))?,
             Validation::Valid
         ));
         assert!(matches!(
-            validator(&build_option_vec(6))?,
+            validator.validate(&build_option_vec(6))?,
             Validation::Invalid(_)
         ));
         assert!(matches!(
-            validator(&build_option_vec(7))?,
+            validator.validate(&build_option_vec(7))?,
             Validation::Invalid(_)
         ));
         assert!(matches!(
-            validator(&build_option_vec(8))?,
+            validator.validate(&build_option_vec(8))?,
             Validation::Invalid(_)
         ));
 
@@ -483,22 +672,29 @@ mod builtin_validators_test {
 
     #[test]
     fn string_min_length_counts_graphemes() -> Result<(), CustomUserError> {
-        let validator: StringValidator = min_length!(5);
+        let validator = MinLengthValidator::new(5);
+        let validator: &dyn StringValidator = &validator;
 
-        assert!(matches!(validator("")?, Validation::Invalid(_)));
-        assert!(matches!(validator("♥️♥️♥️♥️")?, Validation::Invalid(_)));
-        assert!(matches!(validator("mike")?, Validation::Invalid(_)));
-
-        assert!(matches!(validator("five!")?, Validation::Valid));
-        assert!(matches!(validator("five!!!")?, Validation::Valid));
-        assert!(matches!(validator("♥️♥️♥️♥️♥️")?, Validation::Valid));
-        assert!(matches!(validator("♥️♥️♥️♥️♥️♥️")?, Validation::Valid));
+        assert!(matches!(validator.validate("")?, Validation::Invalid(_)));
         assert!(matches!(
-            validator("🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️")?,
+            validator.validate("♥️♥️♥️♥️")?,
+            Validation::Invalid(_)
+        ));
+        assert!(matches!(
+            validator.validate("mike")?,
+            Validation::Invalid(_)
+        ));
+
+        assert!(matches!(validator.validate("five!")?, Validation::Valid));
+        assert!(matches!(validator.validate("five!!!")?, Validation::Valid));
+        assert!(matches!(validator.validate("♥️♥️♥️♥️♥️")?, Validation::Valid));
+        assert!(matches!(validator.validate("♥️♥️♥️♥️♥️♥️")?, Validation::Valid));
+        assert!(matches!(
+            validator.validate("🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️")?,
             Validation::Valid
         ));
         assert!(matches!(
-            validator("🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️")?,
+            validator.validate("🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️")?,
             Validation::Valid
         ));
 
@@ -507,42 +703,43 @@ mod builtin_validators_test {
 
     #[test]
     fn slice_min_length() -> Result<(), CustomUserError> {
-        let validator: MultiOptionValidator<str> = min_length!(5);
+        let validator = MinLengthValidator::new(5);
+        let validator: &dyn MultiOptionValidator<str> = &validator;
 
         assert!(matches!(
-            validator(&build_option_vec(0))?,
+            validator.validate(&build_option_vec(0))?,
             Validation::Invalid(_)
         ));
         assert!(matches!(
-            validator(&build_option_vec(1))?,
+            validator.validate(&build_option_vec(1))?,
             Validation::Invalid(_)
         ));
         assert!(matches!(
-            validator(&build_option_vec(2))?,
+            validator.validate(&build_option_vec(2))?,
             Validation::Invalid(_)
         ));
         assert!(matches!(
-            validator(&build_option_vec(3))?,
+            validator.validate(&build_option_vec(3))?,
             Validation::Invalid(_)
         ));
         assert!(matches!(
-            validator(&build_option_vec(4))?,
+            validator.validate(&build_option_vec(4))?,
             Validation::Invalid(_)
         ));
         assert!(matches!(
-            validator(&build_option_vec(5))?,
+            validator.validate(&build_option_vec(5))?,
             Validation::Valid
         ));
         assert!(matches!(
-            validator(&build_option_vec(6))?,
+            validator.validate(&build_option_vec(6))?,
             Validation::Valid
         ));
         assert!(matches!(
-            validator(&build_option_vec(7))?,
+            validator.validate(&build_option_vec(7))?,
             Validation::Valid
         ));
         assert!(matches!(
-            validator(&build_option_vec(8))?,
+            validator.validate(&build_option_vec(8))?,
             Validation::Valid
         ));
 

@@ -75,7 +75,7 @@ pub struct Editor<'a> {
     /// only the first validation error that might appear.
     ///
     /// The possible error is displayed to the user one line above the prompt.
-    pub validators: Vec<StringValidator<'a>>,
+    pub validators: Vec<Box<dyn StringValidator>>,
 
     /// RenderConfig to apply to the rendered interface.
     ///
@@ -93,7 +93,7 @@ impl<'a> Editor<'a> {
     pub const DEFAULT_FORMATTER: StringFormatter<'a> = &|_| String::from("<received>");
 
     /// Default validators added to the [Editor] prompt, none.
-    pub const DEFAULT_VALIDATORS: Vec<StringValidator<'a>> = vec![];
+    pub const DEFAULT_VALIDATORS: Vec<Box<dyn StringValidator>> = vec![];
 
     /// Default help message.
     pub const DEFAULT_HELP_MESSAGE: Option<&'a str> = None;
@@ -157,8 +157,11 @@ impl<'a> Editor<'a> {
     /// only the first validation error that might appear.
     ///
     /// The possible error is displayed to the user one line above the prompt.
-    pub fn with_validator(mut self, validator: StringValidator<'a>) -> Self {
-        self.validators.push(validator);
+    pub fn with_validator<V>(mut self, validator: V) -> Self
+    where
+        V: StringValidator + 'static,
+    {
+        self.validators.push(Box::new(validator));
         self
     }
 
@@ -170,7 +173,7 @@ impl<'a> Editor<'a> {
     /// only the first validation error that might appear.
     ///
     /// The possible error is displayed to the user one line above the prompt.
-    pub fn with_validators(mut self, validators: &[StringValidator<'a>]) -> Self {
+    pub fn with_validators(mut self, validators: &[Box<dyn StringValidator>]) -> Self {
         for validator in validators {
             #[allow(clippy::clone_double_ref)]
             self.validators.push(validator.clone());
@@ -216,7 +219,7 @@ impl<'a> Editor<'a> {
         self.prompt_with_backend(&mut backend)
     }
 
-    pub(in crate) fn prompt_with_backend<B: EditorBackend>(
+    pub(crate) fn prompt_with_backend<B: EditorBackend>(
         self,
         backend: &mut B,
     ) -> InquireResult<String> {
@@ -230,7 +233,7 @@ struct EditorPrompt<'a> {
     editor_command_args: &'a [&'a OsStr],
     help_message: Option<&'a str>,
     formatter: StringFormatter<'a>,
-    validators: Vec<StringValidator<'a>>,
+    validators: Vec<Box<dyn StringValidator>>,
     error: Option<ErrorMessage>,
     tmp_file: NamedTempFile,
 }
@@ -312,7 +315,7 @@ impl<'a> EditorPrompt<'a> {
     fn validate_current_answer(&self) -> InquireResult<Validation> {
         let cur_answer = self.cur_answer()?;
         for validator in &self.validators {
-            match validator(&cur_answer) {
+            match validator.validate(&cur_answer) {
                 Ok(Validation::Valid) => {}
                 Ok(Validation::Invalid(msg)) => return Ok(Validation::Invalid(msg)),
                 Err(err) => return Err(InquireError::Custom(err)),

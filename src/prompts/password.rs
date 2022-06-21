@@ -49,7 +49,7 @@ pub enum PasswordDisplayMode {
 /// ```no_run
 ///  use inquire::{validator::{StringValidator, Validation}, Password, PasswordDisplayMode};
 ///
-///  let validator: StringValidator = &|input| if input.chars().count() < 10 {
+///  let validator = |input: &str| if input.chars().count() < 10 {
 ///      Ok(Validation::Invalid("Keys must have at least 10 characters.".into()))
 ///  } else {
 ///      Ok(Validation::Valid)
@@ -91,7 +91,7 @@ pub struct Password<'a> {
     /// only the first validation error that might appear.
     ///
     /// The possible error is displayed to the user one line above the prompt.
-    pub validators: Vec<StringValidator<'a>>,
+    pub validators: Vec<Box<dyn StringValidator>>,
 
     /// RenderConfig to apply to the rendered interface.
     ///
@@ -109,7 +109,7 @@ impl<'a> Password<'a> {
     pub const DEFAULT_FORMATTER: StringFormatter<'a> = &|_| String::from("********");
 
     /// Default validators added to the [Password] prompt, none.
-    pub const DEFAULT_VALIDATORS: Vec<StringValidator<'a>> = vec![];
+    pub const DEFAULT_VALIDATORS: Vec<Box<dyn StringValidator>> = vec![];
 
     /// Default help message.
     pub const DEFAULT_HELP_MESSAGE: Option<&'a str> = None;
@@ -165,8 +165,11 @@ impl<'a> Password<'a> {
     /// only the first validation error that might appear.
     ///
     /// The possible error is displayed to the user one line above the prompt.
-    pub fn with_validator(mut self, validator: StringValidator<'a>) -> Self {
-        self.validators.push(validator);
+    pub fn with_validator<V>(mut self, validator: V) -> Self
+    where
+        V: StringValidator + 'static,
+    {
+        self.validators.push(Box::new(validator));
         self
     }
 
@@ -176,7 +179,7 @@ impl<'a> Password<'a> {
     /// only the first validation error that might appear.
     ///
     /// The possible error is displayed to the user one line above the prompt.
-    pub fn with_validators(mut self, validators: &[StringValidator<'a>]) -> Self {
+    pub fn with_validators(mut self, validators: &[Box<dyn StringValidator>]) -> Self {
         for validator in validators {
             #[allow(clippy::clone_double_ref)]
             self.validators.push(validator.clone());
@@ -222,7 +225,7 @@ impl<'a> Password<'a> {
         self.prompt_with_backend(&mut backend)
     }
 
-    pub(in crate) fn prompt_with_backend<B: PasswordBackend>(
+    pub(crate) fn prompt_with_backend<B: PasswordBackend>(
         self,
         backend: &mut B,
     ) -> InquireResult<String> {
@@ -238,7 +241,7 @@ struct PasswordPrompt<'a> {
     display_mode: PasswordDisplayMode,
     enable_display_toggle: bool,
     formatter: StringFormatter<'a>,
-    validators: Vec<StringValidator<'a>>,
+    validators: Vec<Box<dyn StringValidator>>,
     error: Option<ErrorMessage>,
 }
 
@@ -288,7 +291,7 @@ impl<'a> PasswordPrompt<'a> {
 
     fn validate_current_answer(&self) -> InquireResult<Validation> {
         for validator in &self.validators {
-            match validator(self.input.content()) {
+            match validator.validate(self.input.content()) {
                 Ok(Validation::Valid) => {}
                 Ok(Validation::Invalid(msg)) => return Ok(Validation::Invalid(msg)),
                 Err(err) => return Err(InquireError::Custom(err)),
@@ -473,9 +476,9 @@ mod test {
             events
         },
         "12345yes",
-        Password::new("").with_validator(&|ans| match ans.len() {
+        Password::new("").with_validator(Box::new(|ans: &str| match ans.len() {
             len if len > 5 && len < 10 => Ok(Validation::Valid),
             _ => Ok(Validation::Invalid(ErrorMessage::Default)),
-        })
+        }))
     );
 }
