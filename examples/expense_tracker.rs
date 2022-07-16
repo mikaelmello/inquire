@@ -2,8 +2,7 @@ use std::fmt::{Display, Formatter};
 
 use inquire::{
     error::{CustomUserError, InquireResult},
-    validator::ValueRequiredValidator,
-    CustomType, DateSelect, MultiSelect, Select, Text,
+    required, CustomType, DateSelect, MultiSelect, Select, Text,
 };
 
 fn main() -> InquireResult<()> {
@@ -12,7 +11,7 @@ fn main() -> InquireResult<()> {
     let _category = Select::new("Category:", get_categories()).prompt()?;
 
     let _payee = Text::new("Payee:")
-        .with_validator(ValueRequiredValidator::new("This field is required"))
+        .with_validator(required!("This field is required"))
         .with_suggester(&payee_suggestor)
         .with_help_message("e.g. Music Store")
         .with_page_size(5)

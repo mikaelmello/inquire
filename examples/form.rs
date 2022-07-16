@@ -1,6 +1,5 @@
 use inquire::{
-    error::InquireResult, validator::MinLengthValidator, Confirm, DateSelect, MultiSelect,
-    Password, Select, Text,
+    error::InquireResult, min_length, Confirm, DateSelect, MultiSelect, Password, Select, Text,
 };
 
 fn main() -> InquireResult<()> {
@@ -32,7 +31,7 @@ fn main() -> InquireResult<()> {
 
     let _workplace = Text::new("Where do you work?")
         .with_help_message("Don't worry, this will not be sold to third-party advertisers.")
-        .with_validator(MinLengthValidator::new(5).with_message("Minimum of 5 characters"))
+        .with_validator(min_length!(5, "Minimum of 5 characters"))
         .with_default("Unemployed")
         .prompt_skippable()?;
 
@@ -49,7 +48,7 @@ fn main() -> InquireResult<()> {
         Select::new("What is your favorite programming language?", languages).prompt_skippable()?;
 
     let _password = Password::new("Password:")
-        .with_validator(MinLengthValidator::new(8).with_message("Minimum of 8 characters"))
+        .with_validator(min_length!(8, "Minimum of 8 characters"))
         .prompt_skippable()?;
 
     let _when = DateSelect::new("When are you going to travel?").prompt_skippable()?;

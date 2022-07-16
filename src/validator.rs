@@ -294,6 +294,39 @@ impl StringValidator for ValueRequiredValidator {
     }
 }
 
+/// Built-in validator that checks whether the answer is not empty.
+///
+/// # Arguments
+///
+/// * `$message` - optional - Error message returned by the validator.
+///   Defaults to "A response is required."
+///
+/// # Examples
+///
+/// ```
+/// use inquire::{required, validator::{StringValidator, Validation}};
+///
+/// let validator = required!();
+/// assert_eq!(Validation::Valid, validator.validate("Generic input")?);
+/// assert_eq!(Validation::Invalid("A response is required.".into()), validator.validate("")?);
+///
+/// let validator = required!("No empty!");
+/// assert_eq!(Validation::Valid, validator.validate("Generic input")?);
+/// assert_eq!(Validation::Invalid("No empty!".into()), validator.validate("")?);
+/// # Ok::<(), inquire::error::CustomUserError>(())
+/// ```
+#[macro_export]
+#[cfg(feature = "builtin_validators")]
+macro_rules! required {
+    () => {
+        $crate::validator::ValueRequiredValidator::default()
+    };
+
+    ($message:expr) => {
+        $crate::validator::ValueRequiredValidator::new($message)
+    };
+}
+
 /// Built-in validator that checks whether the answer length is smaller than
 /// or equal to the specified threshold.
 ///
@@ -363,6 +396,45 @@ impl<T: ?Sized> MultiOptionValidator<T> for MaxLengthValidator {
     fn validate(&self, input: &[ListOption<&T>]) -> Result<Validation, CustomUserError> {
         self.validate_inquire_length(input)
     }
+}
+
+/// Built-in validator that checks whether the answer length is smaller than
+/// or equal to the specified threshold.
+///
+/// The validator uses a custom-built length function that
+/// has a special implementation for strings which counts the number of
+/// graphemes. See this [StackOverflow question](https://stackoverflow.com/questions/46290655/get-the-string-length-in-characters-in-rust).
+///
+/// # Arguments
+///
+/// * `$length` - Maximum length of the input.
+/// * `$message` - optional - Error message returned by the validator.
+///   Defaults to "The length of the response should be at most $length"
+///
+/// # Examples
+///
+/// ```
+/// use inquire::{max_length, validator::{StringValidator, Validation}};
+///
+/// let validator = max_length!(5);
+/// assert_eq!(Validation::Valid, validator.validate("Good")?);
+/// assert_eq!(Validation::Invalid("The length of the response should be at most 5".into()), validator.validate("Terrible")?);
+///
+/// let validator = max_length!(5, "Not too large!");
+/// assert_eq!(Validation::Valid, validator.validate("Good")?);
+/// assert_eq!(Validation::Invalid("Not too large!".into()), validator.validate("Terrible")?);
+/// # Ok::<(), inquire::error::CustomUserError>(())
+/// ```
+#[macro_export]
+#[cfg(feature = "builtin_validators")]
+macro_rules! max_length {
+    ($length:expr) => {
+        $crate::validator::MaxLengthValidator::new($length)
+    };
+
+    ($length:expr, $message:expr) => {
+        $crate::max_length!($length).with_message($message)
+    };
 }
 
 /// Built-in validator that checks whether the answer length is larger than
@@ -439,6 +511,45 @@ impl<T: ?Sized> MultiOptionValidator<T> for MinLengthValidator {
     }
 }
 
+/// Built-in validator that checks whether the answer length is larger than
+/// or equal to the specified threshold.
+///
+/// The validator uses a custom-built length function that
+/// has a special implementation for strings which counts the number of
+/// graphemes. See this [StackOverflow question](https://stackoverflow.com/questions/46290655/get-the-string-length-in-characters-in-rust).
+///
+/// # Arguments
+///
+/// * `$length` - Minimum length of the input.
+/// * `$message` - optional - Error message returned by the validator.
+///   Defaults to "The length of the response should be at least $length"
+///
+/// # Examples
+///
+/// ```
+/// use inquire::{min_length, validator::{StringValidator, Validation}};
+///
+/// let validator = min_length!(3);
+/// assert_eq!(Validation::Valid, validator.validate("Yes")?);
+/// assert_eq!(Validation::Invalid("The length of the response should be at least 3".into()), validator.validate("No")?);
+///
+/// let validator = min_length!(3, "You have to give me more than that!");
+/// assert_eq!(Validation::Valid, validator.validate("Yes")?);
+/// assert_eq!(Validation::Invalid("You have to give me more than that!".into()), validator.validate("No")?);
+/// # Ok::<(), inquire::error::CustomUserError>(())
+/// ```
+#[macro_export]
+#[cfg(feature = "builtin_validators")]
+macro_rules! min_length {
+    ($length:expr) => {
+        $crate::validator::MinLengthValidator::new($length)
+    };
+
+    ($length:expr, $message:expr) => {
+        $crate::min_length!($length).with_message($message)
+    };
+}
+
 /// Built-in validator that checks whether the answer length is equal to
 /// the specified value.
 ///
@@ -508,6 +619,45 @@ impl<T: ?Sized> MultiOptionValidator<T> for ExactLengthValidator {
     fn validate(&self, input: &[ListOption<&T>]) -> Result<Validation, CustomUserError> {
         self.validate_inquire_length(input)
     }
+}
+
+/// Built-in validator that checks whether the answer length is equal to
+/// the specified value.
+///
+/// The validator uses a custom-built length function that
+/// has a special implementation for strings which counts the number of
+/// graphemes. See this [StackOverflow question](https://stackoverflow.com/questions/46290655/get-the-string-length-in-characters-in-rust).
+///
+/// # Arguments
+///
+/// * `$length` - Expected length of the input.
+/// * `$message` - optional - Error message returned by the validator.
+///   Defaults to "The length of the response should be $length"
+///
+/// # Examples
+///
+/// ```
+/// use inquire::{length, validator::{StringValidator, Validation}};
+///
+/// let validator = length!(3);
+/// assert_eq!(Validation::Valid, validator.validate("Yes")?);
+/// assert_eq!(Validation::Invalid("The length of the response should be 3".into()), validator.validate("No")?);
+///
+/// let validator = length!(3, "Three characters please.");
+/// assert_eq!(Validation::Valid, validator.validate("Yes")?);
+/// assert_eq!(Validation::Invalid("Three characters please.".into()), validator.validate("No")?);
+/// # Ok::<(), inquire::error::CustomUserError>(())
+/// ```
+#[macro_export]
+#[cfg(feature = "builtin_validators")]
+macro_rules! length {
+    ($length:expr) => {
+        $crate::validator::ExactLengthValidator::new($length)
+    };
+
+    ($length:expr, $message:expr) => {
+        $crate::length!($length).with_message($message)
+    };
 }
 
 #[cfg(test)]
