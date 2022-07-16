@@ -219,7 +219,7 @@ where
 /// Custom trait to call correct method to retrieve input length.
 ///
 /// The method can vary depending on the type of input.
-
+///
 /// String inputs should count the number of graphemes, via
 /// `.graphemes(true).count()`, instead of the number of bytes
 /// via `.len()`. While simple slices should keep using `.len()`
@@ -261,6 +261,7 @@ impl<T> InquireLength for &[T] {
 /// # Ok::<(), inquire::error::CustomUserError>(())
 /// ```
 #[derive(Clone)]
+#[cfg(feature = "builtin_validators")]
 pub struct ValueRequiredValidator {
     message: String,
 }
@@ -274,6 +275,7 @@ impl ValueRequiredValidator {
     }
 }
 
+#[cfg(feature = "builtin_validators")]
 impl Default for ValueRequiredValidator {
     /// Create a new instance of this validator with the default error message
     /// `A response is required`.
@@ -284,6 +286,7 @@ impl Default for ValueRequiredValidator {
     }
 }
 
+#[cfg(feature = "builtin_validators")]
 impl StringValidator for ValueRequiredValidator {
     fn validate(&self, input: &str) -> Result<Validation, CustomUserError> {
         Ok(if input.is_empty() {
@@ -294,7 +297,8 @@ impl StringValidator for ValueRequiredValidator {
     }
 }
 
-/// Built-in validator that checks whether the answer is not empty.
+/// Shorthand for the built-in [`ValueRequiredValidator`] that checks whether the answer is not
+/// empty.
 ///
 /// # Arguments
 ///
@@ -352,11 +356,13 @@ macro_rules! required {
 /// # Ok::<(), inquire::error::CustomUserError>(())
 /// ```
 #[derive(Clone)]
+#[cfg(feature = "builtin_validators")]
 pub struct MaxLengthValidator {
     limit: usize,
     message: String,
 }
 
+#[cfg(feature = "builtin_validators")]
 impl MaxLengthValidator {
     /// Create a new instance of this validator, requiring at most the given length, otherwise
     /// returning an error with default message.
@@ -386,24 +392,22 @@ impl MaxLengthValidator {
     }
 }
 
+#[cfg(feature = "builtin_validators")]
 impl StringValidator for MaxLengthValidator {
     fn validate(&self, input: &str) -> Result<Validation, CustomUserError> {
         self.validate_inquire_length(input)
     }
 }
 
+#[cfg(feature = "builtin_validators")]
 impl<T: ?Sized> MultiOptionValidator<T> for MaxLengthValidator {
     fn validate(&self, input: &[ListOption<&T>]) -> Result<Validation, CustomUserError> {
         self.validate_inquire_length(input)
     }
 }
 
-/// Built-in validator that checks whether the answer length is smaller than
-/// or equal to the specified threshold.
-///
-/// The validator uses a custom-built length function that
-/// has a special implementation for strings which counts the number of
-/// graphemes. See this [StackOverflow question](https://stackoverflow.com/questions/46290655/get-the-string-length-in-characters-in-rust).
+/// Shorthand for the built-in [`MaxLengthValidator`] that checks whether the answer length is
+/// smaller than or equal to the specified threshold.
 ///
 /// # Arguments
 ///
@@ -465,11 +469,13 @@ macro_rules! max_length {
 /// # Ok::<(), inquire::error::CustomUserError>(())
 /// ```
 #[derive(Clone)]
+#[cfg(feature = "builtin_validators")]
 pub struct MinLengthValidator {
     limit: usize,
     message: String,
 }
 
+#[cfg(feature = "builtin_validators")]
 impl MinLengthValidator {
     /// Create a new instance of this validator, requiring at least the given length, otherwise
     /// returning an error with default message.
@@ -499,24 +505,22 @@ impl MinLengthValidator {
     }
 }
 
+#[cfg(feature = "builtin_validators")]
 impl StringValidator for MinLengthValidator {
     fn validate(&self, input: &str) -> Result<Validation, CustomUserError> {
         self.validate_inquire_length(input)
     }
 }
 
+#[cfg(feature = "builtin_validators")]
 impl<T: ?Sized> MultiOptionValidator<T> for MinLengthValidator {
     fn validate(&self, input: &[ListOption<&T>]) -> Result<Validation, CustomUserError> {
         self.validate_inquire_length(input)
     }
 }
 
-/// Built-in validator that checks whether the answer length is larger than
-/// or equal to the specified threshold.
-///
-/// The validator uses a custom-built length function that
-/// has a special implementation for strings which counts the number of
-/// graphemes. See this [StackOverflow question](https://stackoverflow.com/questions/46290655/get-the-string-length-in-characters-in-rust).
+/// Shorthand for the built-in [`MinLengthValidator`] that checks whether the answer length is
+/// larger than or equal to the specified threshold.
 ///
 /// # Arguments
 ///
@@ -575,11 +579,13 @@ macro_rules! min_length {
 /// # Ok::<(), inquire::error::CustomUserError>(())
 /// ```
 #[derive(Clone)]
+#[cfg(feature = "builtin_validators")]
 pub struct ExactLengthValidator {
     length: usize,
     message: String,
 }
 
+#[cfg(feature = "builtin_validators")]
 impl ExactLengthValidator {
     /// Create a new instance of this validator, requiring exactly the given length, otherwise
     /// returning an error with default message.
@@ -609,24 +615,22 @@ impl ExactLengthValidator {
     }
 }
 
+#[cfg(feature = "builtin_validators")]
 impl StringValidator for ExactLengthValidator {
     fn validate(&self, input: &str) -> Result<Validation, CustomUserError> {
         self.validate_inquire_length(input)
     }
 }
 
+#[cfg(feature = "builtin_validators")]
 impl<T: ?Sized> MultiOptionValidator<T> for ExactLengthValidator {
     fn validate(&self, input: &[ListOption<&T>]) -> Result<Validation, CustomUserError> {
         self.validate_inquire_length(input)
     }
 }
 
-/// Built-in validator that checks whether the answer length is equal to
-/// the specified value.
-///
-/// The validator uses a custom-built length function that
-/// has a special implementation for strings which counts the number of
-/// graphemes. See this [StackOverflow question](https://stackoverflow.com/questions/46290655/get-the-string-length-in-characters-in-rust).
+/// Shorthand for the built-in [`ExactLengthValidator`] that checks whether the answer length is
+/// equal to the specified value.
 ///
 /// # Arguments
 ///
