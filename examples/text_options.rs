@@ -9,7 +9,7 @@ fn main() {
     let answer = Text::new("What's your name?")
         .with_suggester(&suggester)
         .with_validators(&[
-            Box::new(ValueRequiredValidator::new()),
+            Box::new(ValueRequiredValidator::default()),
             Box::new(ExactLengthValidator::new(10)),
         ])
         .prompt()

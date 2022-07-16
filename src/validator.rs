@@ -251,41 +251,43 @@ impl<T> InquireLength for &[T] {
 /// ```
 /// use inquire::validator::{StringValidator, Validation, ValueRequiredValidator};
 ///
-/// let validator = ValueRequiredValidator::new();
+/// let validator = ValueRequiredValidator::default();
 /// assert_eq!(Validation::Valid, validator.validate("Generic input")?);
 /// assert_eq!(Validation::Invalid("A response is required.".into()), validator.validate("")?);
 ///
-/// let validator = ValueRequiredValidator::new().with_message("No empty!");
+/// let validator = ValueRequiredValidator::new("No empty!");
 /// assert_eq!(Validation::Valid, validator.validate("Generic input")?);
 /// assert_eq!(Validation::Invalid("No empty!".into()), validator.validate("")?);
 /// # Ok::<(), inquire::error::CustomUserError>(())
 /// ```
-#[derive(Clone, Default)]
+#[derive(Clone)]
 pub struct ValueRequiredValidator {
-    message: Option<String>,
+    message: String,
 }
 
 impl ValueRequiredValidator {
-    /// Create a new instance of this validator with default error message.
-    pub fn new() -> Self {
-        Self { message: None }
+    /// Create a new instance of this validator with given error message.
+    pub fn new(message: impl Into<String>) -> Self {
+        Self {
+            message: message.into(),
+        }
     }
+}
 
-    /// Define a custom error message returned by the validator.
-    /// Defaults to `A response is required.`.
-    pub fn with_message(mut self, message: impl Into<String>) -> Self {
-        self.message = Some(message.into());
-        self
+impl Default for ValueRequiredValidator {
+    /// Create a new instance of this validator with the default error message
+    /// `A response is required`.
+    fn default() -> Self {
+        Self {
+            message: "A response is required.".to_owned(),
+        }
     }
 }
 
 impl StringValidator for ValueRequiredValidator {
     fn validate(&self, input: &str) -> Result<Validation, CustomUserError> {
         Ok(if input.is_empty() {
-            Validation::Invalid(match &self.message {
-                Some(msg) => msg.into(),
-                None => "A response is required.".into(),
-            })
+            Validation::Invalid(self.message.as_str().into())
         } else {
             Validation::Valid
         })
@@ -319,7 +321,7 @@ impl StringValidator for ValueRequiredValidator {
 #[derive(Clone)]
 pub struct MaxLengthValidator {
     limit: usize,
-    message: Option<String>,
+    message: String,
 }
 
 impl MaxLengthValidator {
@@ -328,14 +330,14 @@ impl MaxLengthValidator {
     pub fn new(limit: usize) -> Self {
         Self {
             limit,
-            message: None,
+            message: format!("The length of the response should be at most {}", limit),
         }
     }
 
     /// Define a custom error message returned by the validator.
     /// Defaults to `The length of the response should be at most $length`.
     pub fn with_message(mut self, message: impl Into<String>) -> Self {
-        self.message = Some(message.into());
+        self.message = message.into();
         self
     }
 
@@ -346,14 +348,7 @@ impl MaxLengthValidator {
         Ok(if input.inquire_length() <= self.limit {
             Validation::Valid
         } else {
-            Validation::Invalid(match &self.message {
-                Some(msg) => msg.into(),
-                None => format!(
-                    "The length of the response should be at most {}",
-                    self.limit
-                )
-                .into(),
-            })
+            Validation::Invalid(self.message.as_str().into())
         })
     }
 }
@@ -400,7 +395,7 @@ impl<T: ?Sized> MultiOptionValidator<T> for MaxLengthValidator {
 #[derive(Clone)]
 pub struct MinLengthValidator {
     limit: usize,
-    message: Option<String>,
+    message: String,
 }
 
 impl MinLengthValidator {
@@ -409,14 +404,14 @@ impl MinLengthValidator {
     pub fn new(limit: usize) -> Self {
         Self {
             limit,
-            message: None,
+            message: format!("The length of the response should be at least {}", limit),
         }
     }
 
     /// Define a custom error message returned by the validator.
     /// Defaults to `The length of the response should be at least $length`.
     pub fn with_message(mut self, message: impl Into<String>) -> Self {
-        self.message = Some(message.into());
+        self.message = message.into();
         self
     }
 
@@ -427,14 +422,7 @@ impl MinLengthValidator {
         Ok(if input.inquire_length() >= self.limit {
             Validation::Valid
         } else {
-            Validation::Invalid(match &self.message {
-                Some(msg) => msg.into(),
-                None => format!(
-                    "The length of the response should be at least {}",
-                    self.limit
-                )
-                .into(),
-            })
+            Validation::Invalid(self.message.as_str().into())
         })
     }
 }
@@ -478,7 +466,7 @@ impl<T: ?Sized> MultiOptionValidator<T> for MinLengthValidator {
 #[derive(Clone)]
 pub struct ExactLengthValidator {
     length: usize,
-    message: Option<String>,
+    message: String,
 }
 
 impl ExactLengthValidator {
@@ -487,14 +475,14 @@ impl ExactLengthValidator {
     pub fn new(length: usize) -> Self {
         Self {
             length,
-            message: None,
+            message: format!("The length of the response should be {}", length),
         }
     }
 
     /// Define a custom error message returned by the validator.
     /// Defaults to `The length of the response should be $length`.
     pub fn with_message(mut self, message: impl Into<String>) -> Self {
-        self.message = Some(message.into());
+        self.message = message.into();
         self
     }
 
@@ -505,10 +493,7 @@ impl ExactLengthValidator {
         Ok(if input.inquire_length() == self.length {
             Validation::Valid
         } else {
-            Validation::Invalid(match &self.message {
-                Some(msg) => msg.into(),
-                None => format!("The length of the response should be {}", self.length).into(),
-            })
+            Validation::Invalid(self.message.as_str().into())
         })
     }
 }
