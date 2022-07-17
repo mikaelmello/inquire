@@ -266,6 +266,7 @@ pub struct ValueRequiredValidator {
     message: String,
 }
 
+#[cfg(feature = "builtin_validators")]
 impl ValueRequiredValidator {
     /// Create a new instance of this validator with given error message.
     pub fn new(message: impl Into<String>) -> Self {
