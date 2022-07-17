@@ -3,7 +3,8 @@ use inquire::{error::CustomUserError, length, required, ui::RenderConfig, Text};
 fn main() {
     let answer = Text::new("What's your name?")
         .with_suggester(&suggester)
-        .with_validators(&[Box::new(required!()), Box::new(length!(10))])
+        .with_validator(required!())
+        .with_validator(length!(10))
         .prompt()
         .unwrap();
 
