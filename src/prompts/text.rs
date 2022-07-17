@@ -203,6 +203,12 @@ impl<'a> Text<'a> {
     where
         V: StringValidator + 'static,
     {
+        // Directly make space for at least 5 elements, so we won't to re-allocate too often when
+        // calling this function repeatedly.
+        if self.validators.capacity() == 0 {
+            self.validators.reserve(5);
+        }
+
         self.validators.push(Box::new(validator));
         self
     }
