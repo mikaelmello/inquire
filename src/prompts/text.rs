@@ -609,9 +609,9 @@ mod test {
             events
         },
         "12345yes",
-        Text::new("").with_validator(Box::new(|ans: &str| match ans.len() {
+        Text::new("").with_validator(|ans: &str| match ans.len() {
             len if len > 5 && len < 10 => Ok(Validation::Valid),
             _ => Ok(Validation::Invalid(ErrorMessage::Default)),
-        }))
+        })
     );
 }
