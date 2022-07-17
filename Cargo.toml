@@ -34,12 +34,12 @@ tempfile = { version = "3", optional = true }
 
 thiserror = "1"
 bitflags = "1"
+dyn-clone = "1"
 lazy_static = "1.4"
 newline-converter = "0.2"
 
 unicode-segmentation = "1"
 unicode-width = "0.1"
-dyn-clone = "1.0.5"
 
 [[example]]
 name = "form"
