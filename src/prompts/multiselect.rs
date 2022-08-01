@@ -80,7 +80,7 @@ pub struct MultiSelect<'a, T> {
     /// Validator to apply to the user input.
     ///
     /// In case of error, the message is displayed one line above the prompt.
-    pub validator: Option<MultiOptionValidator<'a, T>>,
+    pub validator: Option<Box<dyn MultiOptionValidator<T>>>,
 
     /// RenderConfig to apply to the rendered interface.
     ///
@@ -234,8 +234,11 @@ where
     /// of selections.
     ///
     /// In case of error, the message is displayed one line above the prompt.
-    pub fn with_validator(mut self, validator: MultiOptionValidator<'a, T>) -> Self {
-        self.validator = Some(validator);
+    pub fn with_validator<V>(mut self, validator: V) -> Self
+    where
+        V: MultiOptionValidator<T> + 'static,
+    {
+        self.validator = Some(Box::new(validator));
         self
     }
 
@@ -323,7 +326,7 @@ where
         self.prompt_with_backend(&mut backend)
     }
 
-    pub(in crate) fn prompt_with_backend<B: MultiSelectBackend>(
+    pub(crate) fn prompt_with_backend<B: MultiSelectBackend>(
         self,
         backend: &mut B,
     ) -> InquireResult<Vec<ListOption<T>>> {
@@ -345,7 +348,7 @@ struct MultiSelectPrompt<'a, T> {
     filtered_options: Vec<usize>,
     filter: Filter<'a, T>,
     formatter: MultiOptionFormatter<'a, T>,
-    validator: Option<MultiOptionValidator<'a, T>>,
+    validator: Option<Box<dyn MultiOptionValidator<T>>>,
     error: Option<ErrorMessage>,
 }
 
@@ -496,7 +499,7 @@ where
     }
 
     fn validate_current_answer(&self) -> InquireResult<Validation> {
-        if let Some(validator) = self.validator {
+        if let Some(validator) = &self.validator {
             let selected_options = self
                 .options
                 .iter()
@@ -505,9 +508,9 @@ where
                     true => Some(ListOption::new(idx, opt)),
                     false => None,
                 })
-                .collect::<Vec<ListOption<&T>>>();
+                .collect::<Vec<_>>();
 
-            let res = validator(&selected_options)?;
+            let res = validator.validate(&selected_options)?;
             Ok(res)
         } else {
             Ok(Validation::Valid)

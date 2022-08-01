@@ -6,8 +6,8 @@ mod key;
 mod render_config;
 mod style;
 
-pub(in crate) use backend::*;
-pub(in crate) use key::{Key, KeyModifiers};
+pub(crate) use backend::*;
+pub(crate) use key::{Key, KeyModifiers};
 
 pub use color::Color;
 pub use render_config::*;

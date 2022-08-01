@@ -39,6 +39,16 @@ The function signature for validators has been changed to `Result<Validation, Cu
 
 The function signature for suggesters has also been changed to allow fallible executions. The return type in successful executions continues to be `Vec<String>`, while `CustomUserError` is used with errors. The docs contain more thorough explanations and full-featured examples.
 
+---
+
+#### 4. Validators are traits instead of closures.
+
+All builtin validators have been turned into traits, with structs instead of macros as implementations.
+
+This changes makes it easier to share the validators throughout the code, especially if these carry their own owned data. For example, consider a validator that uses a compiled regular expression to verify the input. That validator can now be built as a new-type struct that encapsulates the regex.
+
+Closures can still be used as before, but may not require to pass the argument type explicitly. The previous macros are now simply shorthands for the constructors of builtin validators.
+
 ### Fixes
 
 #### 1. Fix a broken link in the `struct.Text` documentation.

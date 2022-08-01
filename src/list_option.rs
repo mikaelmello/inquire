@@ -39,7 +39,7 @@ impl<T> ListOption<T> {
     }
 
     #[allow(unused)]
-    pub(in crate) fn from_list(vals: Vec<T>) -> Vec<ListOption<T>> {
+    pub(crate) fn from_list(vals: Vec<T>) -> Vec<ListOption<T>> {
         vals.into_iter()
             .enumerate()
             .map(|(index, value)| Self { index, value })
@@ -47,7 +47,7 @@ impl<T> ListOption<T> {
     }
 
     #[allow(unused)]
-    pub(in crate) fn from_enumerated_list(vals: Vec<(usize, T)>) -> Vec<ListOption<T>> {
+    pub(crate) fn from_enumerated_list(vals: Vec<(usize, T)>) -> Vec<ListOption<T>> {
         vals.into_iter()
             .map(|(index, value)| Self { index, value })
             .collect()

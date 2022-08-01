@@ -1,7 +1,5 @@
 use inquire::{
-    formatter::MultiOptionFormatter,
-    validator::{MultiOptionValidator, Validation},
-    MultiSelect,
+    formatter::MultiOptionFormatter, list_option::ListOption, validator::Validation, MultiSelect,
 };
 
 fn main() {
@@ -19,7 +17,7 @@ fn main() {
         "Pineapple",
     ];
 
-    let validator: MultiOptionValidator<&str> = &|a| {
+    let validator = |a: &[ListOption<&&str>]| {
         if a.len() < 2 {
             return Ok(Validation::Invalid("This list is too small!".into()));
         }

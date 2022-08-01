@@ -105,7 +105,7 @@ The `CustomUserError` type is an alias to `Box<dyn std::error::Error + Send + Sy
 
 The validators are typed as a reference to `dyn Fn`. This allows both functions and closures to be used as validators, but it also means that the functions can not hold any mutable references.
 
-Finally, `inquire` has a feature called `builtin_validators` that is included by default. When the feature is on, several built-in validators are exported at the root-level of the library in the form of macros. Check their documentation to see more details, they provide full-featured examples.
+Finally, `inquire` has a feature called `macros` that is included by default. When the feature is on, several shorthand macros for the builtin validators are exported at the root-level of the library. Check their documentation to see more details, they provide full-featured examples.
 
 In the [demo](#Demo) you can see the behavior of an input not passing the requirements in the _amount_ prompt, when the error message "Please type a valid number" is displayed. _Full disclosure, this error message was displayed due to a parsing, not validation, error, but the user experience is the same for both cases._
 
@@ -157,7 +157,7 @@ Filter functions receive three arguments: the current user input, the option str
 
 The default filter function does a naive case-insensitive comparison between the option string value and the current user input, returning `true` if the option string value contains the user input as a substring.
 
-In the [demo](#Demo) you can see this behavior in action with the *account* (Select) and *tags* (MultiSelect) prompts. 
+In the [demo](#Demo) you can see this behavior in action with the *account* (Select) and *tags* (MultiSelect) prompts.
 
 ## Error handling
 
@@ -232,7 +232,7 @@ Default behaviors for each one of `Text` configuration options:
 ```rust
 let date = DateSelect::new("When do you want to travel?")
     .with_default(chrono::NaiveDate::from_ymd(2021, 8, 1))
-    .with_min_date(chrono::NaiveDate::from_ymd(2021, 8, 1)) 
+    .with_min_date(chrono::NaiveDate::from_ymd(2021, 8, 1))
     .with_max_date(chrono::NaiveDate::from_ymd(2021, 12, 31))
     .with_week_start(chrono::Weekday::Mon)
     .with_help_message("Possible flights will be displayed according to the selected date")
@@ -350,7 +350,7 @@ This prompt's behavior is to ask the user to either open the editor - by pressin
 
 The editor opened is set by default to `nano` on Unix environments and `notepad` on Windows environments. Additionally, if there's an editor set in either the `EDITOR` or `VISUAL` environment variables, it is used instead.
 
-If the user presses `esc` while the editor is not open, it will be interpreted as the user canceling (or skipping) the operation, in which case the prompt call will return `Err(InquireError::OperationCanceled)`. 
+If the user presses `esc` while the editor is not open, it will be interpreted as the user canceling (or skipping) the operation, in which case the prompt call will return `Err(InquireError::OperationCanceled)`.
 
 If the user presses `enter` without ever modyfing the temporary file, it will be treated as an empty submission. If this is unwanted behavior, you can control the user input by using validators.
 
@@ -388,7 +388,7 @@ However, you can still customize these and other behaviors if you wish:
   - Hidden: default behavior, no UI indicators.
   - Masked: behaves like a normal text input, except that all characters of the input are masked to a special character, which is `'*'` by default but can be customized via `RenderConfig`.
   - Full: behaves like a normal text input, no modifications.
-- **Toggle display mode**: By enabling this feature by calling the `with_display_toggle_enabled()`, you allow the user to toggle between the standard display mode set and the full display mode. 
+- **Toggle display mode**: By enabling this feature by calling the `with_display_toggle_enabled()`, you allow the user to toggle between the standard display mode set and the full display mode.
   - If you have set the standard display mode to hidden (which is also the default) or masked, the user can press `Ctrl+R` to change the display mode to `Full`, and `Ctrl+R` again to change it back to the standard one.
   - Obviously, if you have set the standard display mode to `Full`, pressing `Ctrl+R` won't cause any changes.
 - **Help message**: Message displayed at the line below the prompt.

@@ -337,7 +337,6 @@ pub enum IndexPrefix {
     /// indexes with two digits will be padded with one space, and
     /// finally the last option with index 100 will not need to be
     /// padded.
-    /// ```
     SpacePadded,
 
     /// A simple index (1-based) will be displayed before the
@@ -350,7 +349,6 @@ pub enum IndexPrefix {
     /// indexes with two digits will be padded with one zero, and
     /// finally the last option with index 100 will not need to be
     /// padded.
-    /// ```
     ZeroPadded,
 }
 

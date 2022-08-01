@@ -68,7 +68,7 @@ pub const DEFAULT_BOOL_PARSER: BoolParser = &|ans| {
 };
 
 #[macro_export]
-#[cfg(feature = "builtin_validators")]
+#[cfg(feature = "macros")]
 /// Built-in parser creator that checks whether the answer is able to be successfully
 /// parsed to a given type, such as `f64`.
 /// [The given type must implement the FromStr trait.](https://doc.rust-lang.org/stable/std/primitive.str.html#method.parse)

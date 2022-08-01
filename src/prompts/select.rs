@@ -259,7 +259,7 @@ where
         self.prompt_with_backend(&mut backend)
     }
 
-    pub(in crate) fn prompt_with_backend<B: SelectBackend>(
+    pub(crate) fn prompt_with_backend<B: SelectBackend>(
         self,
         backend: &mut B,
     ) -> InquireResult<ListOption<T>> {
