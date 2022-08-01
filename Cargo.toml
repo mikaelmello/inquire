@@ -14,8 +14,8 @@ categories = ["command-line-interface", "value-formatting"]
 include = ["/examples", "/src", "/LICENSE"]
 
 [features]
-default = ["builtin_validators", "crossterm"]
-builtin_validators = []
+default = ["macros", "crossterm"]
+macros = []
 date = ["chrono"]
 editor = ["tempfile"]
 
@@ -43,11 +43,11 @@ unicode-width = "0.1"
 
 [[example]]
 name = "form"
-required-features = ["builtin_validators", "date"]
+required-features = ["date", "macros"]
 
 [[example]]
 name = "date"
-required-features = ["builtin_validators", "date"]
+required-features = ["date", "macros"]
 
 [[example]]
 name = "editor"
@@ -55,23 +55,23 @@ required-features = ["editor"]
 
 [[example]]
 name = "expense_tracker"
-required-features = ["builtin_validators", "date"]
+required-features = ["date", "macros"]
 
 [[example]]
 name = "render_config"
-required-features = ["builtin_validators", "date"]
+required-features = ["date", "macros"]
 
 [[example]]
 name = "empty_render_config"
-required-features = ["builtin_validators", "date"]
+required-features = ["date", "macros"]
 
 [[example]]
 name = "text_options"
-required-features = ["builtin_validators"]
+required-features = ["macros"]
 
 [[example]]
 name = "password_full_featured"
-required-features = ["builtin_validators"]
+required-features = ["macros"]
 
 [[example]]
 name = "date_complete"
