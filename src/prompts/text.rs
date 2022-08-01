@@ -68,7 +68,9 @@ pub struct Text<'a> {
 
     /// Initial value of the prompt's text input.
     ///
-    /// If you want to set a default value for the prompt, returned when the user's submission is empty, see [default].
+    /// If you want to set a default value for the prompt, returned when the user's submission is empty, see [`default`].
+    ///
+    /// [`default`]: Self::default
     pub initial_value: Option<&'a str>,
 
     /// Default value, returned when the user input is empty.
@@ -149,7 +151,9 @@ impl<'a> Text<'a> {
 
     /// Sets the initial value of the prompt's text input.
     ///
-    /// If you want to set a default value for the prompt, returned when the user's submission is empty, see [with_default].
+    /// If you want to set a default value for the prompt, returned when the user's submission is empty, see [`with_default`].
+    ///
+    /// [`with_default`]: Self::with_default
     pub fn with_initial_value(mut self, message: &'a str) -> Self {
         self.initial_value = Some(message);
         self

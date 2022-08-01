@@ -1,4 +1,4 @@
-//! Type aliases for functions used by prompts to validate user input before
+//! Traits and structs used by prompts to validate user input before
 //! returning the values to their callers.
 //!
 //! Validators receive the user input to a given prompt and decide whether
@@ -9,12 +9,8 @@
 //! Validators can also return errors, which propagate to the caller prompt
 //! and cause the prompt to return the error.
 //!
-//! When creating containers of validators, e.g. when calling `with_validators`
-//! in a prompt, you might need to type hint the container with one of the types
-//! below.
-//!
-//! This module also provides several built-in validators generated through macros,
-//! exported with the `builtin_validators` feature.
+//! This module also provides several macros as shorthands to the struct
+//! constructor functions, exported with the `macros` feature.
 
 use dyn_clone::DynClone;
 
@@ -25,7 +21,7 @@ use crate::{error::CustomUserError, list_option::ListOption};
 #[derive(Clone, Debug, PartialEq)]
 pub enum ErrorMessage {
     /// No custom message is defined, a standard one defined in the set
-    /// [`RenderConfig`](crate::RenderConfig) is used instead.
+    /// [`RenderConfig`](crate::ui::RenderConfig) is used instead.
     Default,
 
     /// Custom error message, used instead of the standard one.
@@ -62,8 +58,8 @@ pub enum Validation {
     Invalid(ErrorMessage),
 }
 
-/// Validator that receives a string slice as the input, such as [Text](crate::Text) and
-/// [Password](crate::Password).
+/// Validator that receives a string slice as the input, such as [`Text`](crate::Text) and
+/// [`Password`](crate::Password).
 ///
 /// If the input provided by the user is valid, your validator should return `Ok(Validation::Valid)`.
 ///
@@ -261,12 +257,10 @@ impl<T> InquireLength for &[T] {
 /// # Ok::<(), inquire::error::CustomUserError>(())
 /// ```
 #[derive(Clone)]
-#[cfg(feature = "builtin_validators")]
 pub struct ValueRequiredValidator {
     message: String,
 }
 
-#[cfg(feature = "builtin_validators")]
 impl ValueRequiredValidator {
     /// Create a new instance of this validator with given error message.
     pub fn new(message: impl Into<String>) -> Self {
@@ -276,7 +270,6 @@ impl ValueRequiredValidator {
     }
 }
 
-#[cfg(feature = "builtin_validators")]
 impl Default for ValueRequiredValidator {
     /// Create a new instance of this validator with the default error message
     /// `A response is required`.
@@ -287,7 +280,6 @@ impl Default for ValueRequiredValidator {
     }
 }
 
-#[cfg(feature = "builtin_validators")]
 impl StringValidator for ValueRequiredValidator {
     fn validate(&self, input: &str) -> Result<Validation, CustomUserError> {
         Ok(if input.is_empty() {
@@ -321,7 +313,7 @@ impl StringValidator for ValueRequiredValidator {
 /// # Ok::<(), inquire::error::CustomUserError>(())
 /// ```
 #[macro_export]
-#[cfg(feature = "builtin_validators")]
+#[cfg(feature = "macros")]
 macro_rules! required {
     () => {
         $crate::validator::ValueRequiredValidator::default()
@@ -357,13 +349,11 @@ macro_rules! required {
 /// # Ok::<(), inquire::error::CustomUserError>(())
 /// ```
 #[derive(Clone)]
-#[cfg(feature = "builtin_validators")]
 pub struct MaxLengthValidator {
     limit: usize,
     message: String,
 }
 
-#[cfg(feature = "builtin_validators")]
 impl MaxLengthValidator {
     /// Create a new instance of this validator, requiring at most the given length, otherwise
     /// returning an error with default message.
@@ -393,14 +383,12 @@ impl MaxLengthValidator {
     }
 }
 
-#[cfg(feature = "builtin_validators")]
 impl StringValidator for MaxLengthValidator {
     fn validate(&self, input: &str) -> Result<Validation, CustomUserError> {
         self.validate_inquire_length(input)
     }
 }
 
-#[cfg(feature = "builtin_validators")]
 impl<T: ?Sized> MultiOptionValidator<T> for MaxLengthValidator {
     fn validate(&self, input: &[ListOption<&T>]) -> Result<Validation, CustomUserError> {
         self.validate_inquire_length(input)
@@ -431,7 +419,7 @@ impl<T: ?Sized> MultiOptionValidator<T> for MaxLengthValidator {
 /// # Ok::<(), inquire::error::CustomUserError>(())
 /// ```
 #[macro_export]
-#[cfg(feature = "builtin_validators")]
+#[cfg(feature = "macros")]
 macro_rules! max_length {
     ($length:expr) => {
         $crate::validator::MaxLengthValidator::new($length)
@@ -470,13 +458,11 @@ macro_rules! max_length {
 /// # Ok::<(), inquire::error::CustomUserError>(())
 /// ```
 #[derive(Clone)]
-#[cfg(feature = "builtin_validators")]
 pub struct MinLengthValidator {
     limit: usize,
     message: String,
 }
 
-#[cfg(feature = "builtin_validators")]
 impl MinLengthValidator {
     /// Create a new instance of this validator, requiring at least the given length, otherwise
     /// returning an error with default message.
@@ -506,14 +492,12 @@ impl MinLengthValidator {
     }
 }
 
-#[cfg(feature = "builtin_validators")]
 impl StringValidator for MinLengthValidator {
     fn validate(&self, input: &str) -> Result<Validation, CustomUserError> {
         self.validate_inquire_length(input)
     }
 }
 
-#[cfg(feature = "builtin_validators")]
 impl<T: ?Sized> MultiOptionValidator<T> for MinLengthValidator {
     fn validate(&self, input: &[ListOption<&T>]) -> Result<Validation, CustomUserError> {
         self.validate_inquire_length(input)
@@ -544,7 +528,7 @@ impl<T: ?Sized> MultiOptionValidator<T> for MinLengthValidator {
 /// # Ok::<(), inquire::error::CustomUserError>(())
 /// ```
 #[macro_export]
-#[cfg(feature = "builtin_validators")]
+#[cfg(feature = "macros")]
 macro_rules! min_length {
     ($length:expr) => {
         $crate::validator::MinLengthValidator::new($length)
@@ -580,13 +564,11 @@ macro_rules! min_length {
 /// # Ok::<(), inquire::error::CustomUserError>(())
 /// ```
 #[derive(Clone)]
-#[cfg(feature = "builtin_validators")]
 pub struct ExactLengthValidator {
     length: usize,
     message: String,
 }
 
-#[cfg(feature = "builtin_validators")]
 impl ExactLengthValidator {
     /// Create a new instance of this validator, requiring exactly the given length, otherwise
     /// returning an error with default message.
@@ -616,14 +598,12 @@ impl ExactLengthValidator {
     }
 }
 
-#[cfg(feature = "builtin_validators")]
 impl StringValidator for ExactLengthValidator {
     fn validate(&self, input: &str) -> Result<Validation, CustomUserError> {
         self.validate_inquire_length(input)
     }
 }
 
-#[cfg(feature = "builtin_validators")]
 impl<T: ?Sized> MultiOptionValidator<T> for ExactLengthValidator {
     fn validate(&self, input: &[ListOption<&T>]) -> Result<Validation, CustomUserError> {
         self.validate_inquire_length(input)
@@ -654,7 +634,7 @@ impl<T: ?Sized> MultiOptionValidator<T> for ExactLengthValidator {
 /// # Ok::<(), inquire::error::CustomUserError>(())
 /// ```
 #[macro_export]
-#[cfg(feature = "builtin_validators")]
+#[cfg(feature = "macros")]
 macro_rules! length {
     ($length:expr) => {
         $crate::validator::ExactLengthValidator::new($length)
@@ -666,8 +646,7 @@ macro_rules! length {
 }
 
 #[cfg(test)]
-#[cfg(feature = "builtin_validators")]
-mod builtin_validators_test {
+mod validators_test {
     use crate::{
         error::CustomUserError,
         list_option::ListOption,
