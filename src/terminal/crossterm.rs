@@ -121,11 +121,11 @@ impl<'a> Terminal for CrosstermTerminal<'a> {
     fn read_key(&mut self) -> Result<Key> {
         loop {
             match &mut self.io {
-                IO::Std { w: _ } => match event::read()? {
-                    event::Event::Key(key_event) => return Ok(key_event.into()),
-                    event::Event::Mouse(_) => {}
-                    event::Event::Resize(_, _) => {}
-                },
+                IO::Std { w: _ } => {
+                    if let event::Event::Key(key_event) = event::read()? {
+                        return Ok(key_event.into());
+                    }
+                }
                 IO::Custom { r, w: _ } => {
                     let key = r.next().expect("Custom stream of characters has ended");
                     return Ok((*key).into());
@@ -260,74 +260,78 @@ impl From<KeyEvent> for Key {
             KeyEvent {
                 code: KeyCode::Char('c'),
                 modifiers: crossterm::event::KeyModifiers::CONTROL,
+                ..
             } => Self::Interrupt,
             KeyEvent {
-                code: KeyCode::Esc,
-                modifiers: _,
+                code: KeyCode::Esc, ..
             } => Self::Cancel,
             KeyEvent {
                 code: KeyCode::Enter,
-                modifiers: _,
+                ..
             }
             | KeyEvent {
                 code: KeyCode::Char('\n'),
-                modifiers: _,
+                ..
             }
             | KeyEvent {
                 code: KeyCode::Char('\r'),
-                modifiers: _,
+                ..
             } => Self::Submit,
             KeyEvent {
-                code: KeyCode::Tab,
-                modifiers: _,
+                code: KeyCode::Tab, ..
             }
             | KeyEvent {
                 code: KeyCode::Char('\t'),
-                modifiers: _,
+                ..
             } => Self::Tab,
             KeyEvent {
                 code: KeyCode::Backspace,
-                modifiers: _,
+                ..
             } => Self::Backspace,
             KeyEvent {
                 code: KeyCode::Delete,
                 modifiers: m,
+                ..
             } => Self::Delete(m.into()),
             KeyEvent {
                 code: KeyCode::Home,
-                modifiers: _,
+                ..
             } => Self::Home,
             KeyEvent {
-                code: KeyCode::End,
-                modifiers: _,
+                code: KeyCode::End, ..
             } => Self::End,
             KeyEvent {
                 code: KeyCode::PageUp,
-                modifiers: _,
+                ..
             } => Self::PageUp,
             KeyEvent {
                 code: KeyCode::PageDown,
-                modifiers: _,
+                ..
             } => Self::PageDown,
             KeyEvent {
                 code: KeyCode::Up,
                 modifiers: m,
+                ..
             } => Self::Up(m.into()),
             KeyEvent {
                 code: KeyCode::Down,
                 modifiers: m,
+                ..
             } => Self::Down(m.into()),
             KeyEvent {
                 code: KeyCode::Left,
                 modifiers: m,
+                ..
             } => Self::Left(m.into()),
             KeyEvent {
                 code: KeyCode::Right,
                 modifiers: m,
+                ..
             } => Self::Right(m.into()),
             KeyEvent {
                 code: KeyCode::Char(c),
                 modifiers: m,
+                ..
             } => Self::Char(c, m.into()),
             #[allow(deprecated)]
             _ => Self::Any,
