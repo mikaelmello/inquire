@@ -24,7 +24,7 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
-crossterm = { version = "0.24", optional = true }
+crossterm = { version = "0.25", optional = true }
 termion = { version = "1.5", optional = true }
 console = { version = "0.15", optional = true, features = ["windows-console-colors"] }
 
