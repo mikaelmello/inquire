@@ -47,7 +47,7 @@ bitflags! {
 ///
 /// assert!(!style_sheet.is_empty());
 /// ```
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct StyleSheet {
     /// Foreground color of text.
     pub fg: Option<Color>,

@@ -317,7 +317,7 @@ impl Default for RenderConfig {
 }
 
 /// Definition of index prefixes in option lists.
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum IndexPrefix {
     /// Lists of options will not display any hints regarding
     /// the position/index of the positions.

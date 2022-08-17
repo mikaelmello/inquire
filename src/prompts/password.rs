@@ -9,7 +9,7 @@ use crate::{
 };
 
 /// Display modes of the text input of a password prompt.
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum PasswordDisplayMode {
     /// Password text input is not rendered at all, no indication of input.
     Hidden,
