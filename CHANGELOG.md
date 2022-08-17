@@ -5,7 +5,7 @@
 
 ### Breaking Changes
 
-Features #1 to #3 are all breaking changes and could break the compilation of your program.
+Features #1 to #4 are all breaking changes and could break the compilation of your program.
 
 Fix #2 representes a change in usability and might be an unexpected behavior.
 
@@ -45,7 +45,7 @@ The function signature for suggesters has also been changed to allow fallible ex
 
 All builtin validators have been turned into traits, with structs instead of macros as implementations.
 
-This changes makes it easier to share the validators throughout the code, especially if these carry their own owned data. For example, consider a validator that uses a compiled regular expression to verify the input. That validator can now be built as a new-type struct that encapsulates the regex.
+This change makes it easier to share the validators throughout the code, especially if these carry their own owned data. For example, consider a validator that uses a compiled regular expression to verify the input. That validator can now be built as a new-type struct that encapsulates the regex.
 
 Closures can still be used as before, but may not require to pass the argument type explicitly. The previous macros are now simply shorthands for the constructors of builtin validators.
 
