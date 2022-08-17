@@ -13,7 +13,7 @@ use crate::{
     validator::{ErrorMessage, StringValidator, Validation},
 };
 
-const DEFAULT_HELP_MESSAGE: &str = "↑↓ to move, tab to auto-complete, enter to submit";
+const DEFAULT_HELP_MESSAGE_WITH_AC: &str = "↑↓ to move, tab to auto-complete, enter to submit";
 
 /// Standard text prompt that returns the user string input.
 ///
@@ -444,7 +444,7 @@ impl<'a> TextPrompt<'a> {
         if let Some(message) = self.help_message {
             backend.render_help_message(message)?;
         } else if !choices.is_empty() {
-            backend.render_help_message(DEFAULT_HELP_MESSAGE)?;
+            backend.render_help_message(DEFAULT_HELP_MESSAGE_WITH_AC)?;
         }
 
         backend.frame_finish()?;
