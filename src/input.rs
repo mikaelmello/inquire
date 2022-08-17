@@ -31,11 +31,16 @@ impl Input {
         }
     }
 
-    pub fn new_with(content: &str) -> Self {
+    pub fn new_with<S>(content: S) -> Self
+    where
+        S: Into<String>,
+    {
+        let content: String = content.into();
+
         let len = content.graphemes(true).count();
 
         Self {
-            content: String::from(content),
+            content,
             placeholder: None,
             length: len,
             cursor: len,

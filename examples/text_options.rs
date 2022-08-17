@@ -2,7 +2,7 @@ use inquire::{error::CustomUserError, length, required, ui::RenderConfig, Text};
 
 fn main() {
     let answer = Text::new("What's your name?")
-        .with_suggester(&suggester)
+        //.with_suggester(&suggester)
         .with_validator(required!())
         .with_validator(length!(10))
         .prompt()
@@ -19,8 +19,7 @@ fn main() {
         formatter: Text::DEFAULT_FORMATTER,
         validators: Vec::new(),
         page_size: Text::DEFAULT_PAGE_SIZE,
-        suggester: None,
-        completer: None,
+        autocompleter: None,
         render_config: RenderConfig::default(),
     }
     .prompt()
