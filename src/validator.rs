@@ -18,7 +18,7 @@ use crate::{error::CustomUserError, list_option::ListOption};
 
 /// Error message that is displayed to the users when their input is considered not
 /// valid by registered validators.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ErrorMessage {
     /// No custom message is defined, a standard one defined in the set
     /// [`RenderConfig`](crate::ui::RenderConfig) is used instead.
@@ -45,7 +45,7 @@ where
 
 /// The result type of validation operations when the execution of the validator
 /// function succeeds.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Validation {
     /// Variant that indicates that the input value is valid according to the validator.
     Valid,

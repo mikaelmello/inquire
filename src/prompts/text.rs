@@ -1,13 +1,13 @@
 use std::cmp::min;
 
 use crate::{
+    autocompletion::{AutoComplete, Completion},
     config::{self, get_configuration},
     error::{InquireError, InquireResult},
     formatter::{StringFormatter, DEFAULT_STRING_FORMATTER},
     input::Input,
     list_option::ListOption,
     terminal::get_default_terminal,
-    type_aliases::{Completer, Suggester},
     ui::{Backend, Key, KeyModifiers, RenderConfig, TextBackend},
     utils::paginate,
     validator::{ErrorMessage, StringValidator, Validation},
@@ -85,8 +85,7 @@ pub struct Text<'a> {
     /// Function that formats the user input and presents it to the user as the final rendering of the prompt.
     pub formatter: StringFormatter<'a>,
 
-    /// Function that provides an optional suggestion to replace the input with, based on the current input.
-    pub completer: Option<Completer<'a>>,
+    pub autocompleter: Option<Box<dyn AutoComplete>>,
 
     /// Collection of validators to apply to the user input.
     ///
@@ -98,9 +97,6 @@ pub struct Text<'a> {
 
     /// Page size of the suggestions displayed to the user, when applicable.
     pub page_size: usize,
-
-    /// Function that provides a list of suggestions to the user based on the current input.
-    pub suggester: Option<Suggester<'a>>,
 
     /// RenderConfig to apply to the rendered interface.
     ///
@@ -137,8 +133,7 @@ impl<'a> Text<'a> {
             validators: Self::DEFAULT_VALIDATORS,
             formatter: Self::DEFAULT_FORMATTER,
             page_size: Self::DEFAULT_PAGE_SIZE,
-            suggester: None,
-            completer: None,
+            autocompleter: None,
             render_config: get_configuration(),
         }
     }
@@ -171,15 +166,11 @@ impl<'a> Text<'a> {
         self
     }
 
-    /// Sets the suggester.
-    pub fn with_suggester(mut self, suggester: Suggester<'a>) -> Self {
-        self.suggester = Some(suggester);
-        self
-    }
-
-    /// Sets the completer.
-    pub fn with_completer(mut self, completer: Completer<'a>) -> Self {
-        self.completer = Some(completer);
+    pub fn with_auto_completion<AC>(mut self, ac: AC) -> Self
+    where
+        AC: AutoComplete + 'static,
+    {
+        self.autocompleter = Some(Box::new(ac));
         self
     }
 
@@ -284,13 +275,11 @@ struct TextPrompt<'a> {
     default: Option<&'a str>,
     help_message: Option<&'a str>,
     input: Input,
-    original_input: Option<Input>,
     formatter: StringFormatter<'a>,
     validators: Vec<Box<dyn StringValidator>>,
     error: Option<ErrorMessage>,
-    suggester: Option<Suggester<'a>>,
+    autocompleter: Option<Box<dyn AutoComplete>>,
     suggested_options: Vec<String>,
-    completer: Option<Completer<'a>>,
     cursor_index: usize,
     page_size: usize,
 }
@@ -309,10 +298,8 @@ impl<'a> From<Text<'a>> for TextPrompt<'a> {
             default: so.default,
             help_message: so.help_message,
             formatter: so.formatter,
-            suggester: so.suggester,
-            completer: so.completer,
+            autocompleter: so.autocompleter,
             input,
-            original_input: None,
             error: None,
             cursor_index: 0,
             page_size: so.page_size,
@@ -329,42 +316,62 @@ impl<'a> From<&'a str> for Text<'a> {
 }
 
 impl<'a> TextPrompt<'a> {
-    fn update_suggestions(&mut self) -> InquireResult<()> {
-        if let Some(suggester) = self.suggester {
-            self.suggested_options = suggester(self.input.content())?;
+    fn tick_autocompleter(&mut self) -> InquireResult<()> {
+        if let Some(ac) = self.autocompleter.as_mut() {
+            ac.update_input(self.input.content())?;
+            self.suggested_options = ac.get_suggestions()?;
             self.cursor_index = 0;
         }
 
         Ok(())
     }
 
-    fn move_cursor_up(&mut self, qty: usize) {
+    fn move_cursor_up(&mut self, qty: usize) -> bool {
         self.cursor_index = self.cursor_index.saturating_sub(qty);
+
+        false
     }
 
-    fn move_cursor_down(&mut self, qty: usize) {
+    fn move_cursor_down(&mut self, qty: usize) -> bool {
         self.cursor_index = min(
             self.cursor_index.saturating_add(qty),
             self.suggested_options.len(),
         );
+
+        false
     }
 
-    fn handle_tab_key(&mut self) -> InquireResult<()> {
-        if let Some(completer) = self.completer {
-            if let Some(suggestion) = completer(self.input.content())? {
-                self.cursor_index = 0;
-                self.input = Input::new_with(&suggestion);
+    fn handle_tab_key(&mut self) -> InquireResult<bool> {
+        if let Some(ac) = self.autocompleter.as_ref() {
+            #[allow(clippy::absurd_extreme_comparisons)]
+            let selected_suggestion = if self.cursor_index <= 0 {
+                None
+            } else {
+                let index = self.cursor_index - 1;
+                Some((index, self.suggested_options.get(index).unwrap().as_ref()))
+            };
+
+            match ac.get_completion(selected_suggestion)? {
+                Completion::Replace(value) => {
+                    self.input = Input::new_with(&value);
+                    Ok(true)
+                }
+                Completion::Append(value) => {
+                    let mut content = String::from(self.input.content());
+                    content.push_str(&value);
+
+                    self.input = Input::new_with(content);
+                    Ok(true)
+                }
+                Completion::None => Ok(false),
             }
+        } else {
+            Ok(false)
         }
-
-        self.original_input.take();
-        self.update_suggestions()?;
-
-        Ok(())
     }
 
     fn on_change(&mut self, key: Key) -> InquireResult<()> {
-        match key {
+        let dirty = match key {
             Key::Up(KeyModifiers::NONE) => self.move_cursor_up(1),
             Key::PageUp => self.move_cursor_up(self.page_size),
 
@@ -373,39 +380,14 @@ impl<'a> TextPrompt<'a> {
 
             Key::Tab => self.handle_tab_key()?,
 
-            key => {
-                let dirty = self.input.handle_key(key);
+            key => self.input.handle_key(key),
+        };
 
-                if dirty {
-                    self.original_input.take();
-                    self.update_suggestions()?;
-                }
-            }
+        if dirty {
+            self.tick_autocompleter()?;
         }
-
-        self.update_current_input();
 
         Ok(())
-    }
-
-    fn update_current_input(&mut self) {
-        if self.cursor_index == 0 {
-            if let Some(input) = self.original_input.take() {
-                self.input = input;
-            }
-        } else {
-            let suggestion = self
-                .suggested_options
-                .get(self.cursor_index - 1)
-                .map(|s| &**s);
-
-            if let Some(suggestion) = suggestion {
-                if self.original_input.is_none() {
-                    self.original_input = Some(self.input.clone());
-                }
-                self.input = Input::new_with(suggestion);
-            }
-        }
     }
 
     fn validate_current_answer(&self) -> InquireResult<Validation> {
@@ -472,7 +454,7 @@ impl<'a> TextPrompt<'a> {
 
     fn prompt<B: TextBackend>(mut self, backend: &mut B) -> InquireResult<String> {
         let final_answer: String;
-        self.update_suggestions()?;
+        self.tick_autocompleter()?;
 
         loop {
             self.render(backend)?;
