@@ -499,3 +499,8 @@ Confirm prompts provide several options of configuration:
 [`Editor`]: #Editor
 [`CustomType`]: #CustomType
 [`Password`]: #Password
+
+
+# Stargazers over time
+
+[![Stargazers over time](https://starchart.cc/mikaelmello/inquire.svg)](https://starchart.cc/mikaelmello/inquire)
