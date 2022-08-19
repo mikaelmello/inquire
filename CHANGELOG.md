@@ -17,11 +17,15 @@ Fix #2 representes a change in usability and might be an unexpected behavior.
 
 It takes the current input and return an optional suggestion. If any, the prompter will replace the current input with the received suggestion. `Completer` is an alias for `&'a dyn Fn(&str) -> Result<Option<String>, CustomUserError>`.
 
+_The auto-completion API will be revamped for v0.4.0, watch [#69](https://github.com/mikaelmello/inquire/pull/69)._
+
 ---
 
 #### 2. Support for custom prompt prefix in finished prompts.
 
 Added `answered_prompt_prefix` configuration on `RenderConfig`, allowing users to set custom prefixes (e.g. a check mark) to prompts that have already been answered.
+
+Additionally, prompts that have been answered are now differed by a `>` prefix instead of the usual `?`.
 
 Cheers to @href for the suggestion! [#44](https://github.com/mikaelmello/inquire/pull/44)
 
@@ -31,13 +35,12 @@ Cheers to @href for the suggestion! [#44](https://github.com/mikaelmello/inquire
 
 Input validation, suggestions and completions are now fallible operations.
 
-`Completer` is an alias for `&'a dyn Fn(&str) -> Result<Option<String>, CustomUserError>`.
+The return type of validators has been changed to `Result<Validation, CustomUserError>`. This means that validating the input can now be a fallible operation. The docs contain more thorough explanations and full-featured examples.
 
-The function signature for validators has been changed to `Result<Validation, CustomUserError>`. This means that validating the input can now be a fallible operation. The docs contain more thorough explanations and full-featured examples.
-  - Successful executions of the validator function should return a variant of the `Validation` enum, which can be either `Valid` or `Invalid(ErrorMessage)`.
-  - Unsuccessful executions return a `CustomUserError` type, which is an alias for `Box<dyn std::error::Error + Send + Sync + 'static>`.
+- Successful executions of the validator  should return a variant of the `Validation` enum, which can be either `Valid` or `Invalid(ErrorMessage)`.
+- Unsuccessful executions return a `CustomUserError` type, which is an alias for `Box<dyn std::error::Error + Send + Sync + 'static>`.
 
-The function signature for suggesters has also been changed to allow fallible executions. The return type in successful executions continues to be `Vec<String>`, while `CustomUserError` is used with errors. The docs contain more thorough explanations and full-featured examples.
+The return type of suggesters has also been changed to allow fallible executions. The return type in successful executions continues to be `Vec<String>`, while `CustomUserError` is used with errors.
 
 ---
 
@@ -51,19 +54,14 @@ Closures can still be used as before, but may not require to pass the argument t
 
 ### Fixes
 
-#### 1. Fix a broken link in the `struct.Text` documentation.
-
----
-
-#### 2. Suggestions are now always loaded at the start of a `Text` prompt.
-
-Previously, suggestions were only loaded and displayed if the `Text` prompt was created with a pre-existing input value or after the user entered any input.
-
-Now, even if the prompt is started without any input and the user hasn't done anything, suggestions are displayed.
+- Fix a broken link in the `struct.Text` documentation.
+- Suggestions are now always loaded at the start of a `Text` prompt.
+  - Previously, suggestions were only loaded and displayed if the `Text` prompt was created with a pre-existing input value or after the user entered any input.
+  - Now, even if the prompt is started without any input and the user hasn't done anything, suggestions are displayed.
 
 ### Changes
 
-- Update `crossterm` and `console` to their latest version.
+- Update `crossterm` and `console` to their latest versions.
 
 ## [0.2.1] - 2021-10-01
 
@@ -193,7 +191,7 @@ The library is already featureful enough to warrant a higher version number, bum
 - Add DateSelect prompt
 
 <!-- next-url -->
-[Unreleased]: https://github.com/mikaelmello/inquire/compare/v0.2.1...HEAD
+[unreleased]: https://github.com/mikaelmello/inquire/compare/v0.2.1...HEAD
 [0.2.1]: https://github.com/mikaelmello/inquire/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/mikaelmello/inquire/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/mikaelmello/inquire/compare/v0.0.11...v0.1.0
