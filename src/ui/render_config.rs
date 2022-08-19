@@ -176,7 +176,7 @@ impl RenderConfig {
     pub fn default_colored() -> Self {
         Self {
             prompt_prefix: Styled::new("?").with_fg(Color::LightGreen),
-            answered_prompt_prefix: Styled::new("?").with_fg(Color::LightGreen),
+            answered_prompt_prefix: Styled::new(">").with_fg(Color::LightGreen),
             prompt: StyleSheet::empty(),
             default_value: StyleSheet::empty(),
             placeholder: StyleSheet::new().with_fg(Color::DarkGrey),
