@@ -74,9 +74,5 @@ name = "password_full_featured"
 required-features = ["macros"]
 
 [[example]]
-name = "date_complete"
-required-features = ["date"]
-
-[[example]]
 name = "manual_date_input"
 required-features = ["date"]
