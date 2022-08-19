@@ -3,6 +3,8 @@
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
 
+## [0.3.0] - 2022-08-19
+
 ### Breaking Changes
 
 Features #1 to #4 are all breaking changes and could break the compilation of your program.
@@ -191,7 +193,8 @@ The library is already featureful enough to warrant a higher version number, bum
 - Add DateSelect prompt
 
 <!-- next-url -->
-[unreleased]: https://github.com/mikaelmello/inquire/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/mikaelmello/inquire/compare/v0.3.0...HEAD
+[unreleased]: https://github.com/mikaelmello/inquire/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/mikaelmello/inquire/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/mikaelmello/inquire/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/mikaelmello/inquire/compare/v0.0.11...v0.1.0
