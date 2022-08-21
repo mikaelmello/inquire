@@ -153,3 +153,15 @@ pub enum Color {
     /// Supported on all terminal back-ends: `crossterm`, `termion` and `console`.
     AnsiValue(u8),
 }
+
+impl Color {
+    /// Shorthand method for creating a Color from RGB components
+    ///
+    /// ```
+    /// # use inquire::ui::Color;
+    /// assert_eq!(Color::rgb(42, 17, 97), Color::Rgb { r: 42, g: 17, b: 97 });
+    /// ```
+    pub fn rgb(r: u8, g: u8, b: u8) -> Color {
+        Color::Rgb { r, g, b }
+    }
+}
