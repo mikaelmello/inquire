@@ -2,7 +2,7 @@ use chrono::{Duration, TimeZone, Utc};
 use inquire::{Folder, RangeSelect};
 use std::fmt::Display;
 
-#[derive(Eq, Debug)]
+#[derive(Debug)]
 struct DatedDurations {
     date: chrono::DateTime<Utc>,
     duration: chrono::Duration,
@@ -14,24 +14,6 @@ impl DatedDurations {
             date: Utc.datetime_from_str(date, "%Y-%m-%d %H:%M:%S").unwrap(),
             duration,
         }
-    }
-}
-
-impl PartialEq for DatedDurations {
-    fn eq(&self, other: &Self) -> bool {
-        self.date == other.date && self.duration == other.duration
-    }
-}
-
-impl PartialOrd for DatedDurations {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.date.partial_cmp(&other.date)
-    }
-}
-
-impl Ord for DatedDurations {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.date.cmp(&other.date)
     }
 }
 

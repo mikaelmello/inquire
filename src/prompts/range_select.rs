@@ -96,7 +96,7 @@ pub struct RangeSelect<'a, T, K: Display> {
 
 impl<'a, T, K: Display> RangeSelect<'a, T, K>
 where
-    T: Display + Ord,
+    T: Display,
 {
     /// String formatter used by default in [Select](crate::Select) prompts.
     /// Simply prints the string value contained in the selected option.
@@ -298,9 +298,9 @@ struct RangeSelectPrompt<'a, T, K: Display> {
 
 impl<'a, T, K: Display> RangeSelectPrompt<'a, T, K>
 where
-    T: Display + Ord,
+    T: Display,
 {
-    fn new(mut so: RangeSelect<'a, T, K>) -> InquireResult<Self> {
+    fn new(so: RangeSelect<'a, T, K>) -> InquireResult<Self> {
         if so.options.is_empty() {
             return Err(InquireError::InvalidConfiguration(
                 "Available options can not be empty".into(),
@@ -317,7 +317,6 @@ where
 
         let string_options = so.options.iter().map(T::to_string).collect();
         let filtered_options = (0..so.options.len()).collect();
-        so.options.sort();
 
         Ok(Self {
             message: so.message,
