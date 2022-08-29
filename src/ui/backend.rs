@@ -11,6 +11,8 @@ use crate::{
     validator::ErrorMessage,
 };
 
+use super::Color;
+
 pub trait CommonBackend {
     fn read_key(&mut self) -> Result<Key>;
 
@@ -42,6 +44,16 @@ pub trait EditorBackend: CommonBackend {
 pub trait SelectBackend: CommonBackend {
     fn render_select_prompt(&mut self, prompt: &str, cur_input: &Input) -> Result<()>;
     fn render_options<D: Display>(&mut self, page: Page<ListOption<D>>) -> Result<()>;
+}
+
+pub trait DateSelectBackend: CommonBackend {
+    fn render_date_select_prompt(&mut self, prompt: &str, cur_input: &Input) -> Result<()>;
+    fn render_date_select_options<D: Display>(
+        &mut self,
+        page: Page<ListOption<D>>,
+        range: &Option<(usize, usize)>,
+    ) -> Result<()>;
+    fn render_fold_message<K: Display>(&mut self, fold_message: &K) -> Result<()>;
 }
 
 pub trait MultiSelectBackend: CommonBackend {
@@ -475,6 +487,49 @@ where
 
         self.new_line()?;
 
+        Ok(())
+    }
+}
+
+impl<T> DateSelectBackend for Backend<T>
+where
+    T: Terminal,
+{
+    fn render_date_select_prompt(&mut self, prompt: &str, cur_input: &Input) -> Result<()> {
+        self.print_prompt_with_input(prompt, None, cur_input)
+    }
+
+    fn render_date_select_options<D: Display>(
+        &mut self,
+        page: Page<ListOption<D>>,
+        range: &Option<(usize, usize)>,
+    ) -> Result<()> {
+        for (idx, option) in page.content.iter().enumerate() {
+            self.print_option_prefix(idx, &page)?;
+
+            self.terminal.write(" ")?;
+
+            if let Some(res) = self.print_option_index_prefix(option.index, page.total) {
+                res?;
+                self.terminal.write(" ")?;
+            }
+
+            match range {
+                Some((start, end)) if *start <= idx && idx <= *end => self
+                    .terminal
+                    .write_styled(&Styled::new(option).with_bg(Color::Grey))?,
+                Some(_) => self.print_option_value(option)?,
+                None => self.print_option_value(option)?,
+            }
+
+            self.new_line()?;
+        }
+
+        Ok(())
+    }
+
+    fn render_fold_message<K: Display>(&mut self, folder_message: &K) -> Result<()> {
+        self.terminal.write(folder_message)?;
         Ok(())
     }
 }

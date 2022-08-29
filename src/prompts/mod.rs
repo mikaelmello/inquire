@@ -9,6 +9,7 @@ mod dateselect;
 mod editor;
 mod multiselect;
 mod password;
+mod range_select;
 mod select;
 mod text;
 
@@ -20,5 +21,6 @@ pub use dateselect::DateSelect;
 pub use editor::Editor;
 pub use multiselect::MultiSelect;
 pub use password::{Password, PasswordDisplayMode};
+pub use range_select::{Folder, RangeSelect};
 pub use select::Select;
 pub use text::Text;
