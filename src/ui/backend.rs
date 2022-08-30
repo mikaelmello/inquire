@@ -515,7 +515,7 @@ where
             }
 
             match range {
-                Some((start, end)) if *start <= idx && idx <= *end => self
+                Some((start, end)) if *start <= option.index && option.index <= *end => self
                     .terminal
                     .write_styled(&Styled::new(option).with_bg(Color::Grey))?,
                 Some(_) => self.print_option_value(option)?,
