@@ -8,7 +8,7 @@ use crate::{
     list_option::ListOption,
     terminal::get_default_terminal,
     type_aliases::Filter,
-    ui::{Backend, DateSelectBackend, Key, KeyModifiers, RenderConfig, SelectBackend},
+    ui::{Backend, DateSelectBackend, Key, KeyModifiers, RenderConfig},
     utils::paginate,
 };
 
@@ -91,6 +91,9 @@ pub struct RangeSelect<'a, T, K: Display> {
     /// and still suport NO_COLOR, you will have to do this on your end.
     pub render_config: RenderConfig,
 
+    /// Function called to transform your selection to an arbitrary type
+    /// Example:
+    /// sum up all selected durations
     pub folder: Option<Folder<'a, T, K>>,
 }
 
@@ -229,8 +232,8 @@ where
     /// the CLI user for input according to the defined rules.
     ///
     /// Returns the owned object selected by the user.
-    pub fn prompt(self) -> InquireResult<T> {
-        self.raw_prompt().map(|op| op.value)
+    pub fn prompt(self) -> InquireResult<K> {
+        self.raw_prompt().map(|op| op)
     }
 
     /// Parses the provided behavioral and rendering options and prompts
@@ -242,7 +245,7 @@ where
     ///
     /// Meanwhile, if the user does submit an answer, the method wraps the return
     /// type with `Some`.
-    pub fn prompt_skippable(self) -> InquireResult<Option<T>> {
+    pub fn prompt_skippable(self) -> InquireResult<Option<K>> {
         match self.prompt() {
             Ok(answer) => Ok(Some(answer)),
             Err(InquireError::OperationCanceled) => Ok(None),
@@ -255,7 +258,7 @@ where
     ///
     /// Returns a [`ListOption`](crate::list_option::ListOption) containing
     /// the index of the selection and the owned object selected by the user.
-    pub fn raw_prompt(self) -> InquireResult<ListOption<T>> {
+    pub fn raw_prompt(self) -> InquireResult<K> {
         let terminal = get_default_terminal()?;
         let mut backend = Backend::new(terminal, self.render_config)?;
         self.prompt_with_backend(&mut backend)
@@ -264,7 +267,7 @@ where
     pub(crate) fn prompt_with_backend<B: DateSelectBackend>(
         self,
         backend: &mut B,
-    ) -> InquireResult<ListOption<T>> {
+    ) -> InquireResult<K> {
         RangeSelectPrompt::new(self)?.prompt(backend)
     }
 }
@@ -276,6 +279,7 @@ enum SelectMode {
     Move,
 }
 
+/// Fold an array of selected options into a new value
 pub type Folder<'a, T, K> = &'a dyn Fn(&[T]) -> K;
 
 struct RangeSelectPrompt<'a, T, K: Display> {
@@ -289,7 +293,7 @@ struct RangeSelectPrompt<'a, T, K: Display> {
     page_size: usize,
     input: Input,
     filter: Filter<'a, T>,
-    formatter: OptionFormatter<'a, T>,
+    _formatter: OptionFormatter<'a, T>,
     start: Option<usize>,
     end: Option<usize>,
     mode: SelectMode,
@@ -329,7 +333,7 @@ where
             page_size: so.page_size,
             input: Input::new(),
             filter: so.filter,
-            formatter: so.formatter,
+            _formatter: so.formatter,
             start: None,
             end: None,
             mode: SelectMode::Move,
@@ -341,16 +345,16 @@ where
         self.options
             .iter()
             .enumerate()
-            // filter all options out that are not allowed because start > end
+            // filter all options out that are not allowed because start >= end
             .filter(|(option_index, _)| match self.mode {
                 SelectMode::SelectStart => self
                     .end
                     .and_then(|max_index| Some(*option_index <= max_index))
-                    .unwrap_or(true),
+                    .unwrap(),
                 SelectMode::SelectEnd => self
                     .start
                     .and_then(|min_index| Some(*option_index >= min_index))
-                    .unwrap_or(true),
+                    .unwrap(),
                 SelectMode::Move => true,
             })
             .filter_map(|(i, opt)| match self.input.content() {
@@ -362,7 +366,7 @@ where
     }
 
     fn move_cursor_up(&mut self, qty: usize, wrap: bool) {
-        if wrap {
+        if wrap && self.mode == SelectMode::Move {
             let after_wrap = qty.saturating_sub(self.cursor_index);
             self.cursor_index = self
                 .cursor_index
@@ -379,11 +383,28 @@ where
         if self.cursor_index >= self.filtered_options.len() {
             self.cursor_index = if self.filtered_options.is_empty() {
                 0
-            } else if wrap {
+            } else if wrap && self.mode == SelectMode::Move {
                 self.cursor_index % self.filtered_options.len()
             } else {
                 self.filtered_options.len().saturating_sub(1)
             }
+        }
+    }
+
+    fn update_filtered_options(&mut self) {
+        let options = self.filter_options();
+        if options.len() <= self.cursor_index {
+            self.cursor_index = options.len().saturating_sub(1);
+        }
+        self.filtered_options = options;
+    }
+
+    /// returns the position the cursor-index has in the unfiltered options
+    fn translated_ci(&self) -> usize {
+        if self.filtered_options.len() > 0 {
+            self.filtered_options[self.cursor_index]
+        } else {
+            0
         }
     }
 
@@ -400,7 +421,7 @@ where
             Key::End => self.move_cursor_down(usize::MAX, false),
             Key::Char('s', KeyModifiers::CONTROL) => {
                 if let Some(end_index) = self.end {
-                    if self.cursor_index >= end_index {
+                    if self.cursor_index > end_index {
                         self.end = None;
                     }
                 }
@@ -411,14 +432,17 @@ where
                     self.mode = SelectMode::SelectEnd;
                     self.help_message = Some("Select an end position");
                 } else {
+                    // if the selection is done reset to moving mode
                     self.mode = SelectMode::Move;
                     self.help_message = None
                 }
-                self.filtered_options = self.filter_options();
+
+                self.update_filtered_options();
+                self.cursor_index = 0;
             }
             Key::Char('e', KeyModifiers::CONTROL) => {
                 if let Some(start_index) = self.start {
-                    if self.cursor_index <= start_index {
+                    if self.cursor_index < start_index {
                         self.start = None;
                     }
                 }
@@ -432,34 +456,25 @@ where
                     self.mode = SelectMode::Move;
                     self.help_message = None
                 }
-                self.filtered_options = self.filter_options();
+                self.update_filtered_options();
+                self.cursor_index = self.options.len();
             }
             key => {
                 let dirty = self.input.handle_key(key);
 
                 if dirty {
-                    let options = self.filter_options();
-                    if options.len() <= self.cursor_index {
-                        self.cursor_index = options.len().saturating_sub(1);
-                    }
-                    self.filtered_options = options;
+                    self.update_filtered_options()
                 }
             }
         };
     }
 
     fn has_answer_highlighted(&mut self) -> bool {
-        self.filtered_options.get(self.cursor_index).is_some()
+        self.start.is_some() && self.end.is_some()
     }
 
-    fn get_final_answer(&mut self) -> ListOption<T> {
-        // should only be called after current cursor index is validated
-        // on has_answer_highlighted
-
-        let index = *self.filtered_options.get(self.cursor_index).unwrap();
-        let value = self.options.swap_remove(index);
-
-        ListOption::new(index, value)
+    fn get_final_answer(&mut self) -> K {
+        self.folder.unwrap()(&self.options[self.start.unwrap()..self.end.unwrap()])
     }
 
     fn render<B: DateSelectBackend>(&mut self, backend: &mut B) -> InquireResult<()> {
@@ -496,8 +511,8 @@ where
 
     fn get_selected_range(&self) -> Option<(usize, usize)> {
         match self.mode {
-            SelectMode::SelectStart => Some((self.cursor_index, self.end.unwrap())),
-            SelectMode::SelectEnd => Some((self.start.unwrap(), self.cursor_index)),
+            SelectMode::SelectStart => Some((self.translated_ci(), self.end.unwrap())),
+            SelectMode::SelectEnd => Some((self.start.unwrap(), self.translated_ci())),
             SelectMode::Move if self.start.is_some() => {
                 Some((self.start.unwrap(), self.end.unwrap()))
             }
@@ -505,7 +520,7 @@ where
         }
     }
 
-    fn prompt<B: DateSelectBackend>(mut self, backend: &mut B) -> InquireResult<ListOption<T>> {
+    fn prompt<B: DateSelectBackend>(mut self, backend: &mut B) -> InquireResult<K> {
         loop {
             self.render(backend)?;
 
@@ -516,7 +531,8 @@ where
                 Key::Cancel => {
                     if self.mode != SelectMode::Move {
                         self.mode = SelectMode::Move;
-                        (self.start, self.end) = (None, None)
+                        (self.start, self.end) = (None, None);
+                        self.update_filtered_options();
                     } else {
                         cancel_prompt!(backend, self.message);
                     }
@@ -530,9 +546,13 @@ where
         }
 
         let final_answer = self.get_final_answer();
-        let formatted = (self.formatter)(final_answer.as_ref());
 
-        finish_prompt_with_answer!(backend, self.message, &formatted, final_answer);
+        finish_prompt_with_answer!(
+            backend,
+            self.message,
+            &final_answer.to_string(),
+            final_answer
+        );
     }
 }
 
