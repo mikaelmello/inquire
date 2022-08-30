@@ -510,6 +510,10 @@ where
     }
 
     fn get_selected_range(&self) -> Option<(usize, usize)> {
+        if self.filtered_options.len() == 0 {
+            return Some((0, 0));
+        }
+
         match self.mode {
             SelectMode::SelectStart => Some((self.translated_ci(), self.end.unwrap())),
             SelectMode::SelectEnd => Some((self.start.unwrap(), self.translated_ci())),
