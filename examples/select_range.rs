@@ -1,42 +1,44 @@
-use chrono::{Duration, TimeZone, Utc};
 use inquire::{Folder, RangeSelect};
 use std::fmt::Display;
 
 #[derive(Debug)]
-struct DatedDurations {
-    date: chrono::DateTime<Utc>,
-    duration: chrono::Duration,
+struct Expenses<'a> {
+    date: &'a str,
+    total: usize,
 }
 
-impl DatedDurations {
-    fn new(date: &str, duration: Duration) -> Self {
-        Self {
-            date: Utc.datetime_from_str(date, "%Y-%m-%d %H:%M:%S").unwrap(),
-            duration,
-        }
+impl<'a> Expenses<'a> {
+    fn new(date: &'a str, total: usize) -> Self {
+        Self { date, total }
     }
 }
 
-impl Display for DatedDurations {
+impl<'a> Display for Expenses<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}: {}", self.date, self.duration)
+        write!(f, "{}: {} gold", self.date, self.total)
     }
 }
 
 fn main() {
     let options = vec![
-        DatedDurations::new("2022-01-05 12:00:00", Duration::minutes(20)),
-        DatedDurations::new("2022-01-07 12:00:00", Duration::minutes(10)),
-        DatedDurations::new("2022-01-12 12:00:00", Duration::minutes(50)),
-        DatedDurations::new("2022-01-18 12:00:00", Duration::minutes(100)),
+        Expenses::new("2022-01-05", 5),
+        Expenses::new("2022-01-07", 5),
+        Expenses::new("2022-01-12", 5),
+        Expenses::new("2022-01-18", 5),
+        Expenses::new("2022-01-20", 5),
+        Expenses::new("2022-01-20", 5),
+        Expenses::new("2022-01-25", 5),
+        Expenses::new("2022-01-25", 5),
+        Expenses::new("2022-01-26", 5),
+        Expenses::new("2022-01-29", 5),
+        Expenses::new("2022-02-01", 5),
+        Expenses::new("2022-03-02", 5),
+        Expenses::new("2022-04-01", 5),
     ];
 
-    let folder: Folder<_, String> = &|elements: &[DatedDurations]| {
-        let full_duration = elements
-            .iter()
-            .map(|dated_dur| dated_dur.duration)
-            .fold(Duration::zero(), |cum, element| cum + element);
-        format!("Total time: {:?}", full_duration)
+    let folder: Folder<_, String> = &|elements: &[Expenses]| {
+        let costs: usize = elements.iter().map(|expenses| expenses.total).sum();
+        format!("Total costs: {:?} gold", costs)
     };
 
     let ans = RangeSelect::new("Select effected days", options, Some(folder)).prompt_skippable();
