@@ -426,7 +426,7 @@ where
                     }
                 }
 
-                self.start = Some(self.cursor_index);
+                self.start = Some(self.translated_ci());
 
                 if self.end.is_none() {
                     self.mode = SelectMode::SelectEnd;
@@ -438,7 +438,14 @@ where
                 }
 
                 self.update_filtered_options();
-                self.cursor_index = 0;
+
+                if self.mode == SelectMode::SelectEnd {
+                    self.cursor_index = 0;
+                } else {
+                    // TODO: jump to the range' start-position in the 
+                    // newly sorted options array
+                }
+                
             }
             Key::Char('e', KeyModifiers::CONTROL) => {
                 if let Some(start_index) = self.start {
@@ -447,17 +454,23 @@ where
                     }
                 }
 
-                self.end = Some(self.cursor_index);
+                self.end = Some(self.translated_ci());
 
                 if self.start.is_none() {
                     self.mode = SelectMode::SelectStart;
-                    self.help_message = Some("Select a start position")
+                    self.help_message = Some("Select a start position");
                 } else {
                     self.mode = SelectMode::Move;
-                    self.help_message = None
+                    self.help_message = None;
                 }
                 self.update_filtered_options();
-                self.cursor_index = self.options.len();
+                
+                if self.mode == SelectMode::SelectStart {
+                    self.cursor_index = self.options.len() - 1; 
+                } else {
+                    // TODO: jump to the range' start-position in the 
+                    // newly sorted options array
+                }
             }
             key => {
                 let dirty = self.input.handle_key(key);
