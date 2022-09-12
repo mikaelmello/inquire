@@ -37,6 +37,7 @@ use crate::{
 ///     formatter: &|i| format!("${:.2}", i),
 ///     default_value_formatter: &|i| format!("${:.2}", i),
 ///     default: None,
+///     validators: vec![],
 ///     placeholder: Some("123.45"),
 ///     error_message: "Please type a valid number.".into(),
 ///     help_message: "Do not use currency and the number should use dots as the decimal separator.".into(),
