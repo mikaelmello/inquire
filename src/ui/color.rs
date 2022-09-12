@@ -159,6 +159,7 @@ impl Color {
     ///
     /// ```
     /// # use inquire::ui::Color;
+    ///
     /// assert_eq!(Color::rgb(42, 17, 97), Color::Rgb { r: 42, g: 17, b: 97 });
     /// ```
     pub fn rgb(r: u8, g: u8, b: u8) -> Color {
