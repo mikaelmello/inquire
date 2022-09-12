@@ -1,7 +1,10 @@
 # Changelog
 
 <!-- next-header -->
+
 ## [Unreleased] - ReleaseDate
+
+- Add shorthand method `rgb(r: u8, g: u8, b: u8)` to create a `Color` struct from RGB components. Thanks to @tpoliaw for the PR! [#73](https://github.com/mikaelmello/inquire/pull/73)
 
 ## [0.3.0] - 2022-08-19
 
@@ -39,7 +42,7 @@ Input validation, suggestions and completions are now fallible operations.
 
 The return type of validators has been changed to `Result<Validation, CustomUserError>`. This means that validating the input can now be a fallible operation. The docs contain more thorough explanations and full-featured examples.
 
-- Successful executions of the validator  should return a variant of the `Validation` enum, which can be either `Valid` or `Invalid(ErrorMessage)`.
+- Successful executions of the validator should return a variant of the `Validation` enum, which can be either `Valid` or `Invalid(ErrorMessage)`.
 - Unsuccessful executions return a `CustomUserError` type, which is an alias for `Box<dyn std::error::Error + Send + Sync + 'static>`.
 
 The return type of suggesters has also been changed to allow fallible executions. The return type in successful executions continues to be `Vec<String>`, while `CustomUserError` is used with errors.
@@ -193,7 +196,8 @@ The library is already featureful enough to warrant a higher version number, bum
 - Add DateSelect prompt
 
 <!-- next-url -->
-[Unreleased]: https://github.com/mikaelmello/inquire/compare/v0.3.0...HEAD
+
+[unreleased]: https://github.com/mikaelmello/inquire/compare/v0.3.0...HEAD
 [unreleased]: https://github.com/mikaelmello/inquire/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/mikaelmello/inquire/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/mikaelmello/inquire/compare/v0.1.0...v0.2.0
