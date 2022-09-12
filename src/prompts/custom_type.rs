@@ -8,7 +8,7 @@ use crate::{
     parser::CustomTypeParser,
     terminal::get_default_terminal,
     ui::{Backend, CustomTypeBackend, Key, RenderConfig},
-    validator::ErrorMessage,
+    validator::{CustomTypeValidator, ErrorMessage, Validation},
 };
 
 /// Generic prompt suitable for when you need to parse the user input into a specific type, for example an `f64` or a `rust_decimal`, maybe even an `uuid`.
@@ -35,6 +35,7 @@ use crate::{
 /// let amount_prompt: CustomType<f64> = CustomType {
 ///     message: "How much is your travel going to cost?",
 ///     formatter: &|i| format!("${:.2}", i),
+///     default_value_formatter: &|i| format!("${:.2}", i),
 ///     default: None,
 ///     placeholder: Some("123.45"),
 ///     error_message: "Please type a valid number.".into(),
@@ -71,7 +72,7 @@ pub struct CustomType<'a, T> {
     pub message: &'a str,
 
     /// Default value, returned when the user input is empty.
-    pub default: Option<(T, CustomTypeFormatter<'a, T>)>,
+    pub default: Option<T>,
 
     /// Short hint that describes the expected value of the input.
     pub placeholder: Option<&'a str>,
@@ -82,8 +83,19 @@ pub struct CustomType<'a, T> {
     /// Function that formats the user input and presents it to the user as the final rendering of the prompt.
     pub formatter: CustomTypeFormatter<'a, T>,
 
+    /// Function that formats the provided value. Useful for example when you want to format a default `true` to the string "Y/n", common in confirmation prompts.
+    pub default_value_formatter: CustomTypeFormatter<'a, T>,
+
     /// Function that parses the user input and returns the result value.
     pub parser: CustomTypeParser<'a, T>,
+
+    /// Collection of validators to apply to the user input.
+    ///
+    /// Validators are executed in the order they are stored, stopping at and displaying to the user
+    /// only the first validation error that might appear.
+    ///
+    /// The possible error is displayed to the user one line above the prompt.
+    pub validators: Vec<Box<dyn CustomTypeValidator<T>>>,
 
     /// Error message displayed when value could not be parsed from input.
     pub error_message: String,
@@ -103,6 +115,9 @@ impl<'a, T> CustomType<'a, T>
 where
     T: Clone,
 {
+    /// Default validators added to the [CustomType] prompt, none.
+    pub const DEFAULT_VALIDATORS: Vec<Box<dyn CustomTypeValidator<T>>> = vec![];
+
     /// Creates a [CustomType] with the provided message and default configuration values.
     pub fn new(message: &'a str) -> Self
     where
@@ -114,14 +129,16 @@ where
             placeholder: None,
             help_message: None,
             formatter: &|val| val.to_string(),
+            default_value_formatter: &|val| val.to_string(),
             parser: &|a| a.parse::<T>().map_err(|_| ()),
+            validators: Self::DEFAULT_VALIDATORS,
             error_message: "Invalid input".into(),
             render_config: get_configuration(),
         }
     }
 
     /// Sets the default input.
-    pub fn with_default(mut self, default: (T, CustomTypeFormatter<'a, T>)) -> Self {
+    pub fn with_default(mut self, default: T) -> Self {
         self.default = Some(default);
         self
     }
@@ -144,9 +161,55 @@ where
         self
     }
 
+    /// Sets the formatter for default values.
+    ///
+    /// Useful for example when you want to format a default `true` to the string "Y/n", common in confirmation prompts,
+    /// when the final answer would be displayed likely as "Yes" or "No".
+    pub fn with_default_value_formatter(mut self, formatter: CustomTypeFormatter<'a, T>) -> Self {
+        self.default_value_formatter = formatter;
+        self
+    }
+
     /// Sets the parser.
     pub fn with_parser(mut self, parser: CustomTypeParser<'a, T>) -> Self {
         self.parser = parser;
+        self
+    }
+
+    /// Adds a validator to the collection of validators. You might want to use this feature
+    /// in case you need to require certain features from the parsed user's answer.
+    ///
+    /// Validators are executed in the order they are stored, stopping at and displaying to the user
+    /// only the first validation error that might appear.
+    ///
+    /// The possible error is displayed to the user one line above the prompt.
+    pub fn with_validator<V>(mut self, validator: V) -> Self
+    where
+        V: CustomTypeValidator<T> + 'static,
+    {
+        // Directly make space for at least 5 elements, so we won't to re-allocate too often when
+        // calling this function repeatedly.
+        if self.validators.capacity() == 0 {
+            self.validators.reserve(5);
+        }
+
+        self.validators.push(Box::new(validator));
+        self
+    }
+
+    /// Adds the validators to the collection of validators in the order they are given.
+    /// You might want to use this feature in case you need to require certain features
+    /// from the parsed user's answer.
+    ///
+    /// Validators are executed in the order they are stored, stopping at and displaying to the user
+    /// only the first validation error that might appear.
+    ///
+    /// The possible error is displayed to the user one line above the prompt.
+    pub fn with_validators(mut self, validators: &[Box<dyn CustomTypeValidator<T>>]) -> Self {
+        for validator in validators {
+            #[allow(clippy::clone_double_ref)]
+            self.validators.push(validator.clone());
+        }
         self
     }
 
@@ -206,9 +269,11 @@ struct CustomTypePrompt<'a, T> {
     message: &'a str,
     error: Option<ErrorMessage>,
     help_message: Option<&'a str>,
-    default: Option<(T, CustomTypeFormatter<'a, T>)>,
+    default: Option<T>,
     input: Input,
     formatter: CustomTypeFormatter<'a, T>,
+    default_value_formatter: CustomTypeFormatter<'a, T>,
+    validators: Vec<Box<dyn CustomTypeValidator<T>>>,
     parser: CustomTypeParser<'a, T>,
     error_message: String,
 }
@@ -224,6 +289,8 @@ where
             default: co.default,
             help_message: co.help_message,
             formatter: co.formatter,
+            default_value_formatter: co.default_value_formatter,
+            validators: co.validators,
             parser: co.parser,
             input: co
                 .placeholder
@@ -242,9 +309,21 @@ where
         self.input.handle_key(key);
     }
 
+    fn validate_current_answer(&self, value: &T) -> InquireResult<Validation> {
+        for validator in &self.validators {
+            match validator.validate(value) {
+                Ok(Validation::Valid) => {}
+                Ok(Validation::Invalid(msg)) => return Ok(Validation::Invalid(msg)),
+                Err(err) => return Err(InquireError::Custom(err)),
+            }
+        }
+
+        Ok(Validation::Valid)
+    }
+
     fn get_final_answer(&self) -> Result<T, String> {
         match &self.default {
-            Some((val, _)) if self.input.content().is_empty() => return Ok(val.clone()),
+            Some(val) if self.input.content().is_empty() => return Ok(val.clone()),
             _ => {}
         }
 
@@ -263,10 +342,11 @@ where
             backend.render_error_message(error)?;
         }
 
+        let default_value_formatter = self.default_value_formatter;
         let default_message = self
             .default
             .as_ref()
-            .map(|(val, formatter)| formatter(val.clone()));
+            .map(|val| default_value_formatter(val.clone()));
 
         backend.render_prompt(prompt, default_message.as_deref(), &self.input)?;
 
@@ -291,14 +371,14 @@ where
                 Key::Interrupt => interrupt_prompt!(),
                 Key::Cancel => cancel_prompt!(backend, self.message),
                 Key::Submit => match self.get_final_answer() {
-                    Ok(answer) => {
-                        final_answer = answer;
-                        break;
-                    }
-                    Err(message) => {
-                        self.error = Some(message.into());
-                        self.input.clear();
-                    }
+                    Ok(answer) => match self.validate_current_answer(&answer)? {
+                        Validation::Valid => {
+                            final_answer = answer;
+                            break;
+                        }
+                        Validation::Invalid(msg) => self.error = Some(msg),
+                    },
+                    Err(message) => self.error = Some(message.into()),
                 },
                 key => self.on_change(key),
             }

@@ -220,14 +220,13 @@ impl<'a> From<Confirm<'a>> for CustomType<'a, bool> {
     fn from(co: Confirm<'a>) -> Self {
         Self {
             message: co.message,
-            default: match co.default {
-                Some(val) => Some((val, co.default_value_formatter)),
-                None => None,
-            },
+            default: co.default,
+            default_value_formatter: co.default_value_formatter,
             placeholder: co.placeholder,
             help_message: co.help_message,
             formatter: co.formatter,
             parser: co.parser,
+            validators: vec![],
             error_message: co.error_message,
             render_config: co.render_config,
         }

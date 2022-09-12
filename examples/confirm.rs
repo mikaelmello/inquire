@@ -20,7 +20,10 @@ fn main() {
         default: Some(false),
         placeholder: Some("si|no"),
         help_message: Some("It's alright if you're not"),
-        formatter: Confirm::DEFAULT_FORMATTER,
+        formatter: &|ans| match ans {
+            true => "si".to_owned(),
+            false => "no".to_owned(),
+        },
         parser: &|ans| match ans {
             "si" => Ok(true),
             "no" => Ok(false),

@@ -212,6 +212,60 @@ where
     }
 }
 
+/// Validator used in [`CustomType`](crate::CustomType) prompts.
+///
+/// If the input provided by the user is valid, your validator should return `Ok(Validation::Valid)`.
+///
+/// If the input is not valid, your validator should return `Ok(Validation::Invalid(ErrorMessage))`,
+/// where the content of `ErrorMessage` is recommended to be a string whose content will be displayed
+/// to the user as an error message. It is also recommended that this value gives a helpful feedback to the user.
+///
+/// # Examples
+///
+/// ```
+/// use inquire::list_option::ListOption;
+/// use inquire::validator::{MultiOptionValidator, Validation};
+///
+/// let validator = |input: &[ListOption<&&str>]| {
+///     if input.len() <= 2 {
+///         Ok(Validation::Valid)
+///     } else {
+///         Ok(Validation::Invalid("You should select at most two options".into()))
+///     }
+/// };
+///
+/// let mut ans = vec![ListOption::new(0, &"a"), ListOption::new(1, &"b")];
+///
+/// assert_eq!(Validation::Valid, validator.validate(&ans[..])?);
+///
+/// ans.push(ListOption::new(3, &"d"));
+/// assert_eq!(
+///     Validation::Invalid("You should select at most two options".into()),
+///     validator.validate(&ans[..])?
+/// );
+/// # Ok::<(), inquire::error::CustomUserError>(())
+/// ```
+pub trait CustomTypeValidator<T: ?Sized>: DynClone {
+    /// Confirm the given input list is a valid value.
+    fn validate(&self, input: &T) -> Result<Validation, CustomUserError>;
+}
+
+impl<T> Clone for Box<dyn CustomTypeValidator<T>> {
+    fn clone(&self) -> Self {
+        dyn_clone::clone_box(&**self)
+    }
+}
+
+impl<F, T> CustomTypeValidator<T> for F
+where
+    F: Fn(&T) -> Result<Validation, CustomUserError> + Clone,
+    T: ?Sized,
+{
+    fn validate(&self, input: &T) -> Result<Validation, CustomUserError> {
+        (self)(input)
+    }
+}
+
 /// Custom trait to call correct method to retrieve input length.
 ///
 /// The method can vary depending on the type of input.
