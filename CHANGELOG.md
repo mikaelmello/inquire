@@ -4,11 +4,22 @@
 
 ## [Unreleased] - ReleaseDate
 
+### Breaking Changes
+
+**Multiple changes to the `CustomType` prompt:**
+
+- Added support for validators, separating concerns between parsing and validating parsed values.
+- Decoupled default value formatting from the default value property. Now you can set default values without a specific formatter to accompany them.
+- Input is not cleared anymore when the parsing or validation fails.
+
+**New autocompletion mechanism for `Text` prompts**
+
+- Existing methods still work, you just have to update `with_suggester` calls to `with_autocomplete`.
+- To know more about the new possibilities, check the updated documentation on the repository's README.
+
+### Other changes
+
 - Added shorthand method `rgb(r: u8, g: u8, b: u8)` to create a `Color` struct from RGB components. Thanks to @tpoliaw for the PR! [#73](https://github.com/mikaelmello/inquire/pull/73)
-- **BREAKING**: Multiple changes to the `CustomType` prompt:
-  - Added support for validators, separating concerns between parsing and validating parsed values.
-  - Decoupled default value formatting from the default value property. Now you can set default values without a specific formatter to accompany them.
-  - Input is not cleared anymore when the parsing or validation fails.
 
 ## [0.3.0] - 2022-08-19
 
