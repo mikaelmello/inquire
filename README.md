@@ -1,10 +1,10 @@
 [![Latest Version]][crates.io] ![Build status] ![Supported platforms] ![License]
 
 [crates.io]: https://crates.io/crates/inquire
-[Latest Version]: https://img.shields.io/crates/v/inquire.svg
-[Build status]: https://github.com/mikaelmello/inquire/actions/workflows/build.yml/badge.svg
-[Supported platforms]: https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-success
-[License]: https://img.shields.io/crates/l/inquire.svg
+[latest version]: https://img.shields.io/crates/v/inquire.svg
+[build status]: https://github.com/mikaelmello/inquire/actions/workflows/build.yml/badge.svg
+[supported platforms]: https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-success
+[license]: https://img.shields.io/crates/l/inquire.svg
 
 ---
 
@@ -15,9 +15,10 @@
 </p>
 
 It provides several different prompts in order to interactively ask the user for information via the CLI. With `inquire`, you can use:
-- [`Text`] to get text input from the user, with _built-in auto-completion support_;
-- [`Editor`]* to get longer text inputs by opening a text editor for the user;
-- [`DateSelect`]* to get a date input from the user, selected via an _interactive calendar_;
+
+- [`Text`] to get text input from the user, with _built-in autocompletion support_;
+- [`Editor`]\* to get longer text inputs by opening a text editor for the user;
+- [`DateSelect`]\* to get a date input from the user, selected via an _interactive calendar_;
 - [`Select`] to ask the user to select one option from a given list;
 - [`MultiSelect`] to ask the user to select an arbitrary number of options from a given list;
 - [`Confirm`] for simple yes/no confirmation prompts;
@@ -44,7 +45,7 @@ It provides several different prompts in order to interactively ask the user for
   - Placeholders;
   - Input validators and formatters;
   - Help messages;
-  - Auto-completion for [`Text`] prompts;
+  - Autocompletion for [`Text`] prompts;
   - Custom list filters for Select and [`MultiSelect`] prompts;
   - Custom parsers for [`Confirm`] and [`CustomType`] prompts;
   - Custom extensions for files created by [`Editor`] prompts;
@@ -157,7 +158,7 @@ Filter functions receive three arguments: the current user input, the option str
 
 The default filter function does a naive case-insensitive comparison between the option string value and the current user input, returning `true` if the option string value contains the user input as a substring.
 
-In the [demo](#Demo) you can see this behavior in action with the *account* (Select) and *tags* (MultiSelect) prompts.
+In the [demo](#Demo) you can see this behavior in action with the _account_ (Select) and _tags_ (MultiSelect) prompts.
 
 ## Error handling
 
@@ -207,7 +208,7 @@ With `Text`, you can customize several aspects:
 
 ### Autocomplete
 
-With `Text` inputs, it is also possible to set-up an auto-completion system to provide a better UX when necessary.
+With `Text` inputs, it is also possible to set-up an autocompletion system to provide a better UX when necessary.
 
 You can set-up a custom `Suggester` function, which receives the current input as the only argument and should return a vector of strings, all of the suggested values.
 
@@ -222,7 +223,7 @@ Default behaviors for each one of `Text` configuration options:
 - The input formatter just echoes back the given input.
 - No validators are called, accepting any sort of input including empty ones.
 - No default values or help messages.
-- No auto-completion features set-up.
+- No autocompletion features set-up.
 - Prompt messages are always required when instantiating via `new()`.
 
 ## DateSelect
@@ -249,6 +250,7 @@ match date {
 By default, the initial selected date is the current date. The user can navigate through the calendar by pressing the keyboard arrows. If the user also presses the control key along with the arrows, the user will be able to "fast-forward" to previous or next months or years.
 
 More specifically:
+
 - Left arrow moves to the day previous to the one selected, and to the month previous to the one selected when pressed with `ctrl`.
 - Analogously, right arrow does the same, but moving to the next day or month.
 - Up arrow moves to the day above to the one selected, basically a week before the selected date. When pressed with `ctrl`, it moves to the previous year.
@@ -287,6 +289,7 @@ match ans {
 The user can select and submit the current highlighted option by pressing space or enter.
 
 This prompt requires a prompt message and a **non-empty** `Vec` of options to be displayed to the user. The options can be of any type as long as they implement the `Display` trait. It is required that the `Vec` is moved to the prompt, as the prompt will return the selected option (`Vec` element) after the user submits.
+
 - If the list is empty, the prompt operation will fail with an `InquireError::InvalidConfiguration` error.
 
 This prompt does not support custom validators because of its nature. A submission always selects exactly one of the options. If this option was not supposed to be selected or is invalid in some way, it probably should not be included in the options list.
@@ -316,6 +319,7 @@ The source is too long, find it [here](./examples/multiselect.rs).
 The user can select (or deselect) the current highlighted option by pressing space, clean all selections by pressing the left arrow and select all options by pressing the right arrow.
 
 This prompt requires a prompt message and a **non-empty** `Vec` of options to be displayed to the user. The options can be of any type as long as they implement the `Display` trait. It is required that the `Vec` is moved to the prompt, as the prompt will return the ownership of the `Vec` after the user submits, with only the selected options inside it.
+
 - If the list is empty, the prompt operation will fail with an `InquireError::InvalidConfiguration` error.
 
 The options are paginated in order to provide a smooth experience to the user, with the default page size being 7. The user can move from the options and the pages will be updated accordingly, including moving from the last to the first options (or vice-versa).
@@ -365,7 +369,6 @@ Finally, this prompt allows a great range of customizable options as all others:
 - **Formatter**: Custom formatter in case you need to pre-process the user input before showing it as the final answer.
   - By default, a successfully submitted answer is displayed to the user simply as `<received>`.
 
-
 ## Password
 
 ![Animated GIF making a demonstration of a simple Password prompt created with this library. You can replay this recording in your terminal with asciinema play command using the file ./assets/password_simple.cast](./assets/password_simple.gif)
@@ -384,6 +387,7 @@ match name {
 By default, the password prompt behaves like a standard one you'd see in common CLI applications: the user has no UI indicators about the state of the current input. They do not know how many characters they typed, or which character they typed, with no option to display the current text input.
 
 However, you can still customize these and other behaviors if you wish:
+
 - **Standard display mode**: Set the display mode of the text input among hidden, masked and full via the `PasswordDisplayMode` enum.
   - Hidden: default behavior, no UI indicators.
   - Masked: behaves like a normal text input, except that all characters of the input are masked to a special character, which is `'*'` by default but can be customized via `RenderConfig`.
@@ -470,6 +474,7 @@ match ans {
 This prompt is basically a wrapper around the behavior of [`CustomType`] prompts, providing a sensible set of defaults to ask for simple `true/false` questions, such as confirming an action.
 
 Default values are formatted with the given value in uppercase, e.g. `(Y/n)` or `(y/N)`. The `bool` parser accepts by default only the following inputs (case-insensitive): `y`, `n`, `yes` and `no`. If the user input does not match any of them, the following error message is displayed by default:
+
 - `# Invalid answer, try typing 'y' for yes or 'n' for no`.
 
 Finally, once the answer is submitted, `Confirm` prompts display the bool value formatted as either "Yes", if a `true` value was parsed, or "No" otherwise.
@@ -491,15 +496,14 @@ Confirm prompts provide several options of configuration:
 - **Error message**: Error message to display when a value could not be parsed from the input.
   - Set to "Invalid answer, try typing 'y' for yes or 'n' for no" by default.
 
-[`Text`]: #Text
-[`DateSelect`]: #DateSelect
-[`Select`]: #Select
-[`MultiSelect`]: #MultiSelect
-[`Confirm`]: #Confirm
-[`Editor`]: #Editor
-[`CustomType`]: #CustomType
-[`Password`]: #Password
-
+[`text`]: #Text
+[`dateselect`]: #DateSelect
+[`select`]: #Select
+[`multiselect`]: #MultiSelect
+[`confirm`]: #Confirm
+[`editor`]: #Editor
+[`customtype`]: #CustomType
+[`password`]: #Password
 
 # Stargazers over time
 

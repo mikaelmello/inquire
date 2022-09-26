@@ -1,7 +1,7 @@
 use std::cmp::min;
 
 use crate::{
-    autocompletion::{AutoComplete, Replacement},
+    autocompletion::{Autocomplete, NoAutoCompletion, Replacement},
     config::{self, get_configuration},
     error::{InquireError, InquireResult},
     formatter::{StringFormatter, DEFAULT_STRING_FORMATTER},
@@ -13,7 +13,7 @@ use crate::{
     validator::{ErrorMessage, StringValidator, Validation},
 };
 
-const DEFAULT_HELP_MESSAGE_WITH_AC: &str = "↑↓ to move, tab to auto-complete, enter to submit";
+const DEFAULT_HELP_MESSAGE_WITH_AC: &str = "↑↓ to move, tab to autocomplete, enter to submit";
 
 /// Standard text prompt that returns the user string input.
 ///
@@ -38,12 +38,12 @@ const DEFAULT_HELP_MESSAGE_WITH_AC: &str = "↑↓ to move, tab to auto-complete
 /// - The input formatter just echoes back the given input.
 /// - No validators are called, accepting any sort of input including empty ones.
 /// - No default values or help messages.
-/// - No auto-completion features set-up.
+/// - No autocompletion features set-up.
 /// - Prompt messages are always required when instantiating via `new()`.
 ///
 /// ## Autocomplete
 ///
-/// With `Text` inputs, it is also possible to set-up an auto-completion system to provide a better UX when necessary.
+/// With `Text` inputs, it is also possible to set-up an autocompletion system to provide a better UX when necessary.
 ///
 /// You can set-up a custom [`Suggester`](crate::type_aliases::Suggester) function, which receives the current input as the only argument and should return a vector of strings, the suggested values.
 ///
@@ -85,7 +85,8 @@ pub struct Text<'a> {
     /// Function that formats the user input and presents it to the user as the final rendering of the prompt.
     pub formatter: StringFormatter<'a>,
 
-    pub autocompleter: Option<Box<dyn AutoComplete>>,
+    /// Autocompleter responsible for handling suggestions and input completions.
+    pub autocompleter: Option<Box<dyn Autocomplete>>,
 
     /// Collection of validators to apply to the user input.
     ///
@@ -166,9 +167,10 @@ impl<'a> Text<'a> {
         self
     }
 
-    pub fn with_auto_completion<AC>(mut self, ac: AC) -> Self
+    /// Sets a new autocompleter
+    pub fn with_autocomplete<AC>(mut self, ac: AC) -> Self
     where
-        AC: AutoComplete + 'static,
+        AC: Autocomplete + 'static,
     {
         self.autocompleter = Some(Box::new(ac));
         self
@@ -278,7 +280,7 @@ struct TextPrompt<'a> {
     formatter: StringFormatter<'a>,
     validators: Vec<Box<dyn StringValidator>>,
     error: Option<ErrorMessage>,
-    autocompleter: Option<Box<dyn AutoComplete>>,
+    autocompleter: Box<dyn Autocomplete>,
     suggested_options: Vec<String>,
     cursor_index: usize,
     page_size: usize,
@@ -298,7 +300,9 @@ impl<'a> From<Text<'a>> for TextPrompt<'a> {
             default: so.default,
             help_message: so.help_message,
             formatter: so.formatter,
-            autocompleter: so.autocompleter,
+            autocompleter: so
+                .autocompleter
+                .unwrap_or_else(|| Box::new(NoAutoCompletion::default())),
             input,
             error: None,
             cursor_index: 0,
@@ -316,14 +320,21 @@ impl<'a> From<&'a str> for Text<'a> {
 }
 
 impl<'a> TextPrompt<'a> {
-    fn tick_autocompleter(&mut self) -> InquireResult<()> {
-        if let Some(ac) = self.autocompleter.as_mut() {
-            ac.update_input(self.input.content())?;
-            self.suggested_options = ac.get_suggestions()?;
-            self.cursor_index = 0;
-        }
+    fn update_suggestions(&mut self) -> InquireResult<()> {
+        self.suggested_options = self.autocompleter.get_suggestions(self.input.content())?;
+        self.cursor_index = 0;
 
         Ok(())
+    }
+
+    fn get_highlighted_suggestion(&self) -> Option<&str> {
+        if self.cursor_index > 0 {
+            let index = self.cursor_index - 1;
+            let suggestion = self.suggested_options.get(index).unwrap().as_ref();
+            Some(suggestion)
+        } else {
+            None
+        }
     }
 
     fn move_cursor_up(&mut self, qty: usize) -> bool {
@@ -342,24 +353,16 @@ impl<'a> TextPrompt<'a> {
     }
 
     fn handle_tab_key(&mut self) -> InquireResult<bool> {
-        if let Some(ac) = self.autocompleter.as_ref() {
-            #[allow(clippy::absurd_extreme_comparisons)]
-            let selected_suggestion = if self.cursor_index <= 0 {
-                None
-            } else {
-                let index = self.cursor_index - 1;
-                Some((index, self.suggested_options.get(index).unwrap().as_ref()))
-            };
-
-            match ac.get_completion(selected_suggestion)? {
-                Replacement::Some(value) => {
-                    self.input = Input::new_with(&value);
-                    Ok(true)
-                }
-                Replacement::None => Ok(false),
+        let suggestion = self.get_highlighted_suggestion().map(|s| s.to_owned());
+        match self
+            .autocompleter
+            .get_completion(self.input.content(), suggestion)?
+        {
+            Replacement::Some(value) => {
+                self.input = Input::new_with(&value);
+                Ok(true)
             }
-        } else {
-            Ok(false)
+            Replacement::None => Ok(false),
         }
     }
 
@@ -377,15 +380,32 @@ impl<'a> TextPrompt<'a> {
         };
 
         if dirty {
-            self.tick_autocompleter()?;
+            self.update_suggestions()?;
         }
 
         Ok(())
     }
 
+    fn get_current_answer(&self) -> &str {
+        // If there is a highlighted suggestion, assume user wanted it as
+        // the answer.
+        if let Some(suggestion) = self.get_highlighted_suggestion() {
+            return suggestion;
+        }
+
+        // Empty input with default values override any validators.
+        if self.input.content().is_empty() {
+            if let Some(val) = self.default {
+                return val;
+            }
+        }
+
+        self.input.content()
+    }
+
     fn validate_current_answer(&self) -> InquireResult<Validation> {
         for validator in &self.validators {
-            match validator.validate(self.input.content()) {
+            match validator.validate(self.get_current_answer()) {
                 Ok(Validation::Valid) => {}
                 Ok(Validation::Invalid(msg)) => return Ok(Validation::Invalid(msg)),
                 Err(err) => return Err(InquireError::Custom(err)),
@@ -393,17 +413,6 @@ impl<'a> TextPrompt<'a> {
         }
 
         Ok(Validation::Valid)
-    }
-
-    fn cur_answer(&self) -> String {
-        // Empty input with default values override any validators.
-        if self.input.content().is_empty() {
-            if let Some(val) = self.default {
-                return val.to_string();
-            }
-        }
-
-        self.input.content().into()
     }
 
     fn render<B: TextBackend>(&mut self, backend: &mut B) -> InquireResult<()> {
@@ -447,7 +456,7 @@ impl<'a> TextPrompt<'a> {
 
     fn prompt<B: TextBackend>(mut self, backend: &mut B) -> InquireResult<String> {
         let final_answer: String;
-        self.tick_autocompleter()?;
+        self.update_suggestions()?;
 
         loop {
             self.render(backend)?;
@@ -459,7 +468,7 @@ impl<'a> TextPrompt<'a> {
                 Key::Cancel => cancel_prompt!(backend, self.message),
                 Key::Submit => match self.validate_current_answer()? {
                     Validation::Valid => {
-                        final_answer = self.cur_answer();
+                        final_answer = self.get_current_answer().to_owned();
                         break;
                     }
                     Validation::Invalid(msg) => self.error = Some(msg),

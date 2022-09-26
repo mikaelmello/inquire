@@ -3,7 +3,7 @@
 //! It provides several different prompts in order to interactively ask the user
 //! for information via the CLI. With `inquire`, you can use:
 //!
-//! - [`Text`] to get text input from the user, with _built-in auto-completion support_;
+//! - [`Text`] to get text input from the user, with _built-in autocompletion support_;
 //! - [`Editor`]* to get longer text inputs by opening a text editor for the user;
 //! - [`DateSelect`]* to get a date input from the user, selected via an _interactive calendar_;
 //! - [`Select`] to ask the user to select one option from a given list;
@@ -23,7 +23,7 @@
 //!   - Default values;
 //!   - Input validators and formatters;
 //!   - Help messages;
-//!   - Auto-completion for [`Text`] prompts;
+//!   - Autocompletion for [`Text`] prompts;
 //!   - Custom list filters for Select and [`MultiSelect`] prompts;
 //!   - Custom parsers for [`Confirm`] and [`CustomType`] prompts;
 //!   - Custom extensions for files created by [`Editor`] prompts;
