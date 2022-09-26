@@ -2,7 +2,7 @@ use inquire::{error::CustomUserError, length, required, ui::RenderConfig, Text};
 
 fn main() {
     let answer = Text::new("What's your name?")
-        //.with_suggester(&suggester)
+        .with_autocomplete(&suggester)
         .with_validator(required!())
         .with_validator(length!(10))
         .prompt()

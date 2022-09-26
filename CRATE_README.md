@@ -1,10 +1,10 @@
 [![Latest Version]][crates.io] ![Build status] ![Supported platforms] ![License]
 
 [crates.io]: https://crates.io/crates/inquire
-[Latest Version]: https://img.shields.io/crates/v/inquire.svg
-[Build status]: https://github.com/mikaelmello/inquire/actions/workflows/test.yml/badge.svg
-[Supported platforms]: https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-success
-[License]: https://img.shields.io/crates/l/inquire.svg
+[latest version]: https://img.shields.io/crates/v/inquire.svg
+[build status]: https://github.com/mikaelmello/inquire/actions/workflows/test.yml/badge.svg
+[supported platforms]: https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-success
+[license]: https://img.shields.io/crates/l/inquire.svg
 
 ---
 
@@ -15,9 +15,10 @@
 </p>
 
 It provides several different prompts in order to interactively ask the user for information via the CLI. With `inquire`, you can use:
-- [`Text`] to get text input from the user, with _built-in auto-completion support_;
-- [`Editor`]* to get longer text inputs by opening a text editor for the user;
-- [`DateSelect`]* to get a date input from the user, selected via an _interactive calendar_;
+
+- [`Text`] to get text input from the user, with _built-in autocompletion support_;
+- [`Editor`]\* to get longer text inputs by opening a text editor for the user;
+- [`DateSelect`]\* to get a date input from the user, selected via an _interactive calendar_;
 - [`Select`] to ask the user to select one option from a given list;
 - [`MultiSelect`] to ask the user to select an arbitrary number of options from a given list;
 - [`Confirm`] for simple yes/no confirmation prompts;
@@ -40,7 +41,7 @@ It provides several different prompts in order to interactively ask the user for
   - Default values;
   - Input validators and formatters;
   - Help messages;
-  - Auto-completion for [`Text`] prompts;
+  - Autocompletion for [`Text`] prompts;
   - Custom list filters for Select and [`MultiSelect`] prompts;
   - Custom parsers for [`Confirm`] and [`CustomType`] prompts;
   - Custom extensions for files created by [`Editor`] prompts;
@@ -60,11 +61,11 @@ inquire = "0.3.0"
 inquire = { version = "0.3.0", features = ["date", "editor"] }
 ```
 
-[`Text`]: https://docs.rs/inquire/*/inquire/prompts/text/struct.Text.html
-[`DateSelect`]: https://docs.rs/inquire/*/inquire/prompts/dateselect/struct.DateSelect.html
-[`Select`]: https://docs.rs/inquire/*/inquire/prompts/select/struct.Select.html
-[`MultiSelect`]: https://docs.rs/inquire/*/inquire/prompts/multiselect/struct.MultiSelect.html
-[`Confirm`]: https://docs.rs/inquire/*/inquire/prompts/confirm/struct.Confirm.html
-[`Editor`]: https://docs.rs/inquire/*/inquire/prompts/editor/struct.Editor.html
-[`CustomType`]: https://docs.rs/inquire/*/inquire/prompts/customtype/struct.CustomType.html
-[`Password`]: https://docs.rs/inquire/*/inquire/prompts/password/struct.Password.html
+[`text`]: https://docs.rs/inquire/*/inquire/prompts/text/struct.Text.html
+[`dateselect`]: https://docs.rs/inquire/*/inquire/prompts/dateselect/struct.DateSelect.html
+[`select`]: https://docs.rs/inquire/*/inquire/prompts/select/struct.Select.html
+[`multiselect`]: https://docs.rs/inquire/*/inquire/prompts/multiselect/struct.MultiSelect.html
+[`confirm`]: https://docs.rs/inquire/*/inquire/prompts/confirm/struct.Confirm.html
+[`editor`]: https://docs.rs/inquire/*/inquire/prompts/editor/struct.Editor.html
+[`customtype`]: https://docs.rs/inquire/*/inquire/prompts/customtype/struct.CustomType.html
+[`password`]: https://docs.rs/inquire/*/inquire/prompts/password/struct.Password.html
