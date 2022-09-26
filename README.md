@@ -210,11 +210,14 @@ With `Text`, you can customize several aspects:
 
 With `Text` inputs, it is also possible to set-up an autocompletion system to provide a better UX when necessary.
 
-You can set-up a custom `Suggester` function, which receives the current input as the only argument and should return a vector of strings, all of the suggested values.
+You can call `with_autocomplete()` and provide a value that implements the `Autocomplete` trait. The `Autocomplete` trait has two provided methods: `get_suggestions` and `get_completion`.
 
-The user is then able to select one of them by moving up and down the list, possibly further modifying a selected suggestion.
+- `get_suggestions` is called whenever the user's text input is modified, e.g. a new letter is typed, returning a `Vec<String>`. The `Vec<String>` is the list of suggestions that the prompt displays to the user according to their text input. The user can then navigate through the list and if they submit while highlighting one of these suggestions, the suggestion is treated as the final answer.
+- `get_completion` is called whenever the user presses the autocompletion hotkey (`tab` by default), with the current text input and the text of the currently highlighted suggestion, if any, as parameters. This method should return whether any text replacement (an autocompletion) should be made. If the prompt receives a replacement to be made, it substitutes the current text input for the string received from the `get_completion` call.
 
-In the demo on the top of this README, you can see this behavior in action with the _payee_ prompt.
+For example, in the `complex_autocompletion.rs` example file, the `FilePathCompleter` scans the file system based on the current text input, storing a list of paths that match the current text input.
+
+Everytime `get_suggestions` is called, the method returns the list of paths that match the user input. When the user presses the autocompletion hotkey, the `FilePathCompleter` checks whether there is any path selected from the list, if there is, it decides to replace the current text input for it. The interesting piece of functionality is that if there isn't a path selected from the list, the `FilePathCompleter` calculates the longest common prefix amongst all scanned paths and updates the text input to an unambiguous new value. Similar how terminals work when traversing paths.
 
 ### Default behaviors
 
