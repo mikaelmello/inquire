@@ -6,6 +6,11 @@ use inquire::{
 };
 
 fn main() {
+    eprintln!("This is in no way representative of best practices when dealing with file systems and OS calls");
+    eprintln!();
+    eprintln!("It is a simple example to showcase autocompletion features and has not been battle-tested nor tested against bugs.");
+    eprintln!();
+
     let current_dir = std::env::current_dir().unwrap();
     let help_message = format!("Current directory: {}", current_dir.to_string_lossy());
 
