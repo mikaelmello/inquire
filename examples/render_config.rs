@@ -16,7 +16,7 @@ fn main() -> InquireResult<()> {
 
     let _payee = Text::new("Payee:")
         .with_validator(required!("This field is required"))
-        //.with_suggester(&payee_suggestor)
+        //.with_auto_completion(&payee_suggestor)
         .with_help_message("e.g. Music Store")
         .with_page_size(5)
         .prompt()?;
