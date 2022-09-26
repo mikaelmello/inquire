@@ -1,7 +1,7 @@
 use std::cmp::min;
 
 use crate::{
-    autocompletion::{AutoComplete, Completion},
+    autocompletion::{AutoComplete, Replacement},
     config::{self, get_configuration},
     error::{InquireError, InquireResult},
     formatter::{StringFormatter, DEFAULT_STRING_FORMATTER},
@@ -352,18 +352,11 @@ impl<'a> TextPrompt<'a> {
             };
 
             match ac.get_completion(selected_suggestion)? {
-                Completion::Replace(value) => {
+                Replacement::Some(value) => {
                     self.input = Input::new_with(&value);
                     Ok(true)
                 }
-                Completion::Append(value) => {
-                    let mut content = String::from(self.input.content());
-                    content.push_str(&value);
-
-                    self.input = Input::new_with(content);
-                    Ok(true)
-                }
-                Completion::None => Ok(false),
+                Replacement::None => Ok(false),
             }
         } else {
             Ok(false)

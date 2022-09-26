@@ -1,7 +1,7 @@
 use std::fs::DirEntry;
 
 use inquire::{
-    autocompletion::{AutoComplete, Completion},
+    autocompletion::{AutoComplete, Replacement},
     CustomUserError, Text,
 };
 
@@ -79,18 +79,18 @@ impl AutoComplete for FilePathCompleter {
     fn get_completion(
         &self,
         selected_suggestion: Option<(usize, &str)>,
-    ) -> Result<inquire::autocompletion::Completion, CustomUserError> {
+    ) -> Result<inquire::autocompletion::Replacement, CustomUserError> {
         let completion = match selected_suggestion {
             None => {
                 let lcp = longest_common_prefix(&self.paths)
                     .map(|bytes| String::from_utf8_lossy(&bytes).to_string());
 
                 match lcp {
-                    Some(lcp) => Completion::Replace(lcp),
-                    None => Completion::None,
+                    Some(lcp) => Replacement::Some(lcp),
+                    None => Replacement::None,
                 }
             }
-            Some(suggestion) => Completion::Replace(suggestion.1.to_owned()),
+            Some(suggestion) => Replacement::Some(suggestion.1.to_owned()),
         };
 
         Ok(completion)
