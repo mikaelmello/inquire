@@ -1,8 +1,10 @@
 # Changelog
 
 <!-- next-header -->
-
 ## [Unreleased] - ReleaseDate
+
+
+## [0.4.0] - 2022-09-27
 
 ### Breaking Changes
 
@@ -211,8 +213,9 @@ The library is already featureful enough to warrant a higher version number, bum
 - Add DateSelect prompt
 
 <!-- next-url -->
+[Unreleased]: https://github.com/mikaelmello/inquire/compare/v0.4.0...HEAD
 
-[unreleased]: https://github.com/mikaelmello/inquire/compare/v0.3.0...HEAD
+[unreleased]: https://github.com/mikaelmello/inquire/compare/v0.3.0...v0.4.0
 [unreleased]: https://github.com/mikaelmello/inquire/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/mikaelmello/inquire/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/mikaelmello/inquire/compare/v0.1.0...v0.2.0
