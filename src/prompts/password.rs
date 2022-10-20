@@ -441,12 +441,13 @@ mod test {
     }
 
     macro_rules! password_test {
-        ($name:ident,$input:expr,$output:expr) => {
-            password_test! {$name, $input, $output, default()}
+        ($(#[$meta:meta])? $name:ident,$input:expr,$output:expr) => {
+            password_test! {$(#[$meta])? $name, $input, $output, default()}
         };
 
-        ($name:ident,$input:expr,$output:expr,$prompt:expr) => {
+        ($(#[$meta:meta])? $name:ident,$input:expr,$output:expr,$prompt:expr) => {
             #[test]
+            $(#[$meta])?
             fn $name() {
                 let read: Vec<KeyEvent> = $input.into_iter().map(KeyEvent::from).collect();
                 let mut read = read.iter();
@@ -536,5 +537,34 @@ mod test {
             len if len > 5 && len < 10 => Ok(Validation::Valid),
             _ => Ok(Validation::Invalid(ErrorMessage::Default)),
         })
+    );
+
+    password_test!(
+        input_verification_same,
+        {
+            let mut events = vec![];
+            events.append(&mut text_to_events!("1234567890").collect());
+            events.push(KeyCode::Enter);
+            events.append(&mut text_to_events!("1234567890").collect());
+            events.push(KeyCode::Enter);
+            events
+        },
+        "1234567890",
+        Password::new("").with_verification_enabled()
+    );
+
+    password_test!(
+        #[should_panic(expected = "Custom stream of characters has ended")]
+        input_verification_different,
+        {
+            let mut events = vec![];
+            events.append(&mut text_to_events!("1234567890").collect());
+            events.push(KeyCode::Enter);
+            events.append(&mut text_to_events!("abcdefghij").collect());
+            events.push(KeyCode::Enter);
+            events
+        },
+        "",
+        Password::new("").with_verification_enabled()
     );
 }
