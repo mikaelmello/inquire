@@ -73,6 +73,9 @@ pub struct Password<'a> {
     /// Message to be presented to the user.
     pub message: &'a str,
 
+    /// Message to be presented to the user when verifying the input.
+    pub verification_message: &'a str,
+
     /// Help message to be presented to the user.
     pub help_message: Option<&'a str>,
 
@@ -84,6 +87,9 @@ pub struct Password<'a> {
 
     /// Whether to allow the user to toggle the display of the current password input by pressing the Ctrl+R hotkey.
     pub enable_display_toggle: bool,
+
+    /// Whether to ask for input twice to see if the provided passwords are the same.
+    pub enable_verification: bool,
 
     /// Collection of validators to apply to the user input.
     ///
@@ -117,6 +123,9 @@ impl<'a> Password<'a> {
     /// Default value for the allow display toggle variable.
     pub const DEFAULT_ENABLE_DISPLAY_TOGGLE: bool = false;
 
+    /// Default value for the allow verification variable.
+    pub const DEFAULT_ENABLE_VERIFICATION: bool = false;
+
     /// Default password display mode.
     pub const DEFAULT_DISPLAY_MODE: PasswordDisplayMode = PasswordDisplayMode::Hidden;
 
@@ -124,6 +133,8 @@ impl<'a> Password<'a> {
     pub fn new(message: &'a str) -> Self {
         Self {
             message,
+            verification_message: message,
+            enable_verification: Self::DEFAULT_ENABLE_VERIFICATION,
             enable_display_toggle: Self::DEFAULT_ENABLE_DISPLAY_TOGGLE,
             display_mode: Self::DEFAULT_DISPLAY_MODE,
             help_message: Self::DEFAULT_HELP_MESSAGE,
@@ -142,6 +153,18 @@ impl<'a> Password<'a> {
     /// Sets the flag to enable display toggling.
     pub fn with_display_toggle_enabled(mut self) -> Self {
         self.enable_display_toggle = true;
+        self
+    }
+
+    /// Sets the flag to enable verification.
+    pub fn with_verification_enabled(mut self) -> Self {
+        self.enable_verification = true;
+        self
+    }
+
+    /// Sets the verification message of the prompt.
+    pub fn with_verification_message(mut self, message: &'a str) -> Self {
+        self.verification_message = message;
         self
     }
 
@@ -241,11 +264,14 @@ impl<'a> Password<'a> {
 
 struct PasswordPrompt<'a> {
     message: &'a str,
+    main_message: &'a str,
+    verification_message: &'a str,
     help_message: Option<&'a str>,
     input: Input,
     standard_display_mode: PasswordDisplayMode,
     display_mode: PasswordDisplayMode,
     enable_display_toggle: bool,
+    enable_verification: bool,
     formatter: StringFormatter<'a>,
     validators: Vec<Box<dyn StringValidator>>,
     error: Option<ErrorMessage>,
@@ -255,10 +281,13 @@ impl<'a> From<Password<'a>> for PasswordPrompt<'a> {
     fn from(so: Password<'a>) -> Self {
         Self {
             message: so.message,
+            main_message: so.message,
+            verification_message: so.verification_message,
             help_message: so.help_message,
             standard_display_mode: so.display_mode,
             display_mode: so.display_mode,
             enable_display_toggle: so.enable_display_toggle,
+            enable_verification: so.enable_verification,
             formatter: so.formatter,
             validators: so.validators,
             input: Input::new(),
@@ -342,30 +371,47 @@ impl<'a> PasswordPrompt<'a> {
     }
 
     fn prompt<B: PasswordBackend>(mut self, backend: &mut B) -> InquireResult<String> {
-        let final_answer: String;
+        let mut first_answer = String::new();
+        let mut has_read_first_input = false;
 
-        loop {
+        let final_answer = loop {
             self.render(backend)?;
 
             let key = backend.read_key()?;
 
             match key {
                 Key::Interrupt => interrupt_prompt!(),
-                Key::Cancel => cancel_prompt!(backend, self.message),
+                Key::Cancel => cancel_prompt!(backend, self.main_message),
                 Key::Submit => match self.validate_current_answer()? {
                     Validation::Valid => {
-                        final_answer = self.cur_answer();
-                        break;
+                        if !self.enable_verification {
+                            break self.cur_answer();
+                        } else if !has_read_first_input {
+                            first_answer = self.cur_answer();
+                            self.input.clear();
+                            has_read_first_input = true;
+                            self.message = self.verification_message;
+                        } else {
+                            let second_answer = self.cur_answer();
+                            if first_answer == second_answer {
+                                break first_answer;
+                            }
+
+                            self.error = Some("The passwords don't match.".into());
+                            self.input.clear();
+                            has_read_first_input = false;
+                            self.message = self.main_message;
+                        }
                     }
                     Validation::Invalid(msg) => self.error = Some(msg),
                 },
                 key => self.on_change(key),
             }
-        }
+        };
 
         let formatted = (self.formatter)(&final_answer);
 
-        finish_prompt_with_answer!(backend, self.message, &formatted, final_answer);
+        finish_prompt_with_answer!(backend, self.main_message, &formatted, final_answer);
     }
 }
 
