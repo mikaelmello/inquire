@@ -33,9 +33,11 @@ pub enum PasswordDisplayMode {
 ///   - Hidden: default behavior, no UI indicators.
 ///   - Masked: behaves like a normal text input, except that all characters of the input are masked to a special character, which is `'*'` by default but can be customized via `RenderConfig`.
 ///   - Full: behaves like a normal text input, no modifications.
-/// - **Toggle display mode**: By enabling this feature by calling the `with_display_toggle_enabled()`, you allow the user to toggle between the standard display mode set and the full display mode.
+/// - **Toggle display mode**: By enabling this feature by calling the `with_display_toggle_enabled()` method, you allow the user to toggle between the standard display mode set and the full display mode.
 ///   - If you have set the standard display mode to hidden (which is also the default) or masked, the user can press `Ctrl+R` to change the display mode to `Full`, and `Ctrl+R` again to change it back to the standard one.
 ///   - Obviously, if you have set the standard display mode to `Full`, pressing `Ctrl+R` won't cause any changes.
+/// - **Enable verification**: By enabling this feature by calling the `with_verification_enabled()` method, the user will be asked for the input twice and the two responses will be compared. If they differ, an error message is shown and the user is prompted again.
+///   - By default, the same message is shown for the two prompts, but this can be modified by setting a custom verification message only shown the second time, using the `with_verification_message()` method.
 /// - **Help message**: Message displayed at the line below the prompt.
 /// - **Formatter**: Custom formatter in case you need to pre-process the user input before showing it as the final answer.
 ///   - By default, it prints eight asterisk characters: `********`.
@@ -58,6 +60,8 @@ pub enum PasswordDisplayMode {
 ///  let name = Password::new("Encryption Key:")
 ///      .with_display_toggle_enabled()
 ///      .with_display_mode(PasswordDisplayMode::Hidden)
+///      .with_verification_enabled()
+///      .with_verification_message("Encryption Key (verify):")
 ///      .with_validator(validator)
 ///      .with_formatter(&|_| String::from("Input received"))
 ///      .with_help_message("It is recommended to generate a new one only for this purpose")
