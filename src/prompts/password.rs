@@ -160,9 +160,9 @@ impl<'a> Password<'a> {
         self
     }
 
-    /// Sets the flag to enable verification.
-    pub fn with_verification_enabled(mut self) -> Self {
-        self.enable_verification = true;
+    /// Disables the verification step of the prompt.
+    pub fn without_verification(mut self) -> Self {
+        self.enable_verification = false;
         self
     }
 
