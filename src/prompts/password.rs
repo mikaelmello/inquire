@@ -385,13 +385,19 @@ impl<'a> PasswordPrompt<'a> {
 
             match key {
                 Key::Interrupt => interrupt_prompt!(),
-                Key::Cancel => cancel_prompt!(backend, self.main_message),
+                Key::Cancel if !has_read_first_input => cancel_prompt!(backend, self.main_message),
+                Key::Cancel => {
+                    self.error = None;
+                    self.input.clear();
+                    has_read_first_input = false;
+                    self.message = self.main_message;
+                }
                 Key::Submit => match self.validate_current_answer()? {
+                    Validation::Valid if !self.enable_confirmation => break self.cur_answer(),
                     Validation::Valid => {
-                        if !self.enable_confirmation {
-                            break self.cur_answer();
-                        } else if !has_read_first_input {
+                        if !has_read_first_input {
                             first_answer = self.cur_answer();
+                            self.error = None;
                             self.input.clear();
                             has_read_first_input = true;
                             self.message = self.confirmation_message;
