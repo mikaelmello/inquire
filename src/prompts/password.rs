@@ -127,8 +127,8 @@ impl<'a> Password<'a> {
     /// Default value for the allow display toggle variable.
     pub const DEFAULT_ENABLE_DISPLAY_TOGGLE: bool = false;
 
-    /// Default value for the allow verification variable.
-    pub const DEFAULT_ENABLE_VERIFICATION: bool = false;
+    /// Default value for the enable verification variable.
+    pub const DEFAULT_ENABLE_VERIFICATION: bool = true;
 
     /// Default password display mode.
     pub const DEFAULT_DISPLAY_MODE: PasswordDisplayMode = PasswordDisplayMode::Hidden;
