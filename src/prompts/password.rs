@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use crate::{
     config::get_configuration,
     error::{InquireError, InquireResult},
@@ -78,7 +80,7 @@ pub struct Password<'a> {
     pub message: &'a str,
 
     /// Message to be presented to the user when confirming the input.
-    pub confirmation_message: &'a str,
+    pub custom_confirmation_message: Option<&'a str>,
 
     /// Help message to be presented to the user.
     pub help_message: Option<&'a str>,
@@ -137,7 +139,7 @@ impl<'a> Password<'a> {
     pub fn new(message: &'a str) -> Self {
         Self {
             message,
-            confirmation_message: message,
+            custom_confirmation_message: None,
             enable_confirmation: Self::DEFAULT_ENABLE_CONFIRMATION,
             enable_display_toggle: Self::DEFAULT_ENABLE_DISPLAY_TOGGLE,
             display_mode: Self::DEFAULT_DISPLAY_MODE,
@@ -168,7 +170,7 @@ impl<'a> Password<'a> {
 
     /// Sets the prompt message when asking for the password confirmation.
     pub fn with_custom_confirmation_message(mut self, message: &'a str) -> Self {
-        self.confirmation_message = message;
+        self.custom_confirmation_message.replace(message);
         self
     }
 
@@ -267,9 +269,9 @@ impl<'a> Password<'a> {
 }
 
 struct PasswordPrompt<'a> {
-    message: &'a str,
+    message: Cow<'a, str>,
     main_message: &'a str,
-    confirmation_message: &'a str,
+    custom_confirmation_message: Option<&'a str>,
     help_message: Option<&'a str>,
     input: Input,
     confirmation_first_answer: Option<Input>,
@@ -285,9 +287,9 @@ struct PasswordPrompt<'a> {
 impl<'a> From<Password<'a>> for PasswordPrompt<'a> {
     fn from(so: Password<'a>) -> Self {
         Self {
-            message: so.message,
+            message: so.message.into(),
             main_message: so.message,
-            confirmation_message: so.confirmation_message,
+            custom_confirmation_message: so.custom_confirmation_message,
             help_message: so.help_message,
             standard_display_mode: so.display_mode,
             display_mode: so.display_mode,
@@ -347,7 +349,7 @@ impl<'a> PasswordPrompt<'a> {
     }
 
     fn render<B: PasswordBackend>(&mut self, backend: &mut B) -> InquireResult<()> {
-        let prompt = self.message;
+        let prompt = &*self.message;
 
         backend.frame_setup()?;
 
@@ -400,7 +402,7 @@ impl<'a> PasswordPrompt<'a> {
                     self.error = None;
                     self.input.clear();
                     self.confirmation_first_answer.take();
-                    self.message = self.main_message;
+                    self.message = Cow::Borrowed(self.main_message);
                 }
                 Key::Submit => match self.validate_current_answer()? {
                     Validation::Valid if !self.enable_confirmation => break self.cur_answer(),
@@ -416,7 +418,11 @@ impl<'a> PasswordPrompt<'a> {
                                 self.confirmation_first_answer =
                                     Some(Input::new_with(self.cur_answer()));
                                 self.input.clear();
-                                self.message = self.confirmation_message;
+                                self.message = if let Some(msg) = self.custom_confirmation_message {
+                                    Cow::Borrowed(msg)
+                                } else {
+                                    Cow::Owned(format!("{} (confirm)", self.main_message))
+                                };
                             }
                             Some(first_answer) if first_answer == self.cur_answer() => {
                                 break first_answer.into();
@@ -424,7 +430,7 @@ impl<'a> PasswordPrompt<'a> {
                             Some(_) => {
                                 self.error = Some("The passwords don't match.".into());
                                 self.input.clear();
-                                self.message = self.main_message;
+                                self.message = Cow::Borrowed(self.main_message);
                             }
                         }
                     }
