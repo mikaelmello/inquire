@@ -36,8 +36,9 @@ pub enum PasswordDisplayMode {
 /// - **Toggle display mode**: When enabling this feature by calling the `with_display_toggle_enabled()` method, you allow the user to toggle between the standard display mode set and the full display mode.
 ///   - If you have set the standard display mode to hidden (which is also the default) or masked, the user can press `Ctrl+R` to change the display mode to `Full`, and `Ctrl+R` again to change it back to the standard one.
 ///   - Obviously, if you have set the standard display mode to `Full`, pressing `Ctrl+R` won't cause any changes.
-/// - **Enable verification**: When enabling this feature by calling the `with_verification_enabled()` method, the user will be asked for the input twice and the two responses will be compared. If they differ, an error message is shown and the user is prompted again.
-///   - By default, the same message is shown for the two prompts, but this can be modified by setting a custom verification message only shown the second time, using the `with_verification_message()` method.
+/// - **Confirmation**: By default, the password will have a confirmation flow where the user will be asked for the input twice and the two responses will be compared. If they differ, an error message is shown and the user is prompted again.
+///   - By default, the same message is shown for the two prompts, but this can be modified by setting a custom confirmation message only shown the second time, using the `with_confirmation_message()` method.
+///   - If confirmation is not desired, it can be turned off using the `without_confirmation()` method.
 /// - **Help message**: Message displayed at the line below the prompt.
 /// - **Formatter**: Custom formatter in case you need to pre-process the user input before showing it as the final answer.
 ///   - By default, it prints eight asterisk characters: `********`.
@@ -60,8 +61,7 @@ pub enum PasswordDisplayMode {
 ///  let name = Password::new("Encryption Key:")
 ///      .with_display_toggle_enabled()
 ///      .with_display_mode(PasswordDisplayMode::Hidden)
-///      .with_verification_enabled()
-///      .with_verification_message("Encryption Key (verify):")
+///      .with_custom_confirmation_message("Encryption Key (confirm):")
 ///      .with_validator(validator)
 ///      .with_formatter(&|_| String::from("Input received"))
 ///      .with_help_message("It is recommended to generate a new one only for this purpose")
@@ -77,8 +77,8 @@ pub struct Password<'a> {
     /// Message to be presented to the user.
     pub message: &'a str,
 
-    /// Message to be presented to the user when verifying the input.
-    pub verification_message: &'a str,
+    /// Message to be presented to the user when confirming the input.
+    pub confirmation_message: &'a str,
 
     /// Help message to be presented to the user.
     pub help_message: Option<&'a str>,
@@ -93,7 +93,7 @@ pub struct Password<'a> {
     pub enable_display_toggle: bool,
 
     /// Whether to ask for input twice to see if the provided passwords are the same.
-    pub enable_verification: bool,
+    pub enable_confirmation: bool,
 
     /// Collection of validators to apply to the user input.
     ///
@@ -127,8 +127,8 @@ impl<'a> Password<'a> {
     /// Default value for the allow display toggle variable.
     pub const DEFAULT_ENABLE_DISPLAY_TOGGLE: bool = false;
 
-    /// Default value for the enable verification variable.
-    pub const DEFAULT_ENABLE_VERIFICATION: bool = true;
+    /// Default value for the enable confirmation variable.
+    pub const DEFAULT_ENABLE_CONFIRMATION: bool = true;
 
     /// Default password display mode.
     pub const DEFAULT_DISPLAY_MODE: PasswordDisplayMode = PasswordDisplayMode::Hidden;
@@ -137,8 +137,8 @@ impl<'a> Password<'a> {
     pub fn new(message: &'a str) -> Self {
         Self {
             message,
-            verification_message: message,
-            enable_verification: Self::DEFAULT_ENABLE_VERIFICATION,
+            confirmation_message: message,
+            enable_confirmation: Self::DEFAULT_ENABLE_CONFIRMATION,
             enable_display_toggle: Self::DEFAULT_ENABLE_DISPLAY_TOGGLE,
             display_mode: Self::DEFAULT_DISPLAY_MODE,
             help_message: Self::DEFAULT_HELP_MESSAGE,
@@ -160,15 +160,15 @@ impl<'a> Password<'a> {
         self
     }
 
-    /// Disables the verification step of the prompt.
-    pub fn without_verification(mut self) -> Self {
-        self.enable_verification = false;
+    /// Disables the confirmation step of the prompt.
+    pub fn without_confirmation(mut self) -> Self {
+        self.enable_confirmation = false;
         self
     }
 
-    /// Sets the prompt message when asking for the password verification.
-    pub fn with_verification_message(mut self, message: &'a str) -> Self {
-        self.verification_message = message;
+    /// Sets the prompt message when asking for the password confirmation.
+    pub fn with_custom_confirmation_message(mut self, message: &'a str) -> Self {
+        self.confirmation_message = message;
         self
     }
 
@@ -269,13 +269,13 @@ impl<'a> Password<'a> {
 struct PasswordPrompt<'a> {
     message: &'a str,
     main_message: &'a str,
-    verification_message: &'a str,
+    confirmation_message: &'a str,
     help_message: Option<&'a str>,
     input: Input,
     standard_display_mode: PasswordDisplayMode,
     display_mode: PasswordDisplayMode,
     enable_display_toggle: bool,
-    enable_verification: bool,
+    enable_confirmation: bool,
     formatter: StringFormatter<'a>,
     validators: Vec<Box<dyn StringValidator>>,
     error: Option<ErrorMessage>,
@@ -286,12 +286,12 @@ impl<'a> From<Password<'a>> for PasswordPrompt<'a> {
         Self {
             message: so.message,
             main_message: so.message,
-            verification_message: so.verification_message,
+            confirmation_message: so.confirmation_message,
             help_message: so.help_message,
             standard_display_mode: so.display_mode,
             display_mode: so.display_mode,
             enable_display_toggle: so.enable_display_toggle,
-            enable_verification: so.enable_verification,
+            enable_confirmation: so.enable_confirmation,
             formatter: so.formatter,
             validators: so.validators,
             input: Input::new(),
@@ -388,13 +388,13 @@ impl<'a> PasswordPrompt<'a> {
                 Key::Cancel => cancel_prompt!(backend, self.main_message),
                 Key::Submit => match self.validate_current_answer()? {
                     Validation::Valid => {
-                        if !self.enable_verification {
+                        if !self.enable_confirmation {
                             break self.cur_answer();
                         } else if !has_read_first_input {
                             first_answer = self.cur_answer();
                             self.input.clear();
                             has_read_first_input = true;
-                            self.message = self.verification_message;
+                            self.message = self.confirmation_message;
                         } else {
                             let second_answer = self.cur_answer();
                             if first_answer == second_answer {
@@ -533,14 +533,16 @@ mod test {
             events
         },
         "12345yes",
-        Password::new("").with_validator(|ans: &str| match ans.len() {
-            len if len > 5 && len < 10 => Ok(Validation::Valid),
-            _ => Ok(Validation::Invalid(ErrorMessage::Default)),
-        })
+        Password::new("")
+            .without_confirmation()
+            .with_validator(|ans: &str| match ans.len() {
+                len if len > 5 && len < 10 => Ok(Validation::Valid),
+                _ => Ok(Validation::Invalid(ErrorMessage::Default)),
+            })
     );
 
     password_test!(
-        input_verification_same,
+        input_confirmation_same,
         {
             let mut events = vec![];
             events.append(&mut text_to_events!("1234567890").collect());
@@ -550,12 +552,12 @@ mod test {
             events
         },
         "1234567890",
-        Password::new("").with_verification_enabled()
+        Password::new("")
     );
 
     password_test!(
         #[should_panic(expected = "Custom stream of characters has ended")]
-        input_verification_different,
+        input_confirmation_different,
         {
             let mut events = vec![];
             events.append(&mut text_to_events!("1234567890").collect());
@@ -565,6 +567,6 @@ mod test {
             events
         },
         "",
-        Password::new("").with_verification_enabled()
+        Password::new("")
     );
 }
