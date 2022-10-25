@@ -166,7 +166,7 @@ impl<'a> Password<'a> {
         self
     }
 
-    /// Sets the verification message of the prompt.
+    /// Sets the prompt message when asking for the password verification.
     pub fn with_verification_message(mut self, message: &'a str) -> Self {
         self.verification_message = message;
         self
