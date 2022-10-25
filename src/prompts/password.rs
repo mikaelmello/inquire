@@ -430,10 +430,6 @@ mod test {
     };
     use crossterm::event::{KeyCode, KeyEvent};
 
-    fn default<'a>() -> Password<'a> {
-        Password::new("Question?")
-    }
-
     macro_rules! text_to_events {
         ($text:expr) => {{
             $text.chars().map(KeyCode::Char)
@@ -441,10 +437,6 @@ mod test {
     }
 
     macro_rules! password_test {
-        ($(#[$meta:meta])? $name:ident,$input:expr,$output:expr) => {
-            password_test! {$(#[$meta])? $name, $input, $output, default()}
-        };
-
         ($(#[$meta:meta])? $name:ident,$input:expr,$output:expr,$prompt:expr) => {
             #[test]
             $(#[$meta])?
@@ -463,20 +455,32 @@ mod test {
         };
     }
 
-    password_test!(empty, vec![KeyCode::Enter], "");
+    password_test!(
+        empty,
+        vec![KeyCode::Enter],
+        "",
+        Password::new("").without_confirmation()
+    );
 
-    password_test!(single_letter, vec![KeyCode::Char('b'), KeyCode::Enter], "b");
+    password_test!(
+        single_letter,
+        vec![KeyCode::Char('b'), KeyCode::Enter],
+        "b",
+        Password::new("").without_confirmation()
+    );
 
     password_test!(
         letters_and_enter,
         text_to_events!("normal input\n"),
-        "normal input"
+        "normal input",
+        Password::new("").without_confirmation()
     );
 
     password_test!(
         letters_and_enter_with_emoji,
         text_to_events!("with emoji 🧘🏻‍♂️, 🌍, 🍞, 🚗, 📞\n"),
-        "with emoji 🧘🏻‍♂️, 🌍, 🍞, 🚗, 📞"
+        "with emoji 🧘🏻‍♂️, 🌍, 🍞, 🚗, 📞",
+        Password::new("").without_confirmation()
     );
 
     password_test!(
@@ -492,7 +496,8 @@ mod test {
             events.push(KeyCode::Enter);
             events
         },
-        "normal input"
+        "normal input",
+        Password::new("").without_confirmation()
     );
 
     password_test!(
@@ -514,7 +519,8 @@ mod test {
             events.push(KeyCode::Enter);
             events
         },
-        "normal input"
+        "normal input",
+        Password::new("").without_confirmation()
     );
 
     password_test!(
