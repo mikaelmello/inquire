@@ -272,6 +272,7 @@ struct PasswordPrompt<'a> {
     confirmation_message: &'a str,
     help_message: Option<&'a str>,
     input: Input,
+    confirmation_first_answer: Option<Input>,
     standard_display_mode: PasswordDisplayMode,
     display_mode: PasswordDisplayMode,
     enable_display_toggle: bool,
@@ -295,6 +296,7 @@ impl<'a> From<Password<'a>> for PasswordPrompt<'a> {
             formatter: so.formatter,
             validators: so.validators,
             input: Input::new(),
+            confirmation_first_answer: None,
             error: None,
         }
     }
@@ -345,7 +347,7 @@ impl<'a> PasswordPrompt<'a> {
     }
 
     fn render<B: PasswordBackend>(&mut self, backend: &mut B) -> InquireResult<()> {
-        let prompt = &self.message;
+        let prompt = self.message;
 
         backend.frame_setup()?;
 
@@ -355,12 +357,21 @@ impl<'a> PasswordPrompt<'a> {
 
         match self.display_mode {
             PasswordDisplayMode::Hidden => {
+                if self.confirmation_first_answer.is_some() {
+                    backend.render_prompt(self.main_message)?;
+                }
                 backend.render_prompt(prompt)?;
             }
             PasswordDisplayMode::Masked => {
+                if let Some(first_answer) = &self.confirmation_first_answer {
+                    backend.render_prompt_with_masked_input(self.main_message, first_answer)?;
+                }
                 backend.render_prompt_with_masked_input(prompt, &self.input)?;
             }
             PasswordDisplayMode::Full => {
+                if let Some(first_answer) = &self.confirmation_first_answer {
+                    backend.render_prompt_with_full_input(self.main_message, first_answer)?;
+                }
                 backend.render_prompt_with_full_input(prompt, &self.input)?;
             }
         };
@@ -375,9 +386,6 @@ impl<'a> PasswordPrompt<'a> {
     }
 
     fn prompt<B: PasswordBackend>(mut self, backend: &mut B) -> InquireResult<String> {
-        let mut first_answer = String::new();
-        let mut has_read_first_input = false;
-
         let final_answer = loop {
             self.render(backend)?;
 
@@ -385,32 +393,39 @@ impl<'a> PasswordPrompt<'a> {
 
             match key {
                 Key::Interrupt => interrupt_prompt!(),
-                Key::Cancel if !has_read_first_input => cancel_prompt!(backend, self.main_message),
+                Key::Cancel if self.confirmation_first_answer.is_none() => {
+                    cancel_prompt!(backend, self.main_message)
+                }
                 Key::Cancel => {
                     self.error = None;
                     self.input.clear();
-                    has_read_first_input = false;
+                    self.confirmation_first_answer.take();
                     self.message = self.main_message;
                 }
                 Key::Submit => match self.validate_current_answer()? {
                     Validation::Valid if !self.enable_confirmation => break self.cur_answer(),
                     Validation::Valid => {
-                        if !has_read_first_input {
-                            first_answer = self.cur_answer();
-                            self.error = None;
-                            self.input.clear();
-                            has_read_first_input = true;
-                            self.message = self.confirmation_message;
-                        } else {
-                            let second_answer = self.cur_answer();
-                            if first_answer == second_answer {
-                                break first_answer;
+                        match self
+                            .confirmation_first_answer
+                            .take()
+                            .as_ref()
+                            .map(Input::content)
+                        {
+                            None => {
+                                self.error = None;
+                                self.confirmation_first_answer =
+                                    Some(Input::new_with(self.cur_answer()));
+                                self.input.clear();
+                                self.message = self.confirmation_message;
                             }
-
-                            self.error = Some("The passwords don't match.".into());
-                            self.input.clear();
-                            has_read_first_input = false;
-                            self.message = self.main_message;
+                            Some(first_answer) if first_answer == self.cur_answer() => {
+                                break first_answer.into();
+                            }
+                            Some(_) => {
+                                self.error = Some("The passwords don't match.".into());
+                                self.input.clear();
+                                self.message = self.main_message;
+                            }
                         }
                     }
                     Validation::Invalid(msg) => self.error = Some(msg),
