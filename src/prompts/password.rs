@@ -48,7 +48,7 @@ struct PasswordConfirmation<'a> {
 ///   - If you have set the standard display mode to hidden (which is also the default) or masked, the user can press `Ctrl+R` to change the display mode to `Full`, and `Ctrl+R` again to change it back to the standard one.
 ///   - Obviously, if you have set the standard display mode to `Full`, pressing `Ctrl+R` won't cause any changes.
 /// - **Confirmation**: By default, the password will have a confirmation flow where the user will be asked for the input twice and the two responses will be compared. If they differ, an error message is shown and the user is prompted again.
-///   - By default, the same message is shown for the two prompts, but this can be modified by setting a custom confirmation message only shown the second time, using the `with_confirmation_message()` method.
+///   - By default, a "Confirmation:" message is shown for the confirmation prompts, but this can be modified by setting a custom confirmation message only shown the second time, using the `with_custom_confirmation_message()` method.
 ///   - If confirmation is not desired, it can be turned off using the `without_confirmation()` method.
 /// - **Help message**: Message displayed at the line below the prompt.
 /// - **Formatter**: Custom formatter in case you need to pre-process the user input before showing it as the final answer.
