@@ -1,4 +1,4 @@
-use std::borrow::Cow;
+use std::mem;
 
 use crate::{
     config::get_configuration,
@@ -24,6 +24,15 @@ pub enum PasswordDisplayMode {
     /// Password text input is fully rendered as a normal input, just like
     /// [Text](crate::Text) prompts.
     Full,
+}
+
+// Helper type for representing the password confirmation flow.
+struct PasswordConfirmation<'a> {
+    // The message of the prompt.
+    message: &'a str,
+
+    // The input to confirm.
+    input: Input,
 }
 
 /// Prompt meant for secretive text inputs.
@@ -269,16 +278,14 @@ impl<'a> Password<'a> {
 }
 
 struct PasswordPrompt<'a> {
-    message: Cow<'a, str>,
-    main_message: &'a str,
-    custom_confirmation_message: Option<&'a str>,
+    message: &'a str,
     help_message: Option<&'a str>,
     input: Input,
-    confirmation_first_answer: Option<Input>,
     standard_display_mode: PasswordDisplayMode,
     display_mode: PasswordDisplayMode,
     enable_display_toggle: bool,
-    enable_confirmation: bool,
+    confirmation: Option<PasswordConfirmation<'a>>, // if `None`, confirmation is disabled, `Some(_)` confirmation is enabled
+    confirmation_stage: bool,
     formatter: StringFormatter<'a>,
     validators: Vec<Box<dyn StringValidator>>,
     error: Option<ErrorMessage>,
@@ -286,19 +293,22 @@ struct PasswordPrompt<'a> {
 
 impl<'a> From<Password<'a>> for PasswordPrompt<'a> {
     fn from(so: Password<'a>) -> Self {
+        let confirmation = so.enable_confirmation.then_some(PasswordConfirmation {
+            message: so.custom_confirmation_message.unwrap_or("Confirmation:"),
+            input: Input::new(),
+        });
+
         Self {
             message: so.message.into(),
-            main_message: so.message,
-            custom_confirmation_message: so.custom_confirmation_message,
             help_message: so.help_message,
             standard_display_mode: so.display_mode,
             display_mode: so.display_mode,
             enable_display_toggle: so.enable_display_toggle,
-            enable_confirmation: so.enable_confirmation,
+            confirmation,
+            confirmation_stage: false,
             formatter: so.formatter,
             validators: so.validators,
             input: Input::new(),
-            confirmation_first_answer: None,
             error: None,
         }
     }
@@ -332,6 +342,53 @@ impl<'a> PasswordPrompt<'a> {
         }
     }
 
+    // Panics if `self.confirmation` is `None`.
+    fn toggle_stage(&mut self) {
+        let confirmation = self.confirmation.as_mut().unwrap();
+
+        mem::swap(&mut self.input, &mut confirmation.input);
+        self.error = None;
+        self.confirmation_stage = !self.confirmation_stage;
+    }
+
+    fn handle_submit(&mut self) -> InquireResult<Option<String>> {
+        match self.validate_current_answer()? {
+            Validation::Valid => {
+                let cur_answer = self.cur_answer();
+                match &mut self.confirmation {
+                    None => Ok(Some(cur_answer)),
+                    Some(confirmation) => {
+                        let answer = if !self.confirmation_stage {
+                            self.toggle_stage();
+                            None
+                        } else if confirmation.input.content() == cur_answer {
+                            Some(confirmation.input.content().into())
+                        } else {
+                            self.handle_mismatched_passwords();
+                            None
+                        };
+                        Ok(answer)
+                    }
+                }
+            }
+            Validation::Invalid(msg) => {
+                self.error = Some(msg);
+                Ok(None)
+            }
+        }
+    }
+
+    // Panics if `self.confirmation` is `None`.
+    fn handle_mismatched_passwords(&mut self) {
+        let confirmation = self.confirmation.as_mut().unwrap();
+
+        mem::swap(&mut self.input, &mut confirmation.input);
+        confirmation.input.clear();
+        self.input.clear();
+        self.error = Some("The passwords don't match.".into());
+        self.confirmation_stage = false;
+    }
+
     fn validate_current_answer(&self) -> InquireResult<Validation> {
         for validator in &self.validators {
             match validator.validate(self.input.content()) {
@@ -349,34 +406,39 @@ impl<'a> PasswordPrompt<'a> {
     }
 
     fn render<B: PasswordBackend>(&mut self, backend: &mut B) -> InquireResult<()> {
-        let prompt = &*self.message;
-
         backend.frame_setup()?;
 
         if let Some(err) = &self.error {
             backend.render_error_message(err)?;
         }
 
-        match self.display_mode {
-            PasswordDisplayMode::Hidden => {
-                if self.confirmation_first_answer.is_some() {
-                    backend.render_prompt(self.main_message)?;
+        match &self.confirmation {
+            Some(confirmation) if self.confirmation_stage => match self.display_mode {
+                PasswordDisplayMode::Hidden => {
+                    backend.render_prompt(self.message)?;
+                    backend.render_prompt(confirmation.message)?;
                 }
-                backend.render_prompt(prompt)?;
-            }
-            PasswordDisplayMode::Masked => {
-                if let Some(first_answer) = &self.confirmation_first_answer {
-                    backend.render_prompt_with_masked_input(self.main_message, first_answer)?;
+                PasswordDisplayMode::Masked => {
+                    backend.render_prompt_with_masked_input(self.message, &confirmation.input)?;
+                    backend.render_prompt_with_masked_input(confirmation.message, &self.input)?;
                 }
-                backend.render_prompt_with_masked_input(prompt, &self.input)?;
-            }
-            PasswordDisplayMode::Full => {
-                if let Some(first_answer) = &self.confirmation_first_answer {
-                    backend.render_prompt_with_full_input(self.main_message, first_answer)?;
+                PasswordDisplayMode::Full => {
+                    backend.render_prompt_with_full_input(self.message, &confirmation.input)?;
+                    backend.render_prompt_with_full_input(confirmation.message, &self.input)?;
                 }
-                backend.render_prompt_with_full_input(prompt, &self.input)?;
-            }
-        };
+            },
+            _ => match self.display_mode {
+                PasswordDisplayMode::Hidden => {
+                    backend.render_prompt(self.message)?;
+                }
+                PasswordDisplayMode::Masked => {
+                    backend.render_prompt_with_masked_input(self.message, &self.input)?;
+                }
+                PasswordDisplayMode::Full => {
+                    backend.render_prompt_with_full_input(self.message, &self.input)?;
+                }
+            },
+        }
 
         if let Some(message) = self.help_message {
             backend.render_help_message(message)?;
@@ -395,46 +457,16 @@ impl<'a> PasswordPrompt<'a> {
 
             match key {
                 Key::Interrupt => interrupt_prompt!(),
-                Key::Cancel if self.confirmation_first_answer.is_none() => {
-                    cancel_prompt!(backend, self.main_message)
-                }
                 Key::Cancel => {
-                    self.error = None;
-                    self.input.clear();
-                    self.confirmation_first_answer.take();
-                    self.message = Cow::Borrowed(self.main_message);
-                }
-                Key::Submit => match self.validate_current_answer()? {
-                    Validation::Valid if !self.enable_confirmation => break self.cur_answer(),
-                    Validation::Valid => {
-                        match self
-                            .confirmation_first_answer
-                            .take()
-                            .as_ref()
-                            .map(Input::content)
-                        {
-                            None => {
-                                self.error = None;
-                                self.confirmation_first_answer =
-                                    Some(Input::new_with(self.cur_answer()));
-                                self.input.clear();
-                                self.message = if let Some(msg) = self.custom_confirmation_message {
-                                    Cow::Borrowed(msg)
-                                } else {
-                                    Cow::Owned(format!("{} (confirm)", self.main_message))
-                                };
-                            }
-                            Some(first_answer) if first_answer == self.cur_answer() => {
-                                break first_answer.into();
-                            }
-                            Some(_) => {
-                                self.error = Some("The passwords don't match.".into());
-                                self.input.clear();
-                                self.message = Cow::Borrowed(self.main_message);
-                            }
-                        }
+                    if self.confirmation_stage && self.confirmation.is_some() {
+                        self.toggle_stage();
+                    } else {
+                        cancel_prompt!(backend, self.message);
                     }
-                    Validation::Invalid(msg) => self.error = Some(msg),
+                }
+                Key::Submit => match self.handle_submit()? {
+                    Some(answer) => break answer,
+                    None => {}
                 },
                 key => self.on_change(key),
             }
@@ -442,7 +474,7 @@ impl<'a> PasswordPrompt<'a> {
 
         let formatted = (self.formatter)(&final_answer);
 
-        finish_prompt_with_answer!(backend, self.main_message, &formatted, final_answer);
+        finish_prompt_with_answer!(backend, self.message, &formatted, final_answer);
     }
 }
 
