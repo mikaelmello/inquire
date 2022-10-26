@@ -347,6 +347,9 @@ impl<'a> PasswordPrompt<'a> {
         let confirmation = self.confirmation.as_mut().unwrap();
 
         mem::swap(&mut self.input, &mut confirmation.input);
+        if self.display_mode == PasswordDisplayMode::Hidden {
+            self.input.clear();
+        }
         self.error = None;
         self.confirmation_stage = !self.confirmation_stage;
     }
