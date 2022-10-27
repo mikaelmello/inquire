@@ -342,54 +342,67 @@ impl<'a> PasswordPrompt<'a> {
         }
     }
 
-    // Panics if `self.confirmation` is `None`.
-    fn toggle_stage(&mut self) {
-        let confirmation = self.confirmation.as_mut().unwrap();
+    fn handle_cancel(&mut self) -> bool {
+        match &mut self.confirmation {
+            Some(confirmation) if self.confirmation_stage => {
+                mem::swap(&mut self.input, &mut confirmation.input);
 
-        mem::swap(&mut self.input, &mut confirmation.input);
-        if self.display_mode == PasswordDisplayMode::Hidden {
-            self.input.clear();
+                if self.display_mode == PasswordDisplayMode::Hidden {
+                    self.input.clear();
+                }
+
+                self.error = None;
+                self.confirmation_stage = false;
+
+                true
+            }
+            _ => false,
         }
-        self.error = None;
-        self.confirmation_stage = !self.confirmation_stage;
     }
 
     fn handle_submit(&mut self) -> InquireResult<Option<String>> {
-        match self.validate_current_answer()? {
-            Validation::Valid => {
-                let cur_answer = self.cur_answer();
-                match &mut self.confirmation {
-                    None => Ok(Some(cur_answer)),
-                    Some(confirmation) => {
-                        let answer = if !self.confirmation_stage {
-                            self.toggle_stage();
-                            None
-                        } else if confirmation.input.content() == cur_answer {
-                            Some(confirmation.input.content().into())
-                        } else {
-                            self.handle_mismatched_passwords();
-                            None
-                        };
-                        Ok(answer)
-                    }
-                }
-            }
+        let answer = match self.validate_current_answer()? {
+            Validation::Valid => self.get_confirmed_answer(),
             Validation::Invalid(msg) => {
                 self.error = Some(msg);
-                Ok(None)
+                None
             }
-        }
+        };
+
+        Ok(answer)
     }
 
-    // Panics if `self.confirmation` is `None`.
-    fn handle_mismatched_passwords(&mut self) {
-        let confirmation = self.confirmation.as_mut().unwrap();
+    fn get_confirmed_answer(&mut self) -> Option<String> {
+        let cur_answer = self.cur_answer();
+        match &mut self.confirmation {
+            None => Some(cur_answer),
+            Some(confirmation) => {
+                if !self.confirmation_stage {
+                    mem::swap(&mut self.input, &mut confirmation.input);
 
-        mem::swap(&mut self.input, &mut confirmation.input);
-        confirmation.input.clear();
-        self.input.clear();
-        self.error = Some("The passwords don't match.".into());
-        self.confirmation_stage = false;
+                    if self.display_mode == PasswordDisplayMode::Hidden {
+                        self.input.clear();
+                    }
+
+                    self.error = None;
+                    self.confirmation_stage = true;
+
+                    None
+                } else if confirmation.input.content() == cur_answer {
+                    Some(confirmation.input.content().into())
+                } else {
+                    mem::swap(&mut self.input, &mut confirmation.input);
+
+                    confirmation.input.clear();
+                    self.input.clear();
+
+                    self.error = Some("The passwords don't match.".into());
+                    self.confirmation_stage = false;
+
+                    None
+                }
+            }
+        }
     }
 
     fn validate_current_answer(&self) -> InquireResult<Validation> {
@@ -461,9 +474,7 @@ impl<'a> PasswordPrompt<'a> {
             match key {
                 Key::Interrupt => interrupt_prompt!(),
                 Key::Cancel => {
-                    if self.confirmation_stage && self.confirmation.is_some() {
-                        self.toggle_stage();
-                    } else {
+                    if !self.handle_cancel() {
                         cancel_prompt!(backend, self.message);
                     }
                 }
