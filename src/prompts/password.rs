@@ -371,7 +371,7 @@ impl<'a> PasswordPrompt<'a> {
 
     fn handle_submit(&mut self) -> InquireResult<Option<String>> {
         let answer = match self.validate_current_answer()? {
-            Validation::Valid => self.get_confirmed_answer(),
+            Validation::Valid => self.confirm_current_answer(),
             Validation::Invalid(msg) => {
                 self.error = Some(msg);
                 None
@@ -381,7 +381,7 @@ impl<'a> PasswordPrompt<'a> {
         Ok(answer)
     }
 
-    fn get_confirmed_answer(&mut self) -> Option<String> {
+    fn confirm_current_answer(&mut self) -> Option<String> {
         let cur_answer = self.cur_answer();
         match &mut self.confirmation {
             None => Some(cur_answer),
@@ -398,7 +398,6 @@ impl<'a> PasswordPrompt<'a> {
                 } else if self.input.content() == cur_answer {
                     Some(confirmation.input.content().into())
                 } else {
-                    self.input.clear();
                     confirmation.input.clear();
 
                     self.error = Some("The passwords don't match.".into());
