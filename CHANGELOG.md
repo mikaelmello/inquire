@@ -3,9 +3,6 @@
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
 
-
-## [0.5.0] - YYYY-MM-DD
-
 ### Breaking Changes
 
 **`Password` prompts now enable a secondary confirmation prompt by default:**
