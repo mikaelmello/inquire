@@ -29,6 +29,9 @@ struct PasswordConfirmation<'a> {
     // The message of the prompt.
     message: &'a str,
 
+    // The error message of the prompt.
+    error_message: &'a str,
+
     // The input to confirm.
     input: Input,
 }
@@ -71,6 +74,7 @@ struct PasswordConfirmation<'a> {
 ///      .with_display_toggle_enabled()
 ///      .with_display_mode(PasswordDisplayMode::Hidden)
 ///      .with_custom_confirmation_message("Encryption Key (confirm):")
+///      .with_custom_confirmation_error_message("The keys don't match.")
 ///      .with_validator(validator)
 ///      .with_formatter(&|_| String::from("Input received"))
 ///      .with_help_message("It is recommended to generate a new one only for this purpose")
@@ -88,6 +92,9 @@ pub struct Password<'a> {
 
     /// Message to be presented to the user when confirming the input.
     pub custom_confirmation_message: Option<&'a str>,
+
+    /// Error to be presented to the user when password confirmation fails.
+    pub custom_confirmation_error_message: Option<&'a str>,
 
     /// Help message to be presented to the user.
     pub help_message: Option<&'a str>,
@@ -147,6 +154,7 @@ impl<'a> Password<'a> {
         Self {
             message,
             custom_confirmation_message: None,
+            custom_confirmation_error_message: None,
             enable_confirmation: Self::DEFAULT_ENABLE_CONFIRMATION,
             enable_display_toggle: Self::DEFAULT_ENABLE_DISPLAY_TOGGLE,
             display_mode: Self::DEFAULT_DISPLAY_MODE,
@@ -178,6 +186,12 @@ impl<'a> Password<'a> {
     /// Sets the prompt message when asking for the password confirmation.
     pub fn with_custom_confirmation_message(mut self, message: &'a str) -> Self {
         self.custom_confirmation_message.replace(message);
+        self
+    }
+
+    /// Sets the prompt error message when password confirmation fails.
+    pub fn with_custom_confirmation_error_message(mut self, message: &'a str) -> Self {
+        self.custom_confirmation_error_message.replace(message);
         self
     }
 
@@ -293,6 +307,9 @@ impl<'a> From<Password<'a>> for PasswordPrompt<'a> {
     fn from(so: Password<'a>) -> Self {
         let confirmation = so.enable_confirmation.then_some(PasswordConfirmation {
             message: so.custom_confirmation_message.unwrap_or("Confirmation:"),
+            error_message: so
+                .custom_confirmation_error_message
+                .unwrap_or("The passwords don't match."),
             input: Input::new(),
         });
 
@@ -400,7 +417,7 @@ impl<'a> PasswordPrompt<'a> {
                 } else {
                     confirmation.input.clear();
 
-                    self.error = Some("The passwords don't match.".into());
+                    self.error = Some(confirmation.error_message.into());
                     self.confirmation_stage = false;
 
                     None

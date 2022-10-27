@@ -7,6 +7,7 @@ fn main() {
         .with_validator(min_length!(10))
         .with_formatter(&|_| String::from("Input received"))
         .with_help_message("It is recommended to generate a new one only for this purpose")
+        .with_custom_confirmation_error_message("The keys don't match.")
         .prompt();
 
     match name {
