@@ -1,5 +1,3 @@
-use std::mem;
-
 use crate::{
     config::get_configuration,
     error::{InquireError, InquireResult},
@@ -321,6 +319,20 @@ impl<'a> From<&'a str> for Password<'a> {
 }
 
 impl<'a> PasswordPrompt<'a> {
+    fn active_input(&self) -> &Input {
+        match &self.confirmation {
+            Some(confirmation) if self.confirmation_stage => &confirmation.input,
+            _ => &self.input,
+        }
+    }
+
+    fn active_input_mut(&mut self) -> &mut Input {
+        match &mut self.confirmation {
+            Some(confirmation) if self.confirmation_stage => &mut confirmation.input,
+            _ => &mut self.input,
+        }
+    }
+
     fn on_change(&mut self, key: Key) {
         match key {
             Key::Char('r', m) | Key::Char('R', m)
@@ -329,7 +341,7 @@ impl<'a> PasswordPrompt<'a> {
                 self.toggle_display_mode();
             }
             _ => {
-                self.input.handle_key(key);
+                self.active_input_mut().handle_key(key);
             }
         };
     }
@@ -343,20 +355,17 @@ impl<'a> PasswordPrompt<'a> {
     }
 
     fn handle_cancel(&mut self) -> bool {
-        match &mut self.confirmation {
-            Some(confirmation) if self.confirmation_stage => {
-                mem::swap(&mut self.input, &mut confirmation.input);
-
-                if self.display_mode == PasswordDisplayMode::Hidden {
-                    self.input.clear();
-                }
-
-                self.error = None;
-                self.confirmation_stage = false;
-
-                true
+        if self.confirmation_stage && self.confirmation.is_some() {
+            if self.display_mode == PasswordDisplayMode::Hidden {
+                self.input.clear();
             }
-            _ => false,
+
+            self.error = None;
+            self.confirmation_stage = false;
+
+            true
+        } else {
+            false
         }
     }
 
@@ -378,23 +387,19 @@ impl<'a> PasswordPrompt<'a> {
             None => Some(cur_answer),
             Some(confirmation) => {
                 if !self.confirmation_stage {
-                    mem::swap(&mut self.input, &mut confirmation.input);
-
                     if self.display_mode == PasswordDisplayMode::Hidden {
-                        self.input.clear();
+                        confirmation.input.clear();
                     }
 
                     self.error = None;
                     self.confirmation_stage = true;
 
                     None
-                } else if confirmation.input.content() == cur_answer {
+                } else if self.input.content() == cur_answer {
                     Some(confirmation.input.content().into())
                 } else {
-                    mem::swap(&mut self.input, &mut confirmation.input);
-
-                    confirmation.input.clear();
                     self.input.clear();
+                    confirmation.input.clear();
 
                     self.error = Some("The passwords don't match.".into());
                     self.confirmation_stage = false;
@@ -407,7 +412,7 @@ impl<'a> PasswordPrompt<'a> {
 
     fn validate_current_answer(&self) -> InquireResult<Validation> {
         for validator in &self.validators {
-            match validator.validate(self.input.content()) {
+            match validator.validate(self.active_input().content()) {
                 Ok(Validation::Valid) => {}
                 Ok(Validation::Invalid(msg)) => return Ok(Validation::Invalid(msg)),
                 Err(err) => return Err(InquireError::Custom(err)),
@@ -418,7 +423,7 @@ impl<'a> PasswordPrompt<'a> {
     }
 
     fn cur_answer(&self) -> String {
-        self.input.content().into()
+        self.active_input().content().into()
     }
 
     fn render<B: PasswordBackend>(&mut self, backend: &mut B) -> InquireResult<()> {
@@ -428,32 +433,43 @@ impl<'a> PasswordPrompt<'a> {
             backend.render_error_message(err)?;
         }
 
-        match &self.confirmation {
-            Some(confirmation) if self.confirmation_stage => match self.display_mode {
-                PasswordDisplayMode::Hidden => {
-                    backend.render_prompt(self.message)?;
-                    backend.render_prompt(confirmation.message)?;
+        match self.display_mode {
+            PasswordDisplayMode::Hidden => {
+                backend.render_prompt(self.message)?;
+
+                match &self.confirmation {
+                    Some(confirmation) if self.confirmation_stage => {
+                        backend.render_prompt(confirmation.message)?
+                    }
+                    _ => {}
                 }
-                PasswordDisplayMode::Masked => {
-                    backend.render_prompt_with_masked_input(self.message, &confirmation.input)?;
-                    backend.render_prompt_with_masked_input(confirmation.message, &self.input)?;
+            }
+            PasswordDisplayMode::Masked => {
+                backend.render_prompt_with_masked_input(self.message, &self.input)?;
+
+                match &self.confirmation {
+                    Some(confirmation) if self.confirmation_stage => {
+                        backend.render_prompt_with_masked_input(
+                            confirmation.message,
+                            &confirmation.input,
+                        )?;
+                    }
+                    _ => {}
                 }
-                PasswordDisplayMode::Full => {
-                    backend.render_prompt_with_full_input(self.message, &confirmation.input)?;
-                    backend.render_prompt_with_full_input(confirmation.message, &self.input)?;
+            }
+            PasswordDisplayMode::Full => {
+                backend.render_prompt_with_full_input(self.message, &self.input)?;
+
+                match &self.confirmation {
+                    Some(confirmation) if self.confirmation_stage => {
+                        backend.render_prompt_with_full_input(
+                            confirmation.message,
+                            &confirmation.input,
+                        )?;
+                    }
+                    _ => {}
                 }
-            },
-            _ => match self.display_mode {
-                PasswordDisplayMode::Hidden => {
-                    backend.render_prompt(self.message)?;
-                }
-                PasswordDisplayMode::Masked => {
-                    backend.render_prompt_with_masked_input(self.message, &self.input)?;
-                }
-                PasswordDisplayMode::Full => {
-                    backend.render_prompt_with_full_input(self.message, &self.input)?;
-                }
-            },
+            }
         }
 
         if let Some(message) = self.help_message {
