@@ -305,13 +305,16 @@ struct PasswordPrompt<'a> {
 
 impl<'a> From<Password<'a>> for PasswordPrompt<'a> {
     fn from(so: Password<'a>) -> Self {
-        let confirmation = so.enable_confirmation.then_some(PasswordConfirmation {
-            message: so.custom_confirmation_message.unwrap_or("Confirmation:"),
-            error_message: so
-                .custom_confirmation_error_message
-                .unwrap_or("THe answers don't match."),
-            input: Input::new(),
-        });
+        let confirmation = match so.enable_confirmation {
+            true => Some(PasswordConfirmation {
+                message: so.custom_confirmation_message.unwrap_or("Confirmation:"),
+                error_message: so
+                    .custom_confirmation_error_message
+                    .unwrap_or("THe answers don't match."),
+                input: Input::new(),
+            }),
+            false => None,
+        };
 
         Self {
             message: so.message,
