@@ -24,6 +24,18 @@ pub enum PasswordDisplayMode {
     Full,
 }
 
+// Helper type for representing the password confirmation flow.
+struct PasswordConfirmation<'a> {
+    // The message of the prompt.
+    message: &'a str,
+
+    // The error message of the prompt.
+    error_message: &'a str,
+
+    // The input to confirm.
+    input: Input,
+}
+
 /// Prompt meant for secretive text inputs.
 ///
 /// By default, the password prompt behaves like a standard one you'd see in common CLI applications: the user has no UI indicators about the state of the current input. They do not know how many characters they typed, or which character they typed, with no option to display the current text input.
@@ -33,9 +45,12 @@ pub enum PasswordDisplayMode {
 ///   - Hidden: default behavior, no UI indicators.
 ///   - Masked: behaves like a normal text input, except that all characters of the input are masked to a special character, which is `'*'` by default but can be customized via `RenderConfig`.
 ///   - Full: behaves like a normal text input, no modifications.
-/// - **Toggle display mode**: By enabling this feature by calling the `with_display_toggle_enabled()`, you allow the user to toggle between the standard display mode set and the full display mode.
+/// - **Toggle display mode**: When enabling this feature by calling the `with_display_toggle_enabled()` method, you allow the user to toggle between the standard display mode set and the full display mode.
 ///   - If you have set the standard display mode to hidden (which is also the default) or masked, the user can press `Ctrl+R` to change the display mode to `Full`, and `Ctrl+R` again to change it back to the standard one.
 ///   - Obviously, if you have set the standard display mode to `Full`, pressing `Ctrl+R` won't cause any changes.
+/// - **Confirmation**: By default, the password will have a confirmation flow where the user will be asked for the input twice and the two responses will be compared. If they differ, an error message is shown and the user is prompted again.
+///   - By default, a "Confirmation:" message is shown for the confirmation prompts, but this can be modified by setting a custom confirmation message only shown the second time, using the `with_custom_confirmation_message()` method.
+///   - If confirmation is not desired, it can be turned off using the `without_confirmation()` method.
 /// - **Help message**: Message displayed at the line below the prompt.
 /// - **Formatter**: Custom formatter in case you need to pre-process the user input before showing it as the final answer.
 ///   - By default, it prints eight asterisk characters: `********`.
@@ -58,6 +73,8 @@ pub enum PasswordDisplayMode {
 ///  let name = Password::new("Encryption Key:")
 ///      .with_display_toggle_enabled()
 ///      .with_display_mode(PasswordDisplayMode::Hidden)
+///      .with_custom_confirmation_message("Encryption Key (confirm):")
+///      .with_custom_confirmation_error_message("The keys don't match.")
 ///      .with_validator(validator)
 ///      .with_formatter(&|_| String::from("Input received"))
 ///      .with_help_message("It is recommended to generate a new one only for this purpose")
@@ -73,6 +90,12 @@ pub struct Password<'a> {
     /// Message to be presented to the user.
     pub message: &'a str,
 
+    /// Message to be presented to the user when confirming the input.
+    pub custom_confirmation_message: Option<&'a str>,
+
+    /// Error to be presented to the user when password confirmation fails.
+    pub custom_confirmation_error_message: Option<&'a str>,
+
     /// Help message to be presented to the user.
     pub help_message: Option<&'a str>,
 
@@ -84,6 +107,9 @@ pub struct Password<'a> {
 
     /// Whether to allow the user to toggle the display of the current password input by pressing the Ctrl+R hotkey.
     pub enable_display_toggle: bool,
+
+    /// Whether to ask for input twice to see if the provided passwords are the same.
+    pub enable_confirmation: bool,
 
     /// Collection of validators to apply to the user input.
     ///
@@ -117,6 +143,9 @@ impl<'a> Password<'a> {
     /// Default value for the allow display toggle variable.
     pub const DEFAULT_ENABLE_DISPLAY_TOGGLE: bool = false;
 
+    /// Default value for the enable confirmation variable.
+    pub const DEFAULT_ENABLE_CONFIRMATION: bool = true;
+
     /// Default password display mode.
     pub const DEFAULT_DISPLAY_MODE: PasswordDisplayMode = PasswordDisplayMode::Hidden;
 
@@ -124,6 +153,9 @@ impl<'a> Password<'a> {
     pub fn new(message: &'a str) -> Self {
         Self {
             message,
+            custom_confirmation_message: None,
+            custom_confirmation_error_message: None,
+            enable_confirmation: Self::DEFAULT_ENABLE_CONFIRMATION,
             enable_display_toggle: Self::DEFAULT_ENABLE_DISPLAY_TOGGLE,
             display_mode: Self::DEFAULT_DISPLAY_MODE,
             help_message: Self::DEFAULT_HELP_MESSAGE,
@@ -142,6 +174,24 @@ impl<'a> Password<'a> {
     /// Sets the flag to enable display toggling.
     pub fn with_display_toggle_enabled(mut self) -> Self {
         self.enable_display_toggle = true;
+        self
+    }
+
+    /// Disables the confirmation step of the prompt.
+    pub fn without_confirmation(mut self) -> Self {
+        self.enable_confirmation = false;
+        self
+    }
+
+    /// Sets the prompt message when asking for the password confirmation.
+    pub fn with_custom_confirmation_message(mut self, message: &'a str) -> Self {
+        self.custom_confirmation_message.replace(message);
+        self
+    }
+
+    /// Sets the prompt error message when password confirmation fails.
+    pub fn with_custom_confirmation_error_message(mut self, message: &'a str) -> Self {
+        self.custom_confirmation_error_message.replace(message);
         self
     }
 
@@ -246,6 +296,8 @@ struct PasswordPrompt<'a> {
     standard_display_mode: PasswordDisplayMode,
     display_mode: PasswordDisplayMode,
     enable_display_toggle: bool,
+    confirmation: Option<PasswordConfirmation<'a>>, // if `None`, confirmation is disabled, `Some(_)` confirmation is enabled
+    confirmation_stage: bool,
     formatter: StringFormatter<'a>,
     validators: Vec<Box<dyn StringValidator>>,
     error: Option<ErrorMessage>,
@@ -253,12 +305,22 @@ struct PasswordPrompt<'a> {
 
 impl<'a> From<Password<'a>> for PasswordPrompt<'a> {
     fn from(so: Password<'a>) -> Self {
+        let confirmation = so.enable_confirmation.then_some(PasswordConfirmation {
+            message: so.custom_confirmation_message.unwrap_or("Confirmation:"),
+            error_message: so
+                .custom_confirmation_error_message
+                .unwrap_or("The passwords don't match."),
+            input: Input::new(),
+        });
+
         Self {
-            message: so.message,
+            message: so.message.into(),
             help_message: so.help_message,
             standard_display_mode: so.display_mode,
             display_mode: so.display_mode,
             enable_display_toggle: so.enable_display_toggle,
+            confirmation,
+            confirmation_stage: false,
             formatter: so.formatter,
             validators: so.validators,
             input: Input::new(),
@@ -274,6 +336,20 @@ impl<'a> From<&'a str> for Password<'a> {
 }
 
 impl<'a> PasswordPrompt<'a> {
+    fn active_input(&self) -> &Input {
+        match &self.confirmation {
+            Some(confirmation) if self.confirmation_stage => &confirmation.input,
+            _ => &self.input,
+        }
+    }
+
+    fn active_input_mut(&mut self) -> &mut Input {
+        match &mut self.confirmation {
+            Some(confirmation) if self.confirmation_stage => &mut confirmation.input,
+            _ => &mut self.input,
+        }
+    }
+
     fn on_change(&mut self, key: Key) {
         match key {
             Key::Char('r', m) | Key::Char('R', m)
@@ -282,7 +358,7 @@ impl<'a> PasswordPrompt<'a> {
                 self.toggle_display_mode();
             }
             _ => {
-                self.input.handle_key(key);
+                self.active_input_mut().handle_key(key);
             }
         };
     }
@@ -295,9 +371,64 @@ impl<'a> PasswordPrompt<'a> {
         }
     }
 
+    fn handle_cancel(&mut self) -> bool {
+        if self.confirmation_stage && self.confirmation.is_some() {
+            if self.display_mode == PasswordDisplayMode::Hidden {
+                self.input.clear();
+            }
+
+            self.error = None;
+            self.confirmation_stage = false;
+
+            true
+        } else {
+            false
+        }
+    }
+
+    fn handle_submit(&mut self) -> InquireResult<Option<String>> {
+        let answer = match self.validate_current_answer()? {
+            Validation::Valid => self.confirm_current_answer(),
+            Validation::Invalid(msg) => {
+                self.error = Some(msg);
+                None
+            }
+        };
+
+        Ok(answer)
+    }
+
+    fn confirm_current_answer(&mut self) -> Option<String> {
+        let cur_answer = self.cur_answer();
+        match &mut self.confirmation {
+            None => Some(cur_answer),
+            Some(confirmation) => {
+                if !self.confirmation_stage {
+                    if self.display_mode == PasswordDisplayMode::Hidden {
+                        confirmation.input.clear();
+                    }
+
+                    self.error = None;
+                    self.confirmation_stage = true;
+
+                    None
+                } else if self.input.content() == cur_answer {
+                    Some(confirmation.input.content().into())
+                } else {
+                    confirmation.input.clear();
+
+                    self.error = Some(confirmation.error_message.into());
+                    self.confirmation_stage = false;
+
+                    None
+                }
+            }
+        }
+    }
+
     fn validate_current_answer(&self) -> InquireResult<Validation> {
         for validator in &self.validators {
-            match validator.validate(self.input.content()) {
+            match validator.validate(self.active_input().content()) {
                 Ok(Validation::Valid) => {}
                 Ok(Validation::Invalid(msg)) => return Ok(Validation::Invalid(msg)),
                 Err(err) => return Err(InquireError::Custom(err)),
@@ -308,12 +439,10 @@ impl<'a> PasswordPrompt<'a> {
     }
 
     fn cur_answer(&self) -> String {
-        self.input.content().into()
+        self.active_input().content().into()
     }
 
     fn render<B: PasswordBackend>(&mut self, backend: &mut B) -> InquireResult<()> {
-        let prompt = &self.message;
-
         backend.frame_setup()?;
 
         if let Some(err) = &self.error {
@@ -322,15 +451,42 @@ impl<'a> PasswordPrompt<'a> {
 
         match self.display_mode {
             PasswordDisplayMode::Hidden => {
-                backend.render_prompt(prompt)?;
+                backend.render_prompt(self.message)?;
+
+                match &self.confirmation {
+                    Some(confirmation) if self.confirmation_stage => {
+                        backend.render_prompt(confirmation.message)?
+                    }
+                    _ => {}
+                }
             }
             PasswordDisplayMode::Masked => {
-                backend.render_prompt_with_masked_input(prompt, &self.input)?;
+                backend.render_prompt_with_masked_input(self.message, &self.input)?;
+
+                match &self.confirmation {
+                    Some(confirmation) if self.confirmation_stage => {
+                        backend.render_prompt_with_masked_input(
+                            confirmation.message,
+                            &confirmation.input,
+                        )?;
+                    }
+                    _ => {}
+                }
             }
             PasswordDisplayMode::Full => {
-                backend.render_prompt_with_full_input(prompt, &self.input)?;
+                backend.render_prompt_with_full_input(self.message, &self.input)?;
+
+                match &self.confirmation {
+                    Some(confirmation) if self.confirmation_stage => {
+                        backend.render_prompt_with_full_input(
+                            confirmation.message,
+                            &confirmation.input,
+                        )?;
+                    }
+                    _ => {}
+                }
             }
-        };
+        }
 
         if let Some(message) = self.help_message {
             backend.render_help_message(message)?;
@@ -342,26 +498,25 @@ impl<'a> PasswordPrompt<'a> {
     }
 
     fn prompt<B: PasswordBackend>(mut self, backend: &mut B) -> InquireResult<String> {
-        let final_answer: String;
-
-        loop {
+        let final_answer = loop {
             self.render(backend)?;
 
             let key = backend.read_key()?;
 
             match key {
                 Key::Interrupt => interrupt_prompt!(),
-                Key::Cancel => cancel_prompt!(backend, self.message),
-                Key::Submit => match self.validate_current_answer()? {
-                    Validation::Valid => {
-                        final_answer = self.cur_answer();
-                        break;
+                Key::Cancel => {
+                    if !self.handle_cancel() {
+                        cancel_prompt!(backend, self.message);
                     }
-                    Validation::Invalid(msg) => self.error = Some(msg),
+                }
+                Key::Submit => match self.handle_submit()? {
+                    Some(answer) => break answer,
+                    None => {}
                 },
                 key => self.on_change(key),
             }
-        }
+        };
 
         let formatted = (self.formatter)(&final_answer);
 
@@ -380,10 +535,6 @@ mod test {
     };
     use crossterm::event::{KeyCode, KeyEvent};
 
-    fn default<'a>() -> Password<'a> {
-        Password::new("Question?")
-    }
-
     macro_rules! text_to_events {
         ($text:expr) => {{
             $text.chars().map(KeyCode::Char)
@@ -391,12 +542,9 @@ mod test {
     }
 
     macro_rules! password_test {
-        ($name:ident,$input:expr,$output:expr) => {
-            password_test! {$name, $input, $output, default()}
-        };
-
-        ($name:ident,$input:expr,$output:expr,$prompt:expr) => {
+        ($(#[$meta:meta])? $name:ident,$input:expr,$output:expr,$prompt:expr) => {
             #[test]
+            $(#[$meta])?
             fn $name() {
                 let read: Vec<KeyEvent> = $input.into_iter().map(KeyEvent::from).collect();
                 let mut read = read.iter();
@@ -412,20 +560,32 @@ mod test {
         };
     }
 
-    password_test!(empty, vec![KeyCode::Enter], "");
+    password_test!(
+        empty,
+        vec![KeyCode::Enter],
+        "",
+        Password::new("").without_confirmation()
+    );
 
-    password_test!(single_letter, vec![KeyCode::Char('b'), KeyCode::Enter], "b");
+    password_test!(
+        single_letter,
+        vec![KeyCode::Char('b'), KeyCode::Enter],
+        "b",
+        Password::new("").without_confirmation()
+    );
 
     password_test!(
         letters_and_enter,
         text_to_events!("normal input\n"),
-        "normal input"
+        "normal input",
+        Password::new("").without_confirmation()
     );
 
     password_test!(
         letters_and_enter_with_emoji,
         text_to_events!("with emoji 🧘🏻‍♂️, 🌍, 🍞, 🚗, 📞\n"),
-        "with emoji 🧘🏻‍♂️, 🌍, 🍞, 🚗, 📞"
+        "with emoji 🧘🏻‍♂️, 🌍, 🍞, 🚗, 📞",
+        Password::new("").without_confirmation()
     );
 
     password_test!(
@@ -441,7 +601,8 @@ mod test {
             events.push(KeyCode::Enter);
             events
         },
-        "normal input"
+        "normal input",
+        Password::new("").without_confirmation()
     );
 
     password_test!(
@@ -463,7 +624,8 @@ mod test {
             events.push(KeyCode::Enter);
             events
         },
-        "normal input"
+        "normal input",
+        Password::new("").without_confirmation()
     );
 
     password_test!(
@@ -482,9 +644,40 @@ mod test {
             events
         },
         "12345yes",
-        Password::new("").with_validator(|ans: &str| match ans.len() {
-            len if len > 5 && len < 10 => Ok(Validation::Valid),
-            _ => Ok(Validation::Invalid(ErrorMessage::Default)),
-        })
+        Password::new("")
+            .without_confirmation()
+            .with_validator(|ans: &str| match ans.len() {
+                len if len > 5 && len < 10 => Ok(Validation::Valid),
+                _ => Ok(Validation::Invalid(ErrorMessage::Default)),
+            })
+    );
+
+    password_test!(
+        input_confirmation_same,
+        {
+            let mut events = vec![];
+            events.append(&mut text_to_events!("1234567890").collect());
+            events.push(KeyCode::Enter);
+            events.append(&mut text_to_events!("1234567890").collect());
+            events.push(KeyCode::Enter);
+            events
+        },
+        "1234567890",
+        Password::new("")
+    );
+
+    password_test!(
+        #[should_panic(expected = "Custom stream of characters has ended")]
+        input_confirmation_different,
+        {
+            let mut events = vec![];
+            events.append(&mut text_to_events!("1234567890").collect());
+            events.push(KeyCode::Enter);
+            events.append(&mut text_to_events!("abcdefghij").collect());
+            events.push(KeyCode::Enter);
+            events
+        },
+        "",
+        Password::new("")
     );
 }

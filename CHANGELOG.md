@@ -3,6 +3,11 @@
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
 
+### Breaking Changes
+
+**`Password` prompts now enable a secondary confirmation prompt by default:**
+
+- Added support for password confirmation, which can be oupted-out of by adding the `without_confirmation()` method into the `Password` builder chain.
 
 ## [0.4.0] - 2022-09-27
 
