@@ -309,12 +309,12 @@ impl<'a> From<Password<'a>> for PasswordPrompt<'a> {
             message: so.custom_confirmation_message.unwrap_or("Confirmation:"),
             error_message: so
                 .custom_confirmation_error_message
-                .unwrap_or("The passwords don't match."),
+                .unwrap_or("THe answers don't match."),
             input: Input::new(),
         });
 
         Self {
-            message: so.message.into(),
+            message: so.message,
             help_message: so.help_message,
             standard_display_mode: so.display_mode,
             display_mode: so.display_mode,
@@ -510,10 +510,11 @@ impl<'a> PasswordPrompt<'a> {
                         cancel_prompt!(backend, self.message);
                     }
                 }
-                Key::Submit => match self.handle_submit()? {
-                    Some(answer) => break answer,
-                    None => {}
-                },
+                Key::Submit => {
+                    if let Some(answer) = self.handle_submit()? {
+                        break answer;
+                    }
+                }
                 key => self.on_change(key),
             }
         };

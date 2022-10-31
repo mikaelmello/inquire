@@ -5,7 +5,7 @@ use std::fmt::{self, Display};
 
 /// Represents a selection made by the user when prompted to select one or several
 /// options among those presented.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ListOption<T> {
     /// Index of the selected option relative to the original (full) list passed to the prompt.
     pub index: usize,
