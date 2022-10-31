@@ -3,6 +3,8 @@
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
 
+- Removed use of `bool::then_some` feature to keep minimum supported Rust version on 1.56.0.
+
 ## [0.5.0] - 2022-10-31
 
 ### Breaking Changes
