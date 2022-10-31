@@ -3,6 +3,8 @@
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
 
+## [0.5.1] - 2022-10-31
+
 - Removed use of `bool::then_some` feature to keep minimum supported Rust version on 1.56.0.
 
 ## [0.5.0] - 2022-10-31
@@ -222,7 +224,8 @@ The library is already featureful enough to warrant a higher version number, bum
 - Add DateSelect prompt
 
 <!-- next-url -->
-[Unreleased]: https://github.com/mikaelmello/inquire/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/mikaelmello/inquire/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/mikaelmello/inquire/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/mikaelmello/inquire/compare/v0.4.0...v0.5.0
 
 [unreleased]: https://github.com/mikaelmello/inquire/compare/v0.3.0...v0.4.0
