@@ -3,6 +3,8 @@
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
 
+## [0.5.0] - 2022-10-31
+
 ### Breaking Changes
 
 **`Password` prompts now enable a secondary confirmation prompt by default:**
@@ -218,7 +220,8 @@ The library is already featureful enough to warrant a higher version number, bum
 - Add DateSelect prompt
 
 <!-- next-url -->
-[Unreleased]: https://github.com/mikaelmello/inquire/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/mikaelmello/inquire/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/mikaelmello/inquire/compare/v0.4.0...v0.5.0
 
 [unreleased]: https://github.com/mikaelmello/inquire/compare/v0.3.0...v0.4.0
 [unreleased]: https://github.com/mikaelmello/inquire/compare/v0.2.1...v0.3.0
