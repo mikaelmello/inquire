@@ -230,6 +230,10 @@ The library is already featureful enough to warrant a higher version number, bum
 - Add custom parser option to Confirm prompt
 - Add DateSelect prompt
 
+## [History]
+
+- Wasn't documented :)
+
 <!-- next-url -->
 [Unreleased]: https://github.com/mikaelmello/inquire/compare/v0.5.2...HEAD
 [0.5.2]: https://github.com/mikaelmello/inquire/compare/v0.5.1...v0.5.2
@@ -248,3 +252,5 @@ The library is already featureful enough to warrant a higher version number, bum
 [0.0.6]: https://github.com/mikaelmello/inquire/compare/v0.0.5...v0.0.6
 [0.0.5]: https://github.com/mikaelmello/inquire/compare/v0.0.4...v0.0.5
 [0.0.4]: https://github.com/mikaelmello/inquire/compare/v0.0.3...v0.0.4
+[0.0.3]: https://github.com/mikaelmello/inquire/compare/v0.0.2...v0.0.3
+[History]: https://github.com/mikaelmello/inquire/compare/11e6f3b961477fbc19adc3c5322ff159c1f606f5...v0.0.2
