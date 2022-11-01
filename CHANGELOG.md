@@ -3,6 +3,8 @@
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
 
+## [0.5.2] - 2022-11-01
+
 - Fixed typo in the default error message when a password confirmation does not match. Thanks to @woodruffw for the PR! [#79](https://github.com/mikaelmello/inquire/pull/79)
   - Releases containing the typo: v0.5.0 and v0.5.1.
 
@@ -227,7 +229,8 @@ The library is already featureful enough to warrant a higher version number, bum
 - Add DateSelect prompt
 
 <!-- next-url -->
-[Unreleased]: https://github.com/mikaelmello/inquire/compare/v0.5.1...HEAD
+[Unreleased]: https://github.com/mikaelmello/inquire/compare/v0.5.2...HEAD
+[0.5.2]: https://github.com/mikaelmello/inquire/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/mikaelmello/inquire/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/mikaelmello/inquire/compare/v0.4.0...v0.5.0
 
