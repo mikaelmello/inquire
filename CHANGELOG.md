@@ -3,6 +3,8 @@
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
 
+- Fixed typo in the default error message when a password confirmation does not match. Thanks to @woodruffw for the PR! [#79](https://github.com/mikaelmello/inquire/pull/79)
+
 ## [0.5.1] - 2022-10-31
 
 - Removed use of `bool::then_some` feature to keep minimum supported Rust version on 1.56.0.
@@ -13,7 +15,7 @@
 
 **`Password` prompts now enable a secondary confirmation prompt by default:**
 
-- Added support for password confirmation, which can be oupted-out of by adding the `without_confirmation()` method into the `Password` builder chain.
+- Added support for password confirmation, which can be oupted-out of by adding the `without_confirmation()` method into the `Password` builder chain. Thanks to @hampuslidin for the PR! [#73](https://github.com/mikaelmello/inquire/pull/73)
 
 ## [0.4.0] - 2022-09-27
 
