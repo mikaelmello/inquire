@@ -4,6 +4,7 @@
 ## [Unreleased] - ReleaseDate
 
 - Fixed typo in the default error message when a password confirmation does not match. Thanks to @woodruffw for the PR! [#79](https://github.com/mikaelmello/inquire/pull/79)
+  - Releases containing the typo: v0.5.0 and v0.5.1.
 
 ## [0.5.1] - 2022-10-31
 
