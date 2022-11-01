@@ -310,7 +310,7 @@ impl<'a> From<Password<'a>> for PasswordPrompt<'a> {
                 message: so.custom_confirmation_message.unwrap_or("Confirmation:"),
                 error_message: so
                     .custom_confirmation_error_message
-                    .unwrap_or("THe answers don't match."),
+                    .unwrap_or("The answers don't match."),
                 input: Input::new(),
             }),
             false => None,
