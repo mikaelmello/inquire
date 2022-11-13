@@ -393,6 +393,9 @@ impl<'a> PasswordPrompt<'a> {
         let answer = match self.validate_current_answer()? {
             Validation::Valid => self.confirm_current_answer(),
             Validation::Invalid(msg) => {
+                if self.display_mode == PasswordDisplayMode::Hidden {
+                    self.input.clear();
+                }
                 self.error = Some(msg);
                 None
             }
@@ -418,6 +421,9 @@ impl<'a> PasswordPrompt<'a> {
                 } else if self.input.content() == cur_answer {
                     Some(confirmation.input.content().into())
                 } else {
+                    if self.display_mode == PasswordDisplayMode::Hidden {
+                        self.input.clear();
+                    }
                     confirmation.input.clear();
 
                     self.error = Some(confirmation.error_message.into());
