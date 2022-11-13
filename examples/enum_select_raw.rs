@@ -1,9 +1,16 @@
 use std::fmt::{Display, Formatter};
 
-use inquire::{error::InquireResult, Select};
+use inquire::{
+    error::InquireResult,
+    ui::{RenderConfig, Styled},
+    Select,
+};
 
 fn main() -> InquireResult<()> {
-    let ans: Currency = Select::new("Currency:", Currency::VARIANTS.to_vec()).prompt()?;
+    let render_config = RenderConfig::default().with_global_prefix(Styled::new("║ "));
+    let ans: Currency = Select::new("Currency:", Currency::VARIANTS.to_vec())
+        .with_render_config(render_config)
+        .prompt()?;
 
     match ans {
         Currency::BRL | Currency::USD | Currency::CAD | Currency::EUR | Currency::GBP => {

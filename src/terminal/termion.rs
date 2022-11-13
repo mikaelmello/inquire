@@ -147,15 +147,12 @@ impl<'a> Terminal for TermionTerminal<'a> {
         terminal_size().map(|(width, height)| super::TerminalSize { width, height })
     }
 
-    fn write<T: std::fmt::Display>(&mut self, val: T) -> Result<()> {
-        let formatted = format!("{}", val);
-        let converted = newline_converter::unix2dos(&formatted);
-
-        self.in_memory_content.push_str(converted.as_ref());
-        write!(self.get_writer(), "{}", converted)
+    fn write(&mut self, val: &str) -> Result<()> {
+        self.in_memory_content.push_str(val);
+        write!(self.get_writer(), "{}", val)
     }
 
-    fn write_styled<T: std::fmt::Display>(&mut self, val: &Styled<T>) -> Result<()> {
+    fn write_styled(&mut self, val: &Styled<&str>) -> Result<()> {
         if let Some(color) = val.style.fg {
             self.set_fg_color(color)?;
         }
@@ -166,7 +163,7 @@ impl<'a> Terminal for TermionTerminal<'a> {
             self.set_attributes(val.style.att)?;
         }
 
-        self.write(&val.content)?;
+        self.write(val.content)?;
 
         if val.style.fg.as_ref().is_some() {
             self.reset_fg_color()?;

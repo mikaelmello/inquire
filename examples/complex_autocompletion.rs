@@ -2,6 +2,7 @@ use std::io::ErrorKind;
 
 use inquire::{
     autocompletion::{Autocomplete, Replacement},
+    ui::{RenderConfig, Styled},
     CustomUserError, Text,
 };
 
@@ -14,7 +15,9 @@ fn main() {
     let current_dir = std::env::current_dir().unwrap();
     let help_message = format!("Current directory: {}", current_dir.to_string_lossy());
 
+    let render_config = RenderConfig::default().with_global_prefix(Styled::new("║ "));
     let ans = Text::new("Profile picture:")
+        .with_render_config(render_config)
         .with_autocomplete(FilePathCompleter::default())
         .with_help_message(&help_message)
         .prompt();

@@ -5,7 +5,9 @@ use inquire::{
 };
 
 fn main() -> InquireResult<()> {
-    let _title = Text::new("Title:").prompt()?;
+    let _title = Text::new("Title:")
+        .with_render_config(default_render_config())
+        .prompt()?;
 
     let _description = Editor::new("Description:")
         .with_formatter(&|submission| {
@@ -26,7 +28,11 @@ fn main() -> InquireResult<()> {
     Ok(())
 }
 
-fn description_render_config() -> RenderConfig {
-    RenderConfig::default()
+fn default_render_config() -> RenderConfig<'static> {
+    RenderConfig::default().with_global_prefix(Styled::new("║ "))
+}
+
+fn description_render_config() -> RenderConfig<'static> {
+    default_render_config()
         .with_canceled_prompt_indicator(Styled::new("<skipped>").with_fg(Color::DarkYellow))
 }

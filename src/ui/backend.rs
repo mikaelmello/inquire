@@ -11,6 +11,59 @@ use crate::{
     validator::ErrorMessage,
 };
 
+macro_rules! __print_impl {
+    (
+        $self:ident,
+        $val_expr:expr,
+        $write_fn:ident,
+        $val_ident:ident => $val_content:expr,
+        $line_ident:ident => $converter:expr
+    ) => {{
+        let $val_ident = $val_expr;
+        let __content = $val_content;
+        let __converted = newline_converter::unix2dos(&__content);
+
+        for $line_ident in __converted.split_inclusive("\r\n") {
+            if !$self.global_prefix_rendered {
+                $self.print_global_prefix()?;
+            }
+
+            $self.terminal.$write_fn($converter)?;
+
+            $self.global_prefix_rendered = !$line_ident.ends_with("\r\n");
+        }
+
+        Result::Ok(())
+    }};
+}
+
+macro_rules! print_with_global_prefix {
+    ($self:ident, $val:expr $(,)?) => {
+        __print_impl!(
+            $self,
+            $val,
+            write,
+            __val => __val.to_string(),
+            __line => __line
+        )
+    };
+}
+
+macro_rules! print_styled_with_global_prefix {
+    ($self:ident, $val:expr $(,)?) => {
+        __print_impl!(
+            $self,
+            $val,
+            write_styled,
+            __val => __val.content.to_string(),
+            __line => &Styled {
+                content: __line,
+                style: __val.style,
+            }
+        )
+    };
+}
+
 pub trait CommonBackend {
     fn read_key(&mut self) -> Result<Key>;
 
@@ -74,7 +127,7 @@ pub struct Position {
     pub col: u16,
 }
 
-pub struct Backend<T>
+pub struct Backend<'a, T>
 where
     T: Terminal,
 {
@@ -85,14 +138,15 @@ where
     show_cursor: bool,
     terminal: T,
     terminal_size: TerminalSize,
-    render_config: RenderConfig,
+    global_prefix_rendered: bool,
+    render_config: RenderConfig<'a>,
 }
 
-impl<T> Backend<T>
+impl<'a, T> Backend<'a, T>
 where
     T: Terminal,
 {
-    pub fn new(terminal: T, render_config: RenderConfig) -> Result<Self> {
+    pub fn new(terminal: T, render_config: RenderConfig<'a>) -> Result<Self> {
         let terminal_size = terminal.get_size().unwrap_or(TerminalSize {
             width: 1000,
             height: 1000,
@@ -105,8 +159,9 @@ where
             prompt_cursor_position: None,
             show_cursor: false,
             terminal,
-            render_config,
             terminal_size,
+            global_prefix_rendered: false,
+            render_config,
         };
 
         backend.terminal.cursor_hide()?;
@@ -202,6 +257,13 @@ where
         Ok(())
     }
 
+    fn print_global_prefix(&mut self) -> Result<()> {
+        self.terminal
+            .write_styled(&self.render_config.global_prefix)?;
+        self.global_prefix_rendered = true;
+        Ok(())
+    }
+
     fn print_option_prefix<D: Display>(
         &mut self,
         idx: usize,
@@ -219,12 +281,14 @@ where
             empty_prefix
         };
 
-        self.terminal.write_styled(&x)
+        print_styled_with_global_prefix!(self, x)
     }
 
     fn print_option_value<D: Display>(&mut self, option: &ListOption<D>) -> Result<()> {
-        self.terminal
-            .write_styled(&Styled::new(&option.value).with_style_sheet(self.render_config.option))
+        print_styled_with_global_prefix!(
+            self,
+            Styled::new(&option.value).with_style_sheet(self.render_config.option)
+        )
     }
 
     fn print_option_index_prefix(&mut self, index: usize, max_index: usize) -> Option<Result<()>> {
@@ -244,8 +308,10 @@ where
         };
 
         content.map(|prefix| {
-            self.terminal
-                .write_styled(&Styled::new(prefix).with_style_sheet(self.render_config.option))
+            print_styled_with_global_prefix!(
+                self,
+                Styled::new(prefix).with_style_sheet(self.render_config.option)
+            )
         })
     }
 
@@ -253,16 +319,18 @@ where
         let content = format!("({})", value);
         let token = Styled::new(content).with_style_sheet(self.render_config.default_value);
 
-        self.terminal.write_styled(&token)
+        print_styled_with_global_prefix!(self, token)
     }
 
     fn print_prompt_with_prefix(&mut self, prefix: Styled<&str>, prompt: &str) -> Result<()> {
-        self.terminal.write_styled(&prefix)?;
+        print_styled_with_global_prefix!(self, prefix)?;
 
-        self.terminal.write(" ")?;
+        print_with_global_prefix!(self, " ")?;
 
-        self.terminal
-            .write_styled(&Styled::new(prompt).with_style_sheet(self.render_config.prompt))?;
+        print_styled_with_global_prefix!(
+            self,
+            Styled::new(prompt).with_style_sheet(self.render_config.prompt)
+        )?;
 
         Ok(())
     }
@@ -272,7 +340,7 @@ where
     }
 
     fn print_input(&mut self, input: &Input) -> Result<()> {
-        self.terminal.write(" ")?;
+        print_with_global_prefix!(self, " ")?;
 
         let cursor_offset = input.pre_cursor().chars().count();
         self.mark_prompt_cursor_position(cursor_offset);
@@ -282,12 +350,14 @@ where
             match input.placeholder() {
                 None => {}
                 Some(p) if p.is_empty() => {}
-                Some(p) => self.terminal.write_styled(
+                Some(p) => print_styled_with_global_prefix!(
+                    self,
                     &Styled::new(p).with_style_sheet(self.render_config.placeholder),
                 )?,
             }
         } else {
-            self.terminal.write_styled(
+            print_styled_with_global_prefix!(
+                self,
                 &Styled::new(input.content()).with_style_sheet(self.render_config.text_input),
             )?;
         }
@@ -296,7 +366,7 @@ where
         // a space, otherwise the cursor will render on the
         // \n character, on the next line.
         if input.cursor() == input.length() {
-            self.terminal.write(' ')?;
+            print_with_global_prefix!(self, ' ')?;
         }
 
         Ok(())
@@ -311,7 +381,7 @@ where
         self.print_prompt(prompt)?;
 
         if let Some(default) = default {
-            self.terminal.write(" ")?;
+            print_with_global_prefix!(self, " ")?;
             self.print_default_value(default)?;
         }
 
@@ -329,12 +399,12 @@ where
     }
 
     fn new_line(&mut self) -> Result<()> {
-        self.terminal.write("\r\n")?;
+        print_with_global_prefix!(self, "\r\n")?;
         Ok(())
     }
 }
 
-impl<T> CommonBackend for Backend<T>
+impl<T> CommonBackend for Backend<'_, T>
 where
     T: Terminal,
 {
@@ -366,10 +436,9 @@ where
     fn render_canceled_prompt(&mut self, prompt: &str) -> Result<()> {
         self.print_prompt(prompt)?;
 
-        self.terminal.write(" ")?;
+        print_with_global_prefix!(self, " ")?;
 
-        self.terminal
-            .write_styled(&self.render_config.canceled_prompt_indicator)?;
+        print_styled_with_global_prefix!(self, self.render_config.canceled_prompt_indicator)?;
 
         self.new_line()?;
 
@@ -379,10 +448,10 @@ where
     fn render_prompt_with_answer(&mut self, prompt: &str, answer: &str) -> Result<()> {
         self.print_prompt_with_prefix(self.render_config.answered_prompt_prefix, prompt)?;
 
-        self.terminal.write(" ")?;
+        print_with_global_prefix!(self, " ")?;
 
         let token = Styled::new(answer).with_style_sheet(self.render_config.answer);
-        self.terminal.write_styled(&token)?;
+        print_styled_with_global_prefix!(self, token)?;
 
         self.new_line()?;
 
@@ -394,11 +463,11 @@ where
     }
 
     fn render_error_message(&mut self, error: &ErrorMessage) -> Result<()> {
-        self.terminal
-            .write_styled(&self.render_config.error_message.prefix)?;
+        print_styled_with_global_prefix!(self, self.render_config.error_message.prefix)?;
 
-        self.terminal.write_styled(
-            &Styled::new(" ").with_style_sheet(self.render_config.error_message.separator),
+        print_styled_with_global_prefix!(
+            self,
+            Styled::new(" ").with_style_sheet(self.render_config.error_message.separator),
         )?;
 
         let message = match error {
@@ -406,8 +475,9 @@ where
             ErrorMessage::Custom(msg) => msg,
         };
 
-        self.terminal.write_styled(
-            &Styled::new(message).with_style_sheet(self.render_config.error_message.message),
+        print_styled_with_global_prefix!(
+            self,
+            Styled::new(message).with_style_sheet(self.render_config.error_message.message),
         )?;
 
         self.new_line()?;
@@ -416,14 +486,20 @@ where
     }
 
     fn render_help_message(&mut self, help: &str) -> Result<()> {
-        self.terminal
-            .write_styled(&Styled::new("[").with_style_sheet(self.render_config.help_message))?;
+        print_styled_with_global_prefix!(
+            self,
+            Styled::new("[").with_style_sheet(self.render_config.help_message)
+        )?;
 
-        self.terminal
-            .write_styled(&Styled::new(help).with_style_sheet(self.render_config.help_message))?;
+        print_styled_with_global_prefix!(
+            self,
+            Styled::new(help).with_style_sheet(self.render_config.help_message)
+        )?;
 
-        self.terminal
-            .write_styled(&Styled::new("]").with_style_sheet(self.render_config.help_message))?;
+        print_styled_with_global_prefix!(
+            self,
+            Styled::new("]").with_style_sheet(self.render_config.help_message)
+        )?;
 
         self.new_line()?;
 
@@ -431,7 +507,7 @@ where
     }
 }
 
-impl<T> TextBackend for Backend<T>
+impl<T> TextBackend for Backend<'_, T>
 where
     T: Terminal,
 {
@@ -448,7 +524,7 @@ where
         for (idx, option) in page.content.iter().enumerate() {
             self.print_option_prefix(idx, &page)?;
 
-            self.terminal.write(" ")?;
+            print_with_global_prefix!(self, " ")?;
 
             self.print_option_value(option)?;
 
@@ -460,18 +536,18 @@ where
 }
 
 #[cfg(feature = "editor")]
-impl<T> EditorBackend for Backend<T>
+impl<T> EditorBackend for Backend<'_, T>
 where
     T: Terminal,
 {
     fn render_prompt(&mut self, prompt: &str, editor_command: &str) -> Result<()> {
         self.print_prompt(prompt)?;
 
-        self.terminal.write(" ")?;
+        print_with_global_prefix!(self, " ")?;
 
         let message = format!("[(e) to open {}, (enter) to submit]", editor_command);
         let token = Styled::new(message).with_style_sheet(self.render_config.editor_prompt);
-        self.terminal.write_styled(&token)?;
+        print_styled_with_global_prefix!(self, token)?;
 
         self.new_line()?;
 
@@ -479,7 +555,7 @@ where
     }
 }
 
-impl<T> SelectBackend for Backend<T>
+impl<T> SelectBackend for Backend<'_, T>
 where
     T: Terminal,
 {
@@ -491,11 +567,11 @@ where
         for (idx, option) in page.content.iter().enumerate() {
             self.print_option_prefix(idx, &page)?;
 
-            self.terminal.write(" ")?;
+            print_with_global_prefix!(self, " ")?;
 
             if let Some(res) = self.print_option_index_prefix(option.index, page.total) {
                 res?;
-                self.terminal.write(" ")?;
+                print_with_global_prefix!(self, " ")?;
             }
 
             self.print_option_value(option)?;
@@ -507,7 +583,7 @@ where
     }
 }
 
-impl<T> MultiSelectBackend for Backend<T>
+impl<T> MultiSelectBackend for Backend<'_, T>
 where
     T: Terminal,
 {
@@ -523,23 +599,23 @@ where
         for (idx, option) in page.content.iter().enumerate() {
             self.print_option_prefix(idx, &page)?;
 
-            self.terminal.write(" ")?;
+            print_with_global_prefix!(self, " ")?;
 
             if let Some(res) = self.print_option_index_prefix(option.index, page.total) {
                 res?;
-                self.terminal.write(" ")?;
+                print_with_global_prefix!(self, " ")?;
             }
 
             match checked.contains(&option.index) {
-                true => self
-                    .terminal
-                    .write_styled(&self.render_config.selected_checkbox)?,
-                false => self
-                    .terminal
-                    .write_styled(&self.render_config.unselected_checkbox)?,
+                true => {
+                    print_styled_with_global_prefix!(self, self.render_config.selected_checkbox)?
+                }
+                false => {
+                    print_styled_with_global_prefix!(self, self.render_config.unselected_checkbox)?
+                }
             }
 
-            self.terminal.write(" ")?;
+            print_with_global_prefix!(self, " ")?;
 
             self.print_option_value(option)?;
 
@@ -576,7 +652,7 @@ pub mod date {
         ) -> Result<()>;
     }
 
-    impl<T> DateSelectBackend for Backend<T>
+    impl<T> DateSelectBackend for Backend<'_, T>
     where
         T: Terminal,
     {
@@ -596,11 +672,10 @@ pub mod date {
             min_date: Option<chrono::NaiveDate>,
             max_date: Option<chrono::NaiveDate>,
         ) -> Result<()> {
-            macro_rules! write_prefix {
+            macro_rules! print_prefix {
                 () => {{
-                    self.terminal
-                        .write_styled(&self.render_config.calendar.prefix)?;
-                    self.terminal.write(" ")
+                    print_styled_with_global_prefix!(self, self.render_config.calendar.prefix)?;
+                    print_with_global_prefix!(self, " ")
                 }};
             }
 
@@ -609,9 +684,9 @@ pub mod date {
             let header = format!("{:^20}", header);
             let header = Styled::new(header).with_style_sheet(self.render_config.calendar.header);
 
-            write_prefix!()?;
+            print_prefix!()?;
 
-            self.terminal.write_styled(&header)?;
+            print_styled_with_global_prefix!(self, header)?;
 
             self.new_line()?;
 
@@ -630,9 +705,9 @@ pub mod date {
             let week_days = Styled::new(week_days.join(" "))
                 .with_style_sheet(self.render_config.calendar.week_header);
 
-            write_prefix!()?;
+            print_prefix!()?;
 
-            self.terminal.write_styled(&week_days)?;
+            print_styled_with_global_prefix!(self, week_days)?;
             self.new_line()?;
 
             // print dates
@@ -647,11 +722,11 @@ pub mod date {
             }
 
             for _ in 0..6 {
-                write_prefix!()?;
+                print_prefix!()?;
 
                 for i in 0..7 {
                     if i > 0 {
-                        self.terminal.write(" ")?;
+                        print_with_global_prefix!(self, " ")?;
                     }
 
                     let date = format!("{:2}", date_it.day());
@@ -687,7 +762,7 @@ pub mod date {
                     }
 
                     let token = Styled::new(date).with_style_sheet(style_sheet);
-                    self.terminal.write_styled(&token)?;
+                    print_styled_with_global_prefix!(self, token)?;
 
                     date_it = date_it.succ();
                 }
@@ -700,7 +775,7 @@ pub mod date {
     }
 }
 
-impl<T> CustomTypeBackend for Backend<T>
+impl<T> CustomTypeBackend for Backend<'_, T>
 where
     T: Terminal,
 {
@@ -714,7 +789,7 @@ where
     }
 }
 
-impl<T> PasswordBackend for Backend<T>
+impl<T> PasswordBackend for Backend<'_, T>
 where
     T: Terminal,
 {
@@ -739,7 +814,7 @@ where
     }
 }
 
-impl<T> Drop for Backend<T>
+impl<T> Drop for Backend<'_, T>
 where
     T: Terminal,
 {

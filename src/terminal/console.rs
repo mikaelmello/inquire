@@ -52,21 +52,15 @@ impl Terminal for ConsoleTerminal {
         Ok(super::TerminalSize { width, height })
     }
 
-    fn write<T: std::fmt::Display>(&mut self, val: T) -> Result<()> {
-        let formatted = format!("{}", val);
-        let converted = newline_converter::unix2dos(&formatted);
-
-        self.in_memory_content.push_str(converted.as_ref());
-        write!(self.term, "{}", converted)
+    fn write(&mut self, val: &str) -> Result<()> {
+        self.in_memory_content.push_str(val);
+        write!(self.term, "{}", val)
     }
 
-    fn write_styled<T: std::fmt::Display>(&mut self, val: &Styled<T>) -> Result<()> {
-        let formatted = format!("{}", val.content);
-        let converted = newline_converter::unix2dos(&formatted);
+    fn write_styled(&mut self, val: &Styled<&str>) -> Result<()> {
+        self.in_memory_content.push_str(val.content);
 
-        self.in_memory_content.push_str(converted.as_ref());
-
-        let styled_object = Style::from(val.style).apply_to(converted);
+        let styled_object = Style::from(val.style).apply_to(val.content);
 
         write!(self.term, "{}", styled_object)
     }

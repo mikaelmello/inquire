@@ -1,7 +1,13 @@
-use inquire::{validator::Validation, CustomType};
+use inquire::{
+    ui::{RenderConfig, Styled},
+    validator::Validation,
+    CustomType,
+};
 
 fn main() {
+    let render_config = RenderConfig::default().with_global_prefix(Styled::new("║ "));
     let amount = CustomType::<f64>::new("How much do you want to donate?")
+        .with_render_config(render_config)
         .with_formatter(&|i| format!("${:.2}", i))
         .with_error_message("Please type a valid number")
         .with_help_message("Type the amount in US dollars using a decimal point as a separator")

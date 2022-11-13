@@ -142,15 +142,12 @@ impl<'a> Terminal for CrosstermTerminal<'a> {
         terminal::size().map(|(width, height)| super::TerminalSize { width, height })
     }
 
-    fn write<T: std::fmt::Display>(&mut self, val: T) -> Result<()> {
-        let formatted = format!("{}", val);
-        let converted = newline_converter::unix2dos(&formatted);
-
-        self.in_memory_content.push_str(converted.as_ref());
-        self.write_command(Print(converted))
+    fn write(&mut self, val: &str) -> Result<()> {
+        self.in_memory_content.push_str(val);
+        self.write_command(Print(val))
     }
 
-    fn write_styled<T: std::fmt::Display>(&mut self, val: &Styled<T>) -> Result<()> {
+    fn write_styled(&mut self, val: &Styled<&str>) -> Result<()> {
         if let Some(color) = val.style.fg {
             self.set_fg_color(color)?;
         }
@@ -161,7 +158,7 @@ impl<'a> Terminal for CrosstermTerminal<'a> {
             self.set_attributes(val.style.att)?;
         }
 
-        self.write(&val.content)?;
+        self.write(val.content)?;
 
         if val.style.fg.as_ref().is_some() {
             self.reset_fg_color()?;

@@ -1,5 +1,9 @@
 use inquire::{
-    formatter::MultiOptionFormatter, list_option::ListOption, validator::Validation, MultiSelect,
+    formatter::MultiOptionFormatter,
+    list_option::ListOption,
+    ui::{RenderConfig, Styled},
+    validator::Validation,
+    MultiSelect,
 };
 
 fn main() {
@@ -32,7 +36,9 @@ fn main() {
 
     let formatter: MultiOptionFormatter<&str> = &|a| format!("{} different fruits", a.len());
 
+    let render_config = RenderConfig::default().with_global_prefix(Styled::new("║ "));
     let ans = MultiSelect::new("Select the fruits for your shopping list:", options)
+        .with_render_config(render_config)
         .with_validator(validator)
         .with_formatter(formatter)
         .prompt();

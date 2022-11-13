@@ -7,17 +7,17 @@ use lazy_static::lazy_static;
 use crate::ui::RenderConfig;
 
 lazy_static! {
-    static ref GLOBAL_RENDER_CONFIGURATION: Mutex<RenderConfig> =
+    static ref GLOBAL_RENDER_CONFIGURATION: Mutex<RenderConfig<'static>> =
         Mutex::new(RenderConfig::default());
 }
 
-pub fn get_configuration() -> RenderConfig {
+pub fn get_configuration() -> RenderConfig<'static> {
     *GLOBAL_RENDER_CONFIGURATION.lock().unwrap()
 }
 
 /// Acquires a write lock to the global RenderConfig object
 /// and updates the inner value with the provided argument.
-pub fn set_global_render_config(config: RenderConfig) {
+pub fn set_global_render_config(config: RenderConfig<'static>) {
     let mut guard = GLOBAL_RENDER_CONFIGURATION.lock().unwrap();
     *guard = config;
 }

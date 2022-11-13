@@ -2,10 +2,14 @@ use std::fmt::{Display, Formatter};
 
 use inquire::{
     error::{CustomUserError, InquireResult},
-    required, CustomType, DateSelect, MultiSelect, Select, Text,
+    required,
+    ui::{RenderConfig, Styled},
+    CustomType, DateSelect, MultiSelect, Select, Text,
 };
 
 fn main() -> InquireResult<()> {
+    inquire::set_global_render_config(get_render_config());
+
     let _date = DateSelect::new("Date:").prompt()?;
 
     let _category = Select::new("Category:", get_categories()).prompt()?;
@@ -141,4 +145,8 @@ fn get_existing_payees() -> &'static [&'static str] {
         "VonRueden-Rath",
         "Waelchi and Sons",
     ]
+}
+
+fn get_render_config() -> RenderConfig<'static> {
+    RenderConfig::default().with_global_prefix(Styled::new("║ "))
 }

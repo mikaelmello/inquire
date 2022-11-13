@@ -1,4 +1,4 @@
-use std::{fmt::Display, io::Result};
+use std::io::Result;
 
 use crate::{
     error::InquireResult,
@@ -36,8 +36,8 @@ pub trait Terminal: Sized {
     fn get_in_memory_content(&self) -> &str;
     fn clear_in_memory_content(&mut self);
 
-    fn write<T: Display>(&mut self, val: T) -> Result<()>;
-    fn write_styled<T: Display>(&mut self, val: &Styled<T>) -> Result<()>;
+    fn write(&mut self, val: &str) -> Result<()>;
+    fn write_styled(&mut self, val: &Styled<&str>) -> Result<()>;
 
     fn clear_current_line(&mut self) -> Result<()>;
 

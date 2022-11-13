@@ -20,7 +20,7 @@ use super::{Color, StyleSheet, Styled};
 /// let mine = default.with_prompt_prefix(prompt_prefix);
 /// ```
 #[derive(Copy, Clone, Debug)]
-pub struct RenderConfig {
+pub struct RenderConfig<'a> {
     /// Prefix added before prompts.
     ///
     /// Note: a space character will be added to separate the prefix
@@ -127,6 +127,12 @@ pub struct RenderConfig {
     /// a separator from the prefix.
     pub option: StyleSheet,
 
+    /// Global prefix used for all prompt lines.
+    ///
+    /// Note: all lines produced by any non-fullscreen prompt will be prefixed
+    /// by this prefix.
+    pub global_prefix: Styled<&'a str>,
+
     /// Render configuration for calendar
 
     #[cfg(feature = "date")]
@@ -141,7 +147,7 @@ pub struct RenderConfig {
     pub editor_prompt: StyleSheet,
 }
 
-impl RenderConfig {
+impl<'a> RenderConfig<'a> {
     /// RenderConfig in which no colors or attributes are applied.
     pub fn empty() -> Self {
         Self {
@@ -163,6 +169,7 @@ impl RenderConfig {
             unselected_checkbox: Styled::new("[ ]"),
             option_index_prefix: IndexPrefix::None,
             option: StyleSheet::empty(),
+            global_prefix: Styled::new(""),
 
             #[cfg(feature = "date")]
             calendar: calendar::CalendarRenderConfig::empty(),
@@ -193,6 +200,7 @@ impl RenderConfig {
             unselected_checkbox: Styled::new("[ ]"),
             option_index_prefix: IndexPrefix::None,
             option: StyleSheet::empty(),
+            global_prefix: Styled::new(""),
 
             #[cfg(feature = "date")]
             calendar: calendar::CalendarRenderConfig::default_colored(),
@@ -292,6 +300,12 @@ impl RenderConfig {
         self
     }
 
+    /// Sets the global prefix for all prompt lines.
+    pub fn with_global_prefix(mut self, global_prefix: Styled<&'a str>) -> Self {
+        self.global_prefix = global_prefix;
+        self
+    }
+
     #[cfg(feature = "date")]
     /// Sets the render configuration for calendars.
     pub fn with_calendar_config(mut self, calendar: calendar::CalendarRenderConfig) -> Self {
@@ -307,7 +321,7 @@ impl RenderConfig {
     }
 }
 
-impl Default for RenderConfig {
+impl Default for RenderConfig<'_> {
     fn default() -> Self {
         match env::var("NO_COLOR") {
             Ok(_) => Self::empty(),

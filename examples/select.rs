@@ -1,4 +1,7 @@
-use inquire::Select;
+use inquire::{
+    ui::{RenderConfig, Styled},
+    Select,
+};
 
 fn main() {
     let options = vec![
@@ -15,7 +18,10 @@ fn main() {
         "Pineapple",
     ];
 
-    let ans = Select::new("What's your favorite fruit?", options).prompt();
+    let render_config = RenderConfig::default().with_global_prefix(Styled::new("║ "));
+    let ans = Select::new("What's your favorite fruit?", options)
+        .with_render_config(render_config)
+        .prompt();
 
     match ans {
         Ok(choice) => println!("{}! That's mine too!", choice),
