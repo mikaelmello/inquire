@@ -39,7 +39,7 @@ pub trait Terminal: Sized {
     fn write(&mut self, val: &str) -> Result<()>;
     fn write_styled(&mut self, val: &Styled<&str>) -> Result<()>;
 
-    fn clear_current_line(&mut self) -> Result<()>;
+    fn clear_until_new_line(&mut self) -> Result<()>;
 
     fn cursor_hide(&mut self) -> Result<()>;
     fn cursor_show(&mut self) -> Result<()>;

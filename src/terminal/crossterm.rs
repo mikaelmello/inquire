@@ -173,8 +173,8 @@ impl<'a> Terminal for CrosstermTerminal<'a> {
         Ok(())
     }
 
-    fn clear_current_line(&mut self) -> Result<()> {
-        self.write_command(terminal::Clear(ClearType::CurrentLine))
+    fn clear_until_new_line(&mut self) -> Result<()> {
+        self.write_command(terminal::Clear(ClearType::UntilNewLine))
     }
 
     fn cursor_hide(&mut self) -> Result<()> {

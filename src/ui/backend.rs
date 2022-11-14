@@ -24,20 +24,26 @@ macro_rules! __print_impl {
         let __converted = newline_converter::unix2dos(&__content);
 
         for $line_ident in __converted.split_inclusive("\r\n") {
-            if !$self.global_prefix_rendered {
-                $self.print_global_prefix()?;
+            if $self.is_new_line {
+                $self
+                    .terminal
+                    .cursor_move_to_column($self.render_config.global_indentation)?;
+                $self
+                    .terminal
+                    .write_styled(&$self.render_config.global_prefix)?;
+                $self.is_new_line = false;
             }
 
             $self.terminal.$write_fn($converter)?;
 
-            $self.global_prefix_rendered = !$line_ident.ends_with("\r\n");
+            $self.is_new_line = $line_ident.ends_with("\r\n");
         }
 
         Result::Ok(())
     }};
 }
 
-macro_rules! print_with_global_prefix {
+macro_rules! print_value {
     ($self:ident, $val:expr $(,)?) => {
         __print_impl!(
             $self,
@@ -49,7 +55,7 @@ macro_rules! print_with_global_prefix {
     };
 }
 
-macro_rules! print_styled_with_global_prefix {
+macro_rules! print_styled_value {
     ($self:ident, $val:expr $(,)?) => {
         __print_impl!(
             $self,
@@ -138,7 +144,7 @@ where
     show_cursor: bool,
     terminal: T,
     terminal_size: TerminalSize,
-    global_prefix_rendered: bool,
+    is_new_line: bool,
     render_config: RenderConfig<'a>,
 }
 
@@ -160,7 +166,7 @@ where
             show_cursor: false,
             terminal,
             terminal_size,
-            global_prefix_rendered: false,
+            is_new_line: true,
             render_config,
         };
 
@@ -173,14 +179,17 @@ where
         let input = self.terminal.get_in_memory_content();
         let term_width = self.terminal_size.width;
 
-        let mut cur_pos = Position::default();
+        let mut cur_pos = Position {
+            row: 0,
+            col: self.render_config.global_indentation,
+        };
 
         for (idx, c) in input.chars().enumerate() {
             let len = UnicodeWidthChar::width(c).unwrap_or(0) as u16;
 
             if c == '\n' {
                 cur_pos.row = cur_pos.row.saturating_add(1);
-                cur_pos.col = 0;
+                cur_pos.col = self.render_config.global_indentation;
             } else {
                 let left = term_width - cur_pos.col;
 
@@ -188,7 +197,7 @@ where
                     cur_pos.col = cur_pos.col.saturating_add(len);
                 } else {
                     cur_pos.row = cur_pos.row.saturating_add(1);
-                    cur_pos.col = len;
+                    cur_pos.col = self.render_config.global_indentation + len;
                 }
             }
 
@@ -239,7 +248,9 @@ where
 
         for _ in 0..self.prompt_end_position.row {
             self.terminal.cursor_up(1)?;
-            self.terminal.clear_current_line()?;
+            self.terminal
+                .cursor_move_to_column(self.render_config.global_indentation)?;
+            self.terminal.clear_until_new_line()?;
         }
 
         self.terminal.clear_in_memory_content();
@@ -254,13 +265,6 @@ where
         self.show_cursor = false;
         self.terminal.cursor_hide()?;
 
-        Ok(())
-    }
-
-    fn print_global_prefix(&mut self) -> Result<()> {
-        self.terminal
-            .write_styled(&self.render_config.global_prefix)?;
-        self.global_prefix_rendered = true;
         Ok(())
     }
 
@@ -281,11 +285,11 @@ where
             empty_prefix
         };
 
-        print_styled_with_global_prefix!(self, x)
+        print_styled_value!(self, x)
     }
 
     fn print_option_value<D: Display>(&mut self, option: &ListOption<D>) -> Result<()> {
-        print_styled_with_global_prefix!(
+        print_styled_value!(
             self,
             Styled::new(&option.value).with_style_sheet(self.render_config.option)
         )
@@ -308,7 +312,7 @@ where
         };
 
         content.map(|prefix| {
-            print_styled_with_global_prefix!(
+            print_styled_value!(
                 self,
                 Styled::new(prefix).with_style_sheet(self.render_config.option)
             )
@@ -319,15 +323,15 @@ where
         let content = format!("({})", value);
         let token = Styled::new(content).with_style_sheet(self.render_config.default_value);
 
-        print_styled_with_global_prefix!(self, token)
+        print_styled_value!(self, token)
     }
 
     fn print_prompt_with_prefix(&mut self, prefix: Styled<&str>, prompt: &str) -> Result<()> {
-        print_styled_with_global_prefix!(self, prefix)?;
+        print_styled_value!(self, prefix)?;
 
-        print_with_global_prefix!(self, " ")?;
+        print_value!(self, " ")?;
 
-        print_styled_with_global_prefix!(
+        print_styled_value!(
             self,
             Styled::new(prompt).with_style_sheet(self.render_config.prompt)
         )?;
@@ -340,7 +344,7 @@ where
     }
 
     fn print_input(&mut self, input: &Input) -> Result<()> {
-        print_with_global_prefix!(self, " ")?;
+        print_value!(self, " ")?;
 
         let cursor_offset = input.pre_cursor().chars().count();
         self.mark_prompt_cursor_position(cursor_offset);
@@ -350,13 +354,13 @@ where
             match input.placeholder() {
                 None => {}
                 Some(p) if p.is_empty() => {}
-                Some(p) => print_styled_with_global_prefix!(
+                Some(p) => print_styled_value!(
                     self,
                     &Styled::new(p).with_style_sheet(self.render_config.placeholder),
                 )?,
             }
         } else {
-            print_styled_with_global_prefix!(
+            print_styled_value!(
                 self,
                 &Styled::new(input.content()).with_style_sheet(self.render_config.text_input),
             )?;
@@ -366,7 +370,7 @@ where
         // a space, otherwise the cursor will render on the
         // \n character, on the next line.
         if input.cursor() == input.length() {
-            print_with_global_prefix!(self, ' ')?;
+            print_value!(self, ' ')?;
         }
 
         Ok(())
@@ -381,7 +385,7 @@ where
         self.print_prompt(prompt)?;
 
         if let Some(default) = default {
-            print_with_global_prefix!(self, " ")?;
+            print_value!(self, " ")?;
             self.print_default_value(default)?;
         }
 
@@ -399,7 +403,7 @@ where
     }
 
     fn new_line(&mut self) -> Result<()> {
-        print_with_global_prefix!(self, "\r\n")?;
+        print_value!(self, "\r\n")?;
         Ok(())
     }
 }
@@ -436,9 +440,9 @@ where
     fn render_canceled_prompt(&mut self, prompt: &str) -> Result<()> {
         self.print_prompt(prompt)?;
 
-        print_with_global_prefix!(self, " ")?;
+        print_value!(self, " ")?;
 
-        print_styled_with_global_prefix!(self, self.render_config.canceled_prompt_indicator)?;
+        print_styled_value!(self, self.render_config.canceled_prompt_indicator)?;
 
         self.new_line()?;
 
@@ -448,10 +452,10 @@ where
     fn render_prompt_with_answer(&mut self, prompt: &str, answer: &str) -> Result<()> {
         self.print_prompt_with_prefix(self.render_config.answered_prompt_prefix, prompt)?;
 
-        print_with_global_prefix!(self, " ")?;
+        print_value!(self, " ")?;
 
         let token = Styled::new(answer).with_style_sheet(self.render_config.answer);
-        print_styled_with_global_prefix!(self, token)?;
+        print_styled_value!(self, token)?;
 
         self.new_line()?;
 
@@ -463,9 +467,9 @@ where
     }
 
     fn render_error_message(&mut self, error: &ErrorMessage) -> Result<()> {
-        print_styled_with_global_prefix!(self, self.render_config.error_message.prefix)?;
+        print_styled_value!(self, self.render_config.error_message.prefix)?;
 
-        print_styled_with_global_prefix!(
+        print_styled_value!(
             self,
             Styled::new(" ").with_style_sheet(self.render_config.error_message.separator),
         )?;
@@ -475,7 +479,7 @@ where
             ErrorMessage::Custom(msg) => msg,
         };
 
-        print_styled_with_global_prefix!(
+        print_styled_value!(
             self,
             Styled::new(message).with_style_sheet(self.render_config.error_message.message),
         )?;
@@ -486,17 +490,17 @@ where
     }
 
     fn render_help_message(&mut self, help: &str) -> Result<()> {
-        print_styled_with_global_prefix!(
+        print_styled_value!(
             self,
             Styled::new("[").with_style_sheet(self.render_config.help_message)
         )?;
 
-        print_styled_with_global_prefix!(
+        print_styled_value!(
             self,
             Styled::new(help).with_style_sheet(self.render_config.help_message)
         )?;
 
-        print_styled_with_global_prefix!(
+        print_styled_value!(
             self,
             Styled::new("]").with_style_sheet(self.render_config.help_message)
         )?;
@@ -524,7 +528,7 @@ where
         for (idx, option) in page.content.iter().enumerate() {
             self.print_option_prefix(idx, &page)?;
 
-            print_with_global_prefix!(self, " ")?;
+            print_value!(self, " ")?;
 
             self.print_option_value(option)?;
 
@@ -543,11 +547,11 @@ where
     fn render_prompt(&mut self, prompt: &str, editor_command: &str) -> Result<()> {
         self.print_prompt(prompt)?;
 
-        print_with_global_prefix!(self, " ")?;
+        print_value!(self, " ")?;
 
         let message = format!("[(e) to open {}, (enter) to submit]", editor_command);
         let token = Styled::new(message).with_style_sheet(self.render_config.editor_prompt);
-        print_styled_with_global_prefix!(self, token)?;
+        print_styled_value!(self, token)?;
 
         self.new_line()?;
 
@@ -567,11 +571,11 @@ where
         for (idx, option) in page.content.iter().enumerate() {
             self.print_option_prefix(idx, &page)?;
 
-            print_with_global_prefix!(self, " ")?;
+            print_value!(self, " ")?;
 
             if let Some(res) = self.print_option_index_prefix(option.index, page.total) {
                 res?;
-                print_with_global_prefix!(self, " ")?;
+                print_value!(self, " ")?;
             }
 
             self.print_option_value(option)?;
@@ -599,23 +603,19 @@ where
         for (idx, option) in page.content.iter().enumerate() {
             self.print_option_prefix(idx, &page)?;
 
-            print_with_global_prefix!(self, " ")?;
+            print_value!(self, " ")?;
 
             if let Some(res) = self.print_option_index_prefix(option.index, page.total) {
                 res?;
-                print_with_global_prefix!(self, " ")?;
+                print_value!(self, " ")?;
             }
 
             match checked.contains(&option.index) {
-                true => {
-                    print_styled_with_global_prefix!(self, self.render_config.selected_checkbox)?
-                }
-                false => {
-                    print_styled_with_global_prefix!(self, self.render_config.unselected_checkbox)?
-                }
+                true => print_styled_value!(self, self.render_config.selected_checkbox)?,
+                false => print_styled_value!(self, self.render_config.unselected_checkbox)?,
             }
 
-            print_with_global_prefix!(self, " ")?;
+            print_value!(self, " ")?;
 
             self.print_option_value(option)?;
 
@@ -674,8 +674,8 @@ pub mod date {
         ) -> Result<()> {
             macro_rules! print_prefix {
                 () => {{
-                    print_styled_with_global_prefix!(self, self.render_config.calendar.prefix)?;
-                    print_with_global_prefix!(self, " ")
+                    print_styled_value!(self, self.render_config.calendar.prefix)?;
+                    print_value!(self, " ")
                 }};
             }
 
@@ -686,7 +686,7 @@ pub mod date {
 
             print_prefix!()?;
 
-            print_styled_with_global_prefix!(self, header)?;
+            print_styled_value!(self, header)?;
 
             self.new_line()?;
 
@@ -707,7 +707,7 @@ pub mod date {
 
             print_prefix!()?;
 
-            print_styled_with_global_prefix!(self, week_days)?;
+            print_styled_value!(self, week_days)?;
             self.new_line()?;
 
             // print dates
@@ -726,7 +726,7 @@ pub mod date {
 
                 for i in 0..7 {
                     if i > 0 {
-                        print_with_global_prefix!(self, " ")?;
+                        print_value!(self, " ")?;
                     }
 
                     let date = format!("{:2}", date_it.day());
@@ -762,7 +762,7 @@ pub mod date {
                     }
 
                     let token = Styled::new(date).with_style_sheet(style_sheet);
-                    print_styled_with_global_prefix!(self, token)?;
+                    print_styled_value!(self, token)?;
 
                     date_it = date_it.succ();
                 }

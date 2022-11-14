@@ -133,6 +133,12 @@ pub struct RenderConfig<'a> {
     /// by this prefix.
     pub global_prefix: Styled<&'a str>,
 
+    /// Global indentation used for all prompt lines.
+    ///
+    /// Note: unlike `global_prefix`, this setting indents each line without clearing the
+    /// content within the indentation.
+    pub global_indentation: u16,
+
     /// Render configuration for calendar
 
     #[cfg(feature = "date")]
@@ -170,6 +176,7 @@ impl<'a> RenderConfig<'a> {
             option_index_prefix: IndexPrefix::None,
             option: StyleSheet::empty(),
             global_prefix: Styled::new(""),
+            global_indentation: 0,
 
             #[cfg(feature = "date")]
             calendar: calendar::CalendarRenderConfig::empty(),
@@ -201,6 +208,7 @@ impl<'a> RenderConfig<'a> {
             option_index_prefix: IndexPrefix::None,
             option: StyleSheet::empty(),
             global_prefix: Styled::new(""),
+            global_indentation: 0,
 
             #[cfg(feature = "date")]
             calendar: calendar::CalendarRenderConfig::default_colored(),
@@ -303,6 +311,12 @@ impl<'a> RenderConfig<'a> {
     /// Sets the global prefix for all prompt lines.
     pub fn with_global_prefix(mut self, global_prefix: Styled<&'a str>) -> Self {
         self.global_prefix = global_prefix;
+        self
+    }
+
+    /// Sets the global indentation for all prompt lines.
+    pub fn with_global_indentation(mut self, global_indentation: u16) -> Self {
+        self.global_indentation = global_indentation;
         self
     }
 

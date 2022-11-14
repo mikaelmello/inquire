@@ -65,8 +65,10 @@ impl Terminal for ConsoleTerminal {
         write!(self.term, "{}", styled_object)
     }
 
-    fn clear_current_line(&mut self) -> Result<()> {
-        self.term.clear_line()
+    fn clear_until_new_line(&mut self) -> Result<()> {
+        // `console` has no API for clearing until new lines, so we print the ANSI code explicitly
+        // here.
+        self.term.write_str("\r\x1b[0K")
     }
 
     fn cursor_hide(&mut self) -> Result<()> {
