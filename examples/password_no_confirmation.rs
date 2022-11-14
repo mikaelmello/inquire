@@ -1,12 +1,7 @@
-use inquire::{
-    ui::{RenderConfig, Styled},
-    Password,
-};
+use inquire::Password;
 
 fn main() {
-    let render_config = RenderConfig::default().with_global_prefix(Styled::new("║ "));
     let name = Password::new("RSA Encryption Key:")
-        .with_render_config(render_config)
         .without_confirmation()
         .prompt();
 

@@ -1,14 +1,7 @@
 use chrono::{NaiveDate, Weekday};
-use inquire::{
-    formatter::DEFAULT_DATE_FORMATTER,
-    ui::{RenderConfig, Styled},
-    validator::Validation,
-    CustomType, DateSelect,
-};
+use inquire::{formatter::DEFAULT_DATE_FORMATTER, validator::Validation, CustomType, DateSelect};
 
 fn main() {
-    inquire::set_global_render_config(get_render_config());
-
     date_select_default();
     custom_type_parsed_date_prompt();
     date_select_misc_options();
@@ -20,7 +13,6 @@ fn date_select_default() {
     println!();
 
     DateSelect::new("Check-in date:").prompt().unwrap();
-
     println!("We will be expecting you!");
     println!();
 }
@@ -84,8 +76,4 @@ fn date_select_with_validation() {
         Err(_) => println!("There was an error in the system."),
     }
     println!();
-}
-
-fn get_render_config() -> RenderConfig<'static> {
-    RenderConfig::default().with_global_prefix(Styled::new("║ "))
 }

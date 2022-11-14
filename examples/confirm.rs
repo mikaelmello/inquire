@@ -1,11 +1,6 @@
-use inquire::{
-    ui::{RenderConfig, Styled},
-    Confirm,
-};
+use inquire::{ui::RenderConfig, Confirm};
 
 fn main() {
-    inquire::set_global_render_config(get_render_config());
-
     let ans = Confirm::new("Do you live in Brazil?")
         .with_default(false)
         .with_help_message("This data is stored for good reasons")
@@ -39,14 +34,10 @@ fn main() {
             true => String::from("si"),
             false => String::from("no"),
         },
-        render_config: get_render_config(),
+        render_config: RenderConfig::default(),
     }
     .prompt()
     .unwrap();
 
     println!("Your answer: {}", ans);
-}
-
-fn get_render_config() -> RenderConfig<'static> {
-    RenderConfig::default().with_global_prefix(Styled::new("║ "))
 }

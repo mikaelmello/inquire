@@ -1,13 +1,7 @@
-use inquire::{
-    error::CustomUserError,
-    length, required,
-    ui::{RenderConfig, Styled},
-    Text,
-};
+use inquire::{error::CustomUserError, length, required, ui::RenderConfig, Text};
 
 fn main() {
     let answer = Text::new("What's your name?")
-        .with_render_config(get_render_config())
         .with_autocomplete(&suggester)
         .with_validator(required!())
         .with_validator(length!(10))
@@ -26,7 +20,7 @@ fn main() {
         validators: Vec::new(),
         page_size: Text::DEFAULT_PAGE_SIZE,
         autocompleter: None,
-        render_config: get_render_config(),
+        render_config: RenderConfig::default(),
     }
     .prompt()
     .unwrap();
@@ -63,8 +57,4 @@ fn suggester(val: &str) -> Result<Vec<String>, CustomUserError> {
         .filter(|s| s.to_lowercase().contains(&val_lower))
         .map(|s| String::from(*s))
         .collect())
-}
-
-fn get_render_config() -> RenderConfig<'static> {
-    RenderConfig::default().with_global_prefix(Styled::new("║ "))
 }

@@ -1,13 +1,7 @@
-use inquire::{
-    min_length,
-    ui::{RenderConfig, Styled},
-    Password, PasswordDisplayMode,
-};
+use inquire::{min_length, Password, PasswordDisplayMode};
 
 fn main() {
-    let render_config = RenderConfig::default().with_global_prefix(Styled::new("║ "));
     let name = Password::new("RSA Encryption Key:")
-        .with_render_config(render_config)
         .with_display_toggle_enabled()
         .with_display_mode(PasswordDisplayMode::Masked)
         .with_validator(min_length!(10))

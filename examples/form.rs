@@ -1,13 +1,8 @@
 use inquire::{
-    error::InquireResult,
-    min_length,
-    ui::{RenderConfig, Styled},
-    Confirm, DateSelect, MultiSelect, Password, Select, Text,
+    error::InquireResult, min_length, Confirm, DateSelect, MultiSelect, Password, Select, Text,
 };
 
 fn main() -> InquireResult<()> {
-    inquire::set_global_render_config(get_render_config());
-
     let fruits = vec![
         "Banana",
         "Apple",
@@ -61,8 +56,4 @@ fn main() -> InquireResult<()> {
     println!("Based on our ML-powered analysis, we were able to conclude absolutely nothing.");
 
     Ok(())
-}
-
-fn get_render_config() -> RenderConfig<'static> {
-    RenderConfig::default().with_global_prefix(Styled::new("║ "))
 }
