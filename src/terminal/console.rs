@@ -15,7 +15,7 @@ impl ConsoleTerminal {
     #[allow(unused)]
     pub fn new() -> Self {
         Self {
-            term: Term::stdout(),
+            term: Term::stderr(),
             in_memory_content: String::with_capacity(INITIAL_IN_MEMORY_CAPACITY),
         }
     }

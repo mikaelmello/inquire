@@ -1,5 +1,5 @@
 use core::fmt;
-use std::io::{stdin, stdout, Result, Stdin, Stdout, Write};
+use std::io::{stdin, stderr, Result, Stdin, Stderr, Write};
 
 use termion::{
     color::{self, Color},
@@ -21,7 +21,7 @@ enum IO<'a> {
     #[allow(unused)]
     Std {
         r: Keys<Stdin>,
-        w: RawTerminal<Stdout>,
+        w: RawTerminal<Stderr>,
     },
     #[allow(unused)]
     Custom {
@@ -38,7 +38,7 @@ pub struct TermionTerminal<'a> {
 impl<'a> TermionTerminal<'a> {
     #[allow(unused)]
     pub fn new() -> InquireResult<Self> {
-        let raw_mode = stdout()
+        let raw_mode = stderr()
             .into_raw_mode()
             .map_err(|e| match e.raw_os_error() {
                 Some(25) | Some(6) => InquireError::NotTTY,
