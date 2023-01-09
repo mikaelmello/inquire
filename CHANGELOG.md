@@ -3,7 +3,8 @@
 <!-- next-header -->
 ## [Unreleased] <!-- ReleaseDate -->
 
-- No changes since the latest release below.
+- Addition of `with_starting_date(NaiveDate)` to `DateSelect` prompts.
+  - Equivalent to `with_default(NaiveDate)`, but with a more descriptive name.
 
 ## [0.5.2] - 2022-11-01
 

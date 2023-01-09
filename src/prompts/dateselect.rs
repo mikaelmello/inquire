@@ -44,7 +44,7 @@ use crate::{
 /// use inquire::DateSelect;
 ///
 /// let date = DateSelect::new("When do you want to travel?")
-///     .with_default(NaiveDate::from_ymd(2021, 8, 1))
+///     .with_starting_date(NaiveDate::from_ymd(2021, 8, 1))
 ///     .with_min_date(NaiveDate::from_ymd(2021, 8, 1))
 ///     .with_max_date(NaiveDate::from_ymd(2021, 12, 31))
 ///     .with_week_start(Weekday::Mon)
@@ -153,10 +153,9 @@ impl<'a> DateSelect<'a> {
         self
     }
 
-    /// Sets the default date.
-    pub fn with_default(mut self, default: NaiveDate) -> Self {
-        self.starting_date = default;
-        self
+    /// Sets the default date of the prompt. Equivalent to [DateSelect::with_starting_date](DateSelect::with_starting_date).
+    pub fn with_default(self, default: NaiveDate) -> Self {
+        self.with_starting_date(default)
     }
 
     /// Sets the week start.
@@ -177,7 +176,7 @@ impl<'a> DateSelect<'a> {
         self
     }
 
-    /// Sets the starting date.
+    /// Sets the starting date. Equivalent to [DateSelect::with_default](DateSelect::with_default).
     pub fn with_starting_date(mut self, starting_date: NaiveDate) -> Self {
         self.starting_date = starting_date;
         self

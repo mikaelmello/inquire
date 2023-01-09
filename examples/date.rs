@@ -42,6 +42,7 @@ fn date_select_misc_options() {
     println!();
 
     let date = DateSelect::new("When do you want to travel?")
+        // Could also be `.with_starting_date()`
         .with_default(NaiveDate::from_ymd(2021, 8, 1))
         .with_min_date(NaiveDate::from_ymd(2021, 8, 1))
         .with_max_date(NaiveDate::from_ymd(2021, 12, 31))
@@ -84,6 +85,7 @@ fn date_select_with_starting_date() {
     println!();
 
     DateSelect::new("Check-in date:")
+        // Could also be `.with_default()`
         .with_starting_date(
             chrono::Local::now()
                 .date()
