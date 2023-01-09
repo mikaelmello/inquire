@@ -6,6 +6,7 @@ fn main() {
     custom_type_parsed_date_prompt();
     date_select_misc_options();
     date_select_with_validation();
+    date_select_with_starting_date();
 }
 
 fn date_select_default() {
@@ -75,5 +76,23 @@ fn date_select_with_validation() {
         Ok(_) => println!("No flights available for this date."),
         Err(_) => println!("There was an error in the system."),
     }
+    println!();
+}
+
+fn date_select_with_starting_date() {
+    println!("-------> DateSelect with yesterday as initial value");
+    println!();
+
+    DateSelect::new("Check-in date:")
+        .with_starting_date(
+            chrono::Local::now()
+                .date()
+                .naive_local()
+                .pred_opt()
+                .unwrap(),
+        )
+        .prompt()
+        .unwrap();
+    println!("We will be expecting you!");
     println!();
 }

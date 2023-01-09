@@ -177,6 +177,12 @@ impl<'a> DateSelect<'a> {
         self
     }
 
+    /// Sets the starting date.
+    pub fn with_starting_date(mut self, starting_date: NaiveDate) -> Self {
+        self.starting_date = starting_date;
+        self
+    }
+
     /// Adds a validator to the collection of validators. You might want to use this feature
     /// in case you need to limit the user to specific choices, such as not allowing weekends.
     ///
