@@ -4,6 +4,10 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
+- No changes since the latest release below.
+
+## [0.5.3] - 2023-01-09
+
 - Addition of `with_starting_date(NaiveDate)` to `DateSelect` prompts.
   - Equivalent to `with_default(NaiveDate)`, but with a more descriptive name.
 
@@ -238,7 +242,8 @@ The library is already featureful enough to warrant a higher version number, bum
 
 <!-- next-url -->
 
-[unreleased]: https://github.com/mikaelmello/inquire/compare/v0.5.2...HEAD
+[Unreleased]: https://github.com/mikaelmello/inquire/compare/v0.5.3...HEAD
+[unreleased]: https://github.com/mikaelmello/inquire/compare/v0.5.2...v0.5.3
 [0.5.2]: https://github.com/mikaelmello/inquire/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/mikaelmello/inquire/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/mikaelmello/inquire/compare/v0.4.0...v0.5.0
