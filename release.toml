@@ -1,6 +1,4 @@
 allow-branch = ["main"]
-sign-commit = true
-sign-tag = true
 enable-all-features = true
 
 pre-release-commit-message = "chore: release v{{version}}"
