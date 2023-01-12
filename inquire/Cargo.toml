@@ -1,0 +1,87 @@
+[package]
+name = "inquire"
+version = "0.6.0"
+description = "inquire is a library for building interactive prompts on terminals"
+repository = "https://github.com/mikaelmello/inquire"
+license = "MIT"
+edition = "2018"
+readme = "./CRATE_README.md"
+documentation = "https://docs.rs/inquire"
+homepage = "https://github.com/mikaelmello/inquire"
+authors = ["Mikael Mello <git@mikaelmello.com>"]
+keywords = ["cli", "ask", "prompt", "question", "interactive"]
+categories = ["command-line-interface", "value-formatting"]
+include = ["../examples", "/src", "../LICENSE"]
+
+[features]
+default = ["macros", "crossterm"]
+macros = []
+date = ["chrono"]
+editor = ["tempfile"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[dependencies]
+crossterm = { version = "0.25", optional = true }
+termion = { version = "1.5", optional = true }
+console = { version = "0.15", optional = true, features = ["windows-console-colors"] }
+
+chrono = { version = "0.4", optional = true }
+
+tempfile = { version = "3", optional = true }
+
+thiserror = "1"
+bitflags = "1"
+dyn-clone = "1"
+lazy_static = "1.4"
+newline-converter = "0.2"
+
+unicode-segmentation = "1"
+unicode-width = "0.1"
+
+[[example]]
+name = "form"
+path = "../examples/form.rs"
+required-features = ["date", "macros"]
+
+[[example]]
+name = "date"
+path = "../examples/date.rs"
+required-features = ["date", "macros"]
+
+[[example]]
+name = "editor"
+path = "../examples/editor.rs"
+required-features = ["editor"]
+
+[[example]]
+name = "expense_tracker"
+path = "../examples/expense_tracker.rs"
+required-features = ["date", "macros"]
+
+[[example]]
+name = "render_config"
+path = "../examples/render_config.rs"
+required-features = ["date", "macros"]
+
+[[example]]
+name = "empty_render_config"
+path = "../examples/empty_render_config.rs"
+required-features = ["date", "macros"]
+
+[[example]]
+name = "text_options"
+path = "../examples/text_options.rs"
+required-features = ["macros"]
+
+[[example]]
+name = "password_full_featured"
+path = "../examples/password_full_featured.rs"
+required-features = ["macros"]
+
+[[example]]
+name = "manual_date_input"
+path = "../examples/manual_date_input.rs"
+required-features = ["date"]
