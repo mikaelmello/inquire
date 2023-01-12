@@ -1,0 +1,4 @@
+pre-release-replacements = [
+  {file="CRATE_README.md", search="inquire-derive = \".*\"", replace="{{crate_name}} = \"{{version}}\""},
+  {file="CRATE_README.md", search="inquire-derive = \\{ version = \"[\\.0-9]*\"", replace="{{crate_name}} = { version = \"{{version}}\""},
+]
