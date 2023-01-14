@@ -222,9 +222,19 @@ where
         self.terminal.write_styled(&x)
     }
 
-    fn print_option_value<D: Display>(&mut self, option: &ListOption<D>) -> Result<()> {
+    fn print_option_value<D: Display>(
+        &mut self,
+        option: &ListOption<D>,
+        is_selected: bool,
+    ) -> Result<()> {
+        let style_sheet = if is_selected && !self.render_config.selected_option.is_empty() {
+            self.render_config.selected_option
+        } else {
+            self.render_config.option
+        };
+
         self.terminal
-            .write_styled(&Styled::new(&option.value).with_style_sheet(self.render_config.option))
+            .write_styled(&Styled::new(&option.value).with_style_sheet(style_sheet))
     }
 
     fn print_option_index_prefix(&mut self, index: usize, max_index: usize) -> Option<Result<()>> {
@@ -450,7 +460,7 @@ where
 
             self.terminal.write(" ")?;
 
-            self.print_option_value(option)?;
+            self.print_option_value(option, idx == page.selection)?;
 
             self.new_line()?;
         }
@@ -498,7 +508,7 @@ where
                 self.terminal.write(" ")?;
             }
 
-            self.print_option_value(option)?;
+            self.print_option_value(option, idx == page.selection)?;
 
             self.new_line()?;
         }
@@ -541,7 +551,7 @@ where
 
             self.terminal.write(" ")?;
 
-            self.print_option_value(option)?;
+            self.print_option_value(option, idx == page.selection)?;
 
             self.new_line()?;
         }
