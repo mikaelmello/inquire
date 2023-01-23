@@ -225,9 +225,11 @@ where
     fn print_option_value<D: Display>(
         &mut self,
         option: &ListOption<D>,
-        is_selected: bool,
+        idx: usize,
+        page: &Page<ListOption<D>>,
     ) -> Result<()> {
-        let style_sheet = if is_selected && !self.render_config.selected_option.is_empty() {
+        let style_sheet = if idx == page.selection && !self.render_config.selected_option.is_empty()
+        {
             self.render_config.selected_option
         } else {
             self.render_config.option
@@ -459,8 +461,7 @@ where
             self.print_option_prefix(idx, &page)?;
 
             self.terminal.write(" ")?;
-
-            self.print_option_value(option, idx == page.selection)?;
+            self.print_option_value(option, idx, &page)?;
 
             self.new_line()?;
         }
@@ -508,7 +509,7 @@ where
                 self.terminal.write(" ")?;
             }
 
-            self.print_option_value(option, idx == page.selection)?;
+            self.print_option_value(option, idx, &page)?;
 
             self.new_line()?;
         }
@@ -551,7 +552,7 @@ where
 
             self.terminal.write(" ")?;
 
-            self.print_option_value(option, idx == page.selection)?;
+            self.print_option_value(option, idx, &page)?;
 
             self.new_line()?;
         }
