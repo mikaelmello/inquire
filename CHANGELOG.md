@@ -4,7 +4,7 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
-- No changes since the latest release below.
+- Selected option can now be styled independently of other options through `RenderConfig::with_selected_option()`
 
 ## [0.5.3] - 2023-01-09
 
