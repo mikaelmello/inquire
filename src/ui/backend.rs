@@ -1,4 +1,4 @@
-use std::{collections::BTreeSet, fmt::Display, io::Result};
+use std::{collections::BTreeSet, fmt::Display, io::Result, ops::Index};
 
 use unicode_width::UnicodeWidthChar;
 
@@ -225,10 +225,10 @@ where
     fn print_option_value<D: Display>(
         &mut self,
         option: &ListOption<D>,
-        idx: usize,
         page: &Page<ListOption<D>>,
     ) -> Result<()> {
-        let style_sheet = if idx == page.selection && !self.render_config.selected_option.is_empty()
+        let style_sheet = if page.content[page.selection].index == option.index
+            && !self.render_config.selected_option.is_empty()
         {
             self.render_config.selected_option
         } else {
@@ -461,7 +461,7 @@ where
             self.print_option_prefix(idx, &page)?;
 
             self.terminal.write(" ")?;
-            self.print_option_value(option, idx, &page)?;
+            self.print_option_value(option, &page)?;
 
             self.new_line()?;
         }
@@ -509,7 +509,7 @@ where
                 self.terminal.write(" ")?;
             }
 
-            self.print_option_value(option, idx, &page)?;
+            self.print_option_value(option, &page)?;
 
             self.new_line()?;
         }
@@ -552,7 +552,7 @@ where
 
             self.terminal.write(" ")?;
 
-            self.print_option_value(option, idx, &page)?;
+            self.print_option_value(option, &page)?;
 
             self.new_line()?;
         }
