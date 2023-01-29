@@ -127,7 +127,8 @@ pub struct RenderConfig {
     /// a separator from the prefix.
     pub option: StyleSheet,
 
-    /// Style sheet for the option that is currently selected. If the value is None, it will fallback to `option`.
+    /// Style sheet for the option that is currently selected. If the value is
+    /// None, it will fall back to `option`.
     ///
     /// Note: a non-styled space character is added before the option value as
     /// a separator from the prefix.
