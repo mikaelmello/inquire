@@ -1,4 +1,4 @@
-use std::{collections::BTreeSet, fmt::Display, io::Result, ops::Index};
+use std::{collections::BTreeSet, fmt::Display, io::Result};
 
 use unicode_width::UnicodeWidthChar;
 
