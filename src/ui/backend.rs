@@ -228,9 +228,9 @@ where
         page: &Page<ListOption<D>>,
     ) -> Result<()> {
         let style_sheet = if page.content[page.selection].index == option.index
-            && !self.render_config.selected_option.is_empty()
+            && self.render_config.selected_option.is_some()
         {
-            self.render_config.selected_option
+            self.render_config.selected_option.unwrap()
         } else {
             self.render_config.option
         };
