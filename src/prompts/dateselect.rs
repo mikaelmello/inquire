@@ -5,7 +5,7 @@ use std::{
 };
 
 use crate::{
-    config::get_configuration,
+    config::{get_configuration, KeymapMode},
     date_utils::{get_current_date, get_month},
     error::{InquireError, InquireResult},
     formatter::{self, DateFormatter},
@@ -76,9 +76,10 @@ pub struct DateSelect<'a> {
     /// Help message to be presented to the user.
     pub help_message: Option<&'a str>,
 
-    /// Whether vim mode is enabled. When enabled, the user can
-    /// navigate through the options using hjkl.
-    pub vim_mode: bool,
+    /// Whether a keymap mode is enabled.
+    /// Vim mode: user can navigate through the options using hjkl.
+    /// Emacs mode: user can navigate through the options using C-p, C-n, C-f, C-b.
+    pub keymap_mode: KeymapMode,
 
     /// Function that formats the user input and presents it to the user as the final rendering of the prompt.
     pub formatter: DateFormatter<'a>,
@@ -106,8 +107,8 @@ impl<'a> DateSelect<'a> {
     /// Default formatter, set to [DEFAULT_DATE_FORMATTER](crate::formatter::DEFAULT_DATE_FORMATTER)
     pub const DEFAULT_FORMATTER: DateFormatter<'a> = formatter::DEFAULT_DATE_FORMATTER;
 
-    /// Default value of vim mode. It is true because there is no typing functionality to be lost here.
-    pub const DEFAULT_VIM_MODE: bool = true;
+    /// Default value of keymap mode. It is Vim by default because there is no typing functionality to be lost here.
+    pub const DEFAULT_KEYMAP_MODE: KeymapMode = KeymapMode::Vim;
 
     /// Default help message.
     pub const DEFAULT_HELP_MESSAGE: Option<&'a str> =
@@ -133,7 +134,7 @@ impl<'a> DateSelect<'a> {
             min_date: Self::DEFAULT_MIN_DATE,
             max_date: Self::DEFAULT_MAX_DATE,
             help_message: Self::DEFAULT_HELP_MESSAGE,
-            vim_mode: Self::DEFAULT_VIM_MODE,
+            keymap_mode: Self::DEFAULT_KEYMAP_MODE,
             formatter: Self::DEFAULT_FORMATTER,
             validators: Self::DEFAULT_VALIDATORS,
             week_start: Self::DEFAULT_WEEK_START,
@@ -218,9 +219,9 @@ impl<'a> DateSelect<'a> {
         self
     }
 
-    /// Enables or disables vim_mode.
-    pub fn with_vim_mode(mut self, vim_mode: bool) -> Self {
-        self.vim_mode = vim_mode;
+    /// Enables or disables keymap_mode.
+    pub fn with_keymap_mode(mut self, keymap_mode: KeymapMode) -> Self {
+        self.keymap_mode = keymap_mode;
         self
     }
 
@@ -283,7 +284,7 @@ struct DateSelectPrompt<'a> {
     min_date: Option<NaiveDate>,
     max_date: Option<NaiveDate>,
     help_message: Option<&'a str>,
-    vim_mode: bool,
+    keymap_mode: KeymapMode,
     formatter: DateFormatter<'a>,
     validators: Vec<Box<dyn DateValidator>>,
     error: Option<ErrorMessage>,
@@ -313,7 +314,7 @@ impl<'a> DateSelectPrompt<'a> {
             max_date: so.max_date,
             week_start: so.week_start,
             help_message: so.help_message,
-            vim_mode: so.vim_mode,
+            keymap_mode: so.keymap_mode,
             formatter: so.formatter,
             validators: so.validators,
             error: None,
@@ -359,22 +360,34 @@ impl<'a> DateSelectPrompt<'a> {
     fn on_change(&mut self, key: Key) {
         match key {
             Key::Up(KeyModifiers::NONE) => self.shift_date(Duration::weeks(-1)),
-            Key::Char('k', KeyModifiers::NONE) if self.vim_mode => {
+            Key::Char('k', KeyModifiers::NONE) if self.keymap_mode == KeymapMode::Vim => {
+                self.shift_date(Duration::weeks(-1))
+            }
+            Key::Char('p', KeyModifiers::CONTROL) if self.keymap_mode == KeymapMode::Emacs => {
                 self.shift_date(Duration::weeks(-1))
             }
 
             Key::Down(KeyModifiers::NONE) | Key::Tab => self.shift_date(Duration::weeks(1)),
-            Key::Char('j', KeyModifiers::NONE) if self.vim_mode => {
+            Key::Char('j', KeyModifiers::NONE) if self.keymap_mode == KeymapMode::Vim => {
+                self.shift_date(Duration::weeks(1))
+            }
+            Key::Char('n', KeyModifiers::CONTROL) if self.keymap_mode == KeymapMode::Emacs => {
                 self.shift_date(Duration::weeks(1))
             }
 
             Key::Left(KeyModifiers::NONE) => self.shift_date(Duration::days(-1)),
-            Key::Char('h', KeyModifiers::NONE) if self.vim_mode => {
+            Key::Char('h', KeyModifiers::NONE) if self.keymap_mode == KeymapMode::Vim => {
+                self.shift_date(Duration::days(-1))
+            }
+            Key::Char('b', KeyModifiers::CONTROL) if self.keymap_mode == KeymapMode::Emacs => {
                 self.shift_date(Duration::days(-1))
             }
 
             Key::Right(KeyModifiers::NONE) => self.shift_date(Duration::days(1)),
-            Key::Char('l', KeyModifiers::NONE) if self.vim_mode => {
+            Key::Char('l', KeyModifiers::NONE) if self.keymap_mode == KeymapMode::Vim => {
+                self.shift_date(Duration::days(1))
+            }
+            Key::Char('f', KeyModifiers::CONTROL) if self.keymap_mode == KeymapMode::Emacs => {
                 self.shift_date(Duration::days(1))
             }
 

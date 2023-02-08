@@ -1,7 +1,7 @@
 use std::{collections::BTreeSet, fmt::Display};
 
 use crate::{
-    config::{self, get_configuration},
+    config::{self, get_configuration, KeymapMode},
     error::{InquireError, InquireResult},
     formatter::MultiOptionFormatter,
     input::Input,
@@ -60,9 +60,10 @@ pub struct MultiSelect<'a, T> {
     /// Page size of the options displayed to the user.
     pub page_size: usize,
 
-    /// Whether vim mode is enabled. When enabled, the user can
-    /// navigate through the options using hjkl.
-    pub vim_mode: bool,
+    /// Whether a keymap mode is enabled.
+    /// Vim mode: user can navigate through the options using hjkl.
+    /// Emacs mode: user can navigate through the options using C-p, C-n, C-f, C-b.
+    pub keymap_mode: KeymapMode,
 
     /// Starting cursor index of the selection.
     pub starting_cursor: usize,
@@ -156,8 +157,8 @@ where
     /// Default page size, equal to the global default page size [config::DEFAULT_PAGE_SIZE]
     pub const DEFAULT_PAGE_SIZE: usize = config::DEFAULT_PAGE_SIZE;
 
-    /// Default value of vim mode, equal to the global default value [config::DEFAULT_PAGE_SIZE]
-    pub const DEFAULT_VIM_MODE: bool = config::DEFAULT_VIM_MODE;
+    /// Default value of keymap mode, equal to the global default value [config::DEFAULT_PAGE_SIZE]
+    pub const DEFAULT_KEYMAP_MODE: KeymapMode = config::DEFAULT_KEYMAP_MODE;
 
     /// Default starting cursor index.
     pub const DEFAULT_STARTING_CURSOR: usize = 0;
@@ -177,7 +178,7 @@ where
             default: None,
             help_message: Self::DEFAULT_HELP_MESSAGE,
             page_size: Self::DEFAULT_PAGE_SIZE,
-            vim_mode: Self::DEFAULT_VIM_MODE,
+            keymap_mode: Self::DEFAULT_KEYMAP_MODE,
             starting_cursor: Self::DEFAULT_STARTING_CURSOR,
             keep_filter: Self::DEFAULT_KEEP_FILTER,
             filter: Self::DEFAULT_FILTER,
@@ -205,9 +206,9 @@ where
         self
     }
 
-    /// Enables or disables vim_mode.
-    pub fn with_vim_mode(mut self, vim_mode: bool) -> Self {
-        self.vim_mode = vim_mode;
+    /// Enables or disables keymap_mode.
+    pub fn with_keymap_mode(mut self, keymap_mode: KeymapMode) -> Self {
+        self.keymap_mode = keymap_mode;
         self
     }
 
@@ -339,7 +340,7 @@ struct MultiSelectPrompt<'a, T> {
     options: Vec<T>,
     string_options: Vec<String>,
     help_message: Option<&'a str>,
-    vim_mode: bool,
+    keymap_mode: KeymapMode,
     cursor_index: usize,
     checked: BTreeSet<usize>,
     page_size: usize,
@@ -386,7 +387,7 @@ where
             string_options,
             filtered_options,
             help_message: mso.help_message,
-            vim_mode: mso.vim_mode,
+            keymap_mode: mso.keymap_mode,
             cursor_index: mso.starting_cursor,
             page_size: mso.page_size,
             keep_filter: mso.keep_filter,
@@ -457,12 +458,22 @@ where
     fn on_change(&mut self, key: Key) {
         match key {
             Key::Up(KeyModifiers::NONE) => self.move_cursor_up(1, true),
-            Key::Char('k', KeyModifiers::NONE) if self.vim_mode => self.move_cursor_up(1, true),
+            Key::Char('k', KeyModifiers::NONE) if self.keymap_mode == KeymapMode::Vim => {
+                self.move_cursor_up(1, true)
+            }
+            Key::Char('p', KeyModifiers::CONTROL) if self.keymap_mode == KeymapMode::Emacs => {
+                self.move_cursor_up(1, true)
+            }
             Key::PageUp => self.move_cursor_up(self.page_size, false),
             Key::Home => self.move_cursor_up(usize::MAX, false),
 
             Key::Down(KeyModifiers::NONE) => self.move_cursor_down(1, true),
-            Key::Char('j', KeyModifiers::NONE) if self.vim_mode => self.move_cursor_down(1, true),
+            Key::Char('j', KeyModifiers::NONE) if self.keymap_mode == KeymapMode::Vim => {
+                self.move_cursor_down(1, true)
+            }
+            Key::Char('n', KeyModifiers::CONTROL) if self.keymap_mode == KeymapMode::Emacs => {
+                self.move_cursor_down(1, true)
+            }
             Key::PageDown => self.move_cursor_down(self.page_size, false),
             Key::End => self.move_cursor_down(usize::MAX, false),
 
