@@ -1,4 +1,4 @@
-use std::io::{stdout, Result, Stdout, Write};
+use std::io::{stderr, Result, Stderr, Write};
 
 use crossterm::{
     cursor,
@@ -18,7 +18,7 @@ use super::{Terminal, INITIAL_IN_MEMORY_CAPACITY};
 
 enum IO<'a> {
     Std {
-        w: Stdout,
+        w: Stderr,
     },
     #[allow(unused)]
     Custom {
@@ -40,7 +40,7 @@ impl<'a> CrosstermTerminal<'a> {
         })?;
 
         Ok(Self {
-            io: IO::Std { w: stdout() },
+            io: IO::Std { w: stderr() },
             in_memory_content: String::with_capacity(INITIAL_IN_MEMORY_CAPACITY),
         })
     }

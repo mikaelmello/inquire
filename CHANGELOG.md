@@ -4,7 +4,10 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
-- Selected option can now be styled independently of other options through `RenderConfig::with_selected_option()`
+### Breaking Changes
+
+- Selected option can now be styled independently of other options through `RenderConfig::with_selected_option()`.
+- Output dialogs on `stderr` instead of `stdout` [#89](https://github.com/mikaelmello/inquire/pull/89).
 
 ## [0.5.3] - 2023-01-09
 
