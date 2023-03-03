@@ -143,7 +143,7 @@ impl<'a> Terminal for CrosstermTerminal<'a> {
     }
 
     fn write<T: std::fmt::Display>(&mut self, val: T) -> Result<()> {
-        let formatted = format!("{}", val);
+        let formatted = format!("{val}");
         let converted = newline_converter::unix2dos(&formatted);
 
         self.in_memory_content.push_str(converted.as_ref());

@@ -52,6 +52,6 @@ impl Currency {
 
 impl Display for Currency {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
-        write!(f, "{:?}", self)
+        write!(f, "{self:?}")
     }
 }

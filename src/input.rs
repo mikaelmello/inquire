@@ -297,8 +297,7 @@ mod test {
             assert_eq!(
                 expected,
                 input.cursor(),
-                "unexpected result cursor from initial {}",
-                initial
+                "unexpected result cursor from initial {initial}",
             );
         };
 

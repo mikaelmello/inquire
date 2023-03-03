@@ -20,8 +20,8 @@ fn main() {
         .prompt();
 
     match ans {
-        Ok(path) => println!("Path: {}", path),
-        Err(error) => println!("Error with questionnaire, try again later: {:?}", error),
+        Ok(path) => println!("Path: {path}"),
+        Err(error) => println!("Error with questionnaire, try again later: {error:?}"),
     }
 }
 

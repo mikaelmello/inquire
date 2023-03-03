@@ -18,7 +18,7 @@ fn main() -> InquireResult<()> {
         .prompt()?;
 
     let amount: f64 = CustomType::new("Amount:")
-        .with_formatter(&|i: f64| format!("${}", i))
+        .with_formatter(&|i: f64| format!("${i}"))
         .with_error_message("Please type a valid number")
         .with_help_message("Type the amount in US dollars using a decimal point as a separator")
         .prompt()

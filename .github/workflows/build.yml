@@ -13,7 +13,7 @@ jobs:
 
           - build: msrv
             os: ubuntu-18.04
-            rust: 1.56.0
+            rust: 1.58.1
 
           - build: beta
             os: ubuntu-latest

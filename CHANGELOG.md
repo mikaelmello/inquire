@@ -9,6 +9,7 @@
 - Selected option can now be styled independently of other options through `RenderConfig::with_selected_option()`.
 - Now selected options are highlighted cyan by default.
 - Output dialogs on `stderr` instead of `stdout` [#89](https://github.com/mikaelmello/inquire/pull/89).
+- New Minimum Supported Rust Version: 1.58.1.
 
 ## [0.5.3] - 2023-01-09
 

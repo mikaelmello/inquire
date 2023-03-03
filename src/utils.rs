@@ -109,19 +109,19 @@ mod test {
     #[test]
     fn int_log10_works() {
         for i in 1..10 {
-            assert_eq!(1, int_log10(i), "Int log 10 failed for value {}", i);
+            assert_eq!(1, int_log10(i), "Int log 10 failed for value {i}");
         }
         for i in 10..100 {
-            assert_eq!(2, int_log10(i), "Int log 10 failed for value {}", i);
+            assert_eq!(2, int_log10(i), "Int log 10 failed for value {i}");
         }
         for i in 100..1000 {
-            assert_eq!(3, int_log10(i), "Int log 10 failed for value {}", i);
+            assert_eq!(3, int_log10(i), "Int log 10 failed for value {i}");
         }
         for i in 1000..10000 {
-            assert_eq!(4, int_log10(i), "Int log 10 failed for value {}", i);
+            assert_eq!(4, int_log10(i), "Int log 10 failed for value {i}");
         }
         for i in 10000..100000 {
-            assert_eq!(5, int_log10(i), "Int log 10 failed for value {}", i);
+            assert_eq!(5, int_log10(i), "Int log 10 failed for value {i}");
         }
     }
 

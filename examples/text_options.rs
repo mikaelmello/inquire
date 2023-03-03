@@ -8,7 +8,7 @@ fn main() {
         .prompt()
         .unwrap();
 
-    println!("Hello {}", answer);
+    println!("Hello {answer}");
 
     let _input = Text {
         message: "How are you feeling?",

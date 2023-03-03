@@ -7,13 +7,13 @@ fn main() {
         .prompt()
         .unwrap();
 
-    println!("Your answer: {}", ans);
+    println!("Your answer: {ans}");
 
     let ans = Confirm::new("Do you want to move to another country?")
         .prompt()
         .unwrap();
 
-    println!("Your answer: {}", ans);
+    println!("Your answer: {ans}");
 
     let ans = Confirm {
         message: "Are you happy?",
@@ -39,5 +39,5 @@ fn main() {
     .prompt()
     .unwrap();
 
-    println!("Your answer: {}", ans);
+    println!("Your answer: {ans}");
 }

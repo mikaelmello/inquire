@@ -414,7 +414,7 @@ impl MaxLengthValidator {
     pub fn new(limit: usize) -> Self {
         Self {
             limit,
-            message: format!("The length of the response should be at most {}", limit),
+            message: format!("The length of the response should be at most {limit}"),
         }
     }
 
@@ -523,7 +523,7 @@ impl MinLengthValidator {
     pub fn new(limit: usize) -> Self {
         Self {
             limit,
-            message: format!("The length of the response should be at least {}", limit),
+            message: format!("The length of the response should be at least {limit}"),
         }
     }
 
@@ -629,7 +629,7 @@ impl ExactLengthValidator {
     pub fn new(length: usize) -> Self {
         Self {
             length,
-            message: format!("The length of the response should be {}", length),
+            message: format!("The length of the response should be {length}"),
         }
     }
 

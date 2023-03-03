@@ -22,7 +22,7 @@ fn main() -> InquireResult<()> {
         .prompt()?;
 
     let amount: f64 = CustomType::new("Amount:")
-        .with_formatter(&|i: f64| format!("${}", i))
+        .with_formatter(&|i: f64| format!("${i}"))
         .with_error_message("Please type a valid number")
         .with_help_message("Type the amount in US dollars using a decimal point as a separator")
         .prompt()
@@ -40,7 +40,7 @@ fn main() -> InquireResult<()> {
     let _tags = MultiSelect::new("Tags:", get_tags()).prompt()?;
 
     println!("Your transaction has been successfully recorded.");
-    println!("The balance of {} is now $311.09", account);
+    println!("The balance of {account} is now $311.09");
 
     Ok(())
 }

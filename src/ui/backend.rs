@@ -247,14 +247,14 @@ where
 
         let content = match self.render_config.option_index_prefix {
             IndexPrefix::None => None,
-            IndexPrefix::Simple => Some(format!("{})", index)),
+            IndexPrefix::Simple => Some(format!("{index})")),
             IndexPrefix::SpacePadded => {
                 let width = int_log10(max_index.saturating_add(1));
-                Some(format!("{:width$})", index, width = width))
+                Some(format!("{index:width$})"))
             }
             IndexPrefix::ZeroPadded => {
                 let width = int_log10(max_index.saturating_add(1));
-                Some(format!("{:0width$})", index, width = width))
+                Some(format!("{index:0width$})"))
             }
         };
 
@@ -265,7 +265,7 @@ where
     }
 
     fn print_default_value(&mut self, value: &str) -> Result<()> {
-        let content = format!("({})", value);
+        let content = format!("({value})");
         let token = Styled::new(content).with_style_sheet(self.render_config.default_value);
 
         self.terminal.write_styled(&token)
@@ -625,7 +625,7 @@ pub mod date {
 
             // print header (month year)
             let header = format!("{} {}", month.name().to_lowercase(), year);
-            let header = format!("{:^20}", header);
+            let header = format!("{header:^20}");
             let header = Styled::new(header).with_style_sheet(self.render_config.calendar.header);
 
             write_prefix!()?;
@@ -638,7 +638,7 @@ pub mod date {
             let mut current_weekday = week_start;
             let mut week_days: Vec<String> = vec![];
             for _ in 0..7 {
-                let mut formatted = format!("{}", current_weekday);
+                let mut formatted = format!("{current_weekday}");
                 formatted.make_ascii_lowercase();
                 formatted.pop();
                 week_days.push(formatted);
@@ -748,7 +748,7 @@ where
             .map(|_| self.render_config.password_mask)
             .collect();
 
-        let masked_input = Input::new_with(&masked_string).with_cursor(cur_input.cursor());
+        let masked_input = Input::new_with(masked_string).with_cursor(cur_input.cursor());
 
         self.print_prompt_with_input(prompt, None, &masked_input)
     }

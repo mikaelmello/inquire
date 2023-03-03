@@ -307,7 +307,7 @@ impl<'a> From<Text<'a>> for TextPrompt<'a> {
             formatter: so.formatter,
             autocompleter: so
                 .autocompleter
-                .unwrap_or_else(|| Box::new(NoAutoCompletion::default())),
+                .unwrap_or_else(|| Box::<NoAutoCompletion>::default()),
             input,
             error: None,
             suggestion_cursor_index: None,
@@ -377,7 +377,7 @@ impl<'a> TextPrompt<'a> {
             .get_completion(self.input.content(), suggestion)?
         {
             Replacement::Some(value) => {
-                self.input = Input::new_with(&value);
+                self.input = Input::new_with(value);
                 Ok(true)
             }
             Replacement::None => Ok(false),
