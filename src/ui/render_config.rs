@@ -127,10 +127,17 @@ pub struct RenderConfig {
     /// a separator from the prefix.
     pub option: StyleSheet,
 
+    /// Style sheet for the option that is currently selected. If the value is
+    /// None, it will fall back to `option`.
+    ///
+    /// Note: a non-styled space character is added before the option value as
+    /// a separator from the prefix.
+    pub selected_option: Option<StyleSheet>,
+
     /// Render configuration for calendar
 
     #[cfg(feature = "date")]
-    /// Render configuration for date prompts.
+    /// Render configuration for date prompts`
     pub calendar: calendar::CalendarRenderConfig,
 
     /// Style sheet of the hint in editor prompts.
@@ -163,6 +170,7 @@ impl RenderConfig {
             unselected_checkbox: Styled::new("[ ]"),
             option_index_prefix: IndexPrefix::None,
             option: StyleSheet::empty(),
+            selected_option: None,
 
             #[cfg(feature = "date")]
             calendar: calendar::CalendarRenderConfig::empty(),
@@ -193,6 +201,7 @@ impl RenderConfig {
             unselected_checkbox: Styled::new("[ ]"),
             option_index_prefix: IndexPrefix::None,
             option: StyleSheet::empty(),
+            selected_option: None,
 
             #[cfg(feature = "date")]
             calendar: calendar::CalendarRenderConfig::default_colored(),
@@ -280,6 +289,12 @@ impl RenderConfig {
     /// Sets the style sheet for option values.
     pub fn with_option(mut self, option: StyleSheet) -> Self {
         self.option = option;
+        self
+    }
+
+    /// Sets the style sheet for currently selected option.
+    pub fn with_selected_option(mut self, selected_option: Option<StyleSheet>) -> Self {
+        self.selected_option = selected_option;
         self
     }
 
