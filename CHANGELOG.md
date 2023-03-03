@@ -4,7 +4,10 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
-- No changes since the latest release below.
+### Breaking Changes
+
+- Output dialogs on `stderr` instead of `stdout` [#89](https://github.com/mikaelmello/inquire/pull/89)
+  - `stdout` is usually used to carry (parseable) data, while other information (logs, dlailogs, etc.) got to `stderr`. This makes `inquire` compatible with such systems.
 
 ## [0.5.3] - 2023-01-09
 
