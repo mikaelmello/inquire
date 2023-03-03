@@ -287,7 +287,7 @@ struct TextPrompt<'a> {
     error: Option<ErrorMessage>,
     autocompleter: Box<dyn Autocomplete>,
     suggested_options: Vec<String>,
-    cursor_index: usize,
+    suggestion_cursor_index: Option<usize>,
     page_size: usize,
 }
 
@@ -310,7 +310,7 @@ impl<'a> From<Text<'a>> for TextPrompt<'a> {
                 .unwrap_or_else(|| Box::new(NoAutoCompletion::default())),
             input,
             error: None,
-            cursor_index: 0,
+            suggestion_cursor_index: None,
             page_size: so.page_size,
             suggested_options: vec![],
             validators: so.validators,
@@ -327,15 +327,14 @@ impl<'a> From<&'a str> for Text<'a> {
 impl<'a> TextPrompt<'a> {
     fn update_suggestions(&mut self) -> InquireResult<()> {
         self.suggested_options = self.autocompleter.get_suggestions(self.input.content())?;
-        self.cursor_index = 0;
+        self.suggestion_cursor_index = None;
 
         Ok(())
     }
 
     fn get_highlighted_suggestion(&self) -> Option<&str> {
-        if self.cursor_index > 0 {
-            let index = self.cursor_index - 1;
-            let suggestion = self.suggested_options.get(index).unwrap().as_ref();
+        if let Some(cursor) = self.suggestion_cursor_index {
+            let suggestion = self.suggested_options.get(cursor).unwrap().as_ref();
             Some(suggestion)
         } else {
             None
@@ -343,16 +342,30 @@ impl<'a> TextPrompt<'a> {
     }
 
     fn move_cursor_up(&mut self, qty: usize) -> bool {
-        self.cursor_index = self.cursor_index.saturating_sub(qty);
+        self.suggestion_cursor_index = match self.suggestion_cursor_index {
+            None => None,
+            Some(index) if index < qty => None,
+            Some(index) => Some(index.saturating_sub(qty)),
+        };
 
         false
     }
 
     fn move_cursor_down(&mut self, qty: usize) -> bool {
-        self.cursor_index = min(
-            self.cursor_index.saturating_add(qty),
-            self.suggested_options.len(),
-        );
+        self.suggestion_cursor_index = match self.suggested_options.is_empty() {
+            true => None,
+            false => match self.suggestion_cursor_index {
+                None if qty == 0 => None,
+                None => Some(min(
+                    qty.saturating_sub(1),
+                    self.suggested_options.len().saturating_sub(1),
+                )),
+                Some(index) => Some(min(
+                    index.saturating_add(qty),
+                    self.suggested_options.len().saturating_sub(1),
+                )),
+            },
+        };
 
         false
     }
@@ -438,13 +451,7 @@ impl<'a> TextPrompt<'a> {
             .map(|(i, val)| ListOption::new(i, val.as_ref()))
             .collect::<Vec<ListOption<&str>>>();
 
-        let list_index = self.cursor_index.saturating_sub(1);
-        let mut page = paginate(self.page_size, &choices, list_index);
-
-        let cursor_on_input = self.cursor_index == 0;
-        if cursor_on_input {
-            page.selection = usize::MAX;
-        }
+        let page = paginate(self.page_size, &choices, self.suggestion_cursor_index);
 
         backend.render_suggestions(page)?;
 

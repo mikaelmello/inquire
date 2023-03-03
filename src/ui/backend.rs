@@ -204,16 +204,18 @@ where
 
     fn print_option_prefix<D: Display>(
         &mut self,
-        idx: usize,
+        option_relative_index: usize,
         page: &Page<ListOption<D>>,
     ) -> Result<()> {
         let empty_prefix = Styled::new(" ");
 
-        let x = if idx == page.selection {
+        let page_cursor_relative_index = page.cursor.map(|c| c.relative_index);
+
+        let x = if page_cursor_relative_index == Some(option_relative_index) {
             self.render_config.highlighted_option_prefix
-        } else if idx == 0 && !page.first {
+        } else if option_relative_index == 0 && !page.first {
             self.render_config.scroll_up_prefix
-        } else if (idx + 1) == page.content.len() && !page.last {
+        } else if (option_relative_index + 1) == page.content.len() && !page.last {
             self.render_config.scroll_down_prefix
         } else {
             empty_prefix
@@ -227,16 +229,17 @@ where
         option: &ListOption<D>,
         page: &Page<ListOption<D>>,
     ) -> Result<()> {
-        let style_sheet = if page.content[page.selection].index == option.index
-            && self.render_config.selected_option.is_some()
-        {
-            self.render_config.selected_option.unwrap()
+        let stylesheet = if let Some(selected_option_style) = self.render_config.selected_option {
+            match page.cursor {
+                Some(cursor) if cursor.absolute_index == option.index => selected_option_style,
+                _ => self.render_config.option,
+            }
         } else {
             self.render_config.option
         };
 
         self.terminal
-            .write_styled(&Styled::new(&option.value).with_style_sheet(style_sheet))
+            .write_styled(&Styled::new(&option.value).with_style_sheet(stylesheet))
     }
 
     fn print_option_index_prefix(&mut self, index: usize, max_index: usize) -> Option<Result<()>> {
@@ -541,14 +544,19 @@ where
                 self.terminal.write(" ")?;
             }
 
-            match checked.contains(&option.index) {
-                true => self
-                    .terminal
-                    .write_styled(&self.render_config.selected_checkbox)?,
-                false => self
-                    .terminal
-                    .write_styled(&self.render_config.unselected_checkbox)?,
+            let mut checkbox = match checked.contains(&option.index) {
+                true => self.render_config.selected_checkbox,
+                false => self.render_config.unselected_checkbox,
+            };
+
+            match (self.render_config.selected_option, page.cursor) {
+                (Some(stylesheet), Some(cursor)) if cursor.absolute_index == option.index => {
+                    checkbox.style = stylesheet
+                }
+                _ => {}
             }
+
+            self.terminal.write_styled(&checkbox)?;
 
             self.terminal.write(" ")?;
 

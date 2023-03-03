@@ -552,7 +552,7 @@ where
             .map(|i| ListOption::new(i, self.options.get(i).unwrap()))
             .collect::<Vec<ListOption<&T>>>();
 
-        let page = paginate(self.page_size, &choices, self.cursor_index);
+        let page = paginate(self.page_size, &choices, Some(self.cursor_index));
 
         backend.render_options(page, &self.checked)?;
 
