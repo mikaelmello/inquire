@@ -7,6 +7,7 @@
 ### Breaking Changes
 
 - Selected option can now be styled independently of other options through `RenderConfig::with_selected_option()`.
+- Now selected options are highlighted cyan by default.
 - Output dialogs on `stderr` instead of `stdout` [#89](https://github.com/mikaelmello/inquire/pull/89).
 
 ## [0.5.3] - 2023-01-09
@@ -245,7 +246,7 @@ The library is already featureful enough to warrant a higher version number, bum
 
 <!-- next-url -->
 
-[Unreleased]: https://github.com/mikaelmello/inquire/compare/v0.5.3...HEAD
+[unreleased]: https://github.com/mikaelmello/inquire/compare/v0.5.3...HEAD
 [unreleased]: https://github.com/mikaelmello/inquire/compare/v0.5.2...v0.5.3
 [0.5.2]: https://github.com/mikaelmello/inquire/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/mikaelmello/inquire/compare/v0.5.0...v0.5.1

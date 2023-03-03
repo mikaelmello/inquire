@@ -201,7 +201,7 @@ impl RenderConfig {
             unselected_checkbox: Styled::new("[ ]"),
             option_index_prefix: IndexPrefix::None,
             option: StyleSheet::empty(),
-            selected_option: None,
+            selected_option: Some(StyleSheet::new().with_fg(Color::LightCyan)),
 
             #[cfg(feature = "date")]
             calendar: calendar::CalendarRenderConfig::default_colored(),
