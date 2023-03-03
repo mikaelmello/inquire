@@ -53,7 +53,7 @@ jobs:
 
           - build: msrv
             os: macOS-latest
-            rust: 1.56.0
+            rust: 1.58.1
 
           - build: beta
             os: macOS-latest
@@ -97,7 +97,7 @@ jobs:
 
           - build: msrv
             os: windows-latest
-            rust: 1.56.0
+            rust: 1.58.1
 
     steps:
       - uses: hecrj/setup-rust-action@v1
