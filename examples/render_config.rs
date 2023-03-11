@@ -149,7 +149,7 @@ fn get_existing_payees() -> &'static [&'static str] {
     ]
 }
 
-fn get_render_config() -> RenderConfig {
+fn get_render_config() -> RenderConfig<'static> {
     let mut render_config = RenderConfig::default();
     render_config.prompt_prefix = Styled::new("$").with_fg(Color::LightRed);
     render_config.highlighted_option_prefix = Styled::new("➠").with_fg(Color::LightYellow);
