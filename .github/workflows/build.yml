@@ -26,9 +26,9 @@ jobs:
       - name: Define Rust version
         run: |
           if [ "${{ matrix.build }}" = "msrv" ]; then
-            RUST_VERSION=1.58.1
+            echo '1.58.1' > $RUST_VERSION
           else
-            RUST_VERSION=${{ matrix.rust }}
+            echo '${{ matrix.build }}' > $RUST_VERSION
           fi
 
       - name: Install toolchain
@@ -58,15 +58,15 @@ jobs:
       - name: Define features
         run: |
           if [ "${{ matrix.config }}" = "termion" ]; then
-            FEATURES="--no-default-features --features=termion"
+            echo "--no-default-features --features=termion" > $FEATURES
           elif [ "${{ matrix.config }}" = "crossterm" ]; then
-            FEATURES="--no-default-features --features=crossterm"
+            echo "--no-default-features --features=crossterm" > $FEATURES
           elif [ "${{ matrix.config }}" = "console" ]; then
-            FEATURES="--no-default-features --features=console"
+            echo "--no-default-features --features=console" > $FEATURES
           elif [ "${{ matrix.config }}" = "default" ]; then
-            FEATURES=""
+            echo "" > $FEATURES
           elif [ "${{ matrix.config }}" = "all" ]; then
-            FEATURES="--all-features"
+            echo "--all-features" > $FEATURES
           fi
 
       - name: Test
