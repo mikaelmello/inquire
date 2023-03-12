@@ -65,9 +65,9 @@ jobs:
             ~/.cargo/git/db
             ./target
             ./test-target
-          key: ${{ runner.os }}-${{ matrix.build}}-cargo-files-${{ hashFiles('**/Cargo.lock', '**/Cargo.toml') }}
+          key: ${{ runner.os }}-cargo-files-${{ matrix.build}}-${{ hashFiles('**/Cargo.lock', '**/Cargo.toml') }}
           restore-keys: |
-            ${{ runner.os }}-cargo-files-
+            ${{ runner.os }}-cargo-files-${{ matrix.build}}
 
       - name: Test (default)
         run: cargo test --verbose
