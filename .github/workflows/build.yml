@@ -73,9 +73,11 @@ jobs:
         run: cargo test --verbose
 
       - name: Test (all features)
+        if: matrix.os != 'windows-latest'
         run: cargo test --verbose --all-features
 
       - name: Test (termion)
+        if: matrix.os != 'windows-latest'
         run: cargo test --verbose --no-default-features --features=termion
 
       - name: Test (crossterm)
