@@ -40,7 +40,7 @@ jobs:
         shell: powershell
         run: |
           if ("${{ matrix.build }}" -eq "msrv") {
-            "RUST_VERSION={$env:MSRV}" >> $env:GITHUB_ENV
+            "RUST_VERSION=$env:MSRV" >> $env:GITHUB_ENV
           } else {
             "RUST_VERSION=${{ matrix.build }}" >> $env:GITHUB_ENV
           }
