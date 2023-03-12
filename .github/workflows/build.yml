@@ -17,7 +17,6 @@ jobs:
       matrix:
         build: [msrv, stable, beta, nightly]
         os: ["ubuntu-latest", "macOS-latest", "windows-latest"]
-        config: ["termion", "crossterm", "console", "default", "all"]
 
     steps:
       - name: Checkout
