@@ -1,4 +1,4 @@
-name: build'n'test
+name: build
 
 # This action works with pull requests and pushes
 on:
