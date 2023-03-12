@@ -28,6 +28,9 @@ pub enum ErrorMessage {
     Custom(String),
 }
 
+// Deriving an enum default was stabilized on v1.62 which would require us
+// to bump the MSRV to 1.62.0.
+#[allow(clippy::derivable_impls)]
 impl Default for ErrorMessage {
     fn default() -> Self {
         ErrorMessage::Default
