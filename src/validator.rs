@@ -18,15 +18,20 @@ use crate::{error::CustomUserError, list_option::ListOption};
 
 /// Error message that is displayed to the users when their input is considered not
 /// valid by registered validators.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ErrorMessage {
     /// No custom message is defined, a standard one defined in the set
     /// [`RenderConfig`](crate::ui::RenderConfig) is used instead.
-    #[default]
     Default,
 
     /// Custom error message, used instead of the standard one.
     Custom(String),
+}
+
+impl Default for ErrorMessage {
+    fn default() -> Self {
+        ErrorMessage::Default
+    }
 }
 
 impl<T> From<T> for ErrorMessage
