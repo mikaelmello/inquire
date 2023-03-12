@@ -26,9 +26,9 @@ jobs:
       - name: Define Rust version
         run: |
           if [ "${{ matrix.build }}" = "msrv" ]; then
-            echo "RUST_VERSION='1.58.1'" >> $GITHUB_ENV
+            echo "RUST_VERSION=1.58.1" >> $GITHUB_ENV
           else
-            echo "RUST_VERSION='${{ matrix.build }}'" >> $GITHUB_ENV
+            echo "RUST_VERSION=${{ matrix.build }}" >> $GITHUB_ENV
           fi
 
       - name: Install toolchain
@@ -58,15 +58,15 @@ jobs:
       - name: Define features
         run: |
           if [ "${{ matrix.config }}" = "termion" ]; then
-            echo "FEATURES='--no-default-features --features=termion'" >> $GITHUB_ENV
+            echo "FEATURES=--no-default-features --features=termion" >> $GITHUB_ENV
           elif [ "${{ matrix.config }}" = "crossterm" ]; then
-            echo "FEATURES='--no-default-features --features=crossterm'" >> $GITHUB_ENV
+            echo "FEATURES=--no-default-features --features=crossterm" >> $GITHUB_ENV
           elif [ "${{ matrix.config }}" = "console" ]; then
-            echo "FEATURES='--no-default-features --features=console'" >> $GITHUB_ENV
+            echo "FEATURES=--no-default-features --features=console" >> $GITHUB_ENV
           elif [ "${{ matrix.config }}" = "default" ]; then
-            echo "FEATURES=''" >> $GITHUB_ENV
+            echo "FEATURES=" >> $GITHUB_ENV
           elif [ "${{ matrix.config }}" = "all" ]; then
-            echo "FEATURES='--all-features'" >> $GITHUB_ENV
+            echo "FEATURES=--all-features" >> $GITHUB_ENV
           fi
 
       - name: Test
