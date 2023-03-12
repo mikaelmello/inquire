@@ -40,9 +40,9 @@ jobs:
         shell: powershell
         run: |
           if ($env:matrix_build -eq "msrv") {
-            "{RUST_VERSION}={$env:MSRV}" >> $env:GITHUB_ENV
+            "RUST_VERSION={$env:MSRV}" >> $env:GITHUB_ENV
           } else {
-            "{RUST_VERSION}={$env:matrix_build}" >> $env:GITHUB_ENV
+            "RUST_VERSION={$env:matrix_build}" >> $env:GITHUB_ENV
           }
 
       - name: Install toolchain
@@ -84,24 +84,20 @@ jobs:
             echo "FEATURES=--all-features" >> $GITHUB_ENV
           fi
 
-      - name: Define features
-        if: matrix.os == 'windows-latest'
-        shell: powershell
-        run: |
-          if ($env:matrix_config -eq "termion") {
-            "{FEATURES}={--no-default-features --features=termion}" >> $env:GITHUB_ENV
-          } elseif ($env:matrix_config -eq "crossterm") {
-            "{FEATURES}={--no-default-features --features=crossterm}" >> $env:GITHUB_ENV
-          } elseif ($env:matrix_config -eq "console") {
-            "{FEATURES}={--no-default-features --features=console}" >> $env:GITHUB_ENV
-          } elseif ($env:matrix_config -eq "default") {
-            "{FEATURES}={}" >> $env:GITHUB_ENV
-          } elseif ($env:matrix_config -eq "all") {
-            "{FEATURES}={--all-features}" >> $env:GITHUB_ENV
-          }
+      - name: Test (default)
+        run: cargo test --verbose
 
-      - name: Test
-        run: cargo test --verbose ${{ env.FEATURES }}
+      - name: Test (all features)
+        run: cargo test --verbose --all-features
+
+      - name: Test (termion)
+        run: cargo test --verbose --no-default-features --features=termion
+
+      - name: Test (crossterm)
+        run: cargo test --verbose --no-default-features --features=crossterm
+
+      - name: Test (console)
+        run: cargo test --verbose --no-default-features --features=console
 
       - name: Check format
         run: cargo fmt --check
