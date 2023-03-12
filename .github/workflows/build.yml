@@ -31,7 +31,7 @@ jobs:
         run: |
           if [ "${{ matrix.build }}" = "msrv" ]; then
             echo "RUST_VERSION=${{ env.MSRV }}" >> $GITHUB_ENV
-          elsex
+          else
             echo "RUST_VERSION=${{ matrix.build }}" >> $GITHUB_ENV
           fi
 
