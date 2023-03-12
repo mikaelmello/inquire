@@ -1,5 +1,5 @@
 use core::fmt;
-use std::io::{stdin, stderr, Result, Stdin, Stderr, Write};
+use std::io::{stderr, stdin, Result, Stderr, Stdin, Write};
 
 use termion::{
     color::{self, Color},
