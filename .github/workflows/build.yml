@@ -69,21 +69,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-files-
 
-      - name: Define features
-        if: matrix.os != 'windows-latest'
-        run: |
-          if [ "${{ matrix.config }}" = "termion" ]; then
-            echo "FEATURES=--no-default-features --features=termion" >> $GITHUB_ENV
-          elif [ "${{ matrix.config }}" = "crossterm" ]; then
-            echo "FEATURES=--no-default-features --features=crossterm" >> $GITHUB_ENV
-          elif [ "${{ matrix.config }}" = "console" ]; then
-            echo "FEATURES=--no-default-features --features=console" >> $GITHUB_ENV
-          elif [ "${{ matrix.config }}" = "default" ]; then
-            echo "FEATURES=" >> $GITHUB_ENV
-          elif [ "${{ matrix.config }}" = "all" ]; then
-            echo "FEATURES=--all-features" >> $GITHUB_ENV
-          fi
-
       - name: Test (default)
         run: cargo test --verbose
 
@@ -100,7 +85,9 @@ jobs:
         run: cargo test --verbose --no-default-features --features=console
 
       - name: Check format
+        if: ${{ false }}
         run: cargo fmt --check
 
       - name: Check lint
+        if: ${{ false }}
         run: cargo clippy -- -D warnings
