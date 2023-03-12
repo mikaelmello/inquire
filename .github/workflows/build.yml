@@ -65,7 +65,7 @@ jobs:
             ~/.cargo/git/db
             ./target
             ./test-target
-          key: ${{ runner.os }}-cargo-files-${{ hashFiles('**/Cargo.lock', '**/Cargo.toml') }}
+          key: ${{ runner.os }}-${{ matrix.build}}-cargo-files-${{ hashFiles('**/Cargo.lock', '**/Cargo.toml') }}
           restore-keys: |
             ${{ runner.os }}-cargo-files-
 
