@@ -38,10 +38,10 @@ jobs:
         if: matrix.os == 'windows-latest'
         shell: powershell
         run: |
-          if ($env:matrix_build -eq "msrv") {
+          if (${{ matrix.build }} -eq "msrv") {
             "RUST_VERSION={$env:MSRV}" >> $env:GITHUB_ENV
           } else {
-            "RUST_VERSION={$env:matrix_build}" >> $env:GITHUB_ENV
+            "RUST_VERSION=${{ matrix.build }}" >> $env:GITHUB_ENV
           }
 
       - name: Install toolchain
