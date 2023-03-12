@@ -15,22 +15,6 @@ jobs:
         build: [msrv, stable, beta, nightly]
         os: ["ubuntu-latest", "macOS-latest", "windows-latest"]
         config: ["termion", "crossterm", "console", "default", "all"]
-        include:
-          - build: stable
-            os: ubuntu-latest
-            rust: stable
-
-          - build: msrv
-            os: ubuntu-18.04
-            rust: 1.58.1
-
-          - build: beta
-            os: ubuntu-latest
-            rust: beta
-
-          - build: nightly
-            os: ubuntu-latest
-            rust: nightly
 
     steps:
       - name: Checkout
@@ -42,15 +26,15 @@ jobs:
       - name: Define Rust version
         run: |
           if [ "${{ matrix.build }}" = "msrv" ]; then
-            rust_version=1.58.1
+            RUST_VERSION=1.58.1
           else
-            rust_version=${{ matrix.rust }}
+            RUST_VERSION=${{ matrix.rust }}
           fi
 
       - name: Install toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: ${{ rust_version }}
+          toolchain: ${{ env.RUST_VERSION }}
           override: true
           profile: minimal
           components: rustfmt, clippy
@@ -74,19 +58,19 @@ jobs:
       - name: Define features
         run: |
           if [ "${{ matrix.config }}" = "termion" ]; then
-            features="--no-default-features --features=termion"
+            FEATURES="--no-default-features --features=termion"
           elif [ "${{ matrix.config }}" = "crossterm" ]; then
-            features="--no-default-features --features=crossterm"
+            FEATURES="--no-default-features --features=crossterm"
           elif [ "${{ matrix.config }}" = "console" ]; then
-            features="--no-default-features --features=console"
+            FEATURES="--no-default-features --features=console"
           elif [ "${{ matrix.config }}" = "default" ]; then
-            features=""
+            FEATURES=""
           elif [ "${{ matrix.config }}" = "all" ]; then
-            features="--all-features"
+            FEATURES="--all-features"
           fi
 
       - name: Test
-        run: cargo test --verbose ${{ features }}
+        run: cargo test --verbose ${{ env.FEATURES }}
 
       - name: Check format
         run: cargo fmt --check
