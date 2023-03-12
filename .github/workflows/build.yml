@@ -40,9 +40,9 @@ jobs:
         shell: powershell
         run: |
           if ($env:matrix_build -eq "msrv") {
-            echo "RUST_VERSION=$env:MSRV" >> $env:GITHUB_ENV
+            "{RUST_VERSION}={$env:MSRV}" >> $env:GITHUB_ENV
           } else {
-            echo "RUST_VERSION=$env:matrix_build" >> $env:GITHUB_ENV
+            "{RUST_VERSION}={$env:matrix_build}" >> $env:GITHUB_ENV
           }
 
       - name: Install toolchain
@@ -89,15 +89,15 @@ jobs:
         shell: powershell
         run: |
           if ($env:matrix_config -eq "termion") {
-            echo "FEATURES=--no-default-features --features=termion" >> $env:GITHUB_ENV
+            "{FEATURES}={--no-default-features --features=termion}" >> $env:GITHUB_ENV
           } elseif ($env:matrix_config -eq "crossterm") {
-            echo "FEATURES=--no-default-features --features=crossterm" >> $env:GITHUB_ENV
+            "{FEATURES}={--no-default-features --features=crossterm}" >> $env:GITHUB_ENV
           } elseif ($env:matrix_config -eq "console") {
-            echo "FEATURES=--no-default-features --features=console" >> $env:GITHUB_ENV
+            "{FEATURES}={--no-default-features --features=console}" >> $env:GITHUB_ENV
           } elseif ($env:matrix_config -eq "default") {
-            echo "FEATURES=" >> $env:GITHUB_ENV
+            "{FEATURES}={}" >> $env:GITHUB_ENV
           } elseif ($env:matrix_config -eq "all") {
-            echo "FEATURES=--all-features" >> $env:GITHUB_ENV
+            "{FEATURES}={--all-features}" >> $env:GITHUB_ENV
           }
 
       - name: Test
