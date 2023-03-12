@@ -1,11 +1,20 @@
-name: build
-on: [push]
+name: build'n'test
+
+# This action works with pull requests and pushes
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
 jobs:
-  linux:
+  tests:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         build: [msrv, stable, beta, nightly]
+        os: ["ubuntu-latest", "macOS-latest", "windows-latest"]
+        config: ["termion", "crossterm", "console", "default", "all"]
         include:
           - build: stable
             os: ubuntu-latest
@@ -24,93 +33,63 @@ jobs:
             rust: nightly
 
     steps:
-      - uses: hecrj/setup-rust-action@v1
+      - name: Checkout
+        uses: actions/checkout@v2
         with:
-          rust-version: ${{ matrix.rust }}
-      - uses: actions/checkout@master
-      - name: Build
-        run: cargo build --verbose --all-features
-      - name: Test with no features [crossterm]
-        run: cargo test --verbose --no-default-features --features=crossterm
-      - name: Test with no features [termion]
-        run: cargo test --verbose --no-default-features --features=termion
-      - name: Test with no features [console]
-        run: cargo test --verbose --no-default-features --features=console
-      - name: Test with default features
-        run: cargo test --verbose
-      - name: Test with all features
-        run: cargo test --verbose --all-features
+          # Make sure the actual branch is checked out when running on pull requests
+          ref: ${{ github.head_ref }}
 
-  macOS:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        build: [msrv, stable, beta, nightly]
-        include:
-          - build: stable
-            os: macOS-latest
-            rust: stable
+      - name: Define Rust version
+        run: |
+          if [ "${{ matrix.build }}" = "msrv" ]; then
+            rust_version=1.58.1
+          else
+            rust_version=${{ matrix.rust }}
+          fi
 
-          - build: msrv
-            os: macOS-latest
-            rust: 1.58.1
-
-          - build: beta
-            os: macOS-latest
-            rust: beta
-
-          - build: nightly
-            os: macOS-latest
-            rust: nightly
-
-    steps:
-      - uses: hecrj/setup-rust-action@v1
+      - name: Install toolchain
+        uses: actions-rs/toolchain@v1
         with:
-          rust-version: ${{ matrix.rust }}
-      - uses: actions/checkout@master
-      - name: Build
-        run: cargo build --verbose --all-features
-      - name: Test with no features [crossterm]
-        run: cargo test --verbose --no-default-features --features=crossterm
-      - name: Test with no features [termion]
-        run: cargo test --verbose --no-default-features --features=termion
-      - name: Test with no features [console]
-        run: cargo test --verbose --no-default-features --features=console
-      - name: Test with default features
-        run: cargo test --verbose
-      - name: Test with all features
-        run: cargo test --verbose --all-features
+          toolchain: ${{ rust_version }}
+          override: true
+          profile: minimal
+          components: rustfmt, clippy
 
-  windows:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        build: [win-gnu, win-msvc, msrv]
-        include:
-          - build: win-gnu
-            os: windows-latest
-            rust: stable-x86_64-gnu
-
-          - build: win-msvc
-            os: windows-latest
-            rust: stable
-
-          - build: msrv
-            os: windows-latest
-            rust: 1.58.1
-
-    steps:
-      - uses: hecrj/setup-rust-action@v1
+      - name: Cache cargo files
+        uses: actions/cache@v2
         with:
-          rust-version: ${{ matrix.rust }}
-      - uses: actions/checkout@master
-      - name: Build with default features
-        run: cargo build --verbose
-      - name: Test with no features [crossterm]
-        run: cargo test --verbose --no-default-features --features=crossterm
-      - name: Test with no features [console]
-        run: cargo test --verbose --no-default-features --features=console
-      - name: Test with default features
-        run: cargo test --verbose
-      - name: Test with all supported features
-        run: cargo test --verbose --no-default-features --features=crossterm,date,macros
+          path: |
+            ~/.cargo/bin
+            ~/.cargo/.crates.toml
+            ~/.cargo/.crates2.json
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            ./target
+            ./test-target
+          key: ${{ runner.os }}-cargo-files-${{ hashFiles('**/Cargo.lock', '**/Cargo.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-files-
+
+      - name: Define features
+        run: |
+          if [ "${{ matrix.config }}" = "termion" ]; then
+            features="--no-default-features --features=termion"
+          elif [ "${{ matrix.config }}" = "crossterm" ]; then
+            features="--no-default-features --features=crossterm"
+          elif [ "${{ matrix.config }}" = "console" ]; then
+            features="--no-default-features --features=console"
+          elif [ "${{ matrix.config }}" = "default" ]; then
+            features=""
+          elif [ "${{ matrix.config }}" = "all" ]; then
+            features="--all-features"
+          fi
+
+      - name: Test
+        run: cargo test --verbose ${{ features }}
+
+      - name: Check format
+        run: cargo fmt --check
+
+      - name: Check lint
+        run: cargo clippy -- -D warnings
