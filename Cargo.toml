@@ -36,7 +36,7 @@ thiserror = "1"
 bitflags = "1"
 dyn-clone = "1"
 lazy_static = "1.4"
-newline-converter = "0.2"
+newline-converter = "0.3"
 
 unicode-segmentation = "1"
 unicode-width = "0.1"
