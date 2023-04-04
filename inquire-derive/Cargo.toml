@@ -1,7 +1,7 @@
 [package]
 name = "inquire-derive"
 version = "0.6.1"
-description = "" # TODO
+description = "inquire-derive helps inquire integration and maintenance" # TODO
 publish = false # TODO
 repository = "https://github.com/mikaelmello/inquire"
 license = "MIT"
@@ -9,7 +9,7 @@ edition = "2021"
 readme = "./CRATE_README.md"
 documentation = "https://docs.rs/inquire"
 homepage = "https://github.com/mikaelmello/inquire"
-authors = ["Walter Bonetti <bonettiw@amotus.ca>", "Mikael Mello <git@mikaelmello.com>"]
+authors = ["Walter Bonetti <walter.bonetti@epitech.eu>", "Mikael Mello <git@mikaelmello.com>"]
 keywords = ["cli", "ask", "prompt", "question", "interactive"]
 categories = ["command-line-interface", "value-formatting"]
 include = ["./src", "../LICENSE"]
@@ -18,7 +18,21 @@ include = ["./src", "../LICENSE"]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
+[lib]
+name = "inquire_derive"
+proc-macro = true
+
 [dependencies]
+proc-macro2 = "1.0"
+quote = "1.0"
+syn = "1.0.90"
+darling = "0.14.1"
 
 [dev-dependencies]
-inquire = { path = "../inquire" }
+inquire = { version = "0.4" }
+
+# Fit with inquire features
+[features]
+default = ["date", "editor"]
+date = []
+editor = []

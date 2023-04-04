@@ -1,0 +1,67 @@
+[package]
+name = "inquire-test"
+version = "0.6.1"
+description = "inquire-test helps to test inquire-derive"
+publish = false # do not publish tests
+repository = "https://github.com/mikaelmello/inquire"
+license = "MIT"
+edition = "2021"
+readme = "./CRATE_README.md"
+documentation = "https://docs.rs/inquire"
+homepage = "https://github.com/mikaelmello/inquire"
+authors = ["Walter Bonetti <walter.bonetti@epitech.eu>", "Mikael Mello <git@mikaelmello.com>"]
+keywords = ["cli", "ask", "prompt", "question", "interactive"]
+categories = ["command-line-interface", "value-formatting"]
+include = ["./src", "../LICENSE"]
+
+[dependencies]
+inquire = { version = "0.4", features = ["date", "editor"] }
+chrono = { version = "0.4" }
+
+[dev-dependencies]
+inquire = { version = "0.4" }
+inquire-derive = { path = "../inquire-derive" }
+
+[[example]]
+name = "derive_skip"
+path = "example/skip.rs"
+
+[[example]]
+name = "derive_text"
+path = "example/text.rs"
+
+[[example]]
+name = "derive_select"
+path = "example/select.rs"
+
+[[example]]
+name = "derive_confirm"
+path = "example/confirm.rs"
+
+[[example]]
+name = "derive_password"
+path = "example/password.rs"
+
+[[example]]
+name = "derive_date_select"
+path = "example/date_select.rs"
+
+[[example]]
+name = "derive_multi_select"
+path = "example/multi_select.rs"
+
+[[example]]
+name = "derive_demo"
+path = "example/demo.rs"
+
+[[example]]
+name = "derive_editor"
+path = "example/editor.rs"
+
+[[example]]
+name = "derive_custom_type"
+path = "example/custom_type.rs"
+
+[[example]]
+name = "derive_form"
+path = "example/form.rs"

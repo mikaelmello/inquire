@@ -2,4 +2,5 @@
 members = [
     "inquire",
     "inquire-derive",
+    "inquire-test"
 ]
