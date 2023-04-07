@@ -4,7 +4,7 @@ on:
   - pull_request
 
 jobs:
-  build:
+  check:
     runs-on: ubuntu-latest
 
     steps:
@@ -12,11 +12,9 @@ jobs:
         id: fetch_comments
         run: |
           PR_COMMENTS=$( \
-            echo $( \
-              curl -sSL -H "Authorization: token check" \
+            curl -sSL -H "Authorization: token check" \
               -H "Accept: application/vnd.github.v3+json" \
               https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments \
-            ) \
             | jq -c \
             | base64 \
           )
