@@ -16,7 +16,7 @@ jobs:
               -H "Accept: application/vnd.github.v3+json" \
               https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments \
             | jq -c \
-            | base64 \
+            | base64 -w 0 \
           )
           echo $PR_COMMENTS
           cat $GITHUB_ENV
