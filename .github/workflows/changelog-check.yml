@@ -31,8 +31,8 @@ jobs:
           echo $COMMENTS | readarray -t comments
 
           CHECK_CHANGELOG=true
-          # iterate through the Bash array
-          for item in "${my_array[@]}"; do
+
+          for item in "${comments[@]}"; do
             author_association=$(jq --raw-output '.author_association' <<< "$item")
             body=$(jq --raw-output '.body' <<< "$item")
             
