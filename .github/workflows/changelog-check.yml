@@ -2,9 +2,11 @@ name: CHANGELOG Check
 
 on:
   - pull_request
+  - issue_comment
 
 jobs:
   check:
+    if: ${{ github.event.issue.pull_request }}
     runs-on: ubuntu-latest
 
     steps:
