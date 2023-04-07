@@ -28,11 +28,12 @@ jobs:
       - name: Check if CHANGELOG is not required
         run: |
           COMMENTS=$(echo ${{ env.PR_COMMENTS }} | base64 --decode)
-          readarray -t comments < <(jq -r '.[]' <<<"$COMMENTS")
-          declare -p comments
 
+          readarray -t comments < <(jq -c '.[]' <<<"$COMMENTS")
+          IFS=$'\n' #read til newline
           CHECK_CHANGELOG=true
 
+          echo $COMMENTS
           echo $comments
           for item in "${comments[@]}"; do
             author_association=$(jq --raw-output '.author_association' <<< "$item")
