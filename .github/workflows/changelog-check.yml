@@ -35,7 +35,11 @@ jobs:
           for item in "${my_array[@]}"; do
             author_association=$(jq --raw-output '.author_association' <<< "$item")
             body=$(jq --raw-output '.body' <<< "$item")
-            # do your stuff
+            
+            echo "author_association=$author_association"
+            echo "body=$body"
+            echo "item=$item"
+            echo "CHECK_CHANGELOG=$CHECK_CHANGELOG"
 
             if [[ "$author_association" == "OWNER" || "$author_association" == "COLLABORATOR" ]]; then
               # if body is no-changelog, set var to false, else if body is require-changelog, set var to true.
