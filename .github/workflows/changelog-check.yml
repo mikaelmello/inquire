@@ -5,28 +5,6 @@ on:
   issue_comment:
 
 jobs:
-  branch-ref:
-    runs-on: ubuntu-latest
-    outputs:
-      head_ref: ${{ env.HEAD_REF }}
-    steps:
-      - name: Init PR branch action
-        id: branch-ref
-        if: ${{ github.event.issue.pull_request }}
-        uses: xt0rted/pull-request-comment-branch@v1
-
-      - name: Set env var when on issue
-        if: ${{ github.event.issue.pull_request }}
-        run: ""
-        env:
-          HEAD_REF: ${{ steps.branch-ref.outputs.head_ref }}
-
-      - name: Get PR branch on PR sync
-        if: ${{ github.event_name == 'pull_request' }}
-        run: ""
-        env:
-          HEAD_REF: ${{ github.head_ref }}
-
   on-pr-sync:
     if: ${{ github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
@@ -64,90 +42,28 @@ jobs:
             echo "status=skip" >> $GITHUB_OUTPUT
           fi
 
-      - uses: actions/checkout@v3
-        if: steps.command-check.outputs.status != 'skip'
-        with:
-          fetch-depth: 0
-
-      - name: Checkout PR branch
-        if: ${{ github.event.issue.pull_request }}
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ steps.comment-branch.outputs.head_ref }}
-
-      # Example 1
-      - name: Get changed files
-        if: steps.command-check.outputs.status != 'skip'
-        id: changed-files
-        uses: tj-actions/changed-files@v35
-
-      # Example 2
-      - name: Get changed files in the docs folder
-        if: steps.command-check.outputs.status != 'skip'
-        id: changelog-changed
-        uses: tj-actions/changed-files@v35
-        with:
-          files: CHANGELOG.md
-
-      - name: Fail workflow if CHANGELOG.md has not been changed
-        if: steps.command-check.outputs.status != 'skip' && steps.changelog-changed.outputs.any_changed == 'false'
-        run: |
-          echo "CHANGELOG.md has not been changed"
-          exit 1
-
-  on-pr-sync:
-    if: (${{ github.event.issue.pull_request }} || ${{ github.event_name == 'pull_request' }})
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Check if CHANGELOG is not required
-        id: command-check
-        run: |
-          PR_COMMENTS=$( \
-            curl -sSL -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-              -H "Accept: application/vnd.github.v3+json" \
-              https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments \
-          )
-
-          readarray -t comments < <(jq -c '.[]' <<<"$PR_COMMENTS")
-          IFS=$'\n' #read til newline
-          CHECK_CHANGELOG=true
-
-          for item in "${comments[@]}"; do
-            author_association=$(jq --raw-output '.author_association' <<< "$item")
-            body=$(jq --raw-output '.body' <<< "$item")
-            
-            if [[ "$author_association" == "OWNER" || "$author_association" == "COLLABORATOR" ]]; then
-              # if body is no-changelog, set var to false, else if body is require-changelog, set var to true.
-              if [[ "$body" == "/no-changelog" ]]; then
-                CHECK_CHANGELOG=false
-              elif [[ "$body" == "/require-changelog" ]]; then
-                CHECK_CHANGELOG=true
-              fi
-            fi
-          done
-
-          if [[ "$CHECK_CHANGELOG" == "false" ]]; then
-            echo "No CHANGELOG required"
-            echo "status=skip" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Get PR branch
-        if: ${{ github.event.issue.pull_request }} and steps.command-check.outputs.status != 'skip'
+      - name: Init PR branch action
+        id: branch-ref
+        if: ${{ github.event.issue.pull_request }} && steps.command-check.outputs.status != 'skip'
         uses: xt0rted/pull-request-comment-branch@v1
-        id: comment-branch
+
+      - name: Set env var when on issue
+        if: ${{ github.event.issue.pull_request }} && steps.command-check.outputs.status != 'skip'
+        run: ""
+        env:
+          HEAD_REF: ${{ steps.branch-ref.outputs.head_ref }}
+
+      - name: Get PR branch on PR sync
+        if: ${{ github.event_name == 'pull_request' }} && steps.command-check.outputs.status != 'skip'
+        run: ""
+        env:
+          HEAD_REF: ${{ github.head_ref }}
 
       - uses: actions/checkout@v3
         if: steps.command-check.outputs.status != 'skip'
         with:
           fetch-depth: 0
-          ref: ${{ steps.comment-branch.outputs.head_ref }}
-
-      - name: Checkout PR branch
-        if: ${{ github.event.issue.pull_request }}
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ steps.comment-branch.outputs.head_ref }}
+          ref: ${{ env.HEAD_REF }}
 
       # Example 1
       - name: Get changed files
