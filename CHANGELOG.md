@@ -4,7 +4,7 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
-- No changes since the latest release below.
+- No changes since the latest release below.xx
 
 ## [0.6.0] - 2023-03-03
 
@@ -251,7 +251,7 @@ The library is already featureful enough to warrant a higher version number, bum
 
 <!-- next-url -->
 
-[Unreleased]: https://github.com/mikaelmello/inquire/compare/v0.6.0...HEAD
+[unreleased]: https://github.com/mikaelmello/inquire/compare/v0.6.0...HEAD
 [unreleased]: https://github.com/mikaelmello/inquire/compare/v0.5.3...v0.6.0
 [unreleased]: https://github.com/mikaelmello/inquire/compare/v0.5.2...v0.5.3
 [0.5.2]: https://github.com/mikaelmello/inquire/compare/v0.5.1...v0.5.2
