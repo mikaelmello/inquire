@@ -209,9 +209,7 @@ where
     ) -> Result<()> {
         let empty_prefix = Styled::new(" ");
 
-        let page_cursor_relative_index = page.cursor.map(|c| c.relative_index);
-
-        let x = if page_cursor_relative_index == Some(option_relative_index) {
+        let x = if page.cursor == Some(option_relative_index) {
             self.render_config.highlighted_option_prefix
         } else if option_relative_index == 0 && !page.first {
             self.render_config.scroll_up_prefix
@@ -226,12 +224,13 @@ where
 
     fn print_option_value<D: Display>(
         &mut self,
+        option_relative_index: usize,
         option: &ListOption<D>,
         page: &Page<ListOption<D>>,
     ) -> Result<()> {
         let stylesheet = if let Some(selected_option_style) = self.render_config.selected_option {
             match page.cursor {
-                Some(cursor) if cursor.absolute_index == option.index => selected_option_style,
+                Some(cursor) if cursor == option_relative_index => selected_option_style,
                 _ => self.render_config.option,
             }
         } else {
@@ -464,7 +463,7 @@ where
             self.print_option_prefix(idx, &page)?;
 
             self.terminal.write(" ")?;
-            self.print_option_value(option, &page)?;
+            self.print_option_value(idx, option, &page)?;
 
             self.new_line()?;
         }
@@ -512,7 +511,7 @@ where
                 self.terminal.write(" ")?;
             }
 
-            self.print_option_value(option, &page)?;
+            self.print_option_value(idx, option, &page)?;
 
             self.new_line()?;
         }
@@ -550,9 +549,7 @@ where
             };
 
             match (self.render_config.selected_option, page.cursor) {
-                (Some(stylesheet), Some(cursor)) if cursor.absolute_index == option.index => {
-                    checkbox.style = stylesheet
-                }
+                (Some(stylesheet), Some(cursor)) if cursor == idx => checkbox.style = stylesheet,
                 _ => {}
             }
 
@@ -560,7 +557,7 @@ where
 
             self.terminal.write(" ")?;
 
-            self.print_option_value(option, &page)?;
+            self.print_option_value(idx, option, &page)?;
 
             self.new_line()?;
         }
