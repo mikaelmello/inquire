@@ -38,7 +38,7 @@ jobs:
 
           if [[ "$CHECK_CHANGELOG" == "false" ]]; then
             echo "No CHANGELOG required"
-            exit 0
+            echo "status=skip" >> $GITHUB_OUTPUT
           fi
 
       - uses: actions/checkout@v3
