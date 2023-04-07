@@ -14,9 +14,9 @@ jobs:
         id: pr-number
         run: |
           if [ "${{ github.event_name }}" = "issue_comment" ]; then
-            PR_NUMBER=${{ github.event.issue.pull_request.number }}
+            PR_NUMBER=${{ github.event.issue.pull_request.head.ref }}
           else
-            PR_NUMBER=${{ github.event.pull_request.number }}
+            PR_NUMBER=${{ github.event.pull_request.head.ref }}
           fi
 
           echo "PR_NUMBER=$PR_NUMBER" >> $GITHUB_ENV
