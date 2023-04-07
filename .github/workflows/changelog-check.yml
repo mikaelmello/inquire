@@ -18,7 +18,7 @@ jobs:
             | jq -c \
             | base64 \
           )
-          echo "PR_COMMENTS=$PR_COMMENTS" >> $GITHUB_ENV
+          echo "PR_COMMENTS='$PR_COMMENTS'" >> $GITHUB_ENV
 
       - name: Check if CHANGELOG is not required
         run: |
