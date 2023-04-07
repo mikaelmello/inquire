@@ -32,9 +32,9 @@ jobs:
             
             if [[ "$author_association" == "OWNER" || "$author_association" == "COLLABORATOR" ]]; then
               # if body is no-changelog, set var to false, else if body is require-changelog, set var to true.
-              if [[ "$body" == "/no-changelog" ]]; then
+              if [[ "$body" == *"/no-changelog"* ]]; then
                 CHECK_CHANGELOG=false
-              elif [[ "$body" == "/require-changelog" ]]; then
+              elif [[ "$body" == *"/require-changelog"* ]]; then
                 CHECK_CHANGELOG=true
               fi
             fi
