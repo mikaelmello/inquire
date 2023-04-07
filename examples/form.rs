@@ -20,7 +20,7 @@ fn main() -> InquireResult<()> {
 
     let languages = vec![
         "C++",
-        "Rust",
+        "Rust  ",
         "C",
         "Python",
         "Java",
