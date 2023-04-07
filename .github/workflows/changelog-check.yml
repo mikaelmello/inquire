@@ -36,11 +36,10 @@ jobs:
             fi
           done
 
-          echo $COMMENTS
-
-          echo $CHECK_CHANGELOG
-
-          echo "CHECK_CHANGELOG=$CHECK_CHANGELOG" >> $GITHUB_ENV
+          if [[ "$CHECK_CHANGELOG" == "false" ]]; then
+            echo "No CHANGELOG required"
+            exit 0
+          fi
 
       - name: Checkout code
         uses: actions/checkout@v2
