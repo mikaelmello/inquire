@@ -4,7 +4,7 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
-- No changes since the latest release below.xx
+- No changes since the latest release below.
 
 ## [0.6.0] - 2023-03-03
 
