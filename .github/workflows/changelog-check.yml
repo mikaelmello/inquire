@@ -10,40 +10,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Fetch PR Comments
-        id: fetch_comments
+      - name: Check if CHANGELOG is not required
         run: |
           PR_COMMENTS=$( \
             curl -sSL -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
               -H "Accept: application/vnd.github.v3+json" \
               https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments \
-            | jq -c \
-            | base64 -w 0 \
           )
-          echo $PR_COMMENTS
-          cat $GITHUB_ENV
-          echo "PR_COMMENTS='$PR_COMMENTS'"
-          echo "PR_COMMENTS='$PR_COMMENTS'" >> $GITHUB_ENV
 
-      - name: Check if CHANGELOG is not required
-        run: |
-          COMMENTS=$(echo ${{ env.PR_COMMENTS }} | base64 --decode)
-
-          readarray -t comments < <(jq -c '.[]' <<<"$COMMENTS")
+          readarray -t comments < <(jq -c '.[]' <<<"$PR_COMMENTS")
           IFS=$'\n' #read til newline
           CHECK_CHANGELOG=true
 
-          echo $COMMENTS
-          echo $comments
           for item in "${comments[@]}"; do
             author_association=$(jq --raw-output '.author_association' <<< "$item")
             body=$(jq --raw-output '.body' <<< "$item")
             
-            echo "author_association=$author_association"
-            echo "body=$body"
-            echo "item=$item"
-            echo "CHECK_CHANGELOG=$CHECK_CHANGELOG"
-
             if [[ "$author_association" == "OWNER" || "$author_association" == "COLLABORATOR" ]]; then
               # if body is no-changelog, set var to false, else if body is require-changelog, set var to true.
               if [[ "$body" == "/no-changelog" ]]; then
