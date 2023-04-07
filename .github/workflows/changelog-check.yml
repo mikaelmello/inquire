@@ -26,7 +26,7 @@ jobs:
       - name: Check if CHANGELOG is not required
         run: |
           COMMENTS=$(echo ${{ env.PR_COMMENTS }} | base64 --decode | jq -c '.[]')
-          readarray -t comments < <$COMMENTS
+          echo $COMMENTS | readarray -t comments
 
           CHECK_CHANGELOG=true
           # iterate through the Bash array
