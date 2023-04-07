@@ -2,17 +2,20 @@
 
 use std::fmt::Debug;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Cursor {
-    pub relative_index: usize,
-    pub absolute_index: usize,
-}
-
 pub struct Page<'a, T> {
+    /// Whether this is the first page.
     pub first: bool,
+
+    /// Whether this is the last page.
     pub last: bool,
+
+    /// Content of the page.
     pub content: &'a [T],
-    pub cursor: Option<Cursor>,
+
+    /// If a cursor exists on the original list, this is the index of the new cursor relative to the output list of choices, the page.
+    pub cursor: Option<usize>,
+
+    /// Total amount of elements in the original list of choices.
     pub total: usize,
 }
 
@@ -21,20 +24,20 @@ pub fn paginate<T>(page_size: usize, choices: &[T], sel: Option<usize>) -> Page<
     // in practice, the same as selecting the 0 index.
 
     let (start, end, cursor) = if choices.len() <= page_size {
-        (0, choices.len(), sel.map(Cursor::same))
+        (0, choices.len(), sel)
     } else if let Some(index) = sel {
         if index < page_size / 2 {
             // if we are in the first half page
             let start = 0;
             let end = page_size;
-            let cursor = Some(Cursor::same(index));
+            let cursor = Some(index);
 
             (start, end, cursor)
         } else if choices.len() - index - 1 < page_size / 2 {
             // if we are in the last half page
             let start = choices.len() - page_size;
             let end = choices.len();
-            let cursor = Some(Cursor::new(index - start, index));
+            let cursor = Some(index - start);
 
             (start, end, cursor)
         } else {
@@ -44,7 +47,7 @@ pub fn paginate<T>(page_size: usize, choices: &[T], sel: Option<usize>) -> Page<
 
             let start = index - above;
             let end = index + below;
-            let cursor = Some(Cursor::new(page_size / 2, index));
+            let cursor = Some(page_size / 2);
 
             (start, end, cursor)
         }
@@ -53,7 +56,7 @@ pub fn paginate<T>(page_size: usize, choices: &[T], sel: Option<usize>) -> Page<
         let start = 0;
         let end = page_size;
 
-        (start, end, sel.map(Cursor::same))
+        (start, end, sel)
     };
 
     Page {
@@ -62,22 +65,6 @@ pub fn paginate<T>(page_size: usize, choices: &[T], sel: Option<usize>) -> Page<
         content: &choices[start..end],
         cursor,
         total: choices.len(),
-    }
-}
-
-impl Cursor {
-    fn new(relative_index: usize, absolute_index: usize) -> Cursor {
-        Cursor {
-            relative_index,
-            absolute_index,
-        }
-    }
-
-    fn same(idx: usize) -> Cursor {
-        Cursor {
-            relative_index: idx,
-            absolute_index: idx,
-        }
     }
 }
 
@@ -103,7 +90,7 @@ mod test {
 
     use crate::{
         list_option::ListOption,
-        utils::{int_log10, paginate, Cursor},
+        utils::{int_log10, paginate},
     };
 
     #[test]
@@ -135,7 +122,7 @@ mod test {
         let page = paginate(page_size, &choices, sel);
 
         assert_eq!(choices[..], page.content[..]);
-        assert_eq!(Some(Cursor::new(3usize, 3)), page.cursor);
+        assert_eq!(Some(3usize), page.cursor);
         assert_eq!(true, page.first);
         assert_eq!(true, page.last);
         assert_eq!(3, page.total);
@@ -167,7 +154,7 @@ mod test {
         let page = paginate(page_size, &choices, sel);
 
         assert_eq!(choices[0..4], page.content[..]);
-        assert_eq!(Some(Cursor::new(2, 2)), page.cursor);
+        assert_eq!(Some(2), page.cursor);
         assert_eq!(true, page.first);
         assert_eq!(false, page.last);
         assert_eq!(6, page.total);
@@ -199,7 +186,7 @@ mod test {
         let page = paginate(page_size, &choices, sel);
 
         assert_eq!(choices[2..4], page.content[..]);
-        assert_eq!(Some(Cursor::new(1, 3)), page.cursor);
+        assert_eq!(Some(1), page.cursor);
         assert_eq!(false, page.first);
         assert_eq!(false, page.last);
         assert_eq!(6, page.total);
@@ -231,7 +218,7 @@ mod test {
         let page = paginate(page_size, &choices, sel);
 
         assert_eq!(choices[3..6], page.content[..]);
-        assert_eq!(Some(Cursor::new(2, 5)), page.cursor);
+        assert_eq!(Some(2), page.cursor);
         assert_eq!(false, page.first);
         assert_eq!(true, page.last);
         assert_eq!(6, page.total);
