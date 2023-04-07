@@ -44,17 +44,17 @@ jobs:
 
       - name: Init PR branch action
         id: branch-ref
-        if: steps.command-check.outputs.status != 'skip' && ${{ github.event.issue.pull_request }}
+        if: steps.command-check.outputs.status != 'skip' && github.event.issue.pull_request
         uses: xt0rted/pull-request-comment-branch@v1
 
       - name: Set env var when on issue
-        if: steps.command-check.outputs.status != 'skip' && ${{ github.event.issue.pull_request }}
+        if: steps.command-check.outputs.status != 'skip' && github.event.issue.pull_request
         run: ""
         env:
           HEAD_REF: ${{ steps.branch-ref.outputs.head_ref }}
 
       - name: Get PR branch on PR sync
-        if: steps.command-check.outputs.status != 'skip' && ${{ github.event_name == 'pull_request' }}
+        if: steps.command-check.outputs.status != 'skip' && github.event_name == 'pull_request'
         run: ""
         env:
           HEAD_REF: ${{ github.head_ref }}
