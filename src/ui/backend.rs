@@ -74,7 +74,7 @@ pub struct Position {
     pub col: u16,
 }
 
-pub struct Backend<T>
+pub struct Backend<'a, T>
 where
     T: Terminal,
 {
@@ -85,14 +85,14 @@ where
     show_cursor: bool,
     terminal: T,
     terminal_size: TerminalSize,
-    render_config: RenderConfig,
+    render_config: RenderConfig<'a>,
 }
 
-impl<T> Backend<T>
+impl<'a, T> Backend<'a, T>
 where
     T: Terminal,
 {
-    pub fn new(terminal: T, render_config: RenderConfig) -> Result<Self> {
+    pub fn new(terminal: T, render_config: RenderConfig<'a>) -> Result<Self> {
         let terminal_size = terminal.get_size().unwrap_or(TerminalSize {
             width: 1000,
             height: 1000,
@@ -348,7 +348,7 @@ where
     }
 }
 
-impl<T> CommonBackend for Backend<T>
+impl<'a, T> CommonBackend for Backend<'a, T>
 where
     T: Terminal,
 {
@@ -445,7 +445,7 @@ where
     }
 }
 
-impl<T> TextBackend for Backend<T>
+impl<'a, T> TextBackend for Backend<'a, T>
 where
     T: Terminal,
 {
@@ -473,7 +473,7 @@ where
 }
 
 #[cfg(feature = "editor")]
-impl<T> EditorBackend for Backend<T>
+impl<'a, T> EditorBackend for Backend<'a, T>
 where
     T: Terminal,
 {
@@ -492,7 +492,7 @@ where
     }
 }
 
-impl<T> SelectBackend for Backend<T>
+impl<'a, T> SelectBackend for Backend<'a, T>
 where
     T: Terminal,
 {
@@ -520,7 +520,7 @@ where
     }
 }
 
-impl<T> MultiSelectBackend for Backend<T>
+impl<'a, T> MultiSelectBackend for Backend<'a, T>
 where
     T: Terminal,
 {
@@ -592,7 +592,7 @@ pub mod date {
         ) -> Result<()>;
     }
 
-    impl<T> DateSelectBackend for Backend<T>
+    impl<'a, T> DateSelectBackend for Backend<'a, T>
     where
         T: Terminal,
     {
@@ -716,7 +716,7 @@ pub mod date {
     }
 }
 
-impl<T> CustomTypeBackend for Backend<T>
+impl<'a, T> CustomTypeBackend for Backend<'a, T>
 where
     T: Terminal,
 {
@@ -730,7 +730,7 @@ where
     }
 }
 
-impl<T> PasswordBackend for Backend<T>
+impl<'a, T> PasswordBackend for Backend<'a, T>
 where
     T: Terminal,
 {
@@ -755,7 +755,7 @@ where
     }
 }
 
-impl<T> Drop for Backend<T>
+impl<'a, T> Drop for Backend<'a, T>
 where
     T: Terminal,
 {

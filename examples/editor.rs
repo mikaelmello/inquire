@@ -26,7 +26,7 @@ fn main() -> InquireResult<()> {
     Ok(())
 }
 
-fn description_render_config() -> RenderConfig {
+fn description_render_config() -> RenderConfig<'static> {
     RenderConfig::default()
         .with_canceled_prompt_indicator(Styled::new("<skipped>").with_fg(Color::DarkYellow))
 }
