@@ -4,6 +4,10 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
+### Breaking Changes
+
+- Allow lifetime customization of RenderConfig. [#101](https://github.com/mikaelmello/inquire/pull/101). Thanks to @arturfast for the suggestion [#95](https://github.com/mikaelmello/inquire/issues/95).
+
 ## [0.6.1] - 2023-04-08
 
 - Fix incorrect highlighting of lists when filtered. [#110](https://github.com/mikaelmello/inquire/pull/110). Thanks to [@prime31](https://github.com/prime31) for reporting on [#106](https://github.com/mikaelmello/inquire/issues/106).
