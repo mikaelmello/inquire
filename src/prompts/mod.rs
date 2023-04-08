@@ -12,6 +12,7 @@ mod password;
 mod select;
 mod text;
 
+pub use crate::config::KeymapMode;
 pub use confirm::Confirm;
 pub use custom_type::CustomType;
 #[cfg(feature = "date")]

@@ -25,5 +25,16 @@ pub fn set_global_render_config(config: RenderConfig<'static>) {
 /// Default page size when displaying options to the user.
 pub const DEFAULT_PAGE_SIZE: usize = 7;
 
-/// Default value of vim mode.
-pub const DEFAULT_VIM_MODE: bool = false;
+#[derive(Debug, Clone, Copy, PartialEq)]
+/// Specifies the keymap mode to use when navigating prompts.
+pub enum KeymapMode {
+    /// No keybindings are enabled
+    None,
+    /// Vim keybindings (hjkl) are enabled
+    Vim,
+    /// Emacs keybindings (C-p, C-n, C-f, C-b) are enabled
+    Emacs,
+}
+
+/// Default value of keymap mode.
+pub const DEFAULT_KEYMAP_MODE: KeymapMode = KeymapMode::None;
