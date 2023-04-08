@@ -6,15 +6,16 @@
   "configurations": [
     {
       "type": "lldb",
+      "request": "attach",
+      "pid": "${command:pickProcess}",
+      "name": "Debug running process"
+    },
+    {
+      "type": "lldb",
       "request": "launch",
       "name": "Debug unit tests in library 'inquire'",
       "cargo": {
-        "args": [
-          "test",
-          "--no-run",
-          "--lib",
-          "--package=inquire"
-        ],
+        "args": ["test", "--no-run", "--lib", "--package=inquire"],
         "filter": {
           "name": "inquire",
           "kind": "lib"
@@ -28,11 +29,7 @@
       "request": "launch",
       "name": "Debug example 'multiselect'",
       "cargo": {
-        "args": [
-          "build",
-          "--example=multiselect",
-          "--package=inquire"
-        ],
+        "args": ["build", "--example=multiselect", "--package=inquire"],
         "filter": {
           "name": "multiselect",
           "kind": "example"
@@ -46,11 +43,7 @@
       "request": "launch",
       "name": "Debug example 'text_simple'",
       "cargo": {
-        "args": [
-          "build",
-          "--example=text_simple",
-          "--package=inquire"
-        ],
+        "args": ["build", "--example=text_simple", "--package=inquire"],
         "filter": {
           "name": "text_simple",
           "kind": "example"
