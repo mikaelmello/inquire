@@ -4,7 +4,13 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
+### Features
+
 - Allow lifetime customization of RenderConfig. [#101](https://github.com/mikaelmello/inquire/pull/101). Thanks to @arturfast for the suggestion [#95](https://github.com/mikaelmello/inquire/issues/95).
+
+### Dependency changes (some breaking)
+
+- Upgraded underlying `crossterm` crate from v0.25 to v0.26.
 
 ## [0.6.1] - 2023-04-08
 
