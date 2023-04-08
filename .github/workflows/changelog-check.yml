@@ -5,18 +5,29 @@ on:
   issue_comment:
 
 jobs:
-  on-pr-sync:
-    if: ${{ github.event_name == 'pull_request' }}
+  changelog-check:
+    if: github.event_name == 'pull_request' || github.event.issue.pull_request
     runs-on: ubuntu-latest
 
     steps:
+      - name: PR number
+        id: pr-number
+        run: |
+          if [ "${{ github.event_name }}" = "issue_comment" ]; then
+            PR_NUMBER=${{ github.event.issue.number }}
+          else
+            PR_NUMBER=${{ github.event.pull_request.number }}
+          fi
+
+          echo "PR_NUMBER=$PR_NUMBER" >> $GITHUB_ENV
+
       - name: Check if CHANGELOG is not required
         id: command-check
         run: |
           PR_COMMENTS=$( \
             curl -sSL -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
               -H "Accept: application/vnd.github.v3+json" \
-              https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments \
+              https://api.github.com/repos/${{ github.repository }}/issues/${{ env.PR_NUMBER }}/comments \
           )
 
           readarray -t comments < <(jq -c '.[]' <<<"$PR_COMMENTS")
@@ -45,28 +56,11 @@ jobs:
             echo "status=skip" >> $GITHUB_OUTPUT
           fi
 
-      - name: Init PR branch action
-        id: branch-ref
-        if: steps.command-check.outputs.status != 'skip' && github.event.issue.pull_request
-        uses: xt0rted/pull-request-comment-branch@v1
-
-      - name: Set env var when on issue
-        if: steps.command-check.outputs.status != 'skip' && github.event.issue.pull_request
-        run: ""
-        env:
-          HEAD_REF: ${{ steps.branch-ref.outputs.head_ref }}
-
-      - name: Get PR branch on PR sync
-        if: steps.command-check.outputs.status != 'skip' && github.event_name == 'pull_request'
-        run: ""
-        env:
-          HEAD_REF: ${{ github.head_ref }}
-
       - uses: actions/checkout@v3
         if: steps.command-check.outputs.status != 'skip'
         with:
           fetch-depth: 0
-          ref: ${{ env.HEAD_REF }}
+          ref: refs/pull/${{ env.PR_NUMBER }}/head
 
       # Example 1
       - name: Get changed files
