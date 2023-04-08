@@ -4,8 +4,6 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
-### Breaking Changes
-
 - Allow lifetime customization of RenderConfig. [#101](https://github.com/mikaelmello/inquire/pull/101). Thanks to @arturfast for the suggestion [#95](https://github.com/mikaelmello/inquire/issues/95).
 
 ## [0.6.1] - 2023-04-08
