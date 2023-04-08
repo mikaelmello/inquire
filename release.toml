@@ -1,8 +1,6 @@
 allow-branch = ["main"]
 enable-all-features = true
 
-pre-release-commit-message = "chore: release v{{version}}"
-
 pre-release-replacements = [
   {file="README.md", search="inquire = \".*\"", replace="{{crate_name}} = \"{{version}}\""},
   {file="README.md", search="inquire = \\{ version = \"[\\.0-9]*\"", replace="{{crate_name}} = { version = \"{{version}}\""},
