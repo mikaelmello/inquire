@@ -19,27 +19,27 @@ jobs:
           echo "CHANGELOG_REQUIRED=false" >> $GITHUB_ENV
 
       - uses: actions/checkout@v3
-        if: env.CHANGELOG_REQUIRED
+        if: fromJSON(env.CHANGELOG_REQUIRED)
         with:
           fetch-depth: 0
           ref: ${{ github.head_ref }}
 
       # Example 1
       - name: Get changed files
-        if: env.CHANGELOG_REQUIRED
+        if: fromJSON(env.CHANGELOG_REQUIRED)
         id: changed-files
         uses: tj-actions/changed-files@v35
 
       # Example 2
       - name: Get changed files in the docs folder
-        if: env.CHANGELOG_REQUIRED
+        if: fromJSON(env.CHANGELOG_REQUIRED)
         id: changelog-changed
         uses: tj-actions/changed-files@v35
         with:
           files: CHANGELOG.md
 
       - name: Fail workflow if CHANGELOG.md has not been changed
-        if: env.CHANGELOG_REQUIRED && steps.changelog-changed.outputs.any_changed == 'false'
+        if: fromJSON(env.CHANGELOG_REQUIRED) && steps.changelog-changed.outputs.any_changed == 'false'
         run: |
           echo "CHANGELOG.md has not been changed"
           exit 1
