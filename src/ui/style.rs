@@ -21,6 +21,7 @@ bitflags! {
     /// assert!(attributes.contains(Attributes::BOLD));
     /// assert!(attributes.contains(Attributes::ITALIC));
     /// ```
+    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
     pub struct Attributes: u8 {
         /// Increases the text intensity
         const BOLD   = 0b01;
