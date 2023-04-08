@@ -20,18 +20,18 @@ use super::{Color, StyleSheet, Styled};
 /// let mine = default.with_prompt_prefix(prompt_prefix);
 /// ```
 #[derive(Copy, Clone, Debug)]
-pub struct RenderConfig {
+pub struct RenderConfig<'a> {
     /// Prefix added before prompts.
     ///
     /// Note: a space character will be added to separate the prefix
     /// and the prompt message.
-    pub prompt_prefix: Styled<&'static str>,
+    pub prompt_prefix: Styled<&'a str>,
 
     /// Prefix added before answered prompts.
     ///
     /// Note: a space character will be added to separate the prefix
     /// and the prompt message.
-    pub answered_prompt_prefix: Styled<&'static str>,
+    pub answered_prompt_prefix: Styled<&'a str>,
 
     /// Style of the prompt message, applicable to all prompt types.
     pub prompt: StyleSheet,
@@ -79,44 +79,44 @@ pub struct RenderConfig {
     ///
     /// Note: a non-styled space character is added before the indicator as
     /// a separator from the prompt message.
-    pub canceled_prompt_indicator: Styled<&'static str>,
+    pub canceled_prompt_indicator: Styled<&'a str>,
 
     /// Render configuration for error messages.
-    pub error_message: ErrorMessageRenderConfig,
+    pub error_message: ErrorMessageRenderConfig<'a>,
 
     /// Prefix for the current highlighted option.
     ///
     /// Note: a space character will be added to separate the prefix
     /// and the option value or the checkbox.
-    pub highlighted_option_prefix: Styled<&'static str>,
+    pub highlighted_option_prefix: Styled<&'a str>,
 
     /// Prefix for the option listed at the top of the page, when it is possible
     /// to scroll up.
     ///
     /// Note: a space character will be added to separate the prefix
     /// and the option value or the checkbox.
-    pub scroll_up_prefix: Styled<&'static str>,
+    pub scroll_up_prefix: Styled<&'a str>,
 
     /// Prefix for the option listed at the bottom of the page, when it is possible
     /// to scroll down.
     ///
     /// Note: a space character will be added to separate the prefix
     /// and the option value or the checkbox.
-    pub scroll_down_prefix: Styled<&'static str>,
+    pub scroll_down_prefix: Styled<&'a str>,
 
     /// Selected checkbox in multi-select options.
     ///
     /// Note: a space character will be added to separate the checkbox
     /// from a possible prefix, and to separate the checkbox from the
     /// option value to the right.
-    pub selected_checkbox: Styled<&'static str>,
+    pub selected_checkbox: Styled<&'a str>,
 
     /// Unselected checkbox in multi-select options.
     ///
     /// Note: a space character will be added to separate the checkbox
     /// from a possible prefix, and to separate the checkbox from the
     /// option value to the right.
-    pub unselected_checkbox: Styled<&'static str>,
+    pub unselected_checkbox: Styled<&'a str>,
 
     /// Definition of index prefixes in option lists.
     pub option_index_prefix: IndexPrefix,
@@ -138,7 +138,7 @@ pub struct RenderConfig {
 
     #[cfg(feature = "date")]
     /// Render configuration for date prompts`
-    pub calendar: calendar::CalendarRenderConfig,
+    pub calendar: calendar::CalendarRenderConfig<'a>,
 
     /// Style sheet of the hint in editor prompts.
     ///
@@ -148,7 +148,7 @@ pub struct RenderConfig {
     pub editor_prompt: StyleSheet,
 }
 
-impl RenderConfig {
+impl<'a> RenderConfig<'a> {
     /// RenderConfig in which no colors or attributes are applied.
     pub fn empty() -> Self {
         Self {
@@ -212,7 +212,7 @@ impl RenderConfig {
     }
 
     /// Sets the prompt prefix and its style sheet.
-    pub fn with_prompt_prefix(mut self, prompt_prefix: Styled<&'static str>) -> Self {
+    pub fn with_prompt_prefix(mut self, prompt_prefix: Styled<&'a str>) -> Self {
         self.prompt_prefix = prompt_prefix;
         self
     }
@@ -242,7 +242,7 @@ impl RenderConfig {
     }
 
     /// Sets the render configuration for error messages.
-    pub fn with_error_message(mut self, error_message: ErrorMessageRenderConfig) -> Self {
+    pub fn with_error_message(mut self, error_message: ErrorMessageRenderConfig<'a>) -> Self {
         self.error_message = error_message;
         self
     }
@@ -250,32 +250,32 @@ impl RenderConfig {
     /// Sets the styled component for prefixes in highlighted options.
     pub fn with_highlighted_option_prefix(
         mut self,
-        highlighted_option_prefix: Styled<&'static str>,
+        highlighted_option_prefix: Styled<&'a str>,
     ) -> Self {
         self.highlighted_option_prefix = highlighted_option_prefix;
         self
     }
 
     /// Sets the styled component for prefixes in scroll-up indicators.
-    pub fn with_scroll_up_prefix(mut self, scroll_up_prefix: Styled<&'static str>) -> Self {
+    pub fn with_scroll_up_prefix(mut self, scroll_up_prefix: Styled<&'a str>) -> Self {
         self.scroll_up_prefix = scroll_up_prefix;
         self
     }
 
     /// Sets the styled component for prefixes in scroll-down indicators.
-    pub fn with_scroll_down_prefix(mut self, scroll_down_prefix: Styled<&'static str>) -> Self {
+    pub fn with_scroll_down_prefix(mut self, scroll_down_prefix: Styled<&'a str>) -> Self {
         self.scroll_down_prefix = scroll_down_prefix;
         self
     }
 
     /// Sets the styled component for selected checkboxes.
-    pub fn with_selected_checkbox(mut self, selected_checkbox: Styled<&'static str>) -> Self {
+    pub fn with_selected_checkbox(mut self, selected_checkbox: Styled<&'a str>) -> Self {
         self.selected_checkbox = selected_checkbox;
         self
     }
 
     /// Sets the styled component for unselected checkboxes.
-    pub fn with_unselected_checkbox(mut self, unselected_checkbox: Styled<&'static str>) -> Self {
+    pub fn with_unselected_checkbox(mut self, unselected_checkbox: Styled<&'a str>) -> Self {
         self.unselected_checkbox = unselected_checkbox;
         self
     }
@@ -301,7 +301,7 @@ impl RenderConfig {
     /// Sets the indicator for canceled prompts.
     pub fn with_canceled_prompt_indicator(
         mut self,
-        canceled_prompt_indicator: Styled<&'static str>,
+        canceled_prompt_indicator: Styled<&'a str>,
     ) -> Self {
         self.canceled_prompt_indicator = canceled_prompt_indicator;
         self
@@ -309,7 +309,7 @@ impl RenderConfig {
 
     #[cfg(feature = "date")]
     /// Sets the render configuration for calendars.
-    pub fn with_calendar_config(mut self, calendar: calendar::CalendarRenderConfig) -> Self {
+    pub fn with_calendar_config(mut self, calendar: calendar::CalendarRenderConfig<'a>) -> Self {
         self.calendar = calendar;
         self
     }
@@ -322,7 +322,7 @@ impl RenderConfig {
     }
 }
 
-impl Default for RenderConfig {
+impl<'a> Default for RenderConfig<'a> {
     fn default() -> Self {
         match env::var("NO_COLOR") {
             Ok(_) => Self::empty(),
@@ -369,9 +369,9 @@ pub enum IndexPrefix {
 
 /// Render configuration for error messages.
 #[derive(Copy, Clone, Debug)]
-pub struct ErrorMessageRenderConfig {
+pub struct ErrorMessageRenderConfig<'a> {
     /// Prefix style.
-    pub prefix: Styled<&'static str>,
+    pub prefix: Styled<&'a str>,
 
     /// Separator style.
     ///
@@ -383,10 +383,10 @@ pub struct ErrorMessageRenderConfig {
     pub message: StyleSheet,
 
     /// Default message used for validators that do not defined custom error messages.
-    pub default_message: &'static str,
+    pub default_message: &'a str,
 }
 
-impl ErrorMessageRenderConfig {
+impl<'a> ErrorMessageRenderConfig<'a> {
     /// Render configuration in which no colors or attributes are applied.
     pub fn empty() -> Self {
         Self {
@@ -408,7 +408,7 @@ impl ErrorMessageRenderConfig {
     }
 
     /// Sets the prefix.
-    pub fn with_prefix(mut self, prefix: Styled<&'static str>) -> Self {
+    pub fn with_prefix(mut self, prefix: Styled<&'a str>) -> Self {
         self.prefix = prefix;
         self
     }
@@ -437,9 +437,9 @@ pub mod calendar {
 
     /// Calendar configuration for error messages.
     #[derive(Copy, Clone, Debug)]
-    pub struct CalendarRenderConfig {
+    pub struct CalendarRenderConfig<'a> {
         /// Prefix style.
-        pub prefix: Styled<&'static str>,
+        pub prefix: Styled<&'a str>,
 
         /// Style sheet for the calendar header, e.g. january 2021.
         pub header: StyleSheet,
@@ -469,7 +469,7 @@ pub mod calendar {
         pub unavailable_date: StyleSheet,
     }
 
-    impl CalendarRenderConfig {
+    impl<'a> CalendarRenderConfig<'a> {
         /// Render configuration in which no colors or attributes are applied.
         pub fn empty() -> Self {
             Self {
@@ -501,7 +501,7 @@ pub mod calendar {
         }
 
         /// Sets the prefix.
-        pub fn with_prefix(mut self, prefix: Styled<&'static str>) -> Self {
+        pub fn with_prefix(mut self, prefix: Styled<&'a str>) -> Self {
             self.prefix = prefix;
             self
         }

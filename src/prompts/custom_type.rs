@@ -109,7 +109,7 @@ pub struct CustomType<'a, T> {
     /// When overriding the config in a prompt, NO_COLOR is no longer considered and your
     /// config is treated as the only source of truth. If you want to customize colors
     /// and still suport NO_COLOR, you will have to do this on your end.
-    pub render_config: RenderConfig,
+    pub render_config: RenderConfig<'a>,
 }
 
 impl<'a, T> CustomType<'a, T>
@@ -228,7 +228,7 @@ where
     /// When overriding the config in a prompt, NO_COLOR is no longer considered and your
     /// config is treated as the only source of truth. If you want to customize colors
     /// and still suport NO_COLOR, you will have to do this on your end.
-    pub fn with_render_config(mut self, render_config: RenderConfig) -> Self {
+    pub fn with_render_config(mut self, render_config: RenderConfig<'a>) -> Self {
         self.render_config = render_config;
         self
     }
