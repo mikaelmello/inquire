@@ -6,7 +6,7 @@ on:
 
 env:
   CHANGELOG_REQUIRED: true
-  IGNORE_CHECK_LABEL: no-changelog
+  IGNORE_CHECK_LABEL: allow-no-changelog
 
 jobs:
   changelog-check:
