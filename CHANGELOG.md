@@ -11,6 +11,7 @@
 ### Dependency changes (some breaking)
 
 - Upgraded underlying `crossterm` crate from v0.25 to v0.26.
+- Upgraded underlying `bitflags` from v1 to v2, which affects the `Attributes` and `KeyModifiers` crates. If you use any of bitflag's methods directly, you might be affected, refer to the [bitflags changelog](https://github.com/bitflags/bitflags/releases/tag/2.0.0) for more information.
 
 ## [0.6.1] - 2023-04-08
 
