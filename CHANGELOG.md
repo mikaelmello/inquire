@@ -4,6 +4,12 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
+### Breaking changes
+
+- Upgraded underlying `bitflags` from v1 to v2, which affects the `Attributes` and `KeyModifiers` crates. If you use any of bitflag's methods directly, you might be affected, refer to the [bitflags changelog](https://github.com/bitflags/bitflags/releases/tag/2.0.0) for more information.
+
+### Features
+
 - Allow lifetime customization of RenderConfig. [#101](https://github.com/mikaelmello/inquire/pull/101). Thanks to @arturfast for the suggestion [#95](https://github.com/mikaelmello/inquire/issues/95).
 
 ## [0.6.1] - 2023-04-08
