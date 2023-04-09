@@ -1,0 +1,13 @@
+pre-release-replacements = [
+  {file="../README.md", search="inquire = \".*\"", replace="inquire = \"{{version}}\""},
+  {file="../README.md", search="inquire = \\{ version = \"[\\.0-9]*\"", replace="inquire = { version = \"{{version}}\""},
+  {file="CRATE_README.md", search="inquire = \".*\"", replace="inquire = \"{{version}}\""},
+  {file="CRATE_README.md", search="inquire = \\{ version = \"[\\.0-9]*\"", replace="inquire = { version = \"{{version}}\""},
+
+  {file="../CHANGELOG.md", search="unreleased", replace="{{version}}"},
+  {file="../CHANGELOG.md", search="Unreleased", replace="{{version}}"},
+  {file="../CHANGELOG.md", search="\\.\\.\\.HEAD", replace="...{{tag_name}}", exactly=1},
+  {file="../CHANGELOG.md", search="<!-- ReleaseDate -->", replace="- {{date}}"},
+  {file="../CHANGELOG.md", search="<!-- next-header -->\n", replace="<!-- next-header -->\n\n## [Unreleased] <!-- ReleaseDate -->\n\n- No changes since the latest release below.\n", exactly=1},
+  {file="../CHANGELOG.md", search="<!-- next-url -->\n", replace="<!-- next-url -->\n\n[unreleased]: https://github.com/mikaelmello/inquire/compare/{{tag_name}}...HEAD", exactly=1},
+]
