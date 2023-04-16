@@ -15,7 +15,7 @@ use crate::{
     DateSelect, InquireError,
 };
 
-use super::{actions::DateSelectPromptAction, config::DateSelectConfig};
+use super::{action::DateSelectPromptAction, config::DateSelectConfig};
 
 pub struct DateSelectPrompt<'a> {
     message: &'a str,
@@ -144,8 +144,8 @@ where
         Ok(answer)
     }
 
-    fn handle(&mut self, action: DateSelectPromptAction) -> HandleResult {
-        match action {
+    fn handle(&mut self, action: DateSelectPromptAction) -> InquireResult<HandleResult> {
+        let result = match action {
             DateSelectPromptAction::GoToPrevWeek => self.shift_date(Duration::weeks(-1)),
             DateSelectPromptAction::GoToNextWeek => self.shift_date(Duration::weeks(1)),
             DateSelectPromptAction::GoToPrevDay => self.shift_date(Duration::days(-1)),
@@ -154,7 +154,9 @@ where
             DateSelectPromptAction::GoToNextYear => self.shift_months(12),
             DateSelectPromptAction::GoToPrevMonth => self.shift_months(-1),
             DateSelectPromptAction::GoToNextMonth => self.shift_months(1),
-        }
+        };
+
+        Ok(result)
     }
 
     fn render(&self, backend: &mut B) -> InquireResult<()> {

@@ -12,7 +12,7 @@ use crate::{
     InquireError, Select,
 };
 
-use super::{actions::SelectPromptAction, config::SelectConfig};
+use super::{action::SelectPromptAction, config::SelectConfig};
 
 pub struct SelectPrompt<'a, T> {
     message: &'a str,
@@ -154,8 +154,8 @@ where
         Ok(answer)
     }
 
-    fn handle(&mut self, action: SelectPromptAction) -> HandleResult {
-        match action {
+    fn handle(&mut self, action: SelectPromptAction) -> InquireResult<HandleResult> {
+        let result = match action {
             SelectPromptAction::MoveUp => self.move_cursor_up(1, true),
             SelectPromptAction::MoveDown => self.move_cursor_down(1, true),
             SelectPromptAction::PageUp => self.move_cursor_up(self.config.page_size, false),
@@ -176,7 +176,9 @@ where
 
                 result
             }
-        }
+        };
+
+        Ok(result)
     }
 
     fn render(&self, backend: &mut B) -> InquireResult<()> {

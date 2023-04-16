@@ -19,7 +19,7 @@ path = "src/lib.rs"
 doctest = true
 
 [features]
-default = ["macros", "crossterm"]
+default = ["macros", "crossterm", "editor"]
 macros = []
 date = ["chrono"]
 editor = ["tempfile"]

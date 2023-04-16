@@ -1,4 +1,4 @@
-pub mod actions;
+pub mod action;
 pub mod config;
 mod prompt;
 #[cfg(test)]

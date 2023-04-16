@@ -49,7 +49,7 @@ where
     }
 
     fn submit(&mut self) -> InquireResult<Option<ReturnType>>;
-    fn handle(&mut self, action: IAction) -> HandleResult;
+    fn handle(&mut self, action: IAction) -> InquireResult<HandleResult>;
     fn render(&self, backend: &mut Backend) -> InquireResult<()>;
 
     fn prompt(mut self, backend: &mut Backend) -> InquireResult<ReturnType> {
@@ -88,7 +88,7 @@ where
                         HandleResult::Dirty
                     }
                     Action::Interrupt => return Err(InquireError::OperationInterrupted),
-                    Action::Inner(inner_action) => self.handle(inner_action),
+                    Action::Inner(inner_action) => self.handle(inner_action)?,
                 };
             }
         };

@@ -113,10 +113,12 @@ where
         Ok(answer)
     }
 
-    fn handle(&mut self, action: CustomTypePromptAction) -> HandleResult {
-        match action {
+    fn handle(&mut self, action: CustomTypePromptAction) -> InquireResult<HandleResult> {
+        let result = match action {
             CustomTypePromptAction::ValueInput(input_action) => self.input.handle(input_action),
-        }
+        };
+
+        Ok(result)
     }
 
     fn render(&self, backend: &mut B) -> InquireResult<()> {

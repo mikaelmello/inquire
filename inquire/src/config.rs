@@ -25,5 +25,4 @@ pub fn set_global_render_config(config: RenderConfig<'static>) {
 /// Default page size when displaying options to the user.
 pub const DEFAULT_PAGE_SIZE: usize = 7;
 
-/// Default value of vim mode.
 pub const DEFAULT_VIM_MODE: bool = false;

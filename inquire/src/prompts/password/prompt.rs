@@ -8,7 +8,7 @@ use crate::{
     InquireError, Password, PasswordDisplayMode,
 };
 
-use super::{actions::PasswordPromptAction, config::PasswordConfig};
+use super::{action::PasswordPromptAction, config::PasswordConfig};
 
 // Helper type for representing the password confirmation flow.
 struct PasswordConfirmation<'a> {
@@ -185,13 +185,15 @@ where
         Ok(answer)
     }
 
-    fn handle(&mut self, action: PasswordPromptAction) -> HandleResult {
-        match action {
+    fn handle(&mut self, action: PasswordPromptAction) -> InquireResult<HandleResult> {
+        let result = match action {
             PasswordPromptAction::ValueInput(input_action) => {
                 self.active_input_mut().handle(input_action)
             }
             PasswordPromptAction::ToggleDisplayMode => self.toggle_display_mode(),
-        }
+        };
+
+        Ok(result)
     }
 
     fn render(&self, backend: &mut B) -> InquireResult<()> {

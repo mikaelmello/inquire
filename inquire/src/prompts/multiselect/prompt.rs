@@ -13,7 +13,7 @@ use crate::{
     InquireError, MultiSelect,
 };
 
-use super::{actions::MultiSelectPromptAction, config::MultiSelectConfig};
+use super::{action::MultiSelectPromptAction, config::MultiSelectConfig};
 
 pub struct MultiSelectPrompt<'a, T> {
     message: &'a str,
@@ -213,8 +213,8 @@ where
         Ok(answer)
     }
 
-    fn handle(&mut self, action: MultiSelectPromptAction) -> HandleResult {
-        match action {
+    fn handle(&mut self, action: MultiSelectPromptAction) -> InquireResult<HandleResult> {
+        let result = match action {
             MultiSelectPromptAction::MoveUp => self.move_cursor_up(1, true),
             MultiSelectPromptAction::MoveDown => self.move_cursor_down(1, true),
             MultiSelectPromptAction::PageUp => self.move_cursor_up(self.config.page_size, false),
@@ -259,7 +259,9 @@ where
 
                 result
             }
-        }
+        };
+
+        Ok(result)
     }
 
     fn render(&self, backend: &mut B) -> InquireResult<()> {
