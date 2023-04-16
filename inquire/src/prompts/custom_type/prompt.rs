@@ -115,7 +115,9 @@ where
 
     fn handle(&mut self, action: CustomTypePromptAction) -> InquireResult<HandleResult> {
         let result = match action {
-            CustomTypePromptAction::ValueInput(input_action) => self.input.handle(input_action),
+            CustomTypePromptAction::ValueInput(input_action) => {
+                self.input.handle(input_action).into()
+            }
         };
 
         Ok(result)

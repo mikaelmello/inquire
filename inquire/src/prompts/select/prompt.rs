@@ -3,7 +3,7 @@ use std::fmt::Display;
 use crate::{
     error::InquireResult,
     formatter::OptionFormatter,
-    input::Input,
+    input::{Input, InputHandleResult},
     list_option::ListOption,
     prompt::{HandleResult, Prompt},
     type_aliases::Filter,
@@ -107,7 +107,7 @@ where
     fn update_cursor_position(&mut self, new_position: usize) -> HandleResult {
         if new_position != self.cursor_index {
             self.cursor_index = new_position;
-            HandleResult::Dirty
+            HandleResult::NeedsRedraw
         } else {
             HandleResult::Clean
         }
@@ -165,7 +165,7 @@ where
             SelectPromptAction::FilterInput(input_action) => {
                 let result = self.input.handle(input_action);
 
-                if let HandleResult::Dirty = result {
+                if let InputHandleResult::ContentChanged = result {
                     let options = self.filter_options();
                     self.filtered_options = options;
                     if self.filtered_options.len() <= self.cursor_index {
@@ -174,7 +174,7 @@ where
                     }
                 }
 
-                result
+                result.into()
             }
         };
 

@@ -1,12 +1,13 @@
 use crate::{
     error::InquireResult,
+    input::InputHandleResult,
     ui::{Action, CommonBackend, InnerAction},
     InquireError,
 };
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum HandleResult {
-    Dirty,
+    NeedsRedraw,
     Clean,
 }
 
@@ -14,15 +15,25 @@ impl HandleResult {
     pub fn join(self, other: HandleResult) -> HandleResult {
         match (self, other) {
             (HandleResult::Clean, HandleResult::Clean) => HandleResult::Clean,
-            (_, _) => HandleResult::Dirty,
+            (_, _) => HandleResult::NeedsRedraw,
         }
     }
 
     pub fn from_bool_cmp(val: bool) -> HandleResult {
         if val {
-            HandleResult::Dirty
+            HandleResult::NeedsRedraw
         } else {
             HandleResult::Clean
+        }
+    }
+}
+
+impl From<InputHandleResult> for HandleResult {
+    fn from(value: InputHandleResult) -> Self {
+        if value.needs_redraw() {
+            Self::NeedsRedraw
+        } else {
+            Self::Clean
         }
     }
 }
@@ -55,9 +66,9 @@ where
     fn prompt(mut self, backend: &mut Backend) -> InquireResult<ReturnType> {
         self.setup()?;
 
-        let mut last_handle = HandleResult::Dirty;
+        let mut last_handle = HandleResult::NeedsRedraw;
         let final_answer = loop {
-            if let HandleResult::Dirty = last_handle {
+            if let HandleResult::NeedsRedraw = last_handle {
                 backend.frame_setup()?;
                 self.render(backend)?;
                 backend.frame_finish()?;
@@ -85,7 +96,7 @@ where
                             return Err(InquireError::OperationCanceled);
                         }
 
-                        HandleResult::Dirty
+                        HandleResult::NeedsRedraw
                     }
                     Action::Interrupt => return Err(InquireError::OperationInterrupted),
                     Action::Inner(inner_action) => self.handle(inner_action)?,

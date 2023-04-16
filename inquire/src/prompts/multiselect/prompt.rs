@@ -3,7 +3,7 @@ use std::{collections::BTreeSet, fmt::Display};
 use crate::{
     error::InquireResult,
     formatter::MultiOptionFormatter,
-    input::Input,
+    input::{Input, InputHandleResult},
     list_option::ListOption,
     prompt::{HandleResult, Prompt},
     type_aliases::Filter,
@@ -120,7 +120,7 @@ where
     fn update_cursor_position(&mut self, new_position: usize) -> HandleResult {
         if new_position != self.cursor_index {
             self.cursor_index = new_position;
-            HandleResult::Dirty
+            HandleResult::NeedsRedraw
         } else {
             HandleResult::Clean
         }
@@ -142,7 +142,7 @@ where
             self.input.clear();
         }
 
-        HandleResult::Dirty
+        HandleResult::NeedsRedraw
     }
 
     fn validate_current_answer(&self) -> InquireResult<Validation> {
@@ -234,7 +234,7 @@ where
                     self.input.clear();
                 }
 
-                HandleResult::Dirty
+                HandleResult::NeedsRedraw
             }
             MultiSelectPromptAction::ClearSelections => {
                 self.checked.clear();
@@ -243,12 +243,12 @@ where
                     self.input.clear();
                 }
 
-                HandleResult::Dirty
+                HandleResult::NeedsRedraw
             }
             MultiSelectPromptAction::FilterInput(input_action) => {
                 let result = self.input.handle(input_action);
 
-                if let HandleResult::Dirty = result {
+                if let InputHandleResult::ContentChanged = result {
                     let options = self.filter_options();
                     self.filtered_options = options;
                     if self.filtered_options.len() <= self.cursor_index {
@@ -257,7 +257,7 @@ where
                     }
                 }
 
-                result
+                result.into()
             }
         };
 

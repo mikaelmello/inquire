@@ -1,6 +1,3 @@
-#[macro_use]
-pub(crate) mod prompt_common;
-
 mod confirm;
 mod custom_type;
 #[cfg(feature = "date")]

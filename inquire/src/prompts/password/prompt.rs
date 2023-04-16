@@ -188,7 +188,7 @@ where
     fn handle(&mut self, action: PasswordPromptAction) -> InquireResult<HandleResult> {
         let result = match action {
             PasswordPromptAction::ValueInput(input_action) => {
-                self.active_input_mut().handle(input_action)
+                self.active_input_mut().handle(input_action).into()
             }
             PasswordPromptAction::ToggleDisplayMode => self.toggle_display_mode(),
         };

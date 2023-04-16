@@ -1,9 +1,6 @@
 use unicode_segmentation::UnicodeSegmentation;
 
-use crate::{
-    prompt::HandleResult,
-    ui::{InnerAction, Key, KeyModifiers},
-};
+use crate::ui::{InnerAction, Key, KeyModifiers};
 
 #[derive(Clone, Debug)]
 pub struct Input {
@@ -35,6 +32,23 @@ pub enum InputAction {
     Delete(Magnitude, LineDirection),
     MoveCursor(Magnitude, LineDirection),
     Write(char),
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum InputHandleResult {
+    ContentChanged,
+    PositionChanged,
+    Clean,
+}
+
+impl InputHandleResult {
+    pub fn needs_redraw(&self) -> bool {
+        match self {
+            InputHandleResult::ContentChanged => true,
+            InputHandleResult::PositionChanged => true,
+            InputHandleResult::Clean => false,
+        }
+    }
 }
 
 impl InputAction {
@@ -137,18 +151,7 @@ impl Input {
         self.placeholder.as_deref()
     }
 
-    #[deprecated]
-    pub fn handle_key(&mut self, key: Key) -> bool {
-        let action = InputAction::from_key(key, &());
-
-        if let Some(action) = action {
-            return self.handle(action) == HandleResult::Dirty;
-        }
-
-        false
-    }
-
-    pub fn handle(&mut self, action: InputAction) -> HandleResult {
+    pub fn handle(&mut self, action: InputAction) -> InputHandleResult {
         match action {
             InputAction::MoveCursor(mag, dir) => match dir {
                 LineDirection::Left => self.move_left(mag),
@@ -196,9 +199,9 @@ impl Input {
         }
     }
 
-    fn move_left(&mut self, mag: Magnitude) -> HandleResult {
+    fn move_left(&mut self, mag: Magnitude) -> InputHandleResult {
         if self.cursor == 0 {
-            return HandleResult::Clean;
+            return InputHandleResult::Clean;
         }
 
         match mag {
@@ -207,12 +210,12 @@ impl Input {
             Magnitude::Line => self.cursor = 0,
         }
 
-        HandleResult::Dirty
+        InputHandleResult::PositionChanged
     }
 
-    fn move_right(&mut self, mag: Magnitude) -> HandleResult {
+    fn move_right(&mut self, mag: Magnitude) -> InputHandleResult {
         match self.cursor.cmp(&self.length) {
-            std::cmp::Ordering::Equal => HandleResult::Clean,
+            std::cmp::Ordering::Equal => InputHandleResult::Clean,
             std::cmp::Ordering::Less => {
                 match mag {
                     Magnitude::Char => self.cursor = self.cursor.saturating_add(1),
@@ -220,11 +223,11 @@ impl Input {
                     Magnitude::Line => self.cursor = self.length,
                 }
 
-                HandleResult::Dirty
+                InputHandleResult::PositionChanged
             }
             std::cmp::Ordering::Greater => {
                 self.cursor = self.length;
-                HandleResult::Dirty
+                InputHandleResult::PositionChanged
             }
         }
     }
@@ -268,7 +271,7 @@ impl Input {
         0
     }
 
-    fn insert(&mut self, c: char) -> HandleResult {
+    fn insert(&mut self, c: char) -> InputHandleResult {
         let at = self.cursor;
 
         if at >= self.length {
@@ -276,7 +279,7 @@ impl Input {
             if self.update_length() {
                 self.cursor = self.cursor.saturating_add(1);
             }
-            return HandleResult::Dirty;
+            return InputHandleResult::ContentChanged;
         }
 
         let mut result = String::new();
@@ -292,12 +295,12 @@ impl Input {
             self.cursor = self.cursor.saturating_add(1);
         }
 
-        HandleResult::Dirty
+        InputHandleResult::ContentChanged
     }
 
-    fn backwards_delete(&mut self, mag: Magnitude) -> HandleResult {
+    fn backwards_delete(&mut self, mag: Magnitude) -> InputHandleResult {
         if self.cursor == 0 {
-            return HandleResult::Clean;
+            return InputHandleResult::Clean;
         }
 
         let cur_cursor_pos = self.cursor;
@@ -308,14 +311,14 @@ impl Input {
         };
 
         if new_cursor_pos == cur_cursor_pos {
-            return HandleResult::Clean;
+            return InputHandleResult::Clean;
         }
 
         self.cursor = new_cursor_pos;
         self.delete_chars_at_right(cur_cursor_pos - new_cursor_pos)
     }
 
-    fn forwards_delete(&mut self, mag: Magnitude) -> HandleResult {
+    fn forwards_delete(&mut self, mag: Magnitude) -> InputHandleResult {
         let start = self.cursor;
         let end = match mag {
             Magnitude::Char => start.saturating_add(1),
@@ -328,20 +331,20 @@ impl Input {
         self.delete_chars_at_right(len)
     }
 
-    fn delete_chars_at_right(&mut self, qty: usize) -> HandleResult {
+    fn delete_chars_at_right(&mut self, qty: usize) -> InputHandleResult {
         let start = self.cursor;
         let end = start.saturating_add(qty);
 
         let mut new_content: String = String::new();
         let mut length = 0;
-        let mut result = HandleResult::Clean;
+        let mut result = InputHandleResult::Clean;
 
         for (index, grapheme) in self.content[..].graphemes(true).enumerate() {
             if index < start || index >= end {
                 length += 1;
                 new_content.push_str(grapheme);
             } else {
-                result = HandleResult::Dirty;
+                result = InputHandleResult::ContentChanged;
             }
         }
 
@@ -365,7 +368,7 @@ mod test {
     use unicode_segmentation::UnicodeSegmentation;
 
     use super::Input;
-    use crate::ui::{Key, KeyModifiers};
+    use crate::input::{InputAction, InputHandleResult, LineDirection, Magnitude};
 
     #[test]
     fn move_previous_word() {
@@ -374,10 +377,16 @@ mod test {
         let assert = |expected, initial| {
             let mut input = Input::new_with(content).with_cursor(initial);
 
-            let dirty = input.handle_key(Key::Left(KeyModifiers::CONTROL));
-            assert_eq!(expected != initial, dirty,
-                "dirty '{}' is not equal to expected '{}' because of initial and expected cursors '{}' and '{}'",
-                dirty, expected != initial, initial, expected);
+            let result = input.handle(InputAction::MoveCursor(
+                Magnitude::Word,
+                LineDirection::Left,
+            ));
+            let cursor_moved = result == InputHandleResult::ContentChanged
+                || result == InputHandleResult::PositionChanged;
+
+            assert_eq!(expected != initial, cursor_moved,
+                "cursor_moved '{}' is not equal to expected '{}' because of initial and expected cursors '{}' and '{}'",
+                cursor_moved, expected != initial, initial, expected);
             assert_eq!(
                 expected,
                 input.cursor(),

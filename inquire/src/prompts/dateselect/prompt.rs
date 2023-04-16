@@ -96,7 +96,7 @@ impl<'a> DateSelectPrompt<'a> {
             self.current_date = min(self.current_date, max_date);
         }
 
-        HandleResult::Dirty
+        HandleResult::NeedsRedraw
     }
 
     fn validate_current_answer(&self) -> InquireResult<Validation> {

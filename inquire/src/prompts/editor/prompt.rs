@@ -132,7 +132,7 @@ where
         match action {
             EditorPromptAction::OpenEditor => {
                 self.run_editor()?;
-                Ok(HandleResult::Dirty)
+                Ok(HandleResult::NeedsRedraw)
             }
         }
     }
