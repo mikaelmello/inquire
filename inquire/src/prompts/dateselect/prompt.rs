@@ -9,7 +9,7 @@ use crate::{
     date_utils::{get_current_date, get_month},
     error::InquireResult,
     formatter::DateFormatter,
-    prompt::{HandleResult, PromptTrait},
+    prompt::{HandleResult, Prompt},
     ui::date::DateSelectBackend,
     validator::{DateValidator, ErrorMessage, Validation},
     DateSelect, InquireError,
@@ -116,8 +116,7 @@ impl<'a> DateSelectPrompt<'a> {
     }
 }
 
-impl<'a, B> PromptTrait<B, DateSelectConfig, DateSelectPromptAction, NaiveDate>
-    for DateSelectPrompt<'a>
+impl<'a, B> Prompt<B, DateSelectConfig, DateSelectPromptAction, NaiveDate> for DateSelectPrompt<'a>
 where
     B: DateSelectBackend,
 {

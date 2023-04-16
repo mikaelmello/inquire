@@ -1,4 +1,3 @@
-#[cfg(feature = "crossterm")]
 use crate::{
     date_utils::get_current_date,
     terminal::crossterm::CrosstermTerminal,

@@ -1,16 +1,24 @@
+pub mod actions;
+pub mod config;
+mod prompt;
+#[cfg(test)]
+#[cfg(feature = "crossterm")]
+mod test;
+
 use std::fmt::Display;
 
 use crate::{
-    config::{self, get_configuration},
+    config::get_configuration,
     error::{InquireError, InquireResult},
     formatter::OptionFormatter,
-    input::Input,
     list_option::ListOption,
+    prompt::Prompt,
     terminal::get_default_terminal,
     type_aliases::Filter,
-    ui::{Backend, Key, KeyModifiers, RenderConfig, SelectBackend},
-    utils::paginate,
+    ui::{Backend, RenderConfig, SelectBackend},
 };
+
+use self::prompt::SelectPrompt;
 
 /// Prompt suitable for when you need the user to select one option among many.
 ///
@@ -141,10 +149,10 @@ where
     };
 
     /// Default page size.
-    pub const DEFAULT_PAGE_SIZE: usize = config::DEFAULT_PAGE_SIZE;
+    pub const DEFAULT_PAGE_SIZE: usize = 7;
 
     /// Default value of vim mode.
-    pub const DEFAULT_VIM_MODE: bool = config::DEFAULT_VIM_MODE;
+    pub const DEFAULT_VIM_MODE: bool = false;
 
     /// Default starting cursor index.
     pub const DEFAULT_STARTING_CURSOR: usize = 0;
@@ -264,285 +272,5 @@ where
         backend: &mut B,
     ) -> InquireResult<ListOption<T>> {
         SelectPrompt::new(self)?.prompt(backend)
-    }
-}
-
-struct SelectPrompt<'a, T> {
-    message: &'a str,
-    options: Vec<T>,
-    string_options: Vec<String>,
-    filtered_options: Vec<usize>,
-    help_message: Option<&'a str>,
-    vim_mode: bool,
-    cursor_index: usize,
-    page_size: usize,
-    input: Input,
-    filter: Filter<'a, T>,
-    formatter: OptionFormatter<'a, T>,
-}
-
-impl<'a, T> SelectPrompt<'a, T>
-where
-    T: Display,
-{
-    fn new(so: Select<'a, T>) -> InquireResult<Self> {
-        if so.options.is_empty() {
-            return Err(InquireError::InvalidConfiguration(
-                "Available options can not be empty".into(),
-            ));
-        }
-
-        if so.starting_cursor >= so.options.len() {
-            return Err(InquireError::InvalidConfiguration(format!(
-                "Starting cursor index {} is out-of-bounds for length {} of options",
-                so.starting_cursor,
-                &so.options.len()
-            )));
-        }
-
-        let string_options = so.options.iter().map(T::to_string).collect();
-        let filtered_options = (0..so.options.len()).collect();
-
-        Ok(Self {
-            message: so.message,
-            options: so.options,
-            string_options,
-            filtered_options,
-            help_message: so.help_message,
-            vim_mode: so.vim_mode,
-            cursor_index: so.starting_cursor,
-            page_size: so.page_size,
-            input: Input::new(),
-            filter: so.filter,
-            formatter: so.formatter,
-        })
-    }
-
-    fn filter_options(&self) -> Vec<usize> {
-        self.options
-            .iter()
-            .enumerate()
-            .filter_map(|(i, opt)| match self.input.content() {
-                val if val.is_empty() => Some(i),
-                val if (self.filter)(val, opt, self.string_options.get(i).unwrap(), i) => Some(i),
-                _ => None,
-            })
-            .collect()
-    }
-
-    fn move_cursor_up(&mut self, qty: usize, wrap: bool) {
-        if wrap {
-            let after_wrap = qty.saturating_sub(self.cursor_index);
-            self.cursor_index = self
-                .cursor_index
-                .checked_sub(qty)
-                .unwrap_or_else(|| self.filtered_options.len().saturating_sub(after_wrap))
-        } else {
-            self.cursor_index = self.cursor_index.saturating_sub(qty);
-        }
-    }
-
-    fn move_cursor_down(&mut self, qty: usize, wrap: bool) {
-        self.cursor_index = self.cursor_index.saturating_add(qty);
-
-        if self.cursor_index >= self.filtered_options.len() {
-            self.cursor_index = if self.filtered_options.is_empty() {
-                0
-            } else if wrap {
-                self.cursor_index % self.filtered_options.len()
-            } else {
-                self.filtered_options.len().saturating_sub(1)
-            }
-        }
-    }
-
-    fn on_change(&mut self, key: Key) {
-        match key {
-            Key::Up(KeyModifiers::NONE) => self.move_cursor_up(1, true),
-            Key::Char('k', KeyModifiers::NONE) if self.vim_mode => self.move_cursor_up(1, true),
-            Key::PageUp => self.move_cursor_up(self.page_size, false),
-            Key::Home => self.move_cursor_up(usize::MAX, false),
-
-            Key::Down(KeyModifiers::NONE) => self.move_cursor_down(1, true),
-            Key::Char('j', KeyModifiers::NONE) if self.vim_mode => self.move_cursor_down(1, true),
-            Key::PageDown => self.move_cursor_down(self.page_size, false),
-            Key::End => self.move_cursor_down(usize::MAX, false),
-
-            key => {
-                let dirty = self.input.handle_key(key);
-
-                if dirty {
-                    let options = self.filter_options();
-                    if options.len() <= self.cursor_index {
-                        self.cursor_index = options.len().saturating_sub(1);
-                    }
-                    self.filtered_options = options;
-                }
-            }
-        };
-    }
-
-    fn has_answer_highlighted(&mut self) -> bool {
-        self.filtered_options.get(self.cursor_index).is_some()
-    }
-
-    fn get_final_answer(&mut self) -> ListOption<T> {
-        // should only be called after current cursor index is validated
-        // on has_answer_highlighted
-
-        let index = *self.filtered_options.get(self.cursor_index).unwrap();
-        let value = self.options.swap_remove(index);
-
-        ListOption::new(index, value)
-    }
-
-    fn render<B: SelectBackend>(&mut self, backend: &mut B) -> InquireResult<()> {
-        let prompt = &self.message;
-
-        backend.frame_setup()?;
-
-        backend.render_select_prompt(prompt, &self.input)?;
-
-        let choices = self
-            .filtered_options
-            .iter()
-            .cloned()
-            .map(|i| ListOption::new(i, self.options.get(i).unwrap()))
-            .collect::<Vec<ListOption<&T>>>();
-
-        let page = paginate(self.page_size, &choices, Some(self.cursor_index));
-
-        backend.render_options(page)?;
-
-        if let Some(help_message) = self.help_message {
-            backend.render_help_message(help_message)?;
-        }
-
-        backend.frame_finish()?;
-
-        Ok(())
-    }
-
-    fn prompt<B: SelectBackend>(mut self, backend: &mut B) -> InquireResult<ListOption<T>> {
-        loop {
-            self.render(backend)?;
-
-            let key = backend.read_key()?;
-
-            match key {
-                Key::Interrupt => interrupt_prompt!(),
-                Key::Cancel => cancel_prompt!(backend, self.message),
-                Key::Submit => match self.has_answer_highlighted() {
-                    true => break,
-                    false => {}
-                },
-                key => self.on_change(key),
-            }
-        }
-
-        let final_answer = self.get_final_answer();
-        let formatted = (self.formatter)(final_answer.as_ref());
-
-        finish_prompt_with_answer!(backend, self.message, &formatted, final_answer);
-    }
-}
-
-#[cfg(test)]
-#[cfg(feature = "crossterm")]
-mod test {
-    use crate::{
-        formatter::OptionFormatter,
-        list_option::ListOption,
-        terminal::crossterm::CrosstermTerminal,
-        ui::{Backend, RenderConfig},
-        Select,
-    };
-    use crossterm::event::{KeyCode, KeyEvent};
-
-    #[test]
-    /// Tests that a closure that actually closes on a variable can be used
-    /// as a Select formatter.
-    fn closure_formatter() {
-        let read: Vec<KeyEvent> = vec![KeyCode::Down, KeyCode::Enter]
-            .into_iter()
-            .map(KeyEvent::from)
-            .collect();
-        let mut read = read.iter();
-
-        let formatted = String::from("Thanks!");
-        let formatter: OptionFormatter<i32> = &|_| formatted.clone();
-
-        let options = vec![1, 2, 3];
-
-        let mut write: Vec<u8> = Vec::new();
-        let terminal = CrosstermTerminal::new_with_io(&mut write, &mut read);
-        let mut backend = Backend::new(terminal, RenderConfig::default()).unwrap();
-
-        let ans = Select::new("Question", options)
-            .with_formatter(formatter)
-            .prompt_with_backend(&mut backend)
-            .unwrap();
-
-        assert_eq!(ListOption::new(1, 2), ans);
-    }
-
-    #[test]
-    // Anti-regression test: https://github.com/mikaelmello/inquire/issues/29
-    fn enter_arrow_on_empty_list_does_not_panic() {
-        let read: Vec<KeyEvent> = [
-            KeyCode::Char('9'),
-            KeyCode::Enter,
-            KeyCode::Backspace,
-            KeyCode::Char('3'),
-            KeyCode::Enter,
-        ]
-        .iter()
-        .map(|c| KeyEvent::from(*c))
-        .collect();
-
-        let mut read = read.iter();
-
-        let options = vec![1, 2, 3];
-
-        let mut write: Vec<u8> = Vec::new();
-        let terminal = CrosstermTerminal::new_with_io(&mut write, &mut read);
-        let mut backend = Backend::new(terminal, RenderConfig::default()).unwrap();
-
-        let ans = Select::new("Question", options)
-            .prompt_with_backend(&mut backend)
-            .unwrap();
-
-        assert_eq!(ListOption::new(2, 3), ans);
-    }
-
-    #[test]
-    // Anti-regression test: https://github.com/mikaelmello/inquire/issues/30
-    fn down_arrow_on_empty_list_does_not_panic() {
-        let read: Vec<KeyEvent> = [
-            KeyCode::Char('9'),
-            KeyCode::Down,
-            KeyCode::Backspace,
-            KeyCode::Char('3'),
-            KeyCode::Down,
-            KeyCode::Backspace,
-            KeyCode::Enter,
-        ]
-        .iter()
-        .map(|c| KeyEvent::from(*c))
-        .collect();
-
-        let mut read = read.iter();
-
-        let options = vec![1, 2, 3];
-
-        let mut write: Vec<u8> = Vec::new();
-        let terminal = CrosstermTerminal::new_with_io(&mut write, &mut read);
-        let mut backend = Backend::new(terminal, RenderConfig::default()).unwrap();
-
-        let ans = Select::new("Question", options)
-            .prompt_with_backend(&mut backend)
-            .unwrap();
-
-        assert_eq!(ListOption::new(0, 1), ans);
     }
 }

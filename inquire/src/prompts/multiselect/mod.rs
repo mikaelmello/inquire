@@ -12,7 +12,7 @@ use crate::{
     error::{InquireError, InquireResult},
     formatter::MultiOptionFormatter,
     list_option::ListOption,
-    prompt::PromptTrait,
+    prompt::Prompt,
     terminal::get_default_terminal,
     type_aliases::Filter,
     ui::{Backend, MultiSelectBackend, RenderConfig},

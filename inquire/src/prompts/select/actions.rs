@@ -3,11 +3,11 @@ use crate::{
     ui::{InnerAction, Key, KeyModifiers},
 };
 
-use super::config::MultiSelectConfig;
+use super::config::SelectConfig;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 #[allow(clippy::enum_variant_names)]
-pub enum MultiSelectPromptAction {
+pub enum SelectPromptAction {
     FilterInput(InputAction),
     MoveUp,
     MoveDown,
@@ -15,13 +15,10 @@ pub enum MultiSelectPromptAction {
     PageDown,
     MoveToStart,
     MoveToEnd,
-    ToggleCurrentOption,
-    SelectAll,
-    ClearSelections,
 }
 
-impl InnerAction<MultiSelectConfig> for MultiSelectPromptAction {
-    fn from_key(key: Key, config: &MultiSelectConfig) -> Option<Self> {
+impl InnerAction<SelectConfig> for SelectPromptAction {
+    fn from_key(key: Key, config: &SelectConfig) -> Option<Self> {
         if config.vim_mode {
             let action = match key {
                 Key::Char('k', KeyModifiers::NONE) => Some(Self::MoveUp),
@@ -43,9 +40,6 @@ impl InnerAction<MultiSelectConfig> for MultiSelectPromptAction {
             Key::PageDown => Self::PageDown,
             Key::End => Self::MoveToEnd,
 
-            Key::Char(' ', KeyModifiers::NONE) => Self::ToggleCurrentOption,
-            Key::Right(KeyModifiers::NONE) => Self::SelectAll,
-            Key::Left(KeyModifiers::NONE) => Self::ClearSelections,
             key => match InputAction::from_key(key, &()) {
                 Some(action) => Self::FilterInput(action),
                 None => return None,

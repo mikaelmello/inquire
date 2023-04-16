@@ -137,6 +137,7 @@ impl Input {
         self.placeholder.as_deref()
     }
 
+    #[deprecated]
     pub fn handle_key(&mut self, key: Key) -> bool {
         let action = InputAction::from_key(key, &());
 
@@ -321,15 +322,6 @@ impl Input {
             Magnitude::Word => self.next_word_index(),
             Magnitude::Line => self.length(),
         };
-
-        let len = end - start;
-
-        self.delete_chars_at_right(len)
-    }
-
-    fn delete_next_word(&mut self) -> HandleResult {
-        let start = self.cursor;
-        let end = self.next_word_index();
 
         let len = end - start;
 

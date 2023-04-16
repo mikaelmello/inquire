@@ -5,7 +5,7 @@ use crate::{
     formatter::MultiOptionFormatter,
     input::Input,
     list_option::ListOption,
-    prompt::{HandleResult, PromptTrait},
+    prompt::{HandleResult, Prompt},
     type_aliases::Filter,
     ui::MultiSelectBackend,
     utils::paginate,
@@ -182,7 +182,7 @@ where
     }
 }
 
-impl<'a, B, T> PromptTrait<B, MultiSelectConfig, MultiSelectPromptAction, Vec<ListOption<T>>>
+impl<'a, B, T> Prompt<B, MultiSelectConfig, MultiSelectPromptAction, Vec<ListOption<T>>>
     for MultiSelectPrompt<'a, T>
 where
     B: MultiSelectBackend,

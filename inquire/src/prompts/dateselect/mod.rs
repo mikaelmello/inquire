@@ -11,7 +11,7 @@ use crate::{
     date_utils::get_current_date,
     error::{InquireError, InquireResult},
     formatter::{self, DateFormatter},
-    prompt::PromptTrait,
+    prompt::Prompt,
     terminal::{get_default_terminal, Terminal},
     ui::{Backend, RenderConfig},
     validator::DateValidator,

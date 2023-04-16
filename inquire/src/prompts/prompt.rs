@@ -27,7 +27,7 @@ impl HandleResult {
     }
 }
 
-pub trait PromptTrait<Backend, Config, IAction, ReturnType>
+pub trait Prompt<Backend, Config, IAction, ReturnType>
 where
     Backend: CommonBackend,
     IAction: InnerAction<Config>,
@@ -39,6 +39,13 @@ where
 
     fn setup(&mut self) -> InquireResult<()> {
         Ok(())
+    }
+
+    /// Hook called when an input to cancel the prompt is triggered.
+    ///
+    /// Returns whether the prompt can be terminated.
+    fn pre_cancel(&mut self) -> InquireResult<bool> {
+        Ok(true)
     }
 
     fn submit(&mut self) -> InquireResult<Option<ReturnType>>;
@@ -69,10 +76,16 @@ where
                         HandleResult::Clean
                     }
                     Action::Cancel => {
-                        backend.frame_setup()?;
-                        backend.render_canceled_prompt(self.message())?;
-                        backend.frame_finish()?;
-                        return Err(InquireError::OperationCanceled);
+                        let pre_cancel_result = self.pre_cancel()?;
+
+                        if pre_cancel_result {
+                            backend.frame_setup()?;
+                            backend.render_canceled_prompt(self.message())?;
+                            backend.frame_finish()?;
+                            return Err(InquireError::OperationCanceled);
+                        }
+
+                        HandleResult::Dirty
                     }
                     Action::Interrupt => return Err(InquireError::OperationInterrupted),
                     Action::Inner(inner_action) => self.handle(inner_action),
