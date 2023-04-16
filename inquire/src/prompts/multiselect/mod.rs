@@ -1,17 +1,25 @@
-use std::{collections::BTreeSet, fmt::Display};
+pub mod actions;
+pub mod config;
+mod prompt;
+#[cfg(test)]
+#[cfg(feature = "crossterm")]
+mod test;
+
+use std::fmt::Display;
 
 use crate::{
-    config::{self, get_configuration},
+    config::get_configuration,
     error::{InquireError, InquireResult},
     formatter::MultiOptionFormatter,
-    input::Input,
     list_option::ListOption,
+    prompt::PromptTrait,
     terminal::get_default_terminal,
     type_aliases::Filter,
-    ui::{Backend, Key, KeyModifiers, MultiSelectBackend, RenderConfig},
-    utils::paginate,
-    validator::{ErrorMessage, MultiOptionValidator, Validation},
+    ui::{Backend, MultiSelectBackend, RenderConfig},
+    validator::MultiOptionValidator,
 };
+
+use self::prompt::MultiSelectPrompt;
 
 /// Prompt suitable for when you need the user to select many options (including none if applicable) among a list of them.
 ///
@@ -154,10 +162,10 @@ where
     };
 
     /// Default page size, equal to the global default page size [config::DEFAULT_PAGE_SIZE]
-    pub const DEFAULT_PAGE_SIZE: usize = config::DEFAULT_PAGE_SIZE;
+    pub const DEFAULT_PAGE_SIZE: usize = 7;
 
     /// Default value of vim mode, equal to the global default value [config::DEFAULT_PAGE_SIZE]
-    pub const DEFAULT_VIM_MODE: bool = config::DEFAULT_VIM_MODE;
+    pub const DEFAULT_VIM_MODE: bool = false;
 
     /// Default starting cursor index.
     pub const DEFAULT_STARTING_CURSOR: usize = 0;
@@ -331,363 +339,5 @@ where
         backend: &mut B,
     ) -> InquireResult<Vec<ListOption<T>>> {
         MultiSelectPrompt::new(self)?.prompt(backend)
-    }
-}
-
-struct MultiSelectPrompt<'a, T> {
-    message: &'a str,
-    options: Vec<T>,
-    string_options: Vec<String>,
-    help_message: Option<&'a str>,
-    vim_mode: bool,
-    cursor_index: usize,
-    checked: BTreeSet<usize>,
-    page_size: usize,
-    keep_filter: bool,
-    input: Input,
-    filtered_options: Vec<usize>,
-    filter: Filter<'a, T>,
-    formatter: MultiOptionFormatter<'a, T>,
-    validator: Option<Box<dyn MultiOptionValidator<T>>>,
-    error: Option<ErrorMessage>,
-}
-
-impl<'a, T> MultiSelectPrompt<'a, T>
-where
-    T: Display,
-{
-    fn new(mso: MultiSelect<'a, T>) -> InquireResult<Self> {
-        if mso.options.is_empty() {
-            return Err(InquireError::InvalidConfiguration(
-                "Available options can not be empty".into(),
-            ));
-        }
-        if let Some(default) = mso.default {
-            for i in default {
-                if i >= &mso.options.len() {
-                    return Err(InquireError::InvalidConfiguration(format!(
-                        "Index {} is out-of-bounds for length {} of options",
-                        i,
-                        &mso.options.len()
-                    )));
-                }
-            }
-        }
-
-        let string_options = mso.options.iter().map(T::to_string).collect();
-        let filtered_options = (0..mso.options.len()).collect();
-        let checked_options = mso
-            .default
-            .map_or_else(BTreeSet::new, |d| d.iter().cloned().collect());
-
-        Ok(Self {
-            message: mso.message,
-            options: mso.options,
-            string_options,
-            filtered_options,
-            help_message: mso.help_message,
-            vim_mode: mso.vim_mode,
-            cursor_index: mso.starting_cursor,
-            page_size: mso.page_size,
-            keep_filter: mso.keep_filter,
-            input: Input::new(),
-            filter: mso.filter,
-            formatter: mso.formatter,
-            validator: mso.validator,
-            error: None,
-            checked: checked_options,
-        })
-    }
-
-    fn filter_options(&self) -> Vec<usize> {
-        self.options
-            .iter()
-            .enumerate()
-            .filter_map(|(i, opt)| match self.input.content() {
-                val if val.is_empty() => Some(i),
-                val if (self.filter)(val, opt, self.string_options.get(i).unwrap(), i) => Some(i),
-                _ => None,
-            })
-            .collect()
-    }
-
-    fn move_cursor_up(&mut self, qty: usize, wrap: bool) {
-        if wrap {
-            let after_wrap = qty.saturating_sub(self.cursor_index);
-            self.cursor_index = self
-                .cursor_index
-                .checked_sub(qty)
-                .unwrap_or_else(|| self.filtered_options.len().saturating_sub(after_wrap))
-        } else {
-            self.cursor_index = self.cursor_index.saturating_sub(qty);
-        }
-    }
-
-    fn move_cursor_down(&mut self, qty: usize, wrap: bool) {
-        self.cursor_index = self.cursor_index.saturating_add(qty);
-
-        if self.cursor_index >= self.filtered_options.len() {
-            self.cursor_index = if self.filtered_options.is_empty() {
-                0
-            } else if wrap {
-                self.cursor_index % self.filtered_options.len()
-            } else {
-                self.filtered_options.len().saturating_sub(1)
-            }
-        }
-    }
-
-    fn toggle_cursor_selection(&mut self) {
-        let idx = match self.filtered_options.get(self.cursor_index) {
-            Some(val) => val,
-            None => return,
-        };
-
-        if self.checked.contains(idx) {
-            self.checked.remove(idx);
-        } else {
-            self.checked.insert(*idx);
-        }
-
-        if !self.keep_filter {
-            self.input.clear();
-        }
-    }
-
-    fn on_change(&mut self, key: Key) {
-        match key {
-            Key::Up(KeyModifiers::NONE) => self.move_cursor_up(1, true),
-            Key::Char('k', KeyModifiers::NONE) if self.vim_mode => self.move_cursor_up(1, true),
-            Key::PageUp => self.move_cursor_up(self.page_size, false),
-            Key::Home => self.move_cursor_up(usize::MAX, false),
-
-            Key::Down(KeyModifiers::NONE) => self.move_cursor_down(1, true),
-            Key::Char('j', KeyModifiers::NONE) if self.vim_mode => self.move_cursor_down(1, true),
-            Key::PageDown => self.move_cursor_down(self.page_size, false),
-            Key::End => self.move_cursor_down(usize::MAX, false),
-
-            Key::Char(' ', KeyModifiers::NONE) => self.toggle_cursor_selection(),
-            Key::Right(KeyModifiers::NONE) => {
-                self.checked.clear();
-                for idx in &self.filtered_options {
-                    self.checked.insert(*idx);
-                }
-
-                if !self.keep_filter {
-                    self.input.clear();
-                }
-            }
-            Key::Left(KeyModifiers::NONE) => {
-                self.checked.clear();
-
-                if !self.keep_filter {
-                    self.input.clear();
-                }
-            }
-            key => {
-                let dirty = self.input.handle_key(key);
-
-                if dirty {
-                    let options = self.filter_options();
-                    if options.len() <= self.cursor_index {
-                        self.cursor_index = options.len().saturating_sub(1);
-                    }
-                    self.filtered_options = options;
-                }
-            }
-        };
-    }
-
-    fn validate_current_answer(&self) -> InquireResult<Validation> {
-        if let Some(validator) = &self.validator {
-            let selected_options = self
-                .options
-                .iter()
-                .enumerate()
-                .filter_map(|(idx, opt)| match &self.checked.contains(&idx) {
-                    true => Some(ListOption::new(idx, opt)),
-                    false => None,
-                })
-                .collect::<Vec<_>>();
-
-            let res = validator.validate(&selected_options)?;
-            Ok(res)
-        } else {
-            Ok(Validation::Valid)
-        }
-    }
-
-    fn get_final_answer(&mut self) -> Vec<ListOption<T>> {
-        let mut answer = vec![];
-
-        // by iterating in descending order, we can safely
-        // swap remove because the elements to the right
-        // that we did not remove will not matter anymore.
-        for index in self.checked.iter().rev() {
-            let index = *index;
-            let value = self.options.swap_remove(index);
-            let lo = ListOption::new(index, value);
-            answer.push(lo);
-        }
-        answer.reverse();
-
-        answer
-    }
-
-    fn render<B: MultiSelectBackend>(&mut self, backend: &mut B) -> InquireResult<()> {
-        let prompt = &self.message;
-
-        backend.frame_setup()?;
-
-        if let Some(err) = &self.error {
-            backend.render_error_message(err)?;
-        }
-
-        backend.render_multiselect_prompt(prompt, &self.input)?;
-
-        let choices = self
-            .filtered_options
-            .iter()
-            .cloned()
-            .map(|i| ListOption::new(i, self.options.get(i).unwrap()))
-            .collect::<Vec<ListOption<&T>>>();
-
-        let page = paginate(self.page_size, &choices, Some(self.cursor_index));
-
-        backend.render_options(page, &self.checked)?;
-
-        if let Some(help_message) = self.help_message {
-            backend.render_help_message(help_message)?;
-        }
-
-        backend.frame_finish()?;
-
-        Ok(())
-    }
-
-    fn prompt<B: MultiSelectBackend>(
-        mut self,
-        backend: &mut B,
-    ) -> InquireResult<Vec<ListOption<T>>> {
-        loop {
-            self.render(backend)?;
-
-            let key = backend.read_key()?;
-
-            match key {
-                Key::Interrupt => interrupt_prompt!(),
-                Key::Cancel => cancel_prompt!(backend, self.message),
-                Key::Submit => match self.validate_current_answer()? {
-                    Validation::Valid => break,
-                    Validation::Invalid(msg) => self.error = Some(msg),
-                },
-                key => self.on_change(key),
-            }
-        }
-
-        let final_answer = self.get_final_answer();
-        let refs: Vec<ListOption<&T>> = final_answer.iter().map(ListOption::as_ref).collect();
-        let formatted = (self.formatter)(&refs);
-
-        finish_prompt_with_answer!(backend, self.message, &formatted, final_answer);
-    }
-}
-
-#[cfg(test)]
-#[cfg(feature = "crossterm")]
-mod test {
-    use crate::{
-        formatter::MultiOptionFormatter,
-        list_option::ListOption,
-        terminal::crossterm::CrosstermTerminal,
-        ui::{Backend, RenderConfig},
-        MultiSelect,
-    };
-    use crossterm::event::{KeyCode, KeyEvent};
-
-    #[test]
-    /// Tests that a closure that actually closes on a variable can be used
-    /// as a Select formatter.
-    fn closure_formatter() {
-        let read: Vec<KeyEvent> = vec![KeyCode::Char(' '), KeyCode::Enter]
-            .into_iter()
-            .map(KeyEvent::from)
-            .collect();
-        let mut read = read.iter();
-
-        let formatted = String::from("Thanks!");
-        let formatter: MultiOptionFormatter<i32> = &|_| formatted.clone();
-
-        let options = vec![1, 2, 3];
-
-        let mut write: Vec<u8> = Vec::new();
-        let terminal = CrosstermTerminal::new_with_io(&mut write, &mut read);
-        let mut backend = Backend::new(terminal, RenderConfig::default()).unwrap();
-
-        let ans = MultiSelect::new("Question", options)
-            .with_formatter(formatter)
-            .prompt_with_backend(&mut backend)
-            .unwrap();
-
-        assert_eq!(vec![ListOption::new(0, 1)], ans);
-    }
-
-    #[test]
-    // Anti-regression test: https://github.com/mikaelmello/inquire/issues/30
-    fn down_arrow_on_empty_list_does_not_panic() {
-        let read: Vec<KeyEvent> = [
-            KeyCode::Char('9'),
-            KeyCode::Down,
-            KeyCode::Backspace,
-            KeyCode::Char('3'),
-            KeyCode::Down,
-            KeyCode::Backspace,
-            KeyCode::Enter,
-        ]
-        .iter()
-        .map(|c| KeyEvent::from(*c))
-        .collect();
-
-        let mut read = read.iter();
-
-        let options = vec![1, 2, 3];
-
-        let mut write: Vec<u8> = Vec::new();
-        let terminal = CrosstermTerminal::new_with_io(&mut write, &mut read);
-        let mut backend = Backend::new(terminal, RenderConfig::default()).unwrap();
-
-        let ans = MultiSelect::new("Question", options)
-            .prompt_with_backend(&mut backend)
-            .unwrap();
-
-        assert_eq!(Vec::<ListOption<i32>>::new(), ans);
-    }
-
-    #[test]
-    // Anti-regression test: https://github.com/mikaelmello/inquire/issues/31
-    fn list_option_indexes_are_relative_to_input_vec() {
-        let read: Vec<KeyEvent> = vec![
-            KeyCode::Down,
-            KeyCode::Char(' '),
-            KeyCode::Down,
-            KeyCode::Char(' '),
-            KeyCode::Enter,
-        ]
-        .into_iter()
-        .map(KeyEvent::from)
-        .collect();
-        let mut read = read.iter();
-
-        let options = vec![1, 2, 3];
-
-        let mut write: Vec<u8> = Vec::new();
-        let terminal = CrosstermTerminal::new_with_io(&mut write, &mut read);
-        let mut backend = Backend::new(terminal, RenderConfig::default()).unwrap();
-
-        let ans = MultiSelect::new("Question", options)
-            .prompt_with_backend(&mut backend)
-            .unwrap();
-
-        assert_eq!(vec![ListOption::new(1, 2), ListOption::new(2, 3)], ans);
     }
 }

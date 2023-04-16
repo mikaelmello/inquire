@@ -1,6 +1,9 @@
 use unicode_segmentation::UnicodeSegmentation;
 
-use crate::ui::{Key, KeyModifiers};
+use crate::{
+    prompt::HandleResult,
+    ui::{InnerAction, Key, KeyModifiers},
+};
 
 #[derive(Clone, Debug)]
 pub struct Input {
@@ -10,15 +13,77 @@ pub struct Input {
     length: usize,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
-enum MoveKind {
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Magnitude {
     Char,
     Word,
     Line,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum LineDirection {
+    Left,
+    Right,
+}
+
 fn is_alphanumeric(grapheme: &str) -> bool {
     grapheme.unicode_words().count() > 0
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum InputAction {
+    Delete(Magnitude, LineDirection),
+    MoveCursor(Magnitude, LineDirection),
+    Write(char),
+}
+
+impl InputAction {
+    fn gen_write_from_str(value: &str) -> Vec<InputAction> {
+        value
+            .chars()
+            .into_iter()
+            .map(|c| InputAction::Write(c))
+            .collect()
+    }
+}
+
+impl InnerAction<()> for InputAction {
+    fn from_key(key: Key, _config: &()) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        let action = match key {
+            Key::Backspace => Self::Delete(Magnitude::Char, LineDirection::Left),
+            Key::Char('h', m) if m.contains(KeyModifiers::CONTROL) => {
+                // Ctrl+Backspace is tricky, we don't want to handle a Ctrl+H
+                // but also don't want ctrl+h to simply write h.
+                // Let's catch this combination and ignore it.
+                return None;
+            }
+
+            Key::Delete(m) if m.contains(KeyModifiers::CONTROL) => {
+                Self::Delete(Magnitude::Word, LineDirection::Right)
+            }
+            Key::Delete(_) => Self::Delete(Magnitude::Char, LineDirection::Right),
+
+            Key::Home => Self::MoveCursor(Magnitude::Line, LineDirection::Left),
+            Key::Left(m) if m.contains(KeyModifiers::CONTROL) => {
+                Self::MoveCursor(Magnitude::Word, LineDirection::Left)
+            }
+            Key::Left(_) => Self::MoveCursor(Magnitude::Char, LineDirection::Left),
+
+            Key::End => Self::MoveCursor(Magnitude::Line, LineDirection::Right),
+            Key::Right(m) if m.contains(KeyModifiers::CONTROL) => {
+                Self::MoveCursor(Magnitude::Word, LineDirection::Right)
+            }
+            Key::Right(_) => Self::MoveCursor(Magnitude::Char, LineDirection::Right),
+
+            Key::Char(c, _) => Self::Write(c),
+            _ => return None,
+        };
+
+        Some(action)
+    }
 }
 
 impl Input {
@@ -73,23 +138,26 @@ impl Input {
     }
 
     pub fn handle_key(&mut self, key: Key) -> bool {
-        match key {
-            Key::Backspace => self.backspace(),
-            Key::Char('h', m) if m.contains(KeyModifiers::CONTROL) => false,
+        let action = InputAction::from_key(key, &());
 
-            Key::Delete(m) if m.contains(KeyModifiers::CONTROL) => self.delete_next_word(),
-            Key::Delete(_) => self.delete(1),
+        if let Some(action) = action {
+            return self.handle(action) == HandleResult::Dirty;
+        }
 
-            Key::Home => self.move_backward(MoveKind::Line),
-            Key::Left(m) if m.contains(KeyModifiers::CONTROL) => self.move_backward(MoveKind::Word),
-            Key::Left(_) => self.move_backward(MoveKind::Char),
+        false
+    }
 
-            Key::End => self.move_forward(MoveKind::Line),
-            Key::Right(m) if m.contains(KeyModifiers::CONTROL) => self.move_forward(MoveKind::Word),
-            Key::Right(_) => self.move_forward(MoveKind::Char),
-
-            Key::Char(c, _) => self.insert(c),
-            _ => false,
+    pub fn handle(&mut self, action: InputAction) -> HandleResult {
+        match action {
+            InputAction::MoveCursor(mag, dir) => match dir {
+                LineDirection::Left => self.move_left(mag),
+                LineDirection::Right => self.move_right(mag),
+            },
+            InputAction::Delete(mag, dir) => match dir {
+                LineDirection::Left => self.backwards_delete(mag),
+                LineDirection::Right => self.forwards_delete(mag),
+            },
+            InputAction::Write(c) => self.insert(c),
         }
     }
 
@@ -127,35 +195,35 @@ impl Input {
         }
     }
 
-    fn move_backward(&mut self, kind: MoveKind) -> bool {
+    fn move_left(&mut self, mag: Magnitude) -> HandleResult {
         if self.cursor == 0 {
-            return false;
+            return HandleResult::Clean;
         }
 
-        match kind {
-            MoveKind::Char => self.cursor = self.cursor.saturating_sub(1),
-            MoveKind::Word => self.cursor = self.prev_word_index(),
-            MoveKind::Line => self.cursor = 0,
+        match mag {
+            Magnitude::Char => self.cursor = self.cursor.saturating_sub(1),
+            Magnitude::Word => self.cursor = self.prev_word_index(),
+            Magnitude::Line => self.cursor = 0,
         }
 
-        true
+        HandleResult::Dirty
     }
 
-    fn move_forward(&mut self, kind: MoveKind) -> bool {
+    fn move_right(&mut self, mag: Magnitude) -> HandleResult {
         match self.cursor.cmp(&self.length) {
-            std::cmp::Ordering::Equal => false,
+            std::cmp::Ordering::Equal => HandleResult::Clean,
             std::cmp::Ordering::Less => {
-                match kind {
-                    MoveKind::Char => self.cursor = self.cursor.saturating_add(1),
-                    MoveKind::Word => self.cursor = self.next_word_index(),
-                    MoveKind::Line => self.cursor = self.length,
+                match mag {
+                    Magnitude::Char => self.cursor = self.cursor.saturating_add(1),
+                    Magnitude::Word => self.cursor = self.next_word_index(),
+                    Magnitude::Line => self.cursor = self.length,
                 }
 
-                true
+                HandleResult::Dirty
             }
             std::cmp::Ordering::Greater => {
                 self.cursor = self.length;
-                true
+                HandleResult::Dirty
             }
         }
     }
@@ -199,7 +267,7 @@ impl Input {
         0
     }
 
-    fn insert(&mut self, c: char) -> bool {
+    fn insert(&mut self, c: char) -> HandleResult {
         let at = self.cursor;
 
         if at >= self.length {
@@ -207,7 +275,7 @@ impl Input {
             if self.update_length() {
                 self.cursor = self.cursor.saturating_add(1);
             }
-            return true;
+            return HandleResult::Dirty;
         }
 
         let mut result = String::new();
@@ -223,48 +291,72 @@ impl Input {
             self.cursor = self.cursor.saturating_add(1);
         }
 
-        true
+        HandleResult::Dirty
     }
 
-    fn backspace(&mut self) -> bool {
+    fn backwards_delete(&mut self, mag: Magnitude) -> HandleResult {
         if self.cursor == 0 {
-            return false;
+            return HandleResult::Clean;
         }
 
-        self.cursor = self.cursor.saturating_sub(1);
-        self.delete(1)
+        let cur_cursor_pos = self.cursor;
+        let new_cursor_pos = match mag {
+            Magnitude::Char => self.cursor.saturating_sub(1),
+            Magnitude::Word => self.prev_word_index(),
+            Magnitude::Line => 0,
+        };
+
+        if new_cursor_pos == cur_cursor_pos {
+            return HandleResult::Clean;
+        }
+
+        self.cursor = new_cursor_pos;
+        self.delete_chars_at_right(cur_cursor_pos - new_cursor_pos)
     }
 
-    fn delete_next_word(&mut self) -> bool {
+    fn forwards_delete(&mut self, mag: Magnitude) -> HandleResult {
+        let start = self.cursor;
+        let end = match mag {
+            Magnitude::Char => start.saturating_add(1),
+            Magnitude::Word => self.next_word_index(),
+            Magnitude::Line => self.length(),
+        };
+
+        let len = end - start;
+
+        self.delete_chars_at_right(len)
+    }
+
+    fn delete_next_word(&mut self) -> HandleResult {
         let start = self.cursor;
         let end = self.next_word_index();
 
         let len = end - start;
 
-        self.delete(len)
+        self.delete_chars_at_right(len)
     }
 
-    fn delete(&mut self, qty: usize) -> bool {
+    fn delete_chars_at_right(&mut self, qty: usize) -> HandleResult {
         let start = self.cursor;
         let end = start.saturating_add(qty);
 
-        let mut result: String = String::new();
+        let mut new_content: String = String::new();
         let mut length = 0;
-        let mut dirty = false;
+        let mut result = HandleResult::Clean;
 
         for (index, grapheme) in self.content[..].graphemes(true).enumerate() {
             if index < start || index >= end {
                 length += 1;
-                result.push_str(grapheme);
+                new_content.push_str(grapheme);
             } else {
-                dirty = true;
+                result = HandleResult::Dirty;
             }
         }
 
         self.length = length;
-        self.content = result;
+        self.content = new_content;
 
-        dirty
+        result
     }
 
     fn update_length(&mut self) -> bool {

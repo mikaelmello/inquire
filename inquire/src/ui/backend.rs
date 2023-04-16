@@ -3,6 +3,7 @@ use std::{collections::BTreeSet, fmt::Display, io::Result};
 use unicode_width::UnicodeWidthChar;
 
 use crate::{
+    error::InquireResult,
     input::Input,
     list_option::ListOption,
     terminal::{Terminal, TerminalSize},
@@ -10,6 +11,8 @@ use crate::{
     utils::{int_log10, Page},
     validator::ErrorMessage,
 };
+
+use super::{Action, InnerAction, InputReader};
 
 pub trait CommonBackend {
     fn read_key(&mut self) -> Result<Key>;
@@ -762,5 +765,20 @@ where
     fn drop(&mut self) {
         let _ = self.move_cursor_to_end_position();
         let _ = self.terminal.cursor_show();
+    }
+}
+
+impl<'a, I, T> InputReader<I> for Backend<'a, T>
+where
+    T: Terminal,
+    I: Copy + Clone + PartialEq + Eq,
+{
+    fn next_action<C>(&mut self, config: &C) -> InquireResult<Option<Action<I>>>
+    where
+        I: InnerAction<C>,
+    {
+        let key = self.read_key()?;
+        let action = Action::from_key(key, config);
+        Ok(action)
     }
 }

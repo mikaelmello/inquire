@@ -1,12 +1,16 @@
 //! UI-related definitions for rendered content.
 
+mod action;
 mod backend;
 mod color;
+mod input_reader;
 mod key;
 mod render_config;
 mod style;
 
+pub(crate) use action::*;
 pub(crate) use backend::*;
+pub(crate) use input_reader::*;
 pub(crate) use key::*;
 
 pub use color::Color;

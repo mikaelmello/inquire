@@ -1,58 +1,82 @@
 use crate::{
     error::InquireResult,
-    ui::{CommonBackend, InnerPromptAction, PromptAction},
-    validator::ErrorMessage,
+    ui::{Action, CommonBackend, InnerAction},
     InquireError,
 };
 
-pub struct Prompt<'a, Fmt, Vld> {
-    message: &'a str,
-    help_message: Option<&'a str>,
-    formatter: Fmt,
-    validators: Vec<Vld>,
-    error: Option<ErrorMessage>,
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum HandleResult {
+    Dirty,
+    Clean,
 }
 
-pub trait PromptTrait<Backend, Config, Action, ReturnType>
+impl HandleResult {
+    pub fn join(self, other: HandleResult) -> HandleResult {
+        match (self, other) {
+            (HandleResult::Clean, HandleResult::Clean) => HandleResult::Clean,
+            (_, _) => HandleResult::Dirty,
+        }
+    }
+
+    pub fn from_bool_cmp(val: bool) -> HandleResult {
+        if val {
+            HandleResult::Dirty
+        } else {
+            HandleResult::Clean
+        }
+    }
+}
+
+pub trait PromptTrait<Backend, Config, IAction, ReturnType>
 where
     Backend: CommonBackend,
-    Action: InnerPromptAction<Config>,
+    IAction: InnerAction<Config>,
     Self: Sized,
 {
     fn message(&self) -> &str;
     fn config(&self) -> &Config;
     fn format_answer(&self, answer: &ReturnType) -> String;
 
-    fn setup(&mut self) -> InquireResult<()>;
+    fn setup(&mut self) -> InquireResult<()> {
+        Ok(())
+    }
+
     fn submit(&mut self) -> InquireResult<Option<ReturnType>>;
-    fn handle(&mut self, action: Action) -> InquireResult<()>;
+    fn handle(&mut self, action: IAction) -> HandleResult;
     fn render(&self, backend: &mut Backend) -> InquireResult<()>;
 
     fn prompt(mut self, backend: &mut Backend) -> InquireResult<ReturnType> {
         self.setup()?;
 
+        let mut last_handle = HandleResult::Dirty;
         let final_answer = loop {
-            backend.frame_setup()?;
-            self.render(backend)?;
-            backend.frame_finish()?;
+            if let HandleResult::Dirty = last_handle {
+                backend.frame_setup()?;
+                self.render(backend)?;
+                backend.frame_finish()?;
+                last_handle = HandleResult::Clean;
+            }
 
             let key = backend.read_key()?;
-            let action = PromptAction::<Action>::from_key(key, self.config());
+            let action = Action::from_key(key, self.config());
 
-            match action {
-                PromptAction::Inner(action) => self.handle(action)?,
-                PromptAction::Submit => match self.submit()? {
-                    Some(answer) => break answer,
-                    None => (),
-                },
-                PromptAction::Cancel => {
-                    backend.frame_setup()?;
-                    backend.render_canceled_prompt(self.message())?;
-                    backend.frame_finish()?;
-                    return Err(InquireError::OperationCanceled);
-                }
-                PromptAction::Interrupt => return Err(InquireError::OperationInterrupted),
-                PromptAction::None => (),
+            if let Some(action) = action {
+                last_handle = match action {
+                    Action::Submit => {
+                        if let Some(answer) = self.submit()? {
+                            break answer;
+                        }
+                        HandleResult::Clean
+                    }
+                    Action::Cancel => {
+                        backend.frame_setup()?;
+                        backend.render_canceled_prompt(self.message())?;
+                        backend.frame_finish()?;
+                        return Err(InquireError::OperationCanceled);
+                    }
+                    Action::Interrupt => return Err(InquireError::OperationInterrupted),
+                    Action::Inner(inner_action) => self.handle(inner_action),
+                };
             }
         };
 
@@ -62,6 +86,6 @@ where
         backend.render_prompt_with_answer(self.message(), &formatted)?;
         backend.frame_finish()?;
 
-        return Ok(final_answer);
+        Ok(final_answer)
     }
 }

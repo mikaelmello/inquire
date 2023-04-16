@@ -2,6 +2,7 @@ use chrono::NaiveDate;
 
 use crate::DateSelect;
 
+#[derive(Copy, Clone, Debug)]
 pub struct DateSelectConfig {
     pub vim_mode: bool,
 
@@ -14,8 +15,8 @@ pub struct DateSelectConfig {
     pub week_start: chrono::Weekday,
 }
 
-impl From<DateSelect<'_>> for DateSelectConfig {
-    fn from(value: DateSelect<'_>) -> Self {
+impl From<&DateSelect<'_>> for DateSelectConfig {
+    fn from(value: &DateSelect<'_>) -> Self {
         Self {
             vim_mode: value.vim_mode,
             min_date: value.min_date,

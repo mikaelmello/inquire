@@ -1,8 +1,10 @@
-use crate::ui::{InnerPromptAction, Key, KeyModifiers};
+use crate::ui::{InnerAction, Key, KeyModifiers};
 
 use super::config::DateSelectConfig;
 
-pub enum DateSelectAction {
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[allow(clippy::enum_variant_names)]
+pub enum DateSelectPromptAction {
     GoToPrevDay,
     GoToNextDay,
     GoToPrevWeek,
@@ -13,38 +15,32 @@ pub enum DateSelectAction {
     GoToNextYear,
 }
 
-impl InnerPromptAction<DateSelectConfig> for DateSelectAction {
-    fn map_key(key: Key, config: DateSelectConfig) -> Option<Self> {
+impl InnerAction<DateSelectConfig> for DateSelectPromptAction {
+    fn from_key(key: Key, config: &DateSelectConfig) -> Option<Self> {
         if config.vim_mode {
-            match key {
-                Key::Char('k', KeyModifiers::NONE) if config.vim_mode => {
-                    return Some(DateSelectAction::GoToPrevWeek)
-                }
-                Key::Char('j', KeyModifiers::NONE) if config.vim_mode => {
-                    return Some(DateSelectAction::GoToNextWeek)
-                }
-                Key::Char('h', KeyModifiers::NONE) if config.vim_mode => {
-                    return Some(DateSelectAction::GoToPrevDay)
-                }
-                Key::Char('l', KeyModifiers::NONE) if config.vim_mode => {
-                    return Some(DateSelectAction::GoToNextDay)
-                }
-                _ => (),
+            let action = match key {
+                Key::Char('k', KeyModifiers::NONE) => Some(DateSelectPromptAction::GoToPrevWeek),
+                Key::Char('j', KeyModifiers::NONE) => Some(DateSelectPromptAction::GoToNextWeek),
+                Key::Char('h', KeyModifiers::NONE) => Some(DateSelectPromptAction::GoToPrevDay),
+                Key::Char('l', KeyModifiers::NONE) => Some(DateSelectPromptAction::GoToNextDay),
+                _ => None,
+            };
+
+            if action.is_some() {
+                return action;
             }
         }
 
         match key {
-            Key::Left(KeyModifiers::NONE) => return Some(DateSelectAction::GoToPrevDay),
-            Key::Right(KeyModifiers::NONE) => return Some(DateSelectAction::GoToNextDay),
-            Key::Up(KeyModifiers::NONE) => return Some(DateSelectAction::GoToPrevWeek),
-            Key::Down(KeyModifiers::NONE) | Key::Tab => {
-                return Some(DateSelectAction::GoToNextWeek)
-            }
-            Key::Left(KeyModifiers::CONTROL) => return Some(DateSelectAction::GoToPrevMonth),
-            Key::Right(KeyModifiers::CONTROL) => return Some(DateSelectAction::GoToNextMonth),
-            Key::Up(KeyModifiers::CONTROL) => return Some(DateSelectAction::GoToPrevYear),
-            Key::Down(KeyModifiers::CONTROL) => return Some(DateSelectAction::GoToNextYear),
-            _ => return None,
-        };
+            Key::Left(KeyModifiers::NONE) => Some(DateSelectPromptAction::GoToPrevDay),
+            Key::Right(KeyModifiers::NONE) => Some(DateSelectPromptAction::GoToNextDay),
+            Key::Up(KeyModifiers::NONE) => Some(DateSelectPromptAction::GoToPrevWeek),
+            Key::Down(KeyModifiers::NONE) | Key::Tab => Some(DateSelectPromptAction::GoToNextWeek),
+            Key::Left(KeyModifiers::CONTROL) => Some(DateSelectPromptAction::GoToPrevMonth),
+            Key::Right(KeyModifiers::CONTROL) => Some(DateSelectPromptAction::GoToNextMonth),
+            Key::Up(KeyModifiers::CONTROL) => Some(DateSelectPromptAction::GoToPrevYear),
+            Key::Down(KeyModifiers::CONTROL) => Some(DateSelectPromptAction::GoToNextYear),
+            _ => None,
+        }
     }
 }

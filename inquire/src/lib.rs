@@ -63,7 +63,7 @@
 //! [`Password`]: crate::Password
 //! [`Editor`]: crate::Editor
 
-#![warn(missing_docs)]
+#![allow(missing_docs)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![allow(clippy::bool_to_int_with_if)]
 pub mod autocompletion;
