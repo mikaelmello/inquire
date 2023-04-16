@@ -32,3 +32,38 @@ pub enum Key {
     #[deprecated(note = "Please implement the proper matcher for your key on key.rs")]
     Any,
 }
+
+pub trait InnerPromptAction<C>
+where
+    Self: Sized,
+{
+    fn map_key(key: Key, config: C) -> Option<Self>;
+}
+
+pub enum PromptAction<A>
+where
+    A: InnerPromptAction<C>,
+{
+    Cancel,
+    Interrupt,
+    Submit,
+    Inner(A),
+    None,
+}
+
+impl<A, C> PromptAction<A, C>
+where
+    A: InnerPromptAction<C>,
+{
+    pub fn from_key(key: Key, config: C) -> Self {
+        match key {
+            Key::Cancel => PromptAction::Cancel,
+            Key::Interrupt => PromptAction::Interrupt,
+            Key::Submit => PromptAction::Submit,
+            key => match A::map_key(key, config) {
+                Some(inner) => PromptAction::Inner(inner),
+                None => PromptAction::None,
+            },
+        }
+    }
+}

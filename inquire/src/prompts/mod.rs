@@ -9,6 +9,7 @@ mod dateselect;
 mod editor;
 mod multiselect;
 mod password;
+pub mod prompt;
 mod select;
 mod text;
 
