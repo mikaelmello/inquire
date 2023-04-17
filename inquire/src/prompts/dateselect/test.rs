@@ -39,8 +39,8 @@ date_test!(today_date, vec![KeyCode::Enter], get_current_date());
 date_test!(
     custom_default_date,
     vec![KeyCode::Enter],
-    NaiveDate::from_ymd(2021, 1, 9),
-    DateSelect::new("Date").with_default(NaiveDate::from_ymd(2021, 1, 9))
+    NaiveDate::from_ymd_opt(2021, 1, 9).unwrap(),
+    DateSelect::new("Date").with_default(NaiveDate::from_ymd_opt(2021, 1, 9).unwrap())
 );
 
 #[test]
@@ -72,5 +72,5 @@ fn closure_validator() {
         .prompt_with_backend(&mut backend)
         .unwrap();
 
-    assert_eq!(today_date.pred(), ans);
+    assert_eq!(today_date.pred_opt().unwrap(), ans);
 }

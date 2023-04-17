@@ -3,11 +3,11 @@ use core::panic;
 use chrono::NaiveDate;
 
 pub fn get_current_date() -> NaiveDate {
-    chrono::Local::now().date().naive_local()
+    chrono::Local::now().date_naive()
 }
 
 pub fn get_start_date(month: chrono::Month, year: i32) -> NaiveDate {
-    chrono::NaiveDate::from_ymd(year, month.number_from_month(), 1)
+    chrono::NaiveDate::from_ymd_opt(year, month.number_from_month(), 1).unwrap()
 }
 
 pub fn get_month(month: u32) -> chrono::Month {

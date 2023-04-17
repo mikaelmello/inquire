@@ -43,9 +43,9 @@ fn date_select_misc_options() {
 
     let date = DateSelect::new("When do you want to travel?")
         // Could also be `.with_starting_date()`
-        .with_default(NaiveDate::from_ymd(2021, 8, 1))
-        .with_min_date(NaiveDate::from_ymd(2021, 8, 1))
-        .with_max_date(NaiveDate::from_ymd(2021, 12, 31))
+        .with_default(NaiveDate::from_ymd_opt(2021, 8, 1).unwrap())
+        .with_min_date(NaiveDate::from_ymd_opt(2021, 8, 1).unwrap())
+        .with_max_date(NaiveDate::from_ymd_opt(2021, 12, 31).unwrap())
         .with_week_start(Weekday::Mon)
         .with_help_message("Possible flights will be displayed according to the selected date")
         .prompt();
@@ -86,13 +86,7 @@ fn date_select_with_starting_date() {
 
     DateSelect::new("Check-in date:")
         // Could also be `.with_default()`
-        .with_starting_date(
-            chrono::Local::now()
-                .date()
-                .naive_local()
-                .pred_opt()
-                .unwrap(),
-        )
+        .with_starting_date(chrono::Local::now().date_naive().pred_opt().unwrap())
         .prompt()
         .unwrap();
     println!("We will be expecting you!");

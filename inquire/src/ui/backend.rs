@@ -662,7 +662,10 @@ pub mod date {
                 date_it = date_it.sub(Duration::weeks(1));
             } else {
                 while date_it.weekday() != week_start {
-                    date_it = date_it.pred();
+                    date_it = match date_it.pred_opt() {
+                        Some(date) => date,
+                        None => break,
+                    };
                 }
             }
 
@@ -709,7 +712,7 @@ pub mod date {
                     let token = Styled::new(date).with_style_sheet(style_sheet);
                     self.terminal.write_styled(&token)?;
 
-                    date_it = date_it.succ();
+                    date_it = date_it.succ_opt().unwrap_or(date_it);
                 }
 
                 self.new_line()?;

@@ -164,10 +164,10 @@ where
     };
 
     /// Default page size, equal to the global default page size [config::DEFAULT_PAGE_SIZE]
-    pub const DEFAULT_PAGE_SIZE: usize = 7;
+    pub const DEFAULT_PAGE_SIZE: usize = crate::config::DEFAULT_PAGE_SIZE;
 
     /// Default value of vim mode, equal to the global default value [config::DEFAULT_PAGE_SIZE]
-    pub const DEFAULT_VIM_MODE: bool = false;
+    pub const DEFAULT_VIM_MODE: bool = crate::config::DEFAULT_VIM_MODE;
 
     /// Default starting cursor index.
     pub const DEFAULT_STARTING_CURSOR: usize = 0;
