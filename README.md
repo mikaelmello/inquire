@@ -86,7 +86,7 @@ With `RenderConfig`, you can customize foreground color, background color and at
 
 This allows you to have greater control over the style of your application while continuing to have a clean API to create prompts as smoothly as possible.
 
-In the [`render_config.rs`](./examples/render_config.rs) example, you can take a look at the capabilities of this API. The example is exactly the same one as [`expense_tracker.rs`](./examples/expense_tracker.rs), but with several style aspects customized. Take a look at their differences:
+In the [`render_config.rs`](./inquire/examples/render_config.rs) example, you can take a look at the capabilities of this API. The example is exactly the same one as [`expense_tracker.rs`](./inquire/examples/expense_tracker.rs), but with several style aspects customized. Take a look at their differences:
 
 ![Animated GIF making a demonstration of the expense_tracker example. You can replay this recording in your terminal with asciinema play command - asciinema play ./assets/expense_tracker.cast](./assets/expense_tracker_gifcast.gif)
 [Source](./examples/expense_tracker.rs)
