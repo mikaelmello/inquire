@@ -10,7 +10,7 @@ use tempfile::NamedTempFile;
 use crate::{
     error::InquireResult,
     formatter::StringFormatter,
-    prompt::{HandleResult, Prompt},
+    prompts::prompt::{ActionResult, Prompt},
     ui::EditorBackend,
     validator::{ErrorMessage, StringValidator, Validation},
     Editor, InquireError,
@@ -128,11 +128,11 @@ where
         Ok(answer)
     }
 
-    fn handle(&mut self, action: EditorPromptAction) -> InquireResult<HandleResult> {
+    fn handle(&mut self, action: EditorPromptAction) -> InquireResult<ActionResult> {
         match action {
             EditorPromptAction::OpenEditor => {
                 self.run_editor()?;
-                Ok(HandleResult::NeedsRedraw)
+                Ok(ActionResult::NeedsRedraw)
             }
         }
     }

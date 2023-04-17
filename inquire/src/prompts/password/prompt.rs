@@ -2,7 +2,7 @@ use crate::{
     error::InquireResult,
     formatter::StringFormatter,
     input::Input,
-    prompt::{HandleResult, Prompt},
+    prompts::prompt::{ActionResult, Prompt},
     ui::PasswordBackend,
     validator::{ErrorMessage, StringValidator, Validation},
     InquireError, Password, PasswordDisplayMode,
@@ -84,17 +84,19 @@ impl<'a> PasswordPrompt<'a> {
         }
     }
 
-    fn toggle_display_mode(&mut self) -> HandleResult {
+    fn toggle_display_mode(&mut self) -> ActionResult {
         let new_mode = match self.current_mode {
             PasswordDisplayMode::Hidden => PasswordDisplayMode::Full,
             PasswordDisplayMode::Masked => PasswordDisplayMode::Full,
             PasswordDisplayMode::Full => self.config.display_mode,
         };
 
-        let dirty = new_mode != self.current_mode;
-        self.current_mode = new_mode;
-
-        HandleResult::from_bool_cmp(dirty)
+        if new_mode != self.current_mode {
+            self.current_mode = new_mode;
+            ActionResult::NeedsRedraw
+        } else {
+            ActionResult::Clean
+        }
     }
 
     fn confirm_current_answer(&mut self) -> Option<String> {
@@ -185,7 +187,7 @@ where
         Ok(answer)
     }
 
-    fn handle(&mut self, action: PasswordPromptAction) -> InquireResult<HandleResult> {
+    fn handle(&mut self, action: PasswordPromptAction) -> InquireResult<ActionResult> {
         let result = match action {
             PasswordPromptAction::ValueInput(input_action) => {
                 self.active_input_mut().handle(input_action).into()

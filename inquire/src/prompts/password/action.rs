@@ -1,14 +1,16 @@
 use crate::{
-    input::InputAction,
-    ui::{InnerAction, Key, KeyModifiers},
+    ui::{Key, KeyModifiers},
+    InnerAction, InputAction,
 };
 
 use super::config::PasswordConfig;
 
+/// Set of actions for a PasswordPrompt.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-#[allow(clippy::enum_variant_names)]
 pub enum PasswordPromptAction {
+    /// Action on the value text input handler.
     ValueInput(InputAction),
+    /// Toggles the display mode between plain text and the initial one.
     ToggleDisplayMode,
 }
 

@@ -1,6 +1,8 @@
-pub mod action;
-pub mod config;
+mod action;
+mod config;
 mod prompt;
+
+pub use action::*;
 
 use std::str::FromStr;
 
@@ -9,7 +11,7 @@ use crate::{
     error::{InquireError, InquireResult},
     formatter::CustomTypeFormatter,
     parser::CustomTypeParser,
-    prompt::Prompt,
+    prompts::prompt::Prompt,
     terminal::get_default_terminal,
     ui::{Backend, CustomTypeBackend, RenderConfig},
     validator::CustomTypeValidator,

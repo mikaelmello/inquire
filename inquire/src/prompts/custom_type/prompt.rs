@@ -3,7 +3,7 @@ use crate::{
     formatter::CustomTypeFormatter,
     input::Input,
     parser::CustomTypeParser,
-    prompt::{HandleResult, Prompt},
+    prompts::prompt::{ActionResult, Prompt},
     ui::CustomTypeBackend,
     validator::{CustomTypeValidator, ErrorMessage, Validation},
     CustomType, InquireError,
@@ -113,7 +113,7 @@ where
         Ok(answer)
     }
 
-    fn handle(&mut self, action: CustomTypePromptAction) -> InquireResult<HandleResult> {
+    fn handle(&mut self, action: CustomTypePromptAction) -> InquireResult<ActionResult> {
         let result = match action {
             CustomTypePromptAction::ValueInput(input_action) => {
                 self.input.handle(input_action).into()

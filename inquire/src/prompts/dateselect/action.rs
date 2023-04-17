@@ -1,17 +1,29 @@
-use crate::ui::{InnerAction, Key, KeyModifiers};
+use crate::{
+    ui::{Key, KeyModifiers},
+    InnerAction,
+};
 
 use super::config::DateSelectConfig;
 
+/// Set of actions for a DateSelectPrompt.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 #[allow(clippy::enum_variant_names)]
 pub enum DateSelectPromptAction {
+    /// Move day cursor to the previous day.
     GoToPrevDay,
+    /// Move day cursor to the next day.
     GoToNextDay,
+    /// Move day cursor to the previous week.
     GoToPrevWeek,
+    /// Move day cursor to the next week.
     GoToNextWeek,
+    /// Move day cursor to the previous month.
     GoToPrevMonth,
+    /// Move day cursor to the next month.
     GoToNextMonth,
+    /// Move day cursor to the previous year.
     GoToPrevYear,
+    /// Move day cursor to the next year.
     GoToNextYear,
 }
 

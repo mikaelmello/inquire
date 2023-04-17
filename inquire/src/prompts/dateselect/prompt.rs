@@ -9,7 +9,7 @@ use crate::{
     date_utils::{get_current_date, get_month},
     error::InquireResult,
     formatter::DateFormatter,
-    prompt::{HandleResult, Prompt},
+    prompts::prompt::{ActionResult, Prompt},
     ui::date::DateSelectBackend,
     validator::{DateValidator, ErrorMessage, Validation},
     DateSelect, InquireError,
@@ -55,11 +55,11 @@ impl<'a> DateSelectPrompt<'a> {
         })
     }
 
-    fn shift_date(&mut self, duration: chrono::Duration) -> HandleResult {
+    fn shift_date(&mut self, duration: chrono::Duration) -> ActionResult {
         self.update_date(self.current_date.add(duration))
     }
 
-    fn shift_months(&mut self, qty: i32) -> HandleResult {
+    fn shift_months(&mut self, qty: i32) -> ActionResult {
         let date = self.current_date;
 
         let years = qty / 12;
@@ -79,13 +79,13 @@ impl<'a> DateSelectPrompt<'a> {
         if let Some(new_date) = new_date {
             self.update_date(new_date)
         } else {
-            HandleResult::Clean
+            ActionResult::Clean
         }
     }
 
-    fn update_date(&mut self, new_date: NaiveDate) -> HandleResult {
+    fn update_date(&mut self, new_date: NaiveDate) -> ActionResult {
         if self.current_date == new_date {
-            return HandleResult::Clean;
+            return ActionResult::Clean;
         }
 
         self.current_date = new_date;
@@ -96,7 +96,7 @@ impl<'a> DateSelectPrompt<'a> {
             self.current_date = min(self.current_date, max_date);
         }
 
-        HandleResult::NeedsRedraw
+        ActionResult::NeedsRedraw
     }
 
     fn validate_current_answer(&self) -> InquireResult<Validation> {
@@ -144,7 +144,7 @@ where
         Ok(answer)
     }
 
-    fn handle(&mut self, action: DateSelectPromptAction) -> InquireResult<HandleResult> {
+    fn handle(&mut self, action: DateSelectPromptAction) -> InquireResult<ActionResult> {
         let result = match action {
             DateSelectPromptAction::GoToPrevWeek => self.shift_date(Duration::weeks(-1)),
             DateSelectPromptAction::GoToNextWeek => self.shift_date(Duration::weeks(1)),

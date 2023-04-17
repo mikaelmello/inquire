@@ -10,9 +10,10 @@ use crate::{
     ui::{IndexPrefix, Key, RenderConfig, Styled},
     utils::{int_log10, Page},
     validator::ErrorMessage,
+    {Action, InnerAction},
 };
 
-use super::{Action, InnerAction, InputReader};
+use super::InputReader;
 
 pub trait CommonBackend {
     fn read_key(&mut self) -> Result<Key>;

@@ -1,6 +1,7 @@
-use crate::error::InquireResult;
-
-use super::{Action, InnerAction};
+use crate::{
+    error::InquireResult,
+    {Action, InnerAction},
+};
 
 pub trait InputReader<I> {
     fn next_action<C>(&mut self, config: &C) -> InquireResult<Option<Action<I>>>

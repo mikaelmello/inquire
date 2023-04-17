@@ -1,9 +1,11 @@
-pub mod action;
-pub mod config;
+mod action;
+mod config;
 mod prompt;
 #[cfg(test)]
 #[cfg(feature = "crossterm")]
 mod test;
+
+pub use action::*;
 
 use std::fmt::Display;
 
@@ -12,7 +14,7 @@ use crate::{
     error::{InquireError, InquireResult},
     formatter::OptionFormatter,
     list_option::ListOption,
-    prompt::Prompt,
+    prompts::prompt::Prompt,
     terminal::get_default_terminal,
     type_aliases::Filter,
     ui::{Backend, RenderConfig, SelectBackend},

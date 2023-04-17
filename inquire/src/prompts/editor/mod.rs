@@ -1,6 +1,8 @@
-pub mod action;
-pub mod config;
+mod action;
+mod config;
 mod prompt;
+
+pub use action::*;
 
 use std::{
     env,
@@ -12,7 +14,7 @@ use lazy_static::lazy_static;
 use crate::{
     error::{InquireError, InquireResult},
     formatter::StringFormatter,
-    prompt::Prompt,
+    prompts::prompt::Prompt,
     terminal::get_default_terminal,
     ui::{Backend, EditorBackend, RenderConfig},
     validator::StringValidator,

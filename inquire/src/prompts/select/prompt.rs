@@ -3,9 +3,9 @@ use std::fmt::Display;
 use crate::{
     error::InquireResult,
     formatter::OptionFormatter,
-    input::{Input, InputHandleResult},
+    input::{Input, InputActionResult},
     list_option::ListOption,
-    prompt::{HandleResult, Prompt},
+    prompts::prompt::{ActionResult, Prompt},
     type_aliases::Filter,
     ui::SelectBackend,
     utils::paginate,
@@ -75,7 +75,7 @@ where
             .collect()
     }
 
-    fn move_cursor_up(&mut self, qty: usize, wrap: bool) -> HandleResult {
+    fn move_cursor_up(&mut self, qty: usize, wrap: bool) -> ActionResult {
         let new_position = if wrap {
             let after_wrap = qty.saturating_sub(self.cursor_index);
             self.cursor_index
@@ -88,7 +88,7 @@ where
         self.update_cursor_position(new_position)
     }
 
-    fn move_cursor_down(&mut self, qty: usize, wrap: bool) -> HandleResult {
+    fn move_cursor_down(&mut self, qty: usize, wrap: bool) -> ActionResult {
         let mut new_position = self.cursor_index.saturating_add(qty);
 
         if new_position >= self.filtered_options.len() {
@@ -104,12 +104,12 @@ where
         self.update_cursor_position(new_position)
     }
 
-    fn update_cursor_position(&mut self, new_position: usize) -> HandleResult {
+    fn update_cursor_position(&mut self, new_position: usize) -> ActionResult {
         if new_position != self.cursor_index {
             self.cursor_index = new_position;
-            HandleResult::NeedsRedraw
+            ActionResult::NeedsRedraw
         } else {
-            HandleResult::Clean
+            ActionResult::Clean
         }
     }
 
@@ -154,7 +154,7 @@ where
         Ok(answer)
     }
 
-    fn handle(&mut self, action: SelectPromptAction) -> InquireResult<HandleResult> {
+    fn handle(&mut self, action: SelectPromptAction) -> InquireResult<ActionResult> {
         let result = match action {
             SelectPromptAction::MoveUp => self.move_cursor_up(1, true),
             SelectPromptAction::MoveDown => self.move_cursor_down(1, true),
@@ -165,7 +165,7 @@ where
             SelectPromptAction::FilterInput(input_action) => {
                 let result = self.input.handle(input_action);
 
-                if let InputHandleResult::ContentChanged = result {
+                if let InputActionResult::ContentChanged = result {
                     let options = self.filter_options();
                     self.filtered_options = options;
                     if self.filtered_options.len() <= self.cursor_index {

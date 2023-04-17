@@ -1,15 +1,17 @@
-pub mod action;
-pub mod config;
+mod action;
+mod config;
 mod prompt;
 #[cfg(test)]
 #[cfg(feature = "crossterm")]
 mod test;
 
+pub use action::*;
+
 use crate::{
     config::get_configuration,
     error::{InquireError, InquireResult},
     formatter::StringFormatter,
-    prompt::Prompt,
+    prompts::prompt::Prompt,
     terminal::get_default_terminal,
     ui::{Backend, PasswordBackend, RenderConfig},
     validator::StringValidator,

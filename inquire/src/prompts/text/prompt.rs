@@ -4,9 +4,9 @@ use crate::{
     autocompletion::{NoAutoCompletion, Replacement},
     error::InquireResult,
     formatter::StringFormatter,
-    input::{Input, InputHandleResult},
+    input::{Input, InputActionResult},
     list_option::ListOption,
-    prompt::{HandleResult, Prompt},
+    prompts::prompt::{ActionResult, Prompt},
     ui::TextBackend,
     utils::paginate,
     validator::{ErrorMessage, StringValidator, Validation},
@@ -79,7 +79,7 @@ impl<'a> TextPrompt<'a> {
         }
     }
 
-    fn move_cursor_up(&mut self, qty: usize) -> HandleResult {
+    fn move_cursor_up(&mut self, qty: usize) -> ActionResult {
         let new_cursor_index = match self.suggestion_cursor_index {
             None => None,
             Some(index) if index < qty => None,
@@ -89,7 +89,7 @@ impl<'a> TextPrompt<'a> {
         self.update_suggestion_cursor_pos(new_cursor_index)
     }
 
-    fn move_cursor_down(&mut self, qty: usize) -> HandleResult {
+    fn move_cursor_down(&mut self, qty: usize) -> ActionResult {
         let new_cursor_index = match self.suggested_options.is_empty() {
             true => None,
             false => match self.suggestion_cursor_index {
@@ -108,16 +108,16 @@ impl<'a> TextPrompt<'a> {
         self.update_suggestion_cursor_pos(new_cursor_index)
     }
 
-    fn update_suggestion_cursor_pos(&mut self, new_position: Option<usize>) -> HandleResult {
+    fn update_suggestion_cursor_pos(&mut self, new_position: Option<usize>) -> ActionResult {
         if new_position != self.suggestion_cursor_index {
             self.suggestion_cursor_index = new_position;
-            HandleResult::NeedsRedraw
+            ActionResult::NeedsRedraw
         } else {
-            HandleResult::Clean
+            ActionResult::Clean
         }
     }
 
-    fn use_current_suggestion(&mut self) -> InquireResult<HandleResult> {
+    fn use_current_suggestion(&mut self) -> InquireResult<ActionResult> {
         let suggestion = self.get_highlighted_suggestion().map(|s| s.to_owned());
         match self
             .autocompleter
@@ -125,9 +125,9 @@ impl<'a> TextPrompt<'a> {
         {
             Replacement::Some(value) => {
                 self.input = Input::new_with(value);
-                Ok(HandleResult::NeedsRedraw)
+                Ok(ActionResult::NeedsRedraw)
             }
-            Replacement::None => Ok(HandleResult::Clean),
+            Replacement::None => Ok(ActionResult::Clean),
         }
     }
 
@@ -193,16 +193,16 @@ where
         Ok(result)
     }
 
-    fn handle(&mut self, action: TextPromptAction) -> InquireResult<HandleResult> {
+    fn handle(&mut self, action: TextPromptAction) -> InquireResult<ActionResult> {
         let result = match action {
             TextPromptAction::ValueInput(input_action) => {
                 let result = self.input.handle(input_action);
 
-                if let InputHandleResult::ContentChanged = result {
+                if let InputActionResult::ContentChanged = result {
                     self.update_suggestions()?;
                 }
 
-                HandleResult::from_bool_cmp(result.needs_redraw())
+                result.into()
             }
             TextPromptAction::MoveToSuggestionAbove => self.move_cursor_up(1),
             TextPromptAction::MoveToSuggestionBelow => self.move_cursor_down(1),

@@ -1,22 +1,32 @@
 use crate::{
-    input::InputAction,
-    ui::{InnerAction, Key, KeyModifiers},
+    ui::{Key, KeyModifiers},
+    InnerAction, InputAction,
 };
 
 use super::config::MultiSelectConfig;
 
+/// Set of actions for a MultiSelectPrompt.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-#[allow(clippy::enum_variant_names)]
 pub enum MultiSelectPromptAction {
+    /// Action on the value text input handler.
     FilterInput(InputAction),
+    /// Moves the cursor to the option above.
     MoveUp,
+    /// Moves the cursor to the option below.
     MoveDown,
+    /// Moves the cursor to the page above.
     PageUp,
+    /// Moves the cursor to the page below.
     PageDown,
+    /// Moves the cursor to the start of the list.
     MoveToStart,
+    /// Moves the cursor to the end of the list.
     MoveToEnd,
+    /// Toggles the selection of the current option.
     ToggleCurrentOption,
+    /// Selects all options.
     SelectAll,
+    /// Deselects all options.
     ClearSelections,
 }
 

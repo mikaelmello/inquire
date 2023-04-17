@@ -63,7 +63,7 @@
 //! [`Password`]: crate::Password
 //! [`Editor`]: crate::Editor
 
-#![allow(missing_docs)]
+#![warn(missing_docs)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![allow(clippy::bool_to_int_with_if)]
 pub mod autocompletion;
@@ -85,4 +85,5 @@ pub mod validator;
 pub use crate::autocompletion::Autocomplete;
 pub use crate::config::set_global_render_config;
 pub use crate::error::{CustomUserError, InquireError};
+pub use crate::input::action::*;
 pub use crate::prompts::*;

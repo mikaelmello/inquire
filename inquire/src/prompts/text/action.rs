@@ -1,18 +1,25 @@
 use crate::{
-    input::InputAction,
-    ui::{InnerAction, Key, KeyModifiers},
+    ui::{Key, KeyModifiers},
+    InnerAction, InputAction,
 };
 
 use super::config::TextConfig;
 
+/// Set of actions for a TextPrompt.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 #[allow(clippy::enum_variant_names)]
 pub enum TextPromptAction {
+    /// Action on the value text input handler.
     ValueInput(InputAction),
+    /// When a suggestion list exists, moves the cursor to the option above.
     MoveToSuggestionAbove,
+    /// When a suggestion list exists, moves the cursor to the option below.
     MoveToSuggestionBelow,
+    /// When a suggestion list exists, moves the cursor to the page above.
     MoveToSuggestionPageUp,
+    /// When a suggestion list exists, moves the cursor to the page below.
     MoveToSuggestionPageDown,
+    /// When a suggestion list exists, autocompletes the text input with the current suggestion.
     UseCurrentSuggestion,
 }
 

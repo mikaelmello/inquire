@@ -1,7 +1,9 @@
 use crate::Text;
 
+/// Configuration settings used in the execution of a TextPrompt.
 #[derive(Copy, Clone, Debug)]
 pub struct TextConfig {
+    /// Page size of the suggestion list, if it exists.
     pub page_size: usize,
 }
 

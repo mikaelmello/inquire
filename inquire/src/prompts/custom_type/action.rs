@@ -1,13 +1,11 @@
-use crate::{
-    input::InputAction,
-    ui::{InnerAction, Key},
-};
+use crate::{ui::Key, InnerAction, InputAction};
 
 use super::config::CustomTypeConfig;
 
+/// Set of actions for a CustomTypePrompt.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-#[allow(clippy::enum_variant_names)]
 pub enum CustomTypePromptAction {
+    /// Action on the value text input handler.
     ValueInput(InputAction),
 }
 

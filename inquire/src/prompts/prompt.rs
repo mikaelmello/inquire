@@ -1,35 +1,23 @@
-use crate::{
-    error::InquireResult,
-    input::InputHandleResult,
-    ui::{Action, CommonBackend, InnerAction},
-    InquireError,
-};
+//! Definitions of common behavior shared amongst all different prompt types.
 
+use crate::{error::InquireResult, input::InputActionResult, ui::CommonBackend, InquireError};
+
+use super::action::{Action, InnerAction};
+
+/// Represents the result of an action on the prompt.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum HandleResult {
+pub enum ActionResult {
+    /// The action resulted in a state change that requires the prompt to be
+    /// re-rendered.
     NeedsRedraw,
+
+    /// The action either didn't result in a state change or the state
+    /// change does not require a redraw.
     Clean,
 }
 
-impl HandleResult {
-    pub fn join(self, other: HandleResult) -> HandleResult {
-        match (self, other) {
-            (HandleResult::Clean, HandleResult::Clean) => HandleResult::Clean,
-            (_, _) => HandleResult::NeedsRedraw,
-        }
-    }
-
-    pub fn from_bool_cmp(val: bool) -> HandleResult {
-        if val {
-            HandleResult::NeedsRedraw
-        } else {
-            HandleResult::Clean
-        }
-    }
-}
-
-impl From<InputHandleResult> for HandleResult {
-    fn from(value: InputHandleResult) -> Self {
+impl From<InputActionResult> for ActionResult {
+    fn from(value: InputActionResult) -> Self {
         if value.needs_redraw() {
             Self::NeedsRedraw
         } else {
@@ -38,16 +26,34 @@ impl From<InputHandleResult> for HandleResult {
     }
 }
 
+/// Shared behavior among all different prompt types.
 pub trait Prompt<Backend, Config, IAction, ReturnType>
 where
     Backend: CommonBackend,
     IAction: InnerAction<Config>,
     Self: Sized,
 {
+    /// Prompt header rendered to the user.
     fn message(&self) -> &str;
+
+    /// Returns the underlying settings of the prompt, used, among other
+    /// goals, to parse a key event into a prompt action.
+    ///
+    /// For example, a prompt might be configured to have vim mode enabled
+    /// or disabled, which affects how certain key events are parsed into
+    /// actions to the prompt.
     fn config(&self) -> &Config;
+
+    /// Hook called when a prompt is finished. Returns a string
+    /// to be rendered to the user as the final submission to the prompt.
+    ///
+    /// # Arguments
+    ///
+    /// * `answer` - Answer returned by the prompt.
     fn format_answer(&self, answer: &ReturnType) -> String;
 
+    /// Hook called when a prompt is first started, before the first
+    /// draw happens.
     fn setup(&mut self) -> InquireResult<()> {
         Ok(())
     }
@@ -59,20 +65,49 @@ where
         Ok(true)
     }
 
+    /// Hook called when the user submits the answer to the prompt.
+    ///
+    /// On success, it should return `Some(ReturnType)` when the user
+    /// submission is valid and the prompt can graciously return.
+    ///
+    /// If the user submission is invalid or should be rejected for some reason,
+    /// this method should return `Ok(None)`.
+    ///
+    /// On `Err(*)`, the prompt is teared down.
     fn submit(&mut self) -> InquireResult<Option<ReturnType>>;
-    fn handle(&mut self, action: IAction) -> InquireResult<HandleResult>;
+
+    /// Entrypoint for any business logic for the prompt. Returns the result
+    /// of the action. If the result is `Clean`, the prompt will
+    /// not be re-rendered.
+    ///
+    /// On the usual path, users' key presses are parsed into prompt actions,
+    /// which are then submitted to this method to be handled.
+    ///
+    /// On testing scenarios, developers might provide a stream of actions
+    /// to the prompt, which will then be submitted to this method just the same.
+    fn handle(&mut self, action: IAction) -> InquireResult<ActionResult>;
+
+    /// Hook called for the rendering of the prompt UI.
+    ///
+    /// The implementation should **not** call neither `frame_setup` or
+    /// `frame_finish` methods of the underlying backend, as this is handled
+    /// by the top-level prompt method.
     fn render(&self, backend: &mut Backend) -> InquireResult<()>;
 
+    /// Top-level implementation of a prompt's flow.
+    ///
+    /// This should not be reimplemented by types that implement this trait,
+    /// unless the situation really warrants it.
     fn prompt(mut self, backend: &mut Backend) -> InquireResult<ReturnType> {
         self.setup()?;
 
-        let mut last_handle = HandleResult::NeedsRedraw;
+        let mut last_handle = ActionResult::NeedsRedraw;
         let final_answer = loop {
-            if let HandleResult::NeedsRedraw = last_handle {
+            if let ActionResult::NeedsRedraw = last_handle {
                 backend.frame_setup()?;
                 self.render(backend)?;
                 backend.frame_finish()?;
-                last_handle = HandleResult::Clean;
+                last_handle = ActionResult::Clean;
             }
 
             let key = backend.read_key()?;
@@ -84,7 +119,7 @@ where
                         if let Some(answer) = self.submit()? {
                             break answer;
                         }
-                        HandleResult::Clean
+                        ActionResult::Clean
                     }
                     Action::Cancel => {
                         let pre_cancel_result = self.pre_cancel()?;
@@ -96,7 +131,7 @@ where
                             return Err(InquireError::OperationCanceled);
                         }
 
-                        HandleResult::NeedsRedraw
+                        ActionResult::NeedsRedraw
                     }
                     Action::Interrupt => return Err(InquireError::OperationInterrupted),
                     Action::Inner(inner_action) => self.handle(inner_action)?,

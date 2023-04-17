@@ -1,10 +1,11 @@
-use crate::ui::{InnerAction, Key};
+use crate::{ui::Key, InnerAction};
 
 use super::config::EditorConfig;
 
+/// Set of actions for an EditorPrompt.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-#[allow(clippy::enum_variant_names)]
 pub enum EditorPromptAction {
+    /// Open the editor.
     OpenEditor,
 }
 

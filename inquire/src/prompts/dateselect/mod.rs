@@ -1,8 +1,11 @@
-pub mod action;
-pub mod config;
+mod action;
+mod config;
 mod prompt;
 #[cfg(test)]
+#[cfg(feature = "crossterm")]
 mod test;
+
+pub use action::*;
 
 use chrono::NaiveDate;
 
@@ -11,7 +14,7 @@ use crate::{
     date_utils::get_current_date,
     error::{InquireError, InquireResult},
     formatter::{self, DateFormatter},
-    prompt::Prompt,
+    prompts::prompt::Prompt,
     terminal::{get_default_terminal, Terminal},
     ui::{Backend, RenderConfig},
     validator::DateValidator,
