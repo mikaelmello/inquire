@@ -23,11 +23,7 @@ impl InputAction {
     /// of a source string.
     #[allow(unused)]
     fn gen_write_from_str(value: &str) -> Vec<InputAction> {
-        value
-            .chars()
-            .into_iter()
-            .map(|c| InputAction::Write(c))
-            .collect()
+        value.chars().map(InputAction::Write).collect()
     }
 }
 

@@ -11,11 +11,9 @@ pub enum CustomTypePromptAction {
 
 impl InnerAction<CustomTypeConfig> for CustomTypePromptAction {
     fn from_key(key: Key, _config: &CustomTypeConfig) -> Option<Self> {
-        let action = match key {
-            key => match InputAction::from_key(key, &()) {
-                Some(action) => Self::ValueInput(action),
-                None => return None,
-            },
+        let action = match InputAction::from_key(key, &()) {
+            Some(action) => Self::ValueInput(action),
+            None => return None,
         };
 
         Some(action)
