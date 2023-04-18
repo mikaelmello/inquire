@@ -14,9 +14,8 @@ bitflags! {
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Key {
-    Cancel,
-    Interrupt,
-    Submit,
+    Escape,
+    Enter,
     Backspace,
     Tab,
     Delete(KeyModifiers),
@@ -29,6 +28,6 @@ pub enum Key {
     Left(KeyModifiers),
     Right(KeyModifiers),
     Char(char, KeyModifiers),
-    #[deprecated(note = "Please implement the proper matcher for your key on key.rs")]
+    #[deprecated(note = "If the key you want isn't mapped, please open a PR.")]
     Any,
 }

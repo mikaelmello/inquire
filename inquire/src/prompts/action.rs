@@ -3,7 +3,7 @@
 
 use std::fmt::Debug;
 
-use crate::ui::Key;
+use crate::ui::{Key, KeyModifiers};
 
 /// Top-level type to describe the directives a prompt
 /// receives.
@@ -36,9 +36,9 @@ where
         I: InnerAction<C>,
     {
         match key {
-            Key::Cancel => Some(Action::Cancel),
-            Key::Interrupt => Some(Action::Interrupt),
-            Key::Submit => Some(Action::Submit),
+            Key::Enter => Some(Action::Submit),
+            Key::Escape => Some(Action::Cancel),
+            Key::Char('c', KeyModifiers::CONTROL) => Some(Action::Interrupt),
             key => I::from_key(key, config).map(Action::Inner),
         }
     }

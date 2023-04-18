@@ -249,9 +249,8 @@ impl From<Key> for crate::ui::Key {
         use crate::ui::KeyModifiers;
 
         match key {
-            Key::Ctrl('c') => Self::Interrupt,
-            Key::Esc => Self::Cancel,
-            Key::Char('\n') | Key::Char('\r') => Self::Submit,
+            Key::Esc => Self::Escape,
+            Key::Char('\n') | Key::Char('\r') => Self::Enter,
             Key::Char('\t') => Self::Tab,
             Key::Backspace => Self::Backspace,
             Key::Delete => Self::Delete(KeyModifiers::empty()),
