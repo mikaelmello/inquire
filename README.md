@@ -111,7 +111,7 @@ Finally, `inquire` has a feature called `macros` that is included by default. Wh
 
 In the [demo](#demo) you can see the behavior of an input not passing the requirements in the _amount_ prompt, when the error message "Please type a valid number" is displayed. _Full disclosure, this error message was displayed due to a parsing, not validation, error, but the user experience is the same for both cases._
 
-If you'd like to see more examples, the [`date.rs`](examples/date.rs) and [`multiselect.rs`](examples/multiselect.rs) files contain custom validators.
+If you'd like to see more examples, the [`date.rs`](./inquire/examples/date.rs) and [`multiselect.rs`](./inquire/examples/multiselect.rs) files contain custom validators.
 
 ## Terminal Back-end
 
