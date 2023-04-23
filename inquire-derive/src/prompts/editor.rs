@@ -1,4 +1,4 @@
-use darling::{FromMeta, ToTokens};
+use darling::{FromMeta};
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use syn::Expr;
@@ -63,52 +63,58 @@ impl FieldInquireForm for Editor {
         };
 
         // generate ident
-        let prompt_message = match &self.prompt_message {
-            Some(prompt_message) => prompt_message.to_token_stream(),
-            None => {
-                let prompt_message = format!("What's your {}?", fieldname);
+        let prompt_message = self.prompt_message.as_ref().map_or_else(
+            || {
+                let prompt_message = format!("What's your {fieldname}?");
                 quote! {
                     #prompt_message
                 }
-            }
-        };
-
-        let editor_command_args = match &self.editor_command_args {
-            Some(editor_command_args) => editor_command_args.to_token_stream(),
-            None => quote! { &[] },
-        };
-        let editor_command = match &self.editor_command {
-            Some(editor_command) => editor_command.to_token_stream(),
-            // TODO: ask inquire lib to expose pub get_default_editor_command()
-            // or impl our own function
-            None => quote! {
-                &std::ffi::OsString::from(if cfg!(windows) {
-                    String::from("notepad")
-                } else {
-                    String::from("nano")
-                })
             },
-        };
-        let file_extension = match &self.file_extension {
-            Some(file_extension) => file_extension.to_token_stream(),
-            None => quote! { ".txt" },
-        };
-        let predefined_text = match &self.predefined_text {
-            Some(predefined_text) => quote! { Some(#predefined_text) },
-            None => quote! { Some(self.#fieldname_idt.as_str()) },
-        };
-        let help_message = match &self.help_message {
-            Some(help_message) => quote! { Some(#help_message) },
-            None => quote! { inquire::Editor::DEFAULT_HELP_MESSAGE },
-        };
-        let validators = match &self.validators {
-            Some(validators) => quote! { #validators },
-            None => quote! { inquire::Editor::DEFAULT_VALIDATORS },
-        };
-        let formatter = match &self.formatter {
-            Some(formatter) => quote! { #formatter },
-            None => quote! { inquire::Editor::DEFAULT_FORMATTER },
-        };
+            quote::ToTokens::to_token_stream,
+        );
+
+        let editor_command_args = self.editor_command_args.as_ref().map_or_else(
+            || quote! { &[] },
+            quote::ToTokens::to_token_stream,
+        );
+
+        let editor_command = self.editor_command.as_ref().map_or_else(
+            || {
+                quote! {
+                     &std::ffi::OsString::from(if cfg!(windows) {
+                         String::from("notepad")
+                     } else {
+                         String::from("nano")
+                     })
+                }
+            },
+            quote::ToTokens::to_token_stream,
+        );
+
+        let file_extension = self.file_extension.as_ref().map_or_else(
+            || quote! { ".txt" },
+            quote::ToTokens::to_token_stream,
+        );
+
+        let predefined_text = self.predefined_text.as_ref().map_or_else(
+            || quote! { Some(self.#fieldname_idt.as_str()) },
+            |predefined_text| quote! { Some(#predefined_text) },
+        );
+
+        let help_message = self.help_message.as_ref().map_or_else(
+            || quote! { inquire::Editor::DEFAULT_HELP_MESSAGE },
+            |help_message| quote! { Some(#help_message) },
+        );
+
+        let validators = self.validators.as_ref().map_or_else(
+            || quote! { inquire::Editor::DEFAULT_VALIDATORS },
+            |validators| quote! { #validators },
+        );
+
+        let formatter = self.formatter.as_ref().map_or_else(
+            || quote! { inquire::Editor::DEFAULT_FORMATTER },
+            |formatter| quote! { #formatter },
+        );
 
         // Generate method
         Ok(quote! {

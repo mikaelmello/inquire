@@ -1,4 +1,6 @@
-use darling::{FromMeta, ToTokens};
+#![allow(clippy::nursery, clippy::option_if_let_else)]
+
+use darling::{FromMeta};
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use syn::{Error, Expr};
@@ -48,47 +50,55 @@ impl FieldInquireForm for Text {
         };
 
         // generate ident
-        let prompt_message = match &self.prompt_message {
-            Some(prompt_message) => prompt_message.to_token_stream(),
-            None => {
-                let prompt_message = format!("What's your {}?", fieldname);
+        let prompt_message = self.prompt_message.as_ref().map_or_else(
+            || {
+                let prompt_message = format!("What's your {fieldname}?");
                 quote! {
                     #prompt_message
                 }
-            }
-        };
-        let help_message = match &self.help_message {
-            Some(help_message) => quote! { Some(#help_message) },
-            None => quote! { None },
-        };
-        let default_value = match &self.default_value {
-            Some(default_value) => quote! { Some(#default_value) },
-            None => quote! { Some(self.#fieldname_idt.as_str()) },
-        };
-        let initial_value = match &self.initial_value {
-            Some(initial_value) => quote! { Some(#initial_value) },
-            None => quote! { None },
-        };
-        let placeholder_value = match &self.placeholder_value {
-            Some(placeholder_value) => quote! { Some(#placeholder_value) },
-            None => quote! { None },
-        };
-        let validators = match &self.validators {
-            Some(validators) => quote! { #validators },
-            None => quote! { Vec::new() },
-        };
-        let formatter = match &self.formatter {
-            Some(formatter) => quote! { Some(#formatter) },
-            None => quote! { inquire::Text::DEFAULT_FORMATTER },
-        };
-        let autocompleter = match &self.autocompleter {
-            Some(autocompleter) => quote! { Some(Box::new(#autocompleter)) },
-            None => quote! { None },
-        };
-        let page_size = match &self.page_size {
-            Some(page_size) => quote! { #page_size },
-            None => quote! { inquire::Text::DEFAULT_PAGE_SIZE },
-        };
+            },
+            quote::ToTokens::to_token_stream,
+        );
+
+        let help_message = self.help_message.as_ref().map_or_else(
+            || quote! { None },
+            |help_message| quote! { Some(#help_message) },
+        );
+
+        let default_value = self.default_value.as_ref().map_or_else(
+            || quote! { Some(self.#fieldname_idt.as_str()) },
+            |default_value| quote! { Some(#default_value) },
+        );
+
+        let initial_value = self.initial_value.as_ref().map_or_else(
+            || quote! { None },
+            |initial_value| quote! { Some(#initial_value) },
+        );
+
+        let placeholder_value = self.placeholder_value.as_ref().map_or_else(
+            || quote! { None },
+            |placeholder_value| quote! { Some(#placeholder_value) },
+        );
+
+        let validators = self.validators.as_ref().map_or_else(
+            || quote! { Vec::new() },
+            |validators| quote! { #validators },
+        );
+
+        let formatter = self.formatter.as_ref().map_or_else(
+            || quote! { inquire::Text::DEFAULT_FORMATTER },
+            |formatter| quote! { Some(#formatter) },
+        );
+
+        let autocompleter = self.autocompleter.as_ref().map_or_else(
+            || quote! { None },
+            |autocompleter| quote! { Some(Box::new(#autocompleter)) },
+        );
+
+        let page_size = self.page_size.as_ref().map_or_else(
+            || quote! { inquire::Text::DEFAULT_PAGE_SIZE },
+            |page_size| quote! { #page_size },
+        );
 
         // Generate method
         Ok(quote! {

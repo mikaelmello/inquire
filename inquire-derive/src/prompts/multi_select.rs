@@ -1,4 +1,4 @@
-use darling::{FromMeta, ToTokens};
+use darling::{FromMeta};
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use syn::{Error, Expr};
@@ -7,7 +7,7 @@ use super::FieldInquireForm;
 use crate::field::FieldSingleContext;
 use crate::helpers::extract_type_from_vec;
 
-/// MultiSelect prompts are suitable for when you need the user to select many options (including none if applicable) among a list of them.
+/// `MultiSelect` prompts are suitable for when you need the user to select many options (including none if applicable) among a list of them.
 /// The user can select (or deselect) the current highlighted option by pressing space, clean all selections by pressing the left arrow and select all options by pressing the right arrow.
 #[derive(Debug, FromMeta, Default)]
 #[darling(default)]
@@ -57,55 +57,55 @@ impl FieldInquireForm for MultiSelect {
         };
 
         // generate ident
-        let prompt_message = match &self.prompt_message {
-            Some(prompt_message) => prompt_message.to_token_stream(),
-            None => {
-                let prompt_message = format!("What's your {}?", fieldname);
+        let prompt_message = self.prompt_message.as_ref().map_or_else(
+            || {
+                let prompt_message = format!("What's your {fieldname}?");
                 quote! {
                     #prompt_message
                 }
-            }
-        };
-        let default_value = match &self.default_value {
-            Some(default_value) => quote! { #default_value },
-            None => quote! {  None },
-        };
-        let help_message = match &self.help_message {
-            Some(help_message) => quote! { Some(#help_message) },
-            None => quote! { None },
-        };
-        let validator = match &self.validator {
-            Some(validator) => quote! { Some(#validator) },
-            None => quote! { None },
-        };
-        let options = match &self.options {
-            Some(options) => options.to_token_stream(),
-            None => quote! { Vec::new() },
-        };
-        let vim_mode = match &self.vim_mode {
-            Some(vim_mode) => quote! { #vim_mode },
-            None => quote! { inquire::MultiSelect::<#inner_ty>::DEFAULT_VIM_MODE },
-        };
-        let keep_filter = match &self.keep_filter {
-            Some(keep_filter) => quote! { #keep_filter },
-            None => quote! { inquire::MultiSelect::<#inner_ty>::DEFAULT_KEEP_FILTER },
-        };
-        let filter_function = match &self.filter_function {
-            Some(filter_function) => quote! { #filter_function },
-            None => quote! { inquire::MultiSelect::<#inner_ty>::DEFAULT_FILTER },
-        };
-        let formatter = match &self.formatter {
-            Some(formatter) => quote! { Some(#formatter) },
-            None => quote! { inquire::MultiSelect::<#inner_ty>::DEFAULT_FORMATTER },
-        };
-        let starting_cursor = match &self.starting_cursor {
-            Some(starting_cursor) => quote! { #starting_cursor },
-            None => quote! { inquire::MultiSelect::<#inner_ty>::DEFAULT_STARTING_CURSOR },
-        };
-        let page_size = match &self.page_size {
-            Some(page_size) => quote! { #page_size },
-            None => quote! { inquire::MultiSelect::<#inner_ty>::DEFAULT_PAGE_SIZE },
-        };
+            },
+            quote::ToTokens::to_token_stream,
+        );
+        let default_value = self.default_value.as_ref().map_or_else(
+            || quote! {  None },
+            |default_value| quote! { #default_value },
+        );
+        let help_message = self.help_message.as_ref().map_or_else(
+            || quote! { None },
+            |help_message| quote! { Some(#help_message) },
+        );
+        let validator = self
+            .validator
+            .as_ref()
+            .map_or_else(|| quote! { None }, |validator| quote! { Some(#validator) });
+        let options = self.options.as_ref().map_or_else(
+            || quote! { Vec::new() },
+            quote::ToTokens::to_token_stream,
+        );
+        let vim_mode = self.vim_mode.as_ref().map_or_else(
+            || quote! { inquire::MultiSelect::<#inner_ty>::DEFAULT_VIM_MODE },
+            |vim_mode| quote! { #vim_mode },
+        );
+        let keep_filter = self.keep_filter.as_ref().map_or_else(
+            || quote! { inquire::MultiSelect::<#inner_ty>::DEFAULT_KEEP_FILTER },
+            |keep_filter| quote! { #keep_filter },
+        );
+        let filter_function = self.filter_function.as_ref().map_or_else(
+            || quote! { inquire::MultiSelect::<#inner_ty>::DEFAULT_FILTER },
+            |filter_function| quote! { #filter_function },
+        );
+        let formatter = self.formatter.as_ref().map_or_else(
+            || quote! { inquire::MultiSelect::<#inner_ty>::DEFAULT_FORMATTER },
+            |formatter| quote! { Some(#formatter) },
+        );
+        let starting_cursor = self.starting_cursor.as_ref().map_or_else(
+            || quote! { inquire::MultiSelect::<#inner_ty>::DEFAULT_STARTING_CURSOR },
+            |starting_cursor| quote! { #starting_cursor },
+        );
+        let page_size = self.page_size.as_ref().map_or_else(
+            || quote! { inquire::MultiSelect::<#inner_ty>::DEFAULT_PAGE_SIZE },
+            |page_size| quote! { #page_size },
+        );
 
         // Generate method
         Ok(quote! {

@@ -1,4 +1,4 @@
-use darling::{FromMeta, ToTokens};
+use darling::{FromMeta};
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use syn::Expr;
@@ -51,37 +51,44 @@ impl FieldInquireForm for Password {
         };
 
         // generate ident
-        let prompt_message = match &self.prompt_message {
-            Some(prompt_message) => prompt_message.to_token_stream(),
-            None => {
-                let prompt_message = format!("What's your {}?", fieldname);
+        let prompt_message = self.prompt_message.as_ref().map_or_else(
+            || {
+                let prompt_message = format!("What's your {fieldname}?");
                 quote! {
                     #prompt_message
                 }
-            }
-        };
-        let help_message = match &self.help_message {
-            Some(help_message) => quote! { Some(#help_message) },
-            None => quote! { inquire::Password::DEFAULT_HELP_MESSAGE },
-        };
-        let display_mode = match &self.display_mode {
-            Some(display_mode) => quote! {
-                #display_mode
             },
-            None => quote! { inquire::Password::DEFAULT_DISPLAY_MODE },
-        };
-        let enable_display_toggle = match &self.enable_display_toggle {
-            Some(enable_display_toggle) => quote! { #enable_display_toggle },
-            None => quote! { inquire::Password::DEFAULT_ENABLE_DISPLAY_TOGGLE },
-        };
-        let validators = match &self.validators {
-            Some(validators) => quote! { #validators },
-            None => quote! { inquire::Password::DEFAULT_VALIDATORS },
-        };
-        let formatter = match &self.formatter {
-            Some(formatter) => quote! { #formatter },
-            None => quote! { inquire::Password::DEFAULT_FORMATTER },
-        };
+            quote::ToTokens::to_token_stream,
+        );
+
+        let help_message = self.help_message.as_ref().map_or_else(
+            || quote! { inquire::Password::DEFAULT_HELP_MESSAGE },
+            |help_message| quote! { Some(#help_message) },
+        );
+
+        let display_mode = self.display_mode.as_ref().map_or_else(
+            || quote! { inquire::Password::DEFAULT_DISPLAY_MODE },
+            |display_mode| {
+                quote! {
+                    #display_mode
+                }
+            },
+        );
+
+        let enable_display_toggle = self.enable_display_toggle.as_ref().map_or_else(
+            || quote! { inquire::Password::DEFAULT_ENABLE_DISPLAY_TOGGLE },
+            |enable_display_toggle| quote! { #enable_display_toggle },
+        );
+
+        let validators = self.validators.as_ref().map_or_else(
+            || quote! { inquire::Password::DEFAULT_VALIDATORS },
+            |validators| quote! { #validators },
+        );
+
+        let formatter = self.formatter.as_ref().map_or_else(
+            || quote! { inquire::Password::DEFAULT_FORMATTER },
+            |formatter| quote! { #formatter },
+        );
 
         // Generate method
         Ok(quote! {

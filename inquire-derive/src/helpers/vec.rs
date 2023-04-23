@@ -2,7 +2,13 @@ use quote::spanned::Spanned;
 use syn::{Error, GenericArgument, PathArguments, Type, TypePath};
 
 fn path_is_vec(path: &TypePath) -> bool {
-    path.path.segments.len() == 1 && path.path.segments.iter().next().unwrap().ident == "Vec"
+    path.path.segments.len() == 1
+        && path
+            .path
+            .segments
+            .iter()
+            .next()
+            .map_or(false, |seg| seg.ident == "Vec")
 }
 
 pub fn extract_type_from_vec(ty: &Type) -> Result<Type, Error> {

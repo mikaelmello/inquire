@@ -5,6 +5,7 @@ fn get_list_options() -> Vec<String> {
 }
 
 #[derive(Debug, InquireForm)]
+#[derive(Default)]
 pub struct TestStruct {
     #[inquire(multi_select(
         prompt_message = "\"What's your selection?\"",
@@ -13,11 +14,7 @@ pub struct TestStruct {
     pub path: Vec<String>,
 }
 
-impl Default for TestStruct {
-    fn default() -> Self {
-        Self { path: Vec::new() }
-    }
-}
+
 
 fn main() {
     let mut ex = TestStruct::default();

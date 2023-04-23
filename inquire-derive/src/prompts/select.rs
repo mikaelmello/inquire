@@ -1,4 +1,4 @@
-use darling::{FromMeta, ToTokens};
+use darling::{FromMeta};
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use syn::{Error, Expr};
@@ -48,47 +48,50 @@ impl FieldInquireForm for Select {
         };
 
         // generate ident
-        let prompt_message = match &self.prompt_message {
-            Some(prompt_message) => prompt_message.to_token_stream(),
-            None => {
-                let prompt_message = format!("What's your {}?", fieldname);
+        let prompt_message = self.prompt_message.as_ref().map_or_else(
+            || {
+                let prompt_message = format!("What's your {fieldname}?");
                 quote! {
                     #prompt_message
                 }
-            }
-        };
-        let help_message = match &self.help_message {
-            Some(help_message) => quote! { Some(#help_message) },
-            None => quote! { None },
-        };
-        let options = match &self.options {
-            Some(options) => options.to_token_stream(),
-            None => quote! { Vec::new() },
-        };
+            },
+            quote::ToTokens::to_token_stream,
+        );
 
-        let vim_mode = match &self.vim_mode {
-            Some(vim_mode) => quote! { #vim_mode },
-            None => quote! { inquire::Select::<#ty>::DEFAULT_VIM_MODE },
-        };
+        let help_message = self.help_message.as_ref().map_or_else(
+            || quote! { None },
+            |help_message| quote! { Some(#help_message) },
+        );
 
-        let filter = match &self.filter_function {
-            Some(filter) => quote! { #filter },
-            None => quote! { inquire::Select::<#ty>::DEFAULT_FILTER },
-        };
-        let formatter = match &self.formatter {
-            Some(formatter) => quote! { Some(#formatter) },
-            None => quote! { inquire::Select::<#ty>::DEFAULT_FORMATTER },
-        };
+        let options = self.options.as_ref().map_or_else(
+            || quote! { Vec::new() },
+            quote::ToTokens::to_token_stream,
+        );
 
-        let starting_cursor = match &self.starting_cursor {
-            Some(starting_cursor) => quote! { #starting_cursor },
-            None => quote! { inquire::Select::<#ty>::DEFAULT_STARTING_CURSOR },
-        };
+        let vim_mode = self.vim_mode.as_ref().map_or_else(
+            || quote! { inquire::Select::<#ty>::DEFAULT_VIM_MODE },
+            |vim_mode| quote! { #vim_mode },
+        );
 
-        let page_size = match &self.page_size {
-            Some(page_size) => quote! { #page_size },
-            None => quote! { inquire::Select::<#ty>::DEFAULT_PAGE_SIZE },
-        };
+        let filter = self.filter_function.as_ref().map_or_else(
+            || quote! { inquire::Select::<#ty>::DEFAULT_FILTER },
+            |filter| quote! { #filter },
+        );
+
+        let formatter = self.formatter.as_ref().map_or_else(
+            || quote! { inquire::Select::<#ty>::DEFAULT_FORMATTER },
+            |formatter| quote! { Some(#formatter) },
+        );
+
+        let starting_cursor = self.starting_cursor.as_ref().map_or_else(
+            || quote! { inquire::Select::<#ty>::DEFAULT_STARTING_CURSOR },
+            |starting_cursor| quote! { #starting_cursor },
+        );
+
+        let page_size = self.page_size.as_ref().map_or_else(
+            || quote! { inquire::Select::<#ty>::DEFAULT_PAGE_SIZE },
+            |page_size| quote! { #page_size },
+        );
 
         // Generate method
         Ok(quote! {

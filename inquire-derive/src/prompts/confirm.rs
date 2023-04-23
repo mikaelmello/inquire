@@ -1,4 +1,4 @@
-use darling::{FromMeta, ToTokens};
+use darling::{FromMeta};
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use syn::Expr;
@@ -53,43 +53,47 @@ impl FieldInquireForm for Confirm {
         };
 
         // generate ident
-        let prompt_message = match &self.prompt_message {
-            Some(prompt_message) => prompt_message.to_token_stream(),
-            None => {
-                let prompt_message = format!("What's your {}?", fieldname);
+        let prompt_message = self.prompt_message.as_ref().map_or_else(
+            || {
+                let prompt_message = format!("What's your {fieldname}?");
                 quote! {
                     #prompt_message
                 }
-            }
-        };
-        let default_value = match &self.default_value {
-            Some(default_value) => quote! { Some(#default_value) },
-            None => quote! { Some(self.#fieldname_idt) },
-        };
-        let placeholder_value = match &self.placeholder_value {
-            Some(placeholder_value) => quote! { Some(#placeholder_value) },
-            None => quote! { None },
-        };
-        let help_message = match &self.help_message {
-            Some(help_message) => quote! { Some(#help_message) },
-            None => quote! { None },
-        };
-        let formatter = match &self.formatter {
-            Some(formatter) => quote! { #formatter },
-            None => quote! { inquire::Confirm::DEFAULT_FORMATTER },
-        };
-        let parser = match &self.parser {
-            Some(parser) => quote! { #parser },
-            None => quote! { inquire::Confirm::DEFAULT_PARSER },
-        };
-        let default_value_formatter = match &self.default_value_formatter {
-            Some(default_value_formatter) => quote! { #default_value_formatter },
-            None => quote! { inquire::Confirm::DEFAULT_DEFAULT_VALUE_FORMATTER },
-        };
-        let error_message = match &self.error_message {
-            Some(error_message) => quote! { String::from(#error_message) },
-            None => quote! { String::from(inquire::Confirm::DEFAULT_ERROR_MESSAGE) },
-        };
+            },
+            quote::ToTokens::to_token_stream,
+        );
+
+        let default_value = self.default_value.as_ref().map_or_else(
+            || quote! { Some(self.#fieldname_idt) },
+            |default_value| quote! { Some(#default_value) },
+        );
+
+        let placeholder_value = self.placeholder_value.as_ref().map_or_else(
+            || quote! { None },
+            |placeholder_value| quote! { Some(#placeholder_value) },
+        );
+
+        let help_message = self.help_message.as_ref().map_or_else(
+            || quote! { None },
+            |help_message| quote! { Some(#help_message) },
+        );
+
+        let formatter = self.formatter.as_ref().map_or_else(
+            || quote! { inquire::Confirm::DEFAULT_FORMATTER },
+            |formatter| quote! { #formatter },
+        );
+        let parser = self.parser.as_ref().map_or_else(
+            || quote! { inquire::Confirm::DEFAULT_PARSER },
+            |parser| quote! { #parser },
+        );
+        let default_value_formatter = self.default_value_formatter.as_ref().map_or_else(
+            || quote! { inquire::Confirm::DEFAULT_DEFAULT_VALUE_FORMATTER },
+            |default_value_formatter| quote! { #default_value_formatter },
+        );
+        let error_message = self.error_message.as_ref().map_or_else(
+            || quote! { String::from(inquire::Confirm::DEFAULT_ERROR_MESSAGE) },
+            |error_message| quote! { String::from(#error_message) },
+        );
 
         // Generate method
         Ok(quote! {

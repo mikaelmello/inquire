@@ -1,3 +1,5 @@
+#![allow(clippy::option_if_let_else)]
+
 use darling::FromField;
 use proc_macro2::TokenStream;
 
@@ -50,15 +52,15 @@ pub struct FieldMultiContext {
 
 impl FieldMultiContext {
     pub fn parse(self) -> Result<FieldType, Error> {
-        let count = self.text.is_some() as i32
-            + self.date_select.is_some() as i32
-            + self.select.is_some() as i32
-            + self.multi_select.is_some() as i32
-            + self.editor.is_some() as i32
-            + self.password.is_some() as i32
-            + self.custom_type.is_some() as i32
-            + self.confirm.is_some() as i32
-            + self.nested.is_some() as i32;
+        let count = i32::from(self.text.is_some())
+            + i32::from(self.date_select.is_some())
+            + i32::from(self.select.is_some())
+            + i32::from(self.multi_select.is_some())
+            + i32::from(self.editor.is_some())
+            + i32::from(self.password.is_some())
+            + i32::from(self.custom_type.is_some())
+            + i32::from(self.confirm.is_some())
+            + i32::from(self.nested.is_some());
 
         // too many definition
         if count > 1 {
@@ -109,30 +111,30 @@ pub struct FieldSingleContext {
 
 impl FieldSingleContext {
     pub fn generate_inquire_method_call(&self) -> Result<TokenStream, Vec<syn::Error>> {
-        match &self.field_type {
-            crate::field::FieldType::Nested(ft) => ft.generate_inquire_method_call(self),
-            crate::field::FieldType::Text(ft) => ft.generate_inquire_method_call(self),
-            crate::field::FieldType::DateSelect(ft) => ft.generate_inquire_method_call(self),
-            crate::field::FieldType::Select(ft) => ft.generate_inquire_method_call(self),
-            crate::field::FieldType::MultiSelect(ft) => ft.generate_inquire_method_call(self),
-            crate::field::FieldType::Editor(ft) => ft.generate_inquire_method_call(self),
-            crate::field::FieldType::Password(ft) => ft.generate_inquire_method_call(self),
-            crate::field::FieldType::CustomType(ft) => ft.generate_inquire_method_call(self),
-            crate::field::FieldType::Confirm(ft) => ft.generate_inquire_method_call(self),
+        match self.field_type {
+            crate::field::FieldType::Nested(ref ft) => ft.generate_inquire_method_call(self),
+            crate::field::FieldType::Text(ref ft) => ft.generate_inquire_method_call(self),
+            crate::field::FieldType::DateSelect(ref ft) => ft.generate_inquire_method_call(self),
+            crate::field::FieldType::Select(ref ft) => ft.generate_inquire_method_call(self),
+            crate::field::FieldType::MultiSelect(ref ft) => ft.generate_inquire_method_call(self),
+            crate::field::FieldType::Editor(ref ft) => ft.generate_inquire_method_call(self),
+            crate::field::FieldType::Password(ref ft) => ft.generate_inquire_method_call(self),
+            crate::field::FieldType::CustomType(ref ft) => ft.generate_inquire_method_call(self),
+            crate::field::FieldType::Confirm(ref ft) => ft.generate_inquire_method_call(self),
         }
     }
 
     pub fn generate_inquire_method(&self) -> Result<TokenStream, Vec<syn::Error>> {
-        match &self.field_type {
-            crate::field::FieldType::Nested(ft) => ft.generate_inquire_method(self),
-            crate::field::FieldType::Text(ft) => ft.generate_inquire_method(self),
-            crate::field::FieldType::DateSelect(ft) => ft.generate_inquire_method(self),
-            crate::field::FieldType::Select(ft) => ft.generate_inquire_method(self),
-            crate::field::FieldType::MultiSelect(ft) => ft.generate_inquire_method(self),
-            crate::field::FieldType::Editor(ft) => ft.generate_inquire_method(self),
-            crate::field::FieldType::Password(ft) => ft.generate_inquire_method(self),
-            crate::field::FieldType::CustomType(ft) => ft.generate_inquire_method(self),
-            crate::field::FieldType::Confirm(ft) => ft.generate_inquire_method(self),
+        match self.field_type {
+            crate::field::FieldType::Nested(ref ft) => ft.generate_inquire_method(self),
+            crate::field::FieldType::Text(ref ft) => ft.generate_inquire_method(self),
+            crate::field::FieldType::DateSelect(ref ft) => ft.generate_inquire_method(self),
+            crate::field::FieldType::Select(ref ft) => ft.generate_inquire_method(self),
+            crate::field::FieldType::MultiSelect(ref ft) => ft.generate_inquire_method(self),
+            crate::field::FieldType::Editor(ref ft) => ft.generate_inquire_method(self),
+            crate::field::FieldType::Password(ref ft) => ft.generate_inquire_method(self),
+            crate::field::FieldType::CustomType(ref ft) => ft.generate_inquire_method(self),
+            crate::field::FieldType::Confirm(ref ft) => ft.generate_inquire_method(self),
         }
     }
 }

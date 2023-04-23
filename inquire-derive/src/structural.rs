@@ -21,17 +21,19 @@ impl InquireFormOpts {
             .data
             .take_struct()
             .take()
-            .unwrap()
-            .fields
-            .into_iter()
-            .filter(|field| !(field.skip.is_some() && field.skip.unwrap()))
-            .map(|field| FieldSingleContext {
-                ident: field.ident.clone().unwrap(),
-                private: self.private,
-                ty: field.ty.clone(),
-                field_type: field.parse().unwrap(),
+            .map(|item| {
+                item.fields
+                    .into_iter()
+                    .filter(|field| !(matches!(field.skip, Some(true))))
+                    .map(|field| FieldSingleContext {
+                        ident: field.ident.clone().expect("field does not have an ident"),
+                        private: self.private,
+                        ty: field.ty.clone(),
+                        field_type: field.parse().expect("field does not have a field_type"),
+                    })
+                    .collect::<Vec<_>>()
             })
-            .collect::<Vec<_>>();
+            .expect("inquire-derive must be used on struct");
 
         // Generate Methods' impls
         let (methods, errs) =
@@ -45,11 +47,12 @@ impl InquireFormOpts {
                     }
                     (acc, acce)
                 });
-        let methods = if !errs.is_empty() {
-            // TODO: improve error handling
-            Err(errs.get(0).unwrap().clone())
-        } else {
+
+        let methods = if errs.is_empty() {
             Ok(methods)
+        } else {
+            // TODO: improve error handling
+            Err(errs.get(0).expect("fail on error conversion").clone())
         }?;
 
         let methods = quote! {
@@ -68,11 +71,12 @@ impl InquireFormOpts {
                     }
                     (acc, acce)
                 });
-        let methods_calls = if !errs.is_empty() {
-            // TODO: improve error handling
-            Err(errs.get(0).unwrap().clone())
-        } else {
+
+        let methods_calls = if errs.is_empty() {
             Ok(methods_calls)
+        } else {
+            // TODO: improve error handling
+            Err(errs.get(0).expect("failed on error conversion").clone())
         }?;
 
         let inquire = quote! {
