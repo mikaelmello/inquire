@@ -120,7 +120,7 @@ where
 
         let mut cur_pos = Position::default();
 
-        for (idx, c) in input.chars().enumerate() {
+        for (idx, c) in crate::ansi::strip_iter(input).enumerate() {
             let len = UnicodeWidthChar::width(c).unwrap_or(0) as u16;
 
             if c == '\n' {

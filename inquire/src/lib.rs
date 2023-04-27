@@ -80,6 +80,7 @@ mod terminal;
 pub mod type_aliases;
 pub mod ui;
 mod utils;
+mod ansi;
 pub mod validator;
 
 pub use crate::autocompletion::Autocomplete;
