@@ -46,17 +46,12 @@ fn match_escape_code(chars: Chars<'_>) -> MatchResult<'_> {
 
 /// An iterator that strips ANSI escape codes from a string.
 ///
-/// Generally constructed by calling [`strip_iter`].
-pub struct AnsiStripIter<'a> {
+/// Often constructed by calling [`ansi_stripped_chars`].
+pub struct AnsiStrippedChars<'a> {
     pub chars: Chars<'a>,
 }
 
-/// Constructs an iterator over the chars of the input string, stripping away ANSI escape codes.
-pub fn strip_iter(s: &str) -> AnsiStripIter<'_> {
-    AnsiStripIter { chars: s.chars() }
-}
-
-impl<'a> Iterator for AnsiStripIter<'a> {
+impl<'a> Iterator for AnsiStrippedChars<'a> {
     type Item = char;
 
     fn next(&mut self) -> Option<char> {
@@ -71,13 +66,26 @@ impl<'a> Iterator for AnsiStripIter<'a> {
     }
 }
 
+/// Constructs an iterator over the chars of the input string, stripping away ANSI escape codes.
+pub trait AnsiStrippable {
+    fn ansi_stripped_chars(&self) -> AnsiStrippedChars<'_>;
+}
+
+impl AnsiStrippable for &str {
+    fn ansi_stripped_chars(&self) -> AnsiStrippedChars<'_> {
+        AnsiStrippedChars {
+            chars: self.chars(),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     macro_rules! assert_stripped_eq {
         ($input:expr, $expected:expr) => {
-            let stripped: String = strip_iter($input).collect();
+            let stripped: String = $input.ansi_stripped_chars().collect();
             assert_eq!(&stripped, $expected);
         };
     }

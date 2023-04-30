@@ -1,3 +1,4 @@
+use crate::ansi::AnsiStrippable;
 use std::{collections::BTreeSet, fmt::Display, io::Result};
 
 use unicode_width::UnicodeWidthChar;
@@ -120,7 +121,7 @@ where
 
         let mut cur_pos = Position::default();
 
-        for (idx, c) in crate::ansi::strip_iter(input).enumerate() {
+        for (idx, c) in input.ansi_stripped_chars().enumerate() {
             let len = UnicodeWidthChar::width(c).unwrap_or(0) as u16;
 
             if c == '\n' {
