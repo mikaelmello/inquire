@@ -44,11 +44,11 @@ impl<'a> Matcher<'a> {
     fn escape(mut self) -> MatchResult<'a> {
         match self.next() {
             None => matched(self.chars),
-            Some(0x1B) =>  self.escape(),
+            Some(0x1B) => self.escape(),
             Some(0x7F) => self.escape(),
             Some(0x5B) => self.csi_entry(),
-            Some(0x5D) => self.string(), // osc_string
-            Some(0x50) => self.string(), // dcs_entry
+            Some(0x5D) => self.string(),               // osc_string
+            Some(0x50) => self.string(),               // dcs_entry
             Some(0x58 | 0x5E | 0x5F) => self.string(), // sos/pm/apc_string
             Some(0x20..=0x2F) => self.escape_intermediate(),
             Some(0x30..=0x4F | 0x51..=0x57 | 0x59 | 0x5A | 0x5C | 0x60..=0x7E) => {
@@ -135,7 +135,10 @@ mod tests {
         assert_stripped_eq!("1\x1b[0m2", "12");
         assert_stripped_eq!("\x1b[92mHello, \x1b[91mWorld!\x1b[0m", "Hello, World!");
         assert_stripped_eq!("\x1b[7@Hi", "Hi");
-        assert_stripped_eq!("\x1b]0;Set The Terminal Title To This\u{9c}Print This", "Print This");
+        assert_stripped_eq!(
+            "\x1b]0;Set The Terminal Title To This\u{9c}Print This",
+            "Print This"
+        );
         assert_stripped_eq!("\x1b[96", "");
     }
 
