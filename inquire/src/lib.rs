@@ -66,6 +66,7 @@
 #![warn(missing_docs)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![allow(clippy::bool_to_int_with_if)]
+mod ansi;
 pub mod autocompletion;
 mod config;
 #[cfg(feature = "date")]

@@ -7,6 +7,7 @@
 ### Features
 
 - Allow lifetime customization of RenderConfig. [#101](https://github.com/mikaelmello/inquire/pull/101). Thanks to @arturfast for the suggestion [#95](https://github.com/mikaelmello/inquire/issues/95).
+- Allow usage of ANSI escape codes in prompts. [#136](https://github.com/mikaelmello/inquire/pull/136). Thanks to [@JimLynchCodes](https://github.com/JimLynchCodes) for reporting on [#135](https://github.com/mikaelmello/inquire/issues/135).
 
 ### Dependency changes (some breaking)
 
