@@ -4,11 +4,11 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
-- No changes since the latest release below.
+- Allow usage of ANSI escape codes in prompts. [#136](https://github.com/mikaelmello/inquire/pull/136). Thanks to [@JimLynchCodes](https://github.com/JimLynchCodes) for reporting on [#135](https://github.com/mikaelmello/inquire/issues/135).
 
 ## [0.6.1] - 2023-04-08
 
-- No changes since the latest release below.
+- Fix incorrect highlighting of lists when filtered. [#110](https://github.com/mikaelmello/inquire/pull/110). Thanks to [@prime31](https://github.com/prime31) for reporting on [#106](https://github.com/mikaelmello/inquire/issues/106).
 
 ## [0.6.0] - 2023-03-03
 
