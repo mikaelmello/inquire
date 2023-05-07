@@ -1,0 +1,24 @@
+[package]
+name = "inquire-derive"
+version = "0.6.2"
+description = "" # TODO
+publish = false # TODO
+repository = "https://github.com/mikaelmello/inquire"
+license = "MIT"
+edition = "2021"
+readme = "./CRATE_README.md"
+documentation = "https://docs.rs/inquire"
+homepage = "https://github.com/mikaelmello/inquire"
+authors = ["Walter Bonetti <bonettiw@amotus.ca>", "Mikael Mello <git@mikaelmello.com>"]
+keywords = ["cli", "ask", "prompt", "question", "interactive"]
+categories = ["command-line-interface", "value-formatting"]
+include = ["./src", "../LICENSE"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[dependencies]
+
+[dev-dependencies]
+inquire = { path = "../inquire" }
