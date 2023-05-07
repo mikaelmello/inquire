@@ -7,12 +7,15 @@
 ### Features
 
 - Allow lifetime customization of RenderConfig. [#101](https://github.com/mikaelmello/inquire/pull/101). Thanks to @arturfast for the suggestion [#95](https://github.com/mikaelmello/inquire/issues/95).
-- Allow usage of ANSI escape codes in prompts. [#136](https://github.com/mikaelmello/inquire/pull/136). Thanks to [@JimLynchCodes](https://github.com/JimLynchCodes) for reporting on [#135](https://github.com/mikaelmello/inquire/issues/135).
 
 ### Dependency changes (some breaking)
 
 - Upgraded underlying `termion` crate from v1.5 to v2.0.
 - Upgraded underlying `bitflags` from v1 to v2, which affects the `Attributes` and `KeyModifiers` crates. If you use any of bitflag's methods directly, you might be affected, refer to the [bitflags changelog](https://github.com/bitflags/bitflags/releases/tag/2.0.0) for more information.
+
+## [0.6.2] - 2023-05-07
+
+- Allow usage of ANSI escape codes in prompts. [#136](https://github.com/mikaelmello/inquire/pull/136). Thanks to [@JimLynchCodes](https://github.com/JimLynchCodes) for reporting on [#135](https://github.com/mikaelmello/inquire/issues/135).
 
 ## [0.6.1] - 2023-04-08
 
@@ -263,7 +266,8 @@ The library is already featureful enough to warrant a higher version number, bum
 
 <!-- next-url -->
 
-[unreleased]: https://github.com/mikaelmello/inquire/compare/v0.6.1...HEAD
+[unreleased]: https://github.com/mikaelmello/inquire/compare/v0.6.2...HEAD
+[0.6.2]: https://github.com/mikaelmello/inquire/compare/v0.6.1...v0.6.2
 [0.6.1]: https://github.com/mikaelmello/inquire/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/mikaelmello/inquire/compare/v0.5.3...v0.6.0
 [0.5.3]: https://github.com/mikaelmello/inquire/compare/v0.5.2...v0.5.3
