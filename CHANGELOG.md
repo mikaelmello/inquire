@@ -4,6 +4,10 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
+- No changes since the latest release below.
+
+## [0.6.2] - 2023-05-07
+
 - Allow usage of ANSI escape codes in prompts. [#136](https://github.com/mikaelmello/inquire/pull/136). Thanks to [@JimLynchCodes](https://github.com/JimLynchCodes) for reporting on [#135](https://github.com/mikaelmello/inquire/issues/135).
 
 ## [0.6.1] - 2023-04-08
@@ -255,7 +259,8 @@ The library is already featureful enough to warrant a higher version number, bum
 
 <!-- next-url -->
 
-[unreleased]: https://github.com/mikaelmello/inquire/compare/v0.6.1...HEAD
+[unreleased]: https://github.com/mikaelmello/inquire/compare/v0.6.2...HEAD
+[0.6.2]: https://github.com/mikaelmello/inquire/compare/v0.6.1...v0.6.2
 [0.6.1]: https://github.com/mikaelmello/inquire/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/mikaelmello/inquire/compare/v0.5.3...v0.6.0
 [0.5.3]: https://github.com/mikaelmello/inquire/compare/v0.5.2...v0.5.3
