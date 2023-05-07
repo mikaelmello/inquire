@@ -1,3 +1,7 @@
+mod action;
+
+pub use action::*;
+
 use crate::{
     config::get_configuration,
     error::{InquireError, InquireResult},

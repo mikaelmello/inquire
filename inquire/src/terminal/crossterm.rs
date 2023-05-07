@@ -258,13 +258,8 @@ impl From<KeyEvent> for Key {
     fn from(event: KeyEvent) -> Self {
         match event {
             KeyEvent {
-                code: KeyCode::Char('c'),
-                modifiers: crossterm::event::KeyModifiers::CONTROL,
-                ..
-            } => Self::Interrupt,
-            KeyEvent {
                 code: KeyCode::Esc, ..
-            } => Self::Cancel,
+            } => Self::Escape,
             KeyEvent {
                 code: KeyCode::Enter,
                 ..
@@ -276,7 +271,7 @@ impl From<KeyEvent> for Key {
             | KeyEvent {
                 code: KeyCode::Char('\r'),
                 ..
-            } => Self::Submit,
+            } => Self::Enter,
             KeyEvent {
                 code: KeyCode::Tab, ..
             }

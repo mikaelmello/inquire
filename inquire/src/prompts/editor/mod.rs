@@ -1,22 +1,26 @@
+mod action;
+mod config;
+mod prompt;
+
+pub use action::*;
+
 use std::{
     env,
     ffi::{OsStr, OsString},
-    fs,
-    io::{Read, Write},
-    path::Path,
-    process,
 };
 
 use lazy_static::lazy_static;
-use tempfile::NamedTempFile;
 
 use crate::{
     error::{InquireError, InquireResult},
     formatter::StringFormatter,
+    prompts::prompt::Prompt,
     terminal::get_default_terminal,
-    ui::{Backend, EditorBackend, Key, RenderConfig},
-    validator::{ErrorMessage, StringValidator, Validation},
+    ui::{Backend, EditorBackend, RenderConfig},
+    validator::StringValidator,
 };
+
+use self::prompt::EditorPrompt;
 
 lazy_static! {
     static ref DEFAULT_EDITOR: OsString = get_default_editor_command();
@@ -230,139 +234,6 @@ impl<'a> Editor<'a> {
         backend: &mut B,
     ) -> InquireResult<String> {
         EditorPrompt::new(self)?.prompt(backend)
-    }
-}
-
-struct EditorPrompt<'a> {
-    message: &'a str,
-    editor_command: &'a OsStr,
-    editor_command_args: &'a [&'a OsStr],
-    help_message: Option<&'a str>,
-    formatter: StringFormatter<'a>,
-    validators: Vec<Box<dyn StringValidator>>,
-    error: Option<ErrorMessage>,
-    tmp_file: NamedTempFile,
-}
-
-impl<'a> From<&'a str> for Editor<'a> {
-    fn from(val: &'a str) -> Self {
-        Editor::new(val)
-    }
-}
-
-impl<'a> EditorPrompt<'a> {
-    pub fn new(so: Editor<'a>) -> InquireResult<Self> {
-        Ok(Self {
-            message: so.message,
-            editor_command: so.editor_command,
-            editor_command_args: so.editor_command_args,
-            help_message: so.help_message,
-            formatter: so.formatter,
-            validators: so.validators,
-            error: None,
-            tmp_file: Self::create_file(so.file_extension, so.predefined_text)?,
-        })
-    }
-
-    fn create_file(
-        file_extension: &str,
-        predefined_text: Option<&str>,
-    ) -> std::io::Result<NamedTempFile> {
-        let mut tmp_file = tempfile::Builder::new()
-            .prefix("tmp-")
-            .suffix(file_extension)
-            .rand_bytes(10)
-            .tempfile()?;
-
-        if let Some(predefined_text) = predefined_text {
-            tmp_file.write_all(predefined_text.as_bytes())?;
-            tmp_file.flush()?;
-        }
-
-        Ok(tmp_file)
-    }
-
-    fn run_editor(&mut self) -> InquireResult<()> {
-        process::Command::new(self.editor_command)
-            .args(self.editor_command_args)
-            .arg(self.tmp_file.path())
-            .spawn()?
-            .wait()?;
-
-        Ok(())
-    }
-
-    fn render<B: EditorBackend>(&mut self, backend: &mut B) -> InquireResult<()> {
-        let prompt = &self.message;
-
-        backend.frame_setup()?;
-
-        if let Some(err) = &self.error {
-            backend.render_error_message(err)?;
-        }
-
-        let path = Path::new(self.editor_command);
-        let editor_name = path
-            .file_stem()
-            .and_then(|f| f.to_str())
-            .unwrap_or("editor");
-
-        backend.render_prompt(prompt, editor_name)?;
-
-        if let Some(message) = self.help_message {
-            backend.render_help_message(message)?;
-        }
-
-        backend.frame_finish()?;
-
-        Ok(())
-    }
-
-    fn validate_current_answer(&self) -> InquireResult<Validation> {
-        let cur_answer = self.cur_answer()?;
-        for validator in &self.validators {
-            match validator.validate(&cur_answer) {
-                Ok(Validation::Valid) => {}
-                Ok(Validation::Invalid(msg)) => return Ok(Validation::Invalid(msg)),
-                Err(err) => return Err(InquireError::Custom(err)),
-            }
-        }
-
-        Ok(Validation::Valid)
-    }
-
-    fn cur_answer(&self) -> InquireResult<String> {
-        let mut read_handler = fs::File::open(self.tmp_file.path())?;
-        let mut submission = String::new();
-        read_handler.read_to_string(&mut submission)?;
-
-        let len = submission.trim_end_matches(&['\n', '\r'][..]).len();
-        submission.truncate(len);
-
-        Ok(submission)
-    }
-
-    fn prompt<B: EditorBackend>(mut self, backend: &mut B) -> InquireResult<String> {
-        let final_answer = loop {
-            self.render(backend)?;
-
-            let key = backend.read_key()?;
-
-            match key {
-                Key::Interrupt => interrupt_prompt!(),
-                Key::Cancel => cancel_prompt!(backend, self.message),
-                Key::Char('e', _) => self.run_editor()?,
-                Key::Submit => match self.validate_current_answer()? {
-                    Validation::Valid => break self.cur_answer()?,
-                    Validation::Invalid(msg) => self.error = Some(msg),
-                },
-                _ => {}
-            }
-        };
-
-        let formatted = (self.formatter)(&final_answer);
-
-        finish_prompt_with_answer!(backend, self.message, &formatted, final_answer);
     }
 }
 
