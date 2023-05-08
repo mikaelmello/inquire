@@ -102,6 +102,9 @@ pub struct PathSelect<'a, T> {
     /// navigate through the options using hjkl.
     pub vim_mode: bool,
 
+    /// Whether to show hidden files.
+    pub show_hidden: bool,
+
     /// The divider to use in the selection list following current-directory entries
     pub divider: &'a str, 
 
@@ -128,6 +131,7 @@ impl<'a, T> PathSelect<'a, T>
 where
     T: AsRef<Path>,
 {
+   
     /// PathEntry formatter used by default in [PathSelect](crate::PathSelect) prompts.
     /// Prints the string value of all selected options, separated by commas.
     ///
@@ -201,7 +205,10 @@ where
     /// Default value of vim mode, equal to the global default value [config::DEFAULT_PAGE_SIZE]
     pub const DEFAULT_VIM_MODE: bool = config::DEFAULT_VIM_MODE;
 
-        /// Default help message.
+    /// Default value of showing hidden files 
+    pub const DEFAULT_SHOW_HIDDEN: bool = false;
+
+    /// Default help message.
     pub const DEFAULT_HELP_MESSAGE: Option<&'a str> =
         Some(r#"↑↓ to move, space to select one, 
         → to navigate to path, ← to navigate up 
@@ -223,6 +230,7 @@ where
             default: None,
             divider: Self::DEFAULT_DIVIDER,
             help_message: Self::DEFAULT_HELP_MESSAGE,
+            show_hidden: Self::DEFAULT_SHOW_HIDDEN,
             page_size: Self::DEFAULT_PAGE_SIZE,
             vim_mode: Self::DEFAULT_VIM_MODE,
             formatter: Self::DEFAULT_FORMATTER,
@@ -232,9 +240,44 @@ where
         }
     }
 
+    /// Test if a path is hidden file 
+    /// 
+    /// ### Problems
+    /// This is missing some things described here:
+    /// https://en.wikipedia.org/wiki/Hidden_file_and_hidden_directory
+    /// - android: .nomedia files that tell smartphone apps not to display/include a folder's contets
+    /// - gnome: filenames listed inside a file named ".hidden" in each directory should be hidden
+    /// - macos: files with Invisible attribute are usually hidden in Finder but not in `ls`
+    /// - windows: files with a Hidden file attribute
+    /// - windows: files in folders with a predefined CLSID on the end of their names (Windows Special Folders)
+    ///
+    /// ```
+    /// use inquire::PathSelect;
+    /// use std::path::Path;
+    ///
+    /// assert!(PathSelect::is_path_hidden_file(Path::new("/ra/set/.nut")));
+    /// assert!(!PathSelect::is_path_hidden_file(Path::new("/ra/set/nut")));
+    /// assert!(PathSelect::is_path_hidden_file(Path::new(".maat")));
+    /// assert!(!PathSelect::is_path_hidden_file(Path::new("maat")));
+    /// 
+    /// ```
+    pub fn is_path_hidden_file(t: T) -> bool {
+        if cfg!(unix) {
+            t.as_ref().file_name().unwrap_or_default().to_str().unwrap_or_default().starts_with(".")
+        } else {
+            false
+        }
+    }   
+
     /// Sets the keep filter behavior.
     pub fn with_keep_filter(mut self, keep_filter: bool) -> Self {
         self.keep_filter = keep_filter;
+        self
+    }
+    
+    /// Sets the show hidden behavior.
+    pub fn with_show_hidden(mut self, show_hidden: bool) -> Self {
+        self.show_hidden = show_hidden;
         self
     }
 
@@ -380,6 +423,7 @@ struct PathSelectPrompt<'a> {
     data_needs_refresh: bool,
     help_message: Option<&'a str>,
     vim_mode: bool,
+    show_hidden: bool,
     cursor_index: usize,
     divider_index: usize,
     selected: HashSet<PathEntry>,
@@ -447,14 +491,15 @@ impl<'a> PathSelectPrompt<'a>
         let mut options = Vec::new();
         let mut filtered_options = Vec::new();
         let mut checked = BTreeSet::<usize>::new();
-        
+        let show_hidden = pso.show_hidden;
         let divider_index = Self::try_update_data_from_selection(
             &start_path,
             &mut options,
             &selected_options,
             &[pso.selection_mode.clone()],
             &mut checked,
-            &mut filtered_options
+            &mut filtered_options,
+            show_hidden
         )?;
 
         Ok(Self {
@@ -465,6 +510,7 @@ impl<'a> PathSelectPrompt<'a>
             help_message: pso.help_message,
             page_size: pso.page_size,
             vim_mode: pso.vim_mode,
+            show_hidden,
             keep_filter: pso.keep_filter,
             input: Input::new(),
             error: None, 
@@ -486,11 +532,13 @@ impl<'a> PathSelectPrompt<'a>
         selection_modes: &[PathSelectionMode<'a>],
         checked: &mut BTreeSet<usize>,
         filtered_options: &mut Vec<usize>,
+        show_hidden: bool,
     ) -> InquireResult<usize> {
         PathSelectPrompt::try_get_valid_path_options::<&PathBuf>(
             start_path,
             options,
-            selection_modes
+            selection_modes,
+            show_hidden
         )
             .map(|_| {
                 Self::update_checked(
@@ -576,7 +624,8 @@ impl<'a> PathSelectPrompt<'a>
     fn try_get_valid_path_options<T: AsRef<Path>>(
         base_path: T,
         options: &mut Vec<PathEntry>,
-        selection_modes: &[PathSelectionMode<'a>]
+        selection_modes: &[PathSelectionMode<'a>],
+        show_hidden: bool
     ) -> InquireResult<()> {
         options.clear();
         fs_err::read_dir(base_path.as_ref())
@@ -588,6 +637,7 @@ impl<'a> PathSelectPrompt<'a>
                         .and_then(|dir_entry| {
                             let entry_type = dir_entry.file_type()?;
                             let entry_path = dir_entry.path();
+                            let is_hidden = PathSelect::<&PathBuf>::is_path_hidden_file(&entry_path);
                             if (
                                 entry_type.is_dir() 
                                 // && selection_modes.contains(&PathSelectionMode::Directory)
@@ -605,7 +655,9 @@ impl<'a> PathSelectPrompt<'a>
                                         ) 
                                     }) 
                             ) {
-                                options.push(dir_entry.try_into()?);
+                                if show_hidden || !is_hidden {
+                                    options.push(dir_entry.try_into()?);
+                                } 
                             }
                             Ok(()) 
                         })
@@ -676,7 +728,8 @@ impl<'a> PathSelectPrompt<'a>
                 &self.selected,
                 &[self.selection_mode.clone()],
                 &mut self.checked,
-                &mut self.filtered_options
+                &mut self.filtered_options,
+                self.show_hidden,
             )?;
             self.data_needs_refresh = false;
         }
@@ -707,7 +760,6 @@ impl<'a> PathSelectPrompt<'a>
         if checked.contains(option_index) {
             checked.remove(option_index);
             selected.remove(option);
-
         } else {
             checked.insert(*option_index);
             selected.insert(option.clone());
