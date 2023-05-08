@@ -23,6 +23,7 @@ default = ["macros", "crossterm"]
 macros = []
 date = ["chrono"]
 editor = ["tempfile"]
+path = ["fs-err"]
 
 [package.metadata.docs.rs]
 all-features = true
@@ -36,6 +37,8 @@ console = { version = "0.15", optional = true, features = ["windows-console-colo
 chrono = { version = "0.4", optional = true }
 
 tempfile = { version = "3", optional = true }
+
+fs-err = { version = "2.9.0", optional = true }
 
 thiserror = "1"
 bitflags = "2"
