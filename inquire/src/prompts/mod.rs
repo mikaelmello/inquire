@@ -9,6 +9,8 @@ mod dateselect;
 mod editor;
 mod multiselect;
 mod password;
+#[cfg(feature = "path")]
+mod path_select;
 mod select;
 mod text;
 
@@ -20,5 +22,7 @@ pub use dateselect::DateSelect;
 pub use editor::Editor;
 pub use multiselect::MultiSelect;
 pub use password::{Password, PasswordDisplayMode};
+#[cfg(feature = "path")]
+pub use path_select::{PathSelect, PathEntry, PathSelectionMode};
 pub use select::Select;
 pub use text::Text;
