@@ -9,24 +9,19 @@ use crate::{
     config::get_configuration,
     error::InquireResult,
     formatter::MultiOptionFormatter,
-    input::{action::InputAction, Input, InputActionResult},
     list_option::ListOption,
-    prompts::{prompt::Prompt, InnerAction},
+    prompts::prompt::Prompt,
     terminal::get_default_terminal,
     type_aliases::Filter,
-    ui::{Backend, Key, KeyModifiers, MultiSelectBackend, RenderConfig},
-    utils::paginate,
-    validator::ErrorMessage,
+    ui::{Backend, MultiSelectBackend, RenderConfig},
     InquireError,
 };
 use std::{
-    collections::{BTreeSet, HashSet},
     convert::TryFrom,
-    env,
     ffi::OsStr,
     fmt, fs,
     ops::Deref,
-    path::{Component, Path, PathBuf},
+    path::{Path, PathBuf},
 };
 
 /// Different path selection modes specify what the user can choose

@@ -1,16 +1,15 @@
 use crate::{
     error::InquireResult,
     formatter::MultiOptionFormatter,
-    input::{action::InputAction, Input, InputActionResult},
+    input::{Input, InputActionResult},
     list_option::ListOption,
     prompts::{
         path_select::{
             PathEntry, PathSelect, PathSelectConfig, PathSelectPromptAction, PathSelectionMode,
         },
         prompt::{ActionResult, Prompt},
-        InnerAction,
     },
-    ui::{Backend, Key, KeyModifiers, MultiSelectBackend, RenderConfig},
+    ui::MultiSelectBackend,
     utils::paginate,
     validator::ErrorMessage,
     InquireError,
@@ -52,25 +51,16 @@ impl<'a> PathSelectPrompt<'a> {
 
         if let Some(default) = pso.default {
             default.iter().try_for_each(|default_item| {
-              // Are all of the selected files extant?
-              let default_path = default_item.as_ref();
-              match default_path.try_exists() {
-                  Err(err) => {
-                      Err(InquireError::InvalidConfiguration(format!(
-                          "Checking specified default path (`{default_path:?})` failed with `{err:#?}`"
-                      )))
-                  },
-                  Ok(exists) => {
-                      if !exists {
-                          Err(InquireError::InvalidConfiguration(format!(
-                              "Specified default path `{default_path:?}` does not exist"
-                          )))
-                      } else {
-                          Ok(())
-                      }
-                  },
-              }
-          })?;
+                // Are all of the selected files extant?
+                let default_path = default_item.as_ref();
+                if !default_path.exists() {
+                    Err(InquireError::InvalidConfiguration(format!(
+                        "Specified default path `{default_path:?}` does not exist"
+                    )))
+                } else {
+                    Ok(())
+                }
+            })?;
         }
 
         let mut start_path = if let Some(start) = pso.start_path_opt {
@@ -473,7 +463,6 @@ where
         let Self {
             config:
                 PathSelectConfig {
-                    ref vim_mode,
                     ref page_size,
                     ref keep_filter,
                     ..
