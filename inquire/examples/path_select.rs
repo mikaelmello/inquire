@@ -17,6 +17,7 @@ fn main() {
         &format!("pick an .{toml_extension} or .{rs_extension} file"),
         Some(start_path)
     )
+        .with_select_multiple(true)
         .with_selection_mode(selection_mode)
         .prompt();
 

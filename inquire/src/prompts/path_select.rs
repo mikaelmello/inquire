@@ -55,7 +55,9 @@ impl fmt::Display for PathEntry {
         let path = self.path.to_string_lossy();
         if let Some(symlink_path) = self.symlink_path_opt.as_ref() { 
             write!(f, "{} -> {path}", symlink_path.to_string_lossy())
-        } else { 
+        } else if self.is_dir() {
+            write!(f, "(dir) {path}")
+        } else  { 
             write!(f, "{path}")
         }
     }
@@ -151,6 +153,9 @@ pub struct PathSelect<'a, T> {
 
     /// Whether to show symlinks
     pub show_symlinks: bool,
+
+    /// Whether to allow selecting multiple files
+    pub select_multiple: bool,
 
     /// The divider to use in the selection list following current-directory entries
     pub divider: &'a str, 
@@ -257,16 +262,19 @@ where
 
     /// Default help message.
     pub const DEFAULT_HELP_MESSAGE: Option<&'a str> =
-        Some(r#"↑↓ to move, space to select one, 
-        → to navigate to path, ← to navigate up 
-        shift + → to select all, shift + ← to clear 
-        type to filter"#);
+        Some("↑↓ to move, space to select one, \
+        → to navigate to path, ← to navigate up, \
+        shift+→ to select all, shift+← to clear, \
+        type to filter");
 
     /// Default behavior of keeping or cleaning the current filter value.
     pub const DEFAULT_KEEP_FILTER: bool = true;
 
     /// Default value of showing symlinks 
     pub const DEFAULT_SHOW_SYMLINKS: bool = false;
+
+    /// Default value of selecting multiple files 
+    pub const DEFAULT_SELECT_MULTIPLE: bool = false;
 
     /// Default visual divider value.
     pub const DEFAULT_DIVIDER: &'a str = "-----";
@@ -281,6 +289,7 @@ where
             help_message: Self::DEFAULT_HELP_MESSAGE,
             show_hidden: Self::DEFAULT_SHOW_HIDDEN,
             show_symlinks: Self::DEFAULT_SHOW_SYMLINKS,
+            select_multiple: Self::DEFAULT_SELECT_MULTIPLE,
             page_size: Self::DEFAULT_PAGE_SIZE,
             vim_mode: Self::DEFAULT_VIM_MODE,
             formatter: Self::DEFAULT_FORMATTER,
@@ -325,6 +334,12 @@ where
         self
     }
     
+    /// Sets the select multiple behavior.
+    pub fn with_select_multiple(mut self, select_multiple: bool) -> Self {
+        self.select_multiple = select_multiple;
+        self
+    }
+
     /// Sets the show hidden behavior.
     pub fn with_show_hidden(mut self, show_hidden: bool) -> Self {
         self.show_hidden = show_hidden;
@@ -476,6 +491,7 @@ struct PathSelectPrompt<'a> {
     options: Vec<PathEntry>,
     divider: &'a str,
     show_symlinks: bool, 
+    select_multiple: bool, 
     filtered_options: Vec<usize>,
     data_needs_refresh: bool,
     help_message: Option<&'a str>,
@@ -571,6 +587,7 @@ impl<'a> PathSelectPrompt<'a>
             vim_mode: pso.vim_mode,
             show_symlinks,
             show_hidden,
+            select_multiple: pso.select_multiple,
             keep_filter: pso.keep_filter,
             input: Input::new(),
             error: None, 
@@ -637,6 +654,21 @@ impl<'a> PathSelectPrompt<'a>
         filtered_options.extend(0..options.len());
                 
         divider_index
+    }
+
+    fn select(
+        option_entry: &PathEntry,
+        option_index: usize,
+        checked: &mut BTreeSet<usize>,
+        selected: &mut HashSet<PathEntry>,
+        select_multiple: bool
+    ) {
+        if !select_multiple {
+            checked.clear();
+            selected.clear();
+        }
+        checked.insert(option_index);
+        selected.insert(option_entry.clone());
     }
 
     fn move_cursor_up(&mut self, qty: usize, wrap: bool) {
@@ -794,6 +826,7 @@ impl<'a> PathSelectPrompt<'a>
             ref options, 
             ref cursor_index, 
             ref selection_mode,
+            ref select_multiple, 
             ref keep_filter, 
             ref mut checked, 
             ref mut input,
@@ -809,13 +842,17 @@ impl<'a> PathSelectPrompt<'a>
             .expect("must get option_entry");
 
         if option_entry.is_selectable(selection_mode) {
-
             if checked.contains(option_index) {
                 checked.remove(option_index);
                 selected.remove(option_entry);
             } else {
-                checked.insert(*option_index);
-                selected.insert(option_entry.clone());
+                Self::select(
+                    option_entry, 
+                    *option_index, 
+                    checked, 
+                    selected, 
+                    *select_multiple
+                )
             }
             
             if !*keep_filter {
@@ -832,6 +869,7 @@ impl<'a> PathSelectPrompt<'a>
             ref page_size, 
             ref keep_filter,
             ref options, 
+            ref select_multiple,
             ref selection_mode,
             ref mut cursor_index, 
             ref mut checked,
@@ -878,12 +916,19 @@ impl<'a> PathSelectPrompt<'a>
             },
             Key::Right(KeyModifiers::SHIFT) => {
                 checked.clear();
-                filtered_options.iter().for_each(|idx|{
-                    let option_entry = options.get(*idx)
+                filtered_options.iter().for_each(|option_index|{
+                    let option_entry = options.get(*option_index)
                         .expect("must get selected path");
-                    if option_entry.is_selectable(selection_mode) {
-                        checked.insert(*idx);
-                        selected.insert(option_entry.clone()); 
+                    if option_entry.is_selectable(selection_mode)
+                    && (*select_multiple || option_index == cursor_index )
+                    {
+                        Self::select(
+                            option_entry, 
+                            *option_index, 
+                            checked, 
+                            selected, 
+                            *select_multiple
+                        ); 
                     }
                 });
 
