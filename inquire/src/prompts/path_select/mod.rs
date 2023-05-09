@@ -25,15 +25,19 @@ use std::{
 };
 
 /// Different path selection modes specify what the user can choose
-#[derive(Clone, Default, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq)]
 pub enum PathSelectionMode<'a> {
     /// The user may pick a file with the given (optional) extension
     File(Option<&'a str>),
     /// The user may pick a directory
-    #[default]
     Directory,
     /// The user may pick multiple paths
     Multiple(Vec<PathSelectionMode<'a>>),
+}
+impl<'a> Default for PathSelectionMode<'a> {
+    fn default() -> Self {
+        Self::Directory
+    }
 }
 
 /// Path with cached information
