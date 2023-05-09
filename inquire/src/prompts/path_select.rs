@@ -1,3 +1,5 @@
+use lazy_static::__Deref;
+
 use crate::{
     config,
     formatter::{MultiOptionFormatter, },
@@ -8,7 +10,11 @@ use crate::{
 use std::{
     env,
     fmt,
-    path::{Component, PathBuf, Path}, collections::{BTreeSet, HashSet}, fs, convert::{TryFrom, TryInto}, option,
+    path::{Component, PathBuf, Path}, collections::{BTreeSet, HashSet}, 
+    fs, convert::{TryFrom, TryInto}, 
+    ops::Deref,
+    option, 
+    ffi::{OsStr, OsString},
 };
 
 /// Different path selection modes specify what the user can choose
@@ -33,12 +39,15 @@ pub struct PathEntry {
 impl AsRef<Path> for PathEntry {
     fn as_ref(&self) -> &Path { self.path.as_path() }
 }
+impl Deref for PathEntry {
+    type Target = fs::FileType;
+    fn deref(&self) -> &Self::Target { &self.file_type }
+}
 impl fmt::Display for PathEntry {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.path.to_string_lossy())
     }
 }
-
 impl TryFrom<&Path> for PathEntry {
     type Error = InquireError;
     fn try_from(value: &Path) -> Result<Self, Self::Error> {
@@ -76,6 +85,33 @@ impl TryFrom<fs_err::DirEntry> for PathEntry {
                     file_type
                 }
             })
+    }
+}
+impl PathEntry {
+    /// Is this path entry selectable based on the given selection mode?
+    pub fn is_selectable<'a>(
+        &self, 
+        selection_mode: &PathSelectionMode<'a>
+    ) -> bool {
+        let is_dir = self.is_dir();
+        let is_file = self.is_file(); 
+        let file_ext_opt = self.path.extension().map(OsStr::to_os_string); 
+        match (selection_mode, is_dir, is_file) {
+            (PathSelectionMode::Directory, true, _) => true,
+            (PathSelectionMode::File(None), _, true) => true,
+            (PathSelectionMode::File(Some(extension)), _, true) => {
+                file_ext_opt.as_ref()
+                    .map(|osstr| {
+                        osstr.to_string_lossy().eq_ignore_ascii_case(*extension)
+                    }).unwrap_or_default()
+            },
+            (PathSelectionMode::Multiple(ref path_selection_modes), _, _) => {
+                path_selection_modes.iter().any(|submode| {
+                    self.is_selectable(submode)
+                })
+            },
+            _ => false
+        }
     }
 }
 /// Prompt for choosing one or multiple files.
@@ -496,7 +532,7 @@ impl<'a> PathSelectPrompt<'a>
             &start_path,
             &mut options,
             &selected_options,
-            &[pso.selection_mode.clone()],
+            &pso.selection_mode,
             &mut checked,
             &mut filtered_options,
             show_hidden
@@ -529,7 +565,7 @@ impl<'a> PathSelectPrompt<'a>
         start_path: &PathBuf,
         options: &mut Vec<PathEntry>,
         selected_options: &HashSet<PathEntry>,
-        selection_modes: &[PathSelectionMode<'a>],
+        selection_mode: &PathSelectionMode<'a>,
         checked: &mut BTreeSet<usize>,
         filtered_options: &mut Vec<usize>,
         show_hidden: bool,
@@ -537,7 +573,7 @@ impl<'a> PathSelectPrompt<'a>
         PathSelectPrompt::try_get_valid_path_options::<&PathBuf>(
             start_path,
             options,
-            selection_modes,
+            selection_mode,
             show_hidden
         )
             .map(|_| {
@@ -612,7 +648,6 @@ impl<'a> PathSelectPrompt<'a>
         }
     }
 
-
     fn get_root_path_buf() -> PathBuf {
         <Component as AsRef<Path>>::as_ref(&Component::RootDir).to_path_buf()
     }
@@ -624,7 +659,7 @@ impl<'a> PathSelectPrompt<'a>
     fn try_get_valid_path_options<T: AsRef<Path>>(
         base_path: T,
         options: &mut Vec<PathEntry>,
-        selection_modes: &[PathSelectionMode<'a>],
+        selection_mode: &PathSelectionMode<'a>,
         show_hidden: bool
     ) -> InquireResult<()> {
         options.clear();
@@ -635,28 +670,12 @@ impl<'a> PathSelectPrompt<'a>
                     entry_result
                         .map_err(InquireError::from)
                         .and_then(|dir_entry| {
-                            let entry_type = dir_entry.file_type()?;
-                            let entry_path = dir_entry.path();
-                            let is_hidden = PathSelect::<&PathBuf>::is_path_hidden_file(&entry_path);
-                            if (
-                                entry_type.is_dir() 
-                                // && selection_modes.contains(&PathSelectionMode::Directory)
-                            ) || (
-                                entry_type.is_file()
-                                && selection_modes
-                                    .iter()
-                                    .any(|mode| {
-                                        matches!(
-                                            mode,
-                                            &PathSelectionMode::File(Some(ext)) if ext == entry_path.extension().unwrap_or_default()
-                                        ) || matches!(
-                                            mode,
-                                            &PathSelectionMode::File(None)
-                                        ) 
-                                    }) 
-                            ) {
+                            let path_entry = PathEntry::try_from(dir_entry)?;
+                            let is_hidden = PathSelect::<&PathBuf>::is_path_hidden_file(&path_entry.path);
+                            if path_entry.is_dir() 
+                            || path_entry.is_selectable(selection_mode) {
                                 if show_hidden || !is_hidden {
-                                    options.push(dir_entry.try_into()?);
+                                    options.push(path_entry);
                                 } 
                             }
                             Ok(()) 
@@ -726,7 +745,7 @@ impl<'a> PathSelectPrompt<'a>
                 &self.current_path,
                 &mut self.options,
                 &self.selected,
-                &[self.selection_mode.clone()],
+                &self.selection_mode,
                 &mut self.checked,
                 &mut self.filtered_options,
                 self.show_hidden,
@@ -743,6 +762,7 @@ impl<'a> PathSelectPrompt<'a>
             ref filtered_options, 
             ref options, 
             ref cursor_index, 
+            ref selection_mode,
             ref keep_filter, 
             ref mut checked, 
             ref mut input,
@@ -754,21 +774,25 @@ impl<'a> PathSelectPrompt<'a>
             Some(val) => val,
             None => return,
         };
-        let option = options.get(*option_index)
-            .expect("must get option");
+        let option_entry = options.get(*option_index)
+            .expect("must get option_entry");
 
-        if checked.contains(option_index) {
-            checked.remove(option_index);
-            selected.remove(option);
-        } else {
-            checked.insert(*option_index);
-            selected.insert(option.clone());
+        if option_entry.is_selectable(selection_mode) {
 
+            if checked.contains(option_index) {
+                checked.remove(option_index);
+                selected.remove(option_entry);
+            } else {
+                checked.insert(*option_index);
+                selected.insert(option_entry.clone());
+            }
+            
+            if !*keep_filter {
+                input.clear();
+            }
         }
 
-        if !*keep_filter {
-            input.clear();
-        }
+
     }   
 
     fn on_change(&mut self, key: Key) {
@@ -777,6 +801,7 @@ impl<'a> PathSelectPrompt<'a>
             ref page_size, 
             ref keep_filter,
             ref options, 
+            ref selection_mode,
             ref mut cursor_index, 
             ref mut checked,
             ref mut input, 
@@ -822,12 +847,13 @@ impl<'a> PathSelectPrompt<'a>
             },
             Key::Right(KeyModifiers::SHIFT) => {
                 checked.clear();
-                filtered_options.iter().for_each(|idx|{ 
-                    checked.insert(*idx);
-                    selected.insert(options.get(*idx)
-                        .expect("must get selected path")
-                        .clone()
-                    ); 
+                filtered_options.iter().for_each(|idx|{
+                    let option_entry = options.get(*idx)
+                        .expect("must get selected path");
+                    if option_entry.is_selectable(selection_mode) {
+                        checked.insert(*idx);
+                        selected.insert(option_entry.clone()); 
+                    }
                 });
 
                 if !*keep_filter {
