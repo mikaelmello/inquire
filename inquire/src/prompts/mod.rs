@@ -23,6 +23,6 @@ pub use editor::Editor;
 pub use multiselect::MultiSelect;
 pub use password::{Password, PasswordDisplayMode};
 #[cfg(feature = "path")]
-pub use path_select::{PathSelect, PathEntry, PathSelectionMode};
+pub use path_select::{PathEntry, PathSelect, PathSelectionMode};
 pub use select::Select;
 pub use text::Text;

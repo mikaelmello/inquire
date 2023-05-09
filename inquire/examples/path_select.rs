@@ -1,7 +1,5 @@
-//! Path picker example 
-use inquire::{
-    PathSelect, PathSelectionMode, 
-};
+//! Path picker example
+use inquire::{PathSelect, PathSelectionMode};
 
 fn main() {
     let start_path = std::env::current_dir().expect("must get current dir");
@@ -15,16 +13,17 @@ fn main() {
 
     let ans = PathSelect::new(
         &format!("pick an .{toml_extension} or .{rs_extension} file"),
-        Some(start_path)
+        Some(start_path),
     )
-        .with_select_multiple(true)
-        .with_selection_mode(selection_mode)
-        .prompt();
+    .with_select_multiple(true)
+    .with_selection_mode(selection_mode)
+    .prompt();
 
     match ans {
         Ok(entries) => {
             let l = entries.len();
-            println!("\nYou picked {l} items{}", 
+            println!(
+                "\nYou picked {l} items{}",
                 (!entries.is_empty())
                     .then(|| {
                         entries
@@ -35,7 +34,7 @@ fn main() {
                     })
                     .unwrap_or_default()
             )
-        },
+        }
         Err(err) => eprintln!("Your choices were wretched:\n{err:#?}"),
     }
 }

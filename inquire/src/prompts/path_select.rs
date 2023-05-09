@@ -1,26 +1,35 @@
 use crate::{
     config,
-    formatter::{MultiOptionFormatter, },
+    config::get_configuration,
+    error::InquireResult,
+    formatter::MultiOptionFormatter,
+    input::Input,
+    list_option::ListOption,
+    terminal::get_default_terminal,
     type_aliases::Filter,
-    ui::{RenderConfig, MultiSelectBackend, Backend, Key, KeyModifiers},
-    validator::{ErrorMessage}, config::get_configuration, error::InquireResult, InquireError, list_option::ListOption, terminal::get_default_terminal, input::Input, utils::paginate,
+    ui::{Backend, Key, KeyModifiers, MultiSelectBackend, RenderConfig},
+    utils::paginate,
+    validator::ErrorMessage,
+    InquireError,
 };
 use std::{
+    collections::{BTreeSet, HashSet},
+    convert::{TryFrom, TryInto},
     env,
-    fmt,
-    path::{Component, PathBuf, Path}, collections::{BTreeSet, HashSet}, 
-    fs, convert::{TryFrom, TryInto}, 
-    ops::Deref,
     ffi::{OsStr, OsString},
+    fmt, fs,
+    ops::Deref,
+    path::{Component, Path, PathBuf},
 };
 
 /// Different path selection modes specify what the user can choose
-#[derive(Clone, Default, Eq, PartialEq,)]
+#[derive(Clone, Default, Eq, PartialEq)]
 pub enum PathSelectionMode<'a> {
     /// The user may pick a file with the given (optional) extension
     File(Option<&'a str>),
     /// The user may pick a directory
-    #[default] Directory,
+    #[default]
+    Directory,
     /// The user may pick multiple paths
     Multiple(Vec<PathSelectionMode<'a>>),
 }
@@ -28,8 +37,8 @@ pub enum PathSelectionMode<'a> {
 /// Path with cached information
 #[derive(Clone, Debug, Hash)]
 pub struct PathEntry {
-    /// The (owned) [path](PathBuf) 
-    /// 
+    /// The (owned) [path](PathBuf)
+    ///
     /// Corresponds to the target if this is a symlink  
     pub path: PathBuf,
     /// The [file type](fs::FileType)
@@ -44,20 +53,24 @@ impl PartialEq for PathEntry {
     }
 }
 impl AsRef<Path> for PathEntry {
-    fn as_ref(&self) -> &Path { self.path.as_path() }
+    fn as_ref(&self) -> &Path {
+        self.path.as_path()
+    }
 }
 impl Deref for PathEntry {
     type Target = fs::FileType;
-    fn deref(&self) -> &Self::Target { &self.file_type }
+    fn deref(&self) -> &Self::Target {
+        &self.file_type
+    }
 }
 impl fmt::Display for PathEntry {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let path = self.path.to_string_lossy();
-        if let Some(symlink_path) = self.symlink_path_opt.as_ref() { 
+        if let Some(symlink_path) = self.symlink_path_opt.as_ref() {
             write!(f, "{} -> {path}", symlink_path.to_string_lossy())
         } else if self.is_dir() {
             write!(f, "(dir) {path}")
-        } else  { 
+        } else {
             write!(f, "{path}")
         }
     }
@@ -66,28 +79,29 @@ impl TryFrom<&Path> for PathEntry {
     type Error = InquireError;
     fn try_from(value: &Path) -> Result<Self, Self::Error> {
         let is_symlink = value.is_symlink();
-        value.metadata()
+        value
+            .metadata()
             .map_err(Self::Error::from)
             .and_then(|target_metadata| {
                 let (path, symlink_path_opt) = if is_symlink {
                     (fs_err::canonicalize(value)?, Some(value.to_path_buf()))
                 } else {
                     (value.to_path_buf(), None)
-                };                    
+                };
                 Ok(Self {
                     path,
                     file_type: target_metadata.file_type(),
-                    symlink_path_opt
+                    symlink_path_opt,
                 })
             })
     }
-} 
+}
 impl TryFrom<fs::DirEntry> for PathEntry {
     type Error = InquireError;
     fn try_from(value: fs::DirEntry) -> Result<Self, Self::Error> {
         Self::try_from(value.path().as_path())
     }
-} 
+}
 impl TryFrom<fs_err::DirEntry> for PathEntry {
     type Error = InquireError;
     fn try_from(value: fs_err::DirEntry) -> Result<Self, Self::Error> {
@@ -96,33 +110,28 @@ impl TryFrom<fs_err::DirEntry> for PathEntry {
 }
 impl PathEntry {
     /// Is this path entry selectable based on the given selection mode?
-    pub fn is_selectable<'a>(
-        &self, 
-        selection_mode: &PathSelectionMode<'a>
-    ) -> bool {
+    pub fn is_selectable<'a>(&self, selection_mode: &PathSelectionMode<'a>) -> bool {
         let is_dir = self.is_dir();
-        let is_file = self.is_file(); 
-        let file_ext_opt = self.path.extension().map(OsStr::to_os_string); 
+        let is_file = self.is_file();
+        let file_ext_opt = self.path.extension().map(OsStr::to_os_string);
         match (selection_mode, is_dir, is_file) {
             (PathSelectionMode::Directory, true, _) => true,
             (PathSelectionMode::File(None), _, true) => true,
-            (PathSelectionMode::File(Some(extension)), _, true) => {
-                file_ext_opt.as_ref()
-                    .map(|osstr| {
-                        osstr.to_string_lossy().eq_ignore_ascii_case(*extension)
-                    }).unwrap_or_default()
-            },
-            (PathSelectionMode::Multiple(ref path_selection_modes), _, _) => {
-                path_selection_modes.iter().any(|submode| {
-                    self.is_selectable(submode)
-                })
-            },
-            _ => false
+            (PathSelectionMode::File(Some(extension)), _, true) => file_ext_opt
+                .as_ref()
+                .map(|osstr| osstr.to_string_lossy().eq_ignore_ascii_case(*extension))
+                .unwrap_or_default(),
+            (PathSelectionMode::Multiple(ref path_selection_modes), _, _) => path_selection_modes
+                .iter()
+                .any(|submode| self.is_selectable(submode)),
+            _ => false,
         }
     }
 
     /// Is this path entry for a symlink?
-    pub fn is_symlink(&self) -> bool { self.symlink_path_opt.is_some() }
+    pub fn is_symlink(&self) -> bool {
+        self.symlink_path_opt.is_some()
+    }
 }
 /// Prompt for choosing one or multiple files.
 ///
@@ -158,7 +167,7 @@ pub struct PathSelect<'a, T> {
     pub select_multiple: bool,
 
     /// The divider to use in the selection list following current-directory entries
-    pub divider: &'a str, 
+    pub divider: &'a str,
 
     /// Function that formats the user input and presents it to the user as the final rendering of the prompt.
     pub formatter: MultiOptionFormatter<'a, PathEntry>,
@@ -183,14 +192,12 @@ impl<'a, T> PathSelect<'a, T>
 where
     T: AsRef<Path>,
 {
-   
     /// PathEntry formatter used by default in [PathSelect](crate::PathSelect) prompts.
     /// Prints the string value of all selected options, separated by commas.
     ///
     /// See [PathSelect::DEFAULT_PATH_FORMATTER]
-    pub const DEFAULT_FORMATTER: MultiOptionFormatter<'a, PathEntry> = &|ans| {
-        PathSelect::<PathEntry>::DEFAULT_PATH_FORMATTER(ans)
-    };
+    pub const DEFAULT_FORMATTER: MultiOptionFormatter<'a, PathEntry> =
+        &|ans| PathSelect::<PathEntry>::DEFAULT_PATH_FORMATTER(ans);
 
     /// Path formatter used by default in [PathSelect](crate::PathSelect) prompts.
     /// Prints the string value of all selected options, separated by commas.
@@ -198,7 +205,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// 
+    ///
     /// use inquire::list_option::ListOption;
     /// use inquire::{PathSelect, PathEntry};
     /// use std::{fs::FileType, path::PathBuf};
@@ -207,8 +214,8 @@ where
     /// let a = PathBuf::from("/ra/set/nefer.rs");
     /// let mut ans = vec![ListOption::new(0, &a)];
     /// assert_eq!(String::from("/ra/set/nefer.rs"), formatter(ans.as_slice()));
-    /// 
-    /// let b = PathBuf::from("/maat/nut.rs"); 
+    ///
+    /// let b = PathBuf::from("/maat/nut.rs");
     /// ans.push(ListOption::new(3, &b));
     /// assert_eq!(String::from("/ra/set/nefer.rs, /maat/nut.rs"), formatter(ans.as_slice()));
     ///
@@ -216,18 +223,17 @@ where
     /// ans.push(ListOption::new(7, &c));
     /// assert_eq!(String::from("/ra/set/nefer.rs, /maat/nut.rs, ptah.rs"), formatter(ans.as_slice()));
     /// ```
-    
+
     pub const DEFAULT_PATH_FORMATTER: MultiOptionFormatter<'a, T> = &|ans| {
         ans.iter()
-        .map(|t|  PathSelectPrompt::get_path_string(t.value))
-        .collect::<Vec<String>>()
-        .join(", ")
-            
+            .map(|t| PathSelectPrompt::get_path_string(t.value))
+            .collect::<Vec<String>>()
+            .join(", ")
     };
 
     /// Default filter function, which only checks if the END component (file name, directory name)
     /// of the path is a match for the filter
-    /// 
+    ///
     /// # Examples
     ///
     /// ```
@@ -244,7 +250,9 @@ where
     /// ```
     pub const DEFAULT_FILTER: Filter<'a, T> = &|filter, as_ref_path, _, _| -> bool {
         let filter = filter.to_lowercase();
-        as_ref_path.as_ref().file_name()
+        as_ref_path
+            .as_ref()
+            .file_name()
             .unwrap_or_default()
             .to_string_lossy()
             .to_lowercase()
@@ -257,23 +265,24 @@ where
     /// Default value of vim mode, equal to the global default value [config::DEFAULT_PAGE_SIZE]
     pub const DEFAULT_VIM_MODE: bool = config::DEFAULT_VIM_MODE;
 
-    /// Default value of showing hidden files 
+    /// Default value of showing hidden files
     pub const DEFAULT_SHOW_HIDDEN: bool = false;
 
     /// Default help message.
-    pub const DEFAULT_HELP_MESSAGE: Option<&'a str> =
-        Some("↑↓ to move, space to select one, \
+    pub const DEFAULT_HELP_MESSAGE: Option<&'a str> = Some(
+        "↑↓ to move, space to select one, \
         → to navigate to path, ← to navigate up, \
         shift+→ to select all, shift+← to clear, \
-        type to filter");
+        type to filter",
+    );
 
     /// Default behavior of keeping or cleaning the current filter value.
     pub const DEFAULT_KEEP_FILTER: bool = true;
 
-    /// Default value of showing symlinks 
+    /// Default value of showing symlinks
     pub const DEFAULT_SHOW_SYMLINKS: bool = false;
 
-    /// Default value of selecting multiple files 
+    /// Default value of selecting multiple files
     pub const DEFAULT_SELECT_MULTIPLE: bool = false;
 
     /// Default visual divider value.
@@ -299,8 +308,8 @@ where
         }
     }
 
-    /// Test if a path is hidden file 
-    /// 
+    /// Test if a path is hidden file
+    ///
     /// ### Problems
     /// This is missing some things described here:
     /// https://en.wikipedia.org/wiki/Hidden_file_and_hidden_directory
@@ -318,22 +327,27 @@ where
     /// assert!(!PathSelect::is_path_hidden_file(Path::new("/ra/set/nut")));
     /// assert!(PathSelect::is_path_hidden_file(Path::new(".maat")));
     /// assert!(!PathSelect::is_path_hidden_file(Path::new("maat")));
-    /// 
+    ///
     /// ```
     pub fn is_path_hidden_file(t: T) -> bool {
         if cfg!(unix) {
-            t.as_ref().file_name().unwrap_or_default().to_str().unwrap_or_default().starts_with(".")
+            t.as_ref()
+                .file_name()
+                .unwrap_or_default()
+                .to_str()
+                .unwrap_or_default()
+                .starts_with(".")
         } else {
             false
         }
-    }   
+    }
 
     /// Sets the keep filter behavior.
     pub fn with_keep_filter(mut self, keep_filter: bool) -> Self {
         self.keep_filter = keep_filter;
         self
     }
-    
+
     /// Sets the select multiple behavior.
     pub fn with_select_multiple(mut self, select_multiple: bool) -> Self {
         self.select_multiple = select_multiple;
@@ -345,7 +359,7 @@ where
         self.show_hidden = show_hidden;
         self
     }
-    
+
     /// Sets the show symlinks behavior.
     pub fn with_show_symlinks(mut self, show_symlinks: bool) -> Self {
         self.show_symlinks = show_symlinks;
@@ -382,7 +396,6 @@ where
         self
     }
 
-
     /// Sets the default selected paths.
     pub fn with_default(mut self, default: &'a [T]) -> Self {
         self.default = Some(default);
@@ -401,8 +414,7 @@ where
         self
     }
 
-
-    /// Sets the selection mode for picker behavior 
+    /// Sets the selection mode for picker behavior
     pub fn with_selection_mode(mut self, selection_mode: PathSelectionMode<'a>) -> Self {
         self.selection_mode = selection_mode;
         self
@@ -445,7 +457,7 @@ where
         self.raw_prompt()
             .map(|op| op.into_iter().map(|o| o.value).collect())
     }
-       /// Parses the provided behavioral and rendering options and prompts
+    /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to the defined rules.
     ///
     /// Returns a vector of [`ListOption`](crate::list_option::ListOption)s containing
@@ -480,18 +492,16 @@ where
         self,
         backend: &mut B,
     ) -> InquireResult<Vec<ListOption<PathEntry>>> {
-        PathSelectPrompt::new(self)?
-            .prompt(backend)
+        PathSelectPrompt::new(self)?.prompt(backend)
     }
 }
-
 
 struct PathSelectPrompt<'a> {
     message: &'a str,
     options: Vec<PathEntry>,
     divider: &'a str,
-    show_symlinks: bool, 
-    select_multiple: bool, 
+    show_symlinks: bool,
+    select_multiple: bool,
     filtered_options: Vec<usize>,
     data_needs_refresh: bool,
     help_message: Option<&'a str>,
@@ -507,16 +517,15 @@ struct PathSelectPrompt<'a> {
     formatter: MultiOptionFormatter<'a, PathEntry>,
     error: Option<ErrorMessage>,
     current_path: PathBuf,
-    selection_mode: PathSelectionMode<'a>
+    selection_mode: PathSelectionMode<'a>,
 }
 
-impl<'a> PathSelectPrompt<'a> 
-{
+impl<'a> PathSelectPrompt<'a> {
     fn new<T: AsRef<Path>>(pso: PathSelect<'a, T>) -> InquireResult<Self> {
         if let Some(default) = pso.default {
             default.iter().try_for_each(|default_item| {
                 // Are all of the selected files extant?
-                let default_path = default_item.as_ref(); 
+                let default_path = default_item.as_ref();
                 match default_path.try_exists() {
                     Err(err) => {
                         Err(InquireError::InvalidConfiguration(format!(
@@ -539,27 +548,24 @@ impl<'a> PathSelectPrompt<'a>
         let mut start_path = if let Some(start) = pso.start_path_opt {
             start.as_ref().to_path_buf()
         } else {
-            env::current_dir()
-                .unwrap_or_else(|_| Self::get_root_path_buf())
+            env::current_dir().unwrap_or_else(|_| Self::get_root_path_buf())
         };
         if !start_path.is_dir() {
-            start_path = start_path.parent()
+            start_path = start_path
+                .parent()
                 .map(Path::to_path_buf)
                 .unwrap_or_else(|| Self::get_root_path_buf());
-        } 
+        }
 
-        let selected_options = pso
-            .default
-            .map_or_else(
-                || Result::<_, InquireError>::Ok(HashSet::<PathEntry>::new()),
-                |d| d.iter().try_fold(
-                    HashSet::new(),
-                    |mut s, d| {
-                        s.insert(PathEntry::try_from(d.as_ref())?);
-                        Ok(s)
-                    }
-                )
-            )?;
+        let selected_options = pso.default.map_or_else(
+            || Result::<_, InquireError>::Ok(HashSet::<PathEntry>::new()),
+            |d| {
+                d.iter().try_fold(HashSet::new(), |mut s, d| {
+                    s.insert(PathEntry::try_from(d.as_ref())?);
+                    Ok(s)
+                })
+            },
+        )?;
 
         let mut options = Vec::new();
         let mut filtered_options = Vec::new();
@@ -590,10 +596,10 @@ impl<'a> PathSelectPrompt<'a>
             select_multiple: pso.select_multiple,
             keep_filter: pso.keep_filter,
             input: Input::new(),
-            error: None, 
+            error: None,
             cursor_index: 0,
             checked,
-            divider: pso.divider, 
+            divider: pso.divider,
             divider_index,
             formatter: pso.formatter,
             selected: selected_options,
@@ -619,14 +625,7 @@ impl<'a> PathSelectPrompt<'a>
             show_hidden,
             show_symlinks,
         )
-            .map(|_| {
-                Self::update_checked(
-                    options,
-                    selected_options,
-                    checked,
-                    filtered_options,
-                )       
-            })
+        .map(|_| Self::update_checked(options, selected_options, checked, filtered_options))
     }
 
     fn update_checked(
@@ -634,7 +633,7 @@ impl<'a> PathSelectPrompt<'a>
         selected_options: &HashSet<PathEntry>,
         checked: &mut BTreeSet<usize>,
         filtered_options: &mut Vec<usize>,
-    )  -> usize {
+    ) -> usize {
         let divider_index = options.len();
         // unlisted selected options are appended
         selected_options.iter().for_each(|selected_entry| {
@@ -643,16 +642,15 @@ impl<'a> PathSelectPrompt<'a>
             }
         });
         checked.clear();
-        checked.extend(selected_options.iter()
-            .filter_map(|p| {
-                options.iter()
-                    .enumerate()
-                    .find_map(|(i, o)| (o == p).then(|| i))
-            })
-        ); 
+        checked.extend(selected_options.iter().filter_map(|p| {
+            options
+                .iter()
+                .enumerate()
+                .find_map(|(i, o)| (o == p).then(|| i))
+        }));
         filtered_options.clear();
         filtered_options.extend(0..options.len());
-                
+
         divider_index
     }
 
@@ -661,7 +659,7 @@ impl<'a> PathSelectPrompt<'a>
         option_index: usize,
         checked: &mut BTreeSet<usize>,
         selected: &mut HashSet<PathEntry>,
-        select_multiple: bool
+        select_multiple: bool,
     ) {
         if !select_multiple {
             checked.clear();
@@ -677,22 +675,22 @@ impl<'a> PathSelectPrompt<'a>
             ref filtered_options,
             ..
         } = self;
-            if wrap {
-                let after_wrap = qty.saturating_sub(*cursor_index);
+        if wrap {
+            let after_wrap = qty.saturating_sub(*cursor_index);
             *cursor_index = cursor_index
                 .checked_sub(qty)
                 .unwrap_or_else(|| filtered_options.len().saturating_sub(after_wrap))
-            } else {
-                *cursor_index = cursor_index.saturating_sub(qty)
-            }
+        } else {
+            *cursor_index = cursor_index.saturating_sub(qty)
         }
-        
+    }
+
     fn move_cursor_down(&mut self, qty: usize, wrap: bool) {
         let Self {
             ref mut cursor_index,
             ref filtered_options,
             ..
-        } = self; 
+        } = self;
         *cursor_index = cursor_index.saturating_add(qty);
 
         if *cursor_index >= filtered_options.len() {
@@ -730,74 +728,63 @@ impl<'a> PathSelectPrompt<'a>
                         .map_err(InquireError::from)
                         .and_then(|dir_entry| {
                             let path_entry = PathEntry::try_from(dir_entry)?;
-                            let is_hidden = PathSelect::<&PathBuf>::is_path_hidden_file(&path_entry.path);
-                            if path_entry.is_dir() 
-                            || path_entry.is_selectable(selection_mode) {
+                            let is_hidden =
+                                PathSelect::<&PathBuf>::is_path_hidden_file(&path_entry.path);
+                            if path_entry.is_dir() || path_entry.is_selectable(selection_mode) {
                                 if show_hidden || !is_hidden {
                                     if show_symlinks || !path_entry.is_symlink() {
                                         options.push(path_entry);
                                     }
-                                } 
+                                }
                             }
-                            Ok(()) 
+                            Ok(())
                         })
                 })
             })
-
     }
 
     fn render<B: MultiSelectBackend>(&mut self, backend: &mut B) -> InquireResult<()> {
         self.update_path_options()?;
-        
-        let Self { 
-            message, 
-            help_message, 
-            options, 
+
+        let Self {
+            message,
+            help_message,
+            options,
             filtered_options,
-            cursor_index, 
-            page_size, 
-            input, 
-            error, 
+            cursor_index,
+            page_size,
+            input,
+            error,
             // selected,
             checked,
-            .. 
-        } = self; 
-
-        
+            ..
+        } = self;
 
         let prompt = message;
         backend.frame_setup()?;
-        
+
         if let Some(error_message) = error {
             backend.render_error_message(error_message)?;
         }
 
         backend.render_multiselect_prompt(prompt, input)?;
 
-        
-        
         let choices = filtered_options
             .iter()
             // .chain(selected.iter())
             .cloned()
-            .map(|i| {
-                ListOption::new(
-                    i,
-                    options.get(i).expect("must get path entry")
-                        .clone()
-                )
-            })
+            .map(|i| ListOption::new(i, options.get(i).expect("must get path entry").clone()))
             .collect::<Vec<ListOption<PathEntry>>>();
 
         let page = paginate(*page_size, &choices, Some(*cursor_index));
         backend.render_options(page, checked)?;
-        
+
         if let Some(help) = help_message {
             backend.render_help_message(help)?;
         }
 
         backend.frame_finish()?;
-        
+
         Ok(())
     }
 
@@ -815,31 +802,29 @@ impl<'a> PathSelectPrompt<'a>
             )?;
             self.data_needs_refresh = false;
         }
-        
+
         Ok(())
-        
     }
 
     fn toggle_cursor_selection(&mut self) {
-        let Self { 
-            ref filtered_options, 
-            ref options, 
-            ref cursor_index, 
+        let Self {
+            ref filtered_options,
+            ref options,
+            ref cursor_index,
             ref selection_mode,
-            ref select_multiple, 
-            ref keep_filter, 
-            ref mut checked, 
+            ref select_multiple,
+            ref keep_filter,
+            ref mut checked,
             ref mut input,
             ref mut selected,
             ..
-        } = self; 
-        
+        } = self;
+
         let option_index = match filtered_options.get(*cursor_index) {
             Some(val) => val,
             None => return,
         };
-        let option_entry = options.get(*option_index)
-            .expect("must get option_entry");
+        let option_entry = options.get(*option_index).expect("must get option_entry");
 
         if option_entry.is_selectable(selection_mode) {
             if checked.contains(option_index) {
@@ -847,33 +832,31 @@ impl<'a> PathSelectPrompt<'a>
                 selected.remove(option_entry);
             } else {
                 Self::select(
-                    option_entry, 
-                    *option_index, 
-                    checked, 
-                    selected, 
-                    *select_multiple
+                    option_entry,
+                    *option_index,
+                    checked,
+                    selected,
+                    *select_multiple,
                 )
             }
-            
+
             if !*keep_filter {
                 input.clear();
             }
         }
-
-
-    }   
+    }
 
     fn on_change(&mut self, key: Key) {
         let Self {
-            ref vim_mode, 
-            ref page_size, 
+            ref vim_mode,
+            ref page_size,
             ref keep_filter,
-            ref options, 
+            ref options,
             ref select_multiple,
             ref selection_mode,
-            ref mut cursor_index, 
+            ref mut cursor_index,
             ref mut checked,
-            ref mut input, 
+            ref mut input,
             ref mut selected,
             ref mut filtered_options,
             ref mut current_path,
@@ -881,74 +864,65 @@ impl<'a> PathSelectPrompt<'a>
             ..
         } = self;
         match key {
-            Key::Up(KeyModifiers::NONE) => {
-                self.move_cursor_up(1, true)
-            },
-            Key::Char('k', KeyModifiers::NONE) if *vim_mode => {
-                self.move_cursor_up(1, true)
-            },
+            Key::Up(KeyModifiers::NONE) => self.move_cursor_up(1, true),
+            Key::Char('k', KeyModifiers::NONE) if *vim_mode => self.move_cursor_up(1, true),
             Key::PageUp => self.move_cursor_up(*page_size, true),
             Key::Home => self.move_cursor_up(usize::MAX, true),
-            
-            Key::Down(KeyModifiers::NONE) => {
-                self.move_cursor_down(1, true)
-            },
-            Key::Char('j', KeyModifiers::NONE) if *vim_mode => {
-                self.move_cursor_down(1, true)
-            },
+
+            Key::Down(KeyModifiers::NONE) => self.move_cursor_down(1, true),
+            Key::Char('j', KeyModifiers::NONE) if *vim_mode => self.move_cursor_down(1, true),
             Key::PageDown => self.move_cursor_down(*page_size, true),
             Key::End => self.move_cursor_down(usize::MAX, true),
 
             Key::Char(' ', KeyModifiers::NONE) => self.toggle_cursor_selection(),
             Key::Right(KeyModifiers::NONE) => {
                 match filtered_options.get(*cursor_index) {
-                    Some(option_index) => {
-                        match options.get(*option_index) {
-                            Some(PathEntry{file_type, path, ..}) if file_type.is_dir() => {
-                                *current_path = path.to_path_buf();
-                                *data_needs_refresh = true;
-                            },
-                            _ => {}
+                    Some(option_index) => match options.get(*option_index) {
+                        Some(PathEntry {
+                            file_type, path, ..
+                        }) if file_type.is_dir() => {
+                            *current_path = path.to_path_buf();
+                            *data_needs_refresh = true;
                         }
+                        _ => {}
                     },
-                    _ => { /* It might be an empty directory*/}
+                    _ => { /* It might be an empty directory*/ }
                 }
-            },
+            }
             Key::Right(KeyModifiers::SHIFT) => {
                 checked.clear();
-                filtered_options.iter().for_each(|option_index|{
-                    let option_entry = options.get(*option_index)
-                        .expect("must get selected path");
+                filtered_options.iter().for_each(|option_index| {
+                    let option_entry = options.get(*option_index).expect("must get selected path");
                     if option_entry.is_selectable(selection_mode)
-                    && (*select_multiple || option_index == cursor_index )
+                        && (*select_multiple || option_index == cursor_index)
                     {
                         Self::select(
-                            option_entry, 
-                            *option_index, 
-                            checked, 
-                            selected, 
-                            *select_multiple
-                        ); 
+                            option_entry,
+                            *option_index,
+                            checked,
+                            selected,
+                            *select_multiple,
+                        );
                     }
                 });
 
                 if !*keep_filter {
                     input.clear();
                 }
-            },
+            }
             Key::Left(KeyModifiers::SHIFT) => {
                 checked.clear();
                 selected.clear();
                 if !*keep_filter {
                     input.clear();
                 }
-            },
+            }
             Key::Left(KeyModifiers::NONE) => {
                 if let Some(parent) = current_path.parent() {
                     *current_path = parent.to_path_buf();
                     *data_needs_refresh = true;
-                } 
-            },
+                }
+            }
             key => {
                 let dirty = input.handle_key(key);
                 if dirty {
@@ -958,24 +932,18 @@ impl<'a> PathSelectPrompt<'a>
                     }
                     *filtered_options = options;
                 }
-            } 
+            }
         }
     }
 
-    fn filter_options(
-        options: &[PathEntry],
-        input: &Input
-    ) -> Vec<usize> {
-        options.iter()
+    fn filter_options(options: &[PathEntry], input: &Input) -> Vec<usize> {
+        options
+            .iter()
             .enumerate()
-            .filter_map(|(i, path_entry)| {
-                match input.content() {
-                    val if val.is_empty() => Some(i),
-                    val if PathSelect::<PathEntry>::DEFAULT_FILTER(
-                        val, path_entry, "", i
-                    ) => Some(i),
-                    _ => None
-                }
+            .filter_map(|(i, path_entry)| match input.content() {
+                val if val.is_empty() => Some(i),
+                val if PathSelect::<PathEntry>::DEFAULT_FILTER(val, path_entry, "", i) => Some(i),
+                _ => None,
             })
             .collect()
     }
@@ -987,23 +955,21 @@ impl<'a> PathSelectPrompt<'a>
             ..
         } = self;
         let mut answer = Vec::with_capacity(checked.len());
-        answer.extend(checked.iter().rev().cloned()
-            .map(|index| {
-                let value = options.swap_remove(index);
-                ListOption{ value, index }
-            })
-        );
+        answer.extend(checked.iter().rev().cloned().map(|index| {
+            let value = options.swap_remove(index);
+            ListOption { value, index }
+        }));
         answer.reverse();
         answer
     }
 
     fn prompt<B: MultiSelectBackend>(
         mut self,
-        backend: &mut B 
+        backend: &mut B,
     ) -> InquireResult<Vec<ListOption<PathEntry>>> {
         'render_listen: loop {
             self.render(backend)?;
-    
+
             let key = backend.read_key()?;
 
             match key {
@@ -1011,11 +977,12 @@ impl<'a> PathSelectPrompt<'a>
                 Key::Cancel => cancel_prompt!(backend, self.message),
                 Key::Submit => break 'render_listen,
                 key => self.on_change(key),
-            } 
+            }
         }
 
         let final_answer = self.get_final_answer();
-        let refs = final_answer.iter()
+        let refs = final_answer
+            .iter()
             .map(ListOption::as_ref)
             .collect::<Vec<ListOption<_>>>();
         let formatted = (self.formatter)(refs.as_slice());
