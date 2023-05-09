@@ -24,9 +24,15 @@ fn main() {
         Ok(entries) => {
             let l = entries.len();
             println!("\nYou picked {l} items{}", 
-                (!entries.is_empty()).then(|| {
-                    entries.iter().enumerate().map(|(i, entry)| format!("\n{i}: {entry}")).collect::<String>()
-                }).unwrap_or_default()
+                (!entries.is_empty())
+                    .then(|| {
+                        entries
+                            .iter()
+                            .enumerate()
+                            .map(|(i, entry)| format!("\n{i}: {entry}"))
+                            .collect::<String>()
+                    })
+                    .unwrap_or_default()
             )
         },
         Err(err) => eprintln!("Your choices were wretched:\n{err:#?}"),

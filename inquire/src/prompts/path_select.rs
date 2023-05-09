@@ -1,5 +1,3 @@
-use lazy_static::__Deref;
-
 use crate::{
     config,
     formatter::{MultiOptionFormatter, },
@@ -13,7 +11,6 @@ use std::{
     path::{Component, PathBuf, Path}, collections::{BTreeSet, HashSet}, 
     fs, convert::{TryFrom, TryInto}, 
     ops::Deref,
-    option, 
     ffi::{OsStr, OsString},
 };
 
@@ -29,12 +26,22 @@ pub enum PathSelectionMode<'a> {
 }
 
 /// Path with cached information
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, Hash)]
 pub struct PathEntry {
     /// The (owned) [path](PathBuf) 
+    /// 
+    /// Corresponds to the target if this is a symlink  
     pub path: PathBuf,
     /// The [file type](fs::FileType)
     pub file_type: fs::FileType,
+    /// The original symlink path
+    pub symlink_path_opt: Option<PathBuf>,
+}
+impl Eq for PathEntry {}
+impl PartialEq for PathEntry {
+    fn eq(&self, other: &Self) -> bool {
+        self.path.eq(&other.path)
+    }
 }
 impl AsRef<Path> for PathEntry {
     fn as_ref(&self) -> &Path { self.path.as_path() }
@@ -45,46 +52,44 @@ impl Deref for PathEntry {
 }
 impl fmt::Display for PathEntry {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.path.to_string_lossy())
+        let path = self.path.to_string_lossy();
+        if let Some(symlink_path) = self.symlink_path_opt.as_ref() { 
+            write!(f, "{} -> {path}", symlink_path.to_string_lossy())
+        } else { 
+            write!(f, "{path}")
+        }
     }
 }
 impl TryFrom<&Path> for PathEntry {
     type Error = InquireError;
     fn try_from(value: &Path) -> Result<Self, Self::Error> {
+        let is_symlink = value.is_symlink();
         value.metadata()
             .map_err(Self::Error::from)
-            .map(|metadata| {
-                Self {
-                    path: value.to_path_buf(),
-                    file_type: metadata.file_type()
-                }
+            .and_then(|target_metadata| {
+                let (path, symlink_path_opt) = if is_symlink {
+                    (fs_err::canonicalize(value)?, Some(value.to_path_buf()))
+                } else {
+                    (value.to_path_buf(), None)
+                };                    
+                Ok(Self {
+                    path,
+                    file_type: target_metadata.file_type(),
+                    symlink_path_opt
+                })
             })
     }
 } 
 impl TryFrom<fs::DirEntry> for PathEntry {
     type Error = InquireError;
     fn try_from(value: fs::DirEntry) -> Result<Self, Self::Error> {
-        value.file_type()
-            .map_err(Self::Error::from)
-            .map(|file_type| {
-                Self {
-                    path: value.path(),
-                    file_type
-                }
-            })
+        Self::try_from(value.path().as_path())
     }
 } 
 impl TryFrom<fs_err::DirEntry> for PathEntry {
     type Error = InquireError;
     fn try_from(value: fs_err::DirEntry) -> Result<Self, Self::Error> {
-        value.file_type()
-            .map_err(Self::Error::from)
-            .map(|file_type| {
-                Self {
-                    path: value.path(),
-                    file_type
-                }
-            })
+        Self::try_from(value.path().as_path())
     }
 }
 impl PathEntry {
@@ -113,6 +118,9 @@ impl PathEntry {
             _ => false
         }
     }
+
+    /// Is this path entry for a symlink?
+    pub fn is_symlink(&self) -> bool { self.symlink_path_opt.is_some() }
 }
 /// Prompt for choosing one or multiple files.
 ///
@@ -140,6 +148,9 @@ pub struct PathSelect<'a, T> {
 
     /// Whether to show hidden files.
     pub show_hidden: bool,
+
+    /// Whether to show symlinks
+    pub show_symlinks: bool,
 
     /// The divider to use in the selection list following current-directory entries
     pub divider: &'a str, 
@@ -254,8 +265,10 @@ where
     /// Default behavior of keeping or cleaning the current filter value.
     pub const DEFAULT_KEEP_FILTER: bool = true;
 
+    /// Default value of showing symlinks 
+    pub const DEFAULT_SHOW_SYMLINKS: bool = false;
 
-    /// Default behavior of keeping or cleaning the current filter value.
+    /// Default visual divider value.
     pub const DEFAULT_DIVIDER: &'a str = "-----";
 
     /// Creates a [MultiSelect] with the provided message and options, along with default configuration values.
@@ -267,6 +280,7 @@ where
             divider: Self::DEFAULT_DIVIDER,
             help_message: Self::DEFAULT_HELP_MESSAGE,
             show_hidden: Self::DEFAULT_SHOW_HIDDEN,
+            show_symlinks: Self::DEFAULT_SHOW_SYMLINKS,
             page_size: Self::DEFAULT_PAGE_SIZE,
             vim_mode: Self::DEFAULT_VIM_MODE,
             formatter: Self::DEFAULT_FORMATTER,
@@ -314,6 +328,12 @@ where
     /// Sets the show hidden behavior.
     pub fn with_show_hidden(mut self, show_hidden: bool) -> Self {
         self.show_hidden = show_hidden;
+        self
+    }
+    
+    /// Sets the show symlinks behavior.
+    pub fn with_show_symlinks(mut self, show_symlinks: bool) -> Self {
+        self.show_symlinks = show_symlinks;
         self
     }
 
@@ -454,7 +474,8 @@ where
 struct PathSelectPrompt<'a> {
     message: &'a str,
     options: Vec<PathEntry>,
-    divider: &'a str, 
+    divider: &'a str,
+    show_symlinks: bool, 
     filtered_options: Vec<usize>,
     data_needs_refresh: bool,
     help_message: Option<&'a str>,
@@ -528,6 +549,7 @@ impl<'a> PathSelectPrompt<'a>
         let mut filtered_options = Vec::new();
         let mut checked = BTreeSet::<usize>::new();
         let show_hidden = pso.show_hidden;
+        let show_symlinks = pso.show_symlinks;
         let divider_index = Self::try_update_data_from_selection(
             &start_path,
             &mut options,
@@ -535,7 +557,8 @@ impl<'a> PathSelectPrompt<'a>
             &pso.selection_mode,
             &mut checked,
             &mut filtered_options,
-            show_hidden
+            show_hidden,
+            show_symlinks,
         )?;
 
         Ok(Self {
@@ -546,6 +569,7 @@ impl<'a> PathSelectPrompt<'a>
             help_message: pso.help_message,
             page_size: pso.page_size,
             vim_mode: pso.vim_mode,
+            show_symlinks,
             show_hidden,
             keep_filter: pso.keep_filter,
             input: Input::new(),
@@ -569,12 +593,14 @@ impl<'a> PathSelectPrompt<'a>
         checked: &mut BTreeSet<usize>,
         filtered_options: &mut Vec<usize>,
         show_hidden: bool,
+        show_symlinks: bool,
     ) -> InquireResult<usize> {
         PathSelectPrompt::try_get_valid_path_options::<&PathBuf>(
             start_path,
             options,
             selection_mode,
-            show_hidden
+            show_hidden,
+            show_symlinks,
         )
             .map(|_| {
                 Self::update_checked(
@@ -593,7 +619,7 @@ impl<'a> PathSelectPrompt<'a>
         filtered_options: &mut Vec<usize>,
     )  -> usize {
         let divider_index = options.len();
-        /// unlisted selected options are appended
+        // unlisted selected options are appended
         selected_options.iter().for_each(|selected_entry| {
             if !options.contains(selected_entry) {
                 options.push(selected_entry.clone());
@@ -660,7 +686,8 @@ impl<'a> PathSelectPrompt<'a>
         base_path: T,
         options: &mut Vec<PathEntry>,
         selection_mode: &PathSelectionMode<'a>,
-        show_hidden: bool
+        show_hidden: bool,
+        show_symlinks: bool,
     ) -> InquireResult<()> {
         options.clear();
         fs_err::read_dir(base_path.as_ref())
@@ -675,7 +702,9 @@ impl<'a> PathSelectPrompt<'a>
                             if path_entry.is_dir() 
                             || path_entry.is_selectable(selection_mode) {
                                 if show_hidden || !is_hidden {
-                                    options.push(path_entry);
+                                    if show_symlinks || !path_entry.is_symlink() {
+                                        options.push(path_entry);
+                                    }
                                 } 
                             }
                             Ok(()) 
@@ -722,7 +751,8 @@ impl<'a> PathSelectPrompt<'a>
             .map(|i| {
                 ListOption::new(
                     i,
-                    options.get(i).expect("must get path entry").clone()
+                    options.get(i).expect("must get path entry")
+                        .clone()
                 )
             })
             .collect::<Vec<ListOption<PathEntry>>>();
@@ -749,6 +779,7 @@ impl<'a> PathSelectPrompt<'a>
                 &mut self.checked,
                 &mut self.filtered_options,
                 self.show_hidden,
+                self.show_symlinks,
             )?;
             self.data_needs_refresh = false;
         }
@@ -835,7 +866,7 @@ impl<'a> PathSelectPrompt<'a>
                 match filtered_options.get(*cursor_index) {
                     Some(option_index) => {
                         match options.get(*option_index) {
-                            Some(PathEntry{file_type, path}) if file_type.is_dir() => {
+                            Some(PathEntry{file_type, path, ..}) if file_type.is_dir() => {
                                 *current_path = path.to_path_buf();
                                 *data_needs_refresh = true;
                             },
