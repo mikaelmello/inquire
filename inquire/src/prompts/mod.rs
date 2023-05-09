@@ -22,7 +22,7 @@ pub use dateselect::*;
 pub use editor::*;
 pub use multiselect::*;
 pub use password::*;
-pub use select::*;
-pub use text::*;
 #[cfg(feature = "path")]
 pub use path_select::*;
+pub use select::*;
+pub use text::*;
