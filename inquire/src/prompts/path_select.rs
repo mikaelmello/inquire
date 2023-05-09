@@ -14,9 +14,9 @@ use crate::{
 };
 use std::{
     collections::{BTreeSet, HashSet},
-    convert::{TryFrom, TryInto},
+    convert::{TryFrom,},
     env,
-    ffi::{OsStr, OsString},
+    ffi::{OsStr},
     fmt, fs,
     ops::Deref,
     path::{Component, Path, PathBuf},
@@ -499,7 +499,7 @@ where
 struct PathSelectPrompt<'a> {
     message: &'a str,
     options: Vec<PathEntry>,
-    divider: &'a str,
+    #[allow(dead_code)] divider: &'a str,
     show_symlinks: bool,
     select_multiple: bool,
     filtered_options: Vec<usize>,
@@ -508,7 +508,7 @@ struct PathSelectPrompt<'a> {
     vim_mode: bool,
     show_hidden: bool,
     cursor_index: usize,
-    divider_index: usize,
+    #[allow(dead_code)] divider_index: usize,
     selected: HashSet<PathEntry>,
     checked: BTreeSet<usize>,
     page_size: usize,
