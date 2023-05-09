@@ -1,6 +1,1 @@
-{
-  "rust-analyzer.cargo.features": [
-    "date",
-    "path"
-  ]
-}
+{}

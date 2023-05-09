@@ -147,8 +147,8 @@ impl From<Key> for crate::ui::Key {
         use crate::ui::KeyModifiers;
 
         match key {
-            Key::Escape => Self::Cancel,
-            Key::Char('\n') | Key::Char('\r') | Key::Enter => Self::Submit,
+            Key::Escape => Self::Escape,
+            Key::Char('\n') | Key::Char('\r') | Key::Enter => Self::Enter,
             Key::Char('\t') | Key::Tab => Self::Tab,
             Key::Backspace => Self::Backspace,
             Key::Del => Self::Delete(KeyModifiers::empty()),

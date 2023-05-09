@@ -86,4 +86,5 @@ pub mod validator;
 pub use crate::autocompletion::Autocomplete;
 pub use crate::config::set_global_render_config;
 pub use crate::error::{CustomUserError, InquireError};
+pub use crate::input::action::*;
 pub use crate::prompts::*;

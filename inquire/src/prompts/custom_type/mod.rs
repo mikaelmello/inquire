@@ -1,15 +1,23 @@
+mod action;
+mod config;
+mod prompt;
+
+pub use action::*;
+
 use std::str::FromStr;
 
 use crate::{
     config::get_configuration,
     error::{InquireError, InquireResult},
     formatter::CustomTypeFormatter,
-    input::Input,
     parser::CustomTypeParser,
+    prompts::prompt::Prompt,
     terminal::get_default_terminal,
-    ui::{Backend, CustomTypeBackend, Key, RenderConfig},
-    validator::{CustomTypeValidator, ErrorMessage, Validation},
+    ui::{Backend, CustomTypeBackend, RenderConfig},
+    validator::CustomTypeValidator,
 };
+
+use self::prompt::CustomTypePrompt;
 
 /// Generic prompt suitable for when you need to parse the user input into a specific type, for example an `f64` or a `rust_decimal`, maybe even an `uuid`.
 ///
@@ -263,130 +271,5 @@ where
         backend: &mut B,
     ) -> InquireResult<T> {
         CustomTypePrompt::from(self).prompt(backend)
-    }
-}
-
-struct CustomTypePrompt<'a, T> {
-    message: &'a str,
-    error: Option<ErrorMessage>,
-    help_message: Option<&'a str>,
-    default: Option<T>,
-    input: Input,
-    formatter: CustomTypeFormatter<'a, T>,
-    default_value_formatter: CustomTypeFormatter<'a, T>,
-    validators: Vec<Box<dyn CustomTypeValidator<T>>>,
-    parser: CustomTypeParser<'a, T>,
-    error_message: String,
-}
-
-impl<'a, T> From<CustomType<'a, T>> for CustomTypePrompt<'a, T>
-where
-    T: Clone,
-{
-    fn from(co: CustomType<'a, T>) -> Self {
-        Self {
-            message: co.message,
-            error: None,
-            default: co.default,
-            help_message: co.help_message,
-            formatter: co.formatter,
-            default_value_formatter: co.default_value_formatter,
-            validators: co.validators,
-            parser: co.parser,
-            input: co
-                .placeholder
-                .map(|p| Input::new().with_placeholder(p))
-                .unwrap_or_else(Input::new),
-            error_message: co.error_message,
-        }
-    }
-}
-
-impl<'a, T> CustomTypePrompt<'a, T>
-where
-    T: Clone,
-{
-    fn on_change(&mut self, key: Key) {
-        self.input.handle_key(key);
-    }
-
-    fn validate_current_answer(&self, value: &T) -> InquireResult<Validation> {
-        for validator in &self.validators {
-            match validator.validate(value) {
-                Ok(Validation::Valid) => {}
-                Ok(Validation::Invalid(msg)) => return Ok(Validation::Invalid(msg)),
-                Err(err) => return Err(InquireError::Custom(err)),
-            }
-        }
-
-        Ok(Validation::Valid)
-    }
-
-    fn get_final_answer(&self) -> Result<T, String> {
-        match &self.default {
-            Some(val) if self.input.content().is_empty() => return Ok(val.clone()),
-            _ => {}
-        }
-
-        match (self.parser)(self.input.content()) {
-            Ok(val) => Ok(val),
-            Err(_) => Err(self.error_message.clone()),
-        }
-    }
-
-    fn render<B: CustomTypeBackend>(&mut self, backend: &mut B) -> InquireResult<()> {
-        let prompt = &self.message;
-
-        backend.frame_setup()?;
-
-        if let Some(error) = &self.error {
-            backend.render_error_message(error)?;
-        }
-
-        let default_value_formatter = self.default_value_formatter;
-        let default_message = self
-            .default
-            .as_ref()
-            .map(|val| default_value_formatter(val.clone()));
-
-        backend.render_prompt(prompt, default_message.as_deref(), &self.input)?;
-
-        if let Some(message) = self.help_message {
-            backend.render_help_message(message)?;
-        }
-
-        backend.frame_finish()?;
-
-        Ok(())
-    }
-
-    fn prompt<B: CustomTypeBackend>(mut self, backend: &mut B) -> InquireResult<T> {
-        let final_answer: T;
-
-        loop {
-            self.render(backend)?;
-
-            let key = backend.read_key()?;
-
-            match key {
-                Key::Interrupt => interrupt_prompt!(),
-                Key::Cancel => cancel_prompt!(backend, self.message),
-                Key::Submit => match self.get_final_answer() {
-                    Ok(answer) => match self.validate_current_answer(&answer)? {
-                        Validation::Valid => {
-                            final_answer = answer;
-                            break;
-                        }
-                        Validation::Invalid(msg) => self.error = Some(msg),
-                    },
-                    Err(message) => self.error = Some(message.into()),
-                },
-                key => self.on_change(key),
-            }
-        }
-
-        let formatted = (self.formatter)(final_answer.clone());
-
-        finish_prompt_with_answer!(backend, self.message, &formatted, final_answer);
     }
 }
