@@ -20,6 +20,7 @@ fn main() {
         default: Some(false),
         placeholder: Some("si|no"),
         help_message: Some("It's alright if you're not"),
+        initial_input: None,
         formatter: &|ans| match ans {
             true => "si".to_owned(),
             false => "no".to_owned(),

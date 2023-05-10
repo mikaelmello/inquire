@@ -58,8 +58,7 @@ where
         let checked_options = mso
             .default
             .map_or_else(BTreeSet::new, |d| d.iter().cloned().collect());
-
-        Ok(Self {
+        let mut s = Self {
             message: mso.message,
             config: (&mso).into(),
             options: mso.options,
@@ -67,13 +66,15 @@ where
             filtered_options,
             help_message: mso.help_message,
             cursor_index: mso.starting_cursor,
-            input: Input::new(),
+            input: Input::new_with(mso.initial_input.unwrap_or_default()),
             filter: mso.filter,
             formatter: mso.formatter,
             validator: mso.validator,
             error: None,
             checked: checked_options,
-        })
+        };
+        s.filtered_options = s.filter_options();
+        Ok(s)
     }
 
     fn filter_options(&self) -> Vec<usize> {

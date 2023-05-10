@@ -83,7 +83,7 @@ pub struct Text<'a> {
     /// If you want to set a default value for the prompt, returned when the user's submission is empty, see [`default`].
     ///
     /// [`default`]: Self::default
-    pub initial_value: Option<&'a str>,
+    pub initial_input: Option<&'a str>,
 
     /// Default value, returned when the user input is empty.
     pub default: Option<&'a str>,
@@ -140,7 +140,7 @@ impl<'a> Text<'a> {
         Self {
             message,
             placeholder: None,
-            initial_value: None,
+            initial_input: None,
             default: None,
             help_message: Self::DEFAULT_HELP_MESSAGE,
             validators: Self::DEFAULT_VALIDATORS,
@@ -162,9 +162,19 @@ impl<'a> Text<'a> {
     /// If you want to set a default value for the prompt, returned when the user's submission is empty, see [`with_default`].
     ///
     /// [`with_default`]: Self::with_default
-    pub fn with_initial_value(mut self, message: &'a str) -> Self {
-        self.initial_value = Some(message);
+    pub fn with_initial_input(mut self, initial_input: &'a str) -> Self {
+        self.initial_input = Some(initial_input);
         self
+    }
+
+    /// Sets the initial value of the prompt's text input.
+    ///
+    /// If you want to set a default value for the prompt, returned when the user's submission is empty, see [`with_default`].
+    ///
+    /// [`with_default`]: Self::with_default
+    #[deprecated(since="0.6.3", note="please use `with_initial_input` instead")]
+    pub fn with_initial_value(mut self, message: &'a str) -> Self {
+        self.with_initial_input(message)
     }
 
     /// Sets the default input.

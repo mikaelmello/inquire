@@ -31,7 +31,7 @@ pub struct TextPrompt<'a> {
 
 impl<'a> From<Text<'a>> for TextPrompt<'a> {
     fn from(so: Text<'a>) -> Self {
-        let input = Input::new_with(so.initial_value.unwrap_or_default());
+        let input = Input::new_with(so.initial_input.unwrap_or_default());
         let input = if let Some(placeholder) = so.placeholder {
             input.with_placeholder(placeholder)
         } else {

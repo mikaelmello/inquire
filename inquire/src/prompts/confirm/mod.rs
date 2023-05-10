@@ -70,6 +70,9 @@ pub struct Confirm<'a> {
     /// Help message to be presented to the user.
     pub help_message: Option<&'a str>,
 
+    /// Initial value of the prompt's text input.
+    pub initial_input: Option<&'a str>,
+
     /// Function that formats the user input and presents it to the user as the final rendering of the prompt.
     pub formatter: BoolFormatter<'a>,
 
@@ -118,6 +121,7 @@ impl<'a> Confirm<'a> {
             default: None,
             placeholder: None,
             help_message: None,
+            initial_input: None,
             formatter: Self::DEFAULT_FORMATTER,
             parser: Self::DEFAULT_PARSER,
             default_value_formatter: Self::DEFAULT_DEFAULT_VALUE_FORMATTER,
@@ -141,6 +145,12 @@ impl<'a> Confirm<'a> {
     /// Sets the help message of the prompt.
     pub fn with_help_message(mut self, message: &'a str) -> Self {
         self.help_message = Some(message);
+        self
+    }
+
+    /// Sets the predefined text for the prompts text input
+    pub fn with_initial_input(mut self, initial_input: &'a str) -> Self {
+        self.initial_input = Some(initial_input);
         self
     }
 
@@ -228,6 +238,7 @@ impl<'a> From<Confirm<'a>> for CustomType<'a, bool> {
             default_value_formatter: co.default_value_formatter,
             placeholder: co.placeholder,
             help_message: co.help_message,
+            initial_input: co.initial_input,
             formatter: co.formatter,
             parser: co.parser,
             validators: vec![],

@@ -67,6 +67,9 @@ pub struct MultiSelect<'a, T> {
     /// Help message to be presented to the user.
     pub help_message: Option<&'a str>,
 
+    /// Initial value of the prompt's text input.
+    pub initial_input: Option<&'a str>,
+
     /// Page size of the options displayed to the user.
     pub page_size: usize,
 
@@ -186,6 +189,7 @@ where
             options,
             default: None,
             help_message: Self::DEFAULT_HELP_MESSAGE,
+            initial_input: None,
             page_size: Self::DEFAULT_PAGE_SIZE,
             vim_mode: Self::DEFAULT_VIM_MODE,
             starting_cursor: Self::DEFAULT_STARTING_CURSOR,
@@ -200,6 +204,12 @@ where
     /// Sets the help message of the prompt.
     pub fn with_help_message(mut self, message: &'a str) -> Self {
         self.help_message = Some(message);
+        self
+    }
+
+    /// Sets the predefined text for the prompts text input
+    pub fn with_initial_input(mut self, initial_input: &'a str) -> Self {
+        self.initial_input = Some(initial_input);
         self
     }
 

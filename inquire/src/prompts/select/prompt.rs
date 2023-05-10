@@ -48,8 +48,7 @@ where
 
         let string_options = so.options.iter().map(T::to_string).collect();
         let filtered_options = (0..so.options.len()).collect();
-
-        Ok(Self {
+        let mut s = Self {
             message: so.message,
             config: (&so).into(),
             options: so.options,
@@ -57,10 +56,12 @@ where
             filtered_options,
             help_message: so.help_message,
             cursor_index: so.starting_cursor,
-            input: Input::new(),
+            input: Input::new_with(so.initial_input.unwrap_or_default()),
             filter: so.filter,
             formatter: so.formatter,
-        })
+        };
+        s.filtered_options = s.filter_options();
+        Ok(s)
     }
 
     fn filter_options(&self) -> Vec<usize> {

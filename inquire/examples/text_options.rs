@@ -12,10 +12,10 @@ fn main() {
 
     let _input = Text {
         message: "How are you feeling?",
-        initial_value: None,
         default: None,
         placeholder: Some("Good"),
         help_message: None,
+        initial_input: None,
         formatter: Text::DEFAULT_FORMATTER,
         validators: Vec::new(),
         page_size: Text::DEFAULT_PAGE_SIZE,
