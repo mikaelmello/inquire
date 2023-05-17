@@ -28,7 +28,7 @@ pub enum PathSelectPromptAction {
     SelectAll,
     /// Deselects all options.
     ClearSelections,
-    /// Navigates deeper in file tree when current selection is a directory
+    /// Navigates deeper in file tree when current selection is a directory.
     NavigateDeeper,
     /// Navigates higher in file tree.
     ///
@@ -37,19 +37,7 @@ pub enum PathSelectPromptAction {
 }
 
 impl InnerAction<PathSelectConfig> for PathSelectPromptAction {
-    fn from_key(key: Key, config: &PathSelectConfig) -> Option<Self> {
-        if config.vim_mode {
-            let action = match key {
-                Key::Char('k', KeyModifiers::NONE) => Some(Self::MoveUp),
-                Key::Char('j', KeyModifiers::NONE) => Some(Self::MoveDown),
-                _ => None,
-            };
-
-            if action.is_some() {
-                return action;
-            }
-        }
-
+    fn from_key(key: Key, _config: &PathSelectConfig) -> Option<Self> {
         let action = match key {
             Key::Up(KeyModifiers::NONE) => Self::MoveUp,
             Key::PageUp => Self::PageUp,
