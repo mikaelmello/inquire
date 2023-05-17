@@ -183,7 +183,7 @@ pub struct PathSelect<'a, T> {
 
     /// RenderConfig to apply to the rendered interface.
     ///
-    /// Note: The default render config considers if the NO_COpubLOR environment variable
+    /// Note: The default render config considers if the NO_COLOR environment variable
     /// is set to decide whether to render the colored config or the empty one.
     ///
     /// When overriding the config in a prompt, NO_COLOR is no longer considered and your
