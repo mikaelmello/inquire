@@ -28,7 +28,7 @@ pub enum PathSelectPromptAction {
     SelectAll,
     /// Deselects all options.
     ClearSelections,
-    /// Navigates deeper in file tree
+    /// Navigates deeper in file tree when current selection is a directory
     NavigateDeeper,
     //// Navigated higher in file tree
     NavigateHigher,
