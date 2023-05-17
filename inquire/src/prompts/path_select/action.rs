@@ -30,7 +30,9 @@ pub enum PathSelectPromptAction {
     ClearSelections,
     /// Navigates deeper in file tree when current selection is a directory
     NavigateDeeper,
-    //// Navigated higher in file tree
+    /// Navigates higher in file tree.
+    ///
+    /// No-op if on a root directory.
     NavigateHigher,
 }
 
