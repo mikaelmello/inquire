@@ -3,7 +3,7 @@ use crate::PathSelect;
 /// Configuration settings used in the execution of a PathSelectPrompt.
 #[derive(Copy, Clone, Debug)]
 pub struct PathSelectConfig {
-    /// Whether to use vim-style keybindings.
+    /// Whether to use vim-style keybindings (unsupported).
     pub vim_mode: bool,
     /// Page size of the list of options.
     pub page_size: usize,
