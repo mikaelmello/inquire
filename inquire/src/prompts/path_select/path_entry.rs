@@ -1,6 +1,6 @@
 //! Path entries
-use super::PathSelectionMode;
-use crate::{InquireError, SortingMode};
+use super::{PathSelectionMode, PathSortingMode};
+use crate::{InquireError, };
 use std::{
     cmp, 
     convert::TryFrom,
@@ -136,13 +136,18 @@ impl PathEntry {
     }
 
     /// Sort by the given sorting mode 
-    pub fn sort_by_mode(a: &Self, b: &Self, sorting_mode: SortingMode) -> cmp::Ordering {
+    pub fn sort_by_mode(a: &Self, b: &Self, sorting_mode: PathSortingMode) -> cmp::Ordering {
         match sorting_mode {
-            SortingMode::Path => a.path.partial_cmp(&b.path).unwrap(),
-            SortingMode::Size => a.size.cmp(&b.size),
-            SortingMode::Extension => {
+            PathSortingMode::Path => a.path.partial_cmp(&b.path).unwrap(),
+            PathSortingMode::Size => {
+                a.size.cmp(&b.size)
+                    .then_with(|| {
+                        Self::sort_by_mode(a, b, PathSortingMode::Path)
+                    })
+            },
+            PathSortingMode::Extension => {
                 match (a.is_dir(), b.is_dir()) {
-                    (true, true) => Self::sort_by_mode(a, b, SortingMode::Path),
+                    (true, true) => Self::sort_by_mode(a, b, PathSortingMode::Path),
                     (true, false) => cmp::Ordering::Less,
                     (false, true) => cmp::Ordering::Greater,
                     (false, false) => {

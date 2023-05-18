@@ -1,5 +1,8 @@
 //! Path picker example
-use inquire::{PathSelect, PathSelectionMode};
+use inquire::{
+    PathSelect,
+    PathSelectionMode
+};
 
 fn main() {
     let start_path = std::env::current_dir().expect("must get current dir");

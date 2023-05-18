@@ -6,6 +6,8 @@ mod prompt;
 use prompt::*;
 mod config;
 use config::*;
+mod modes;
+pub use modes::*;
 #[cfg(feature = "crossterm")]
 #[cfg(test)]
 mod test;
@@ -54,7 +56,7 @@ pub struct PathSelect<'a, T> {
     pub show_symlinks: bool,
 
     /// [How to sort](SortingMode) listed files and directories
-    pub sorting_mode: SortingMode,
+    pub sorting_mode: PathSortingMode,
 
     /// Whether to allow selecting multiple files
     pub select_multiple: bool,
@@ -166,7 +168,7 @@ where
         "↑↓ to move, space to select one, \
         → to navigate to path, ← to navigate up, \
         shift+→ to select all, shift+← to clear, \
-        type to filter, tab to change sorting mode",
+        tab to change sorting mode",
     );
 
     /// Default behavior of keeping or cleaning the current filter value.
@@ -245,6 +247,12 @@ where
     /// Sets the select multiple behavior.
     pub fn with_select_multiple(mut self, select_multiple: bool) -> Self {
         self.select_multiple = select_multiple;
+        self
+    }
+
+    /// Sets the default sorting mode.
+    pub fn with_sorting_mode(mut self, sorting_mode: PathSortingMode) -> Self {
+        self.sorting_mode = sorting_mode;
         self
     }
 
@@ -387,53 +395,5 @@ where
         backend: &mut B,
     ) -> InquireResult<Vec<ListOption<PathEntry>>> {
         PathSelectPrompt::new(self)?.prompt(backend)
-    }
-}
-
-
-/// Different path selection modes specify what the user can choose
-#[derive(Clone, Eq, PartialEq)]
-pub enum PathSelectionMode<'a> {
-    /// The user may pick a directory.
-    Directory,
-    /// The user may pick a file with the given (optional) extension.
-    File(Option<&'a str>),
-    /// The user can set gitignore rules from a file 
-    /// The user may pick multiple paths
-    Multiple(Vec<PathSelectionMode<'a>>),
-}
-
-impl<'a> Default for PathSelectionMode<'a> {
-    fn default() -> Self {
-        Self::Directory
-    }
-}
-
-
-/// Item sort options when displaying the list of files and directories.
-#[derive(Copy, Clone, Eq, PartialEq)]
-pub enum SortingMode {
-    /// Sort by path according to the standard library implementation  
-    Path,
-    /// Sort by file size (directories listed first)
-    Size,
-    /// Sort by extension  
-    Extension
-}
-
-impl Default for SortingMode {
-    fn default() -> Self {
-        Self::Path
-    }
-}
-
-impl SortingMode {
-    /// Get the next sorting mode
-    pub (crate) fn next(self) -> Self {
-        match self {
-            Self::Path => Self::Size,
-            Self::Size => Self::Extension,
-            Self::Extension => Self::Path,   
-        }
     }
 }

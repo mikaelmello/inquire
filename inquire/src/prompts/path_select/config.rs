@@ -20,3 +20,4 @@ impl<T> From<&PathSelect<'_, T>> for PathSelectConfig {
         }
     }
 }
+

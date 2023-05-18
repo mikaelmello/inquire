@@ -5,14 +5,14 @@ use crate::{
     list_option::ListOption,
     prompts::{
         path_select::{
-            PathEntry, PathSelect, PathSelectConfig, PathSelectPromptAction, PathSelectionMode,
+            PathEntry, PathSortingMode, PathSelect, PathSelectConfig, PathSelectPromptAction, PathSelectionMode,
         },
         prompt::{ActionResult, Prompt},
     },
     ui::MultiSelectBackend,
     utils::paginate,
     validator::ErrorMessage,
-    InquireError, SortingMode,
+    InquireError, 
 };
 use std::{
     collections::{BTreeSet, HashSet},
@@ -28,7 +28,7 @@ pub struct PathSelectPrompt<'a> {
     divider: &'a str,
     show_symlinks: bool,
     select_multiple: bool,
-    sorting_mode: SortingMode,
+    sorting_mode: PathSortingMode,
     filtered_options: Vec<usize>,
     data_needs_refresh: bool,
     help_message: Option<&'a str>,
@@ -136,7 +136,7 @@ impl<'a> PathSelectPrompt<'a> {
         filtered_options: &mut Vec<usize>,
         show_hidden: bool,
         show_symlinks: bool,
-        sorting_mode: SortingMode,
+        sorting_mode: PathSortingMode,
     ) -> InquireResult<usize> {
         PathSelectPrompt::try_get_valid_path_options::<&PathBuf>(
             start_path,
@@ -256,7 +256,7 @@ impl<'a> PathSelectPrompt<'a> {
         selection_mode: &PathSelectionMode<'a>,
         show_hidden: bool,
         show_symlinks: bool,
-        sorting_mode: SortingMode
+        sorting_mode: PathSortingMode
     ) -> InquireResult<()> {
         options.clear();
         fs_err::read_dir(base_path.as_ref())
@@ -414,11 +414,20 @@ where
             error,
             // selected,
             checked,
+            current_path,
+            sorting_mode,
             ..
         } = self;
 
-        let prompt = message;
+        let prompt = &format!(
+            "{message} \
+            \n Currently in: {} \
+            \n Sorted by {sorting_mode}.
+            \n Type to filter: ",
+            current_path.to_string_lossy() 
+        );
 
+        // let prompt = message;
         if let Some(error_message) = error {
             backend.render_error_message(error_message)?;
         }
