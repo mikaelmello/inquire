@@ -50,20 +50,6 @@ impl<'a> PathSelectPrompt<'a> {
     pub fn new<T: AsRef<Path>>(pso: PathSelect<'a, T>) -> InquireResult<Self> {
         let config = PathSelectConfig::from(&pso);
 
-        if let Some(default) = pso.default {
-            default.iter().try_for_each(|default_item| {
-                // Are all of the selected files extant?
-                let default_path = default_item.as_ref();
-                if !default_path.exists() {
-                    Err(InquireError::InvalidConfiguration(format!(
-                        "Specified default path `{default_path:?}` does not exist"
-                    )))
-                } else {
-                    Ok(())
-                }
-            })?;
-        }
-
         let mut start_path = if let Some(start) = pso.start_path_opt {
             start.as_ref().to_path_buf()
         } else {
@@ -79,7 +65,9 @@ impl<'a> PathSelectPrompt<'a> {
         let selected_options = pso.default.map_or_else(
             || Result::<_, InquireError>::Ok(HashSet::<PathEntry>::new()),
             |d| {
-                d.iter().try_fold(HashSet::new(), |mut s, d| {
+                d.iter()
+                    .filter(|default_path| default_path.as_ref().exists())
+                    .try_fold(HashSet::new(), |mut s, d| {
                     s.insert(PathEntry::try_from(d.as_ref())?);
                     Ok(s)
                 })
@@ -251,26 +239,6 @@ impl<'a> PathSelectPrompt<'a> {
     }
 
     /// Test if a path is hidden file.
-    ///
-    /// ### Problems
-    /// This is missing some things described here:
-    /// https://en.wikipedia.org/wiki/Hidden_file_and_hidden_directory
-    /// - android: .nomedia files that tell smartphone apps not to display/include a folder's contets
-    /// - gnome: filenames listed inside a file named ".hidden" in each directory should be hidden
-    /// - macos: files with Invisible attribute are usually hidden in Finder but not in `ls`
-    /// - windows: files with a Hidden file attribute
-    /// - windows: files in folders with a predefined CLSID on the end of their names (Windows Special Folders)
-    ///
-    /// ```
-    /// use inquire::PathSelect;
-    /// use std::path::Path;
-    ///
-    /// assert!(PathSelect::is_path_hidden_file(Path::new("/ra/set/.nut")));
-    /// assert!(!PathSelect::is_path_hidden_file(Path::new("/ra/set/nut")));
-    /// assert!(PathSelect::is_path_hidden_file(Path::new(".maat")));
-    /// assert!(!PathSelect::is_path_hidden_file(Path::new("maat")));
-    ///
-    /// ```
     fn is_path_hidden_file<T: AsRef<Path>>(t: T) -> bool {
         if cfg!(unix) {
             t.as_ref()
