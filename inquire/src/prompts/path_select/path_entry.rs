@@ -1,25 +1,30 @@
 //! Path entries
 use super::PathSelectionMode;
-use crate::InquireError;
+use crate::{InquireError, SortingMode};
 use std::{
-  convert::TryFrom,
-  ffi::OsStr,
-  fmt, fs,
-  ops::Deref,
-  path::{Path, PathBuf}
+    cmp, 
+    convert::TryFrom,
+    ffi::OsStr,
+    fmt, fs,
+    ops::Deref,
+    path::{Path, PathBuf}
 };
 
 /// A path with cached information
 #[derive(Clone, Debug, Hash)]
 pub struct PathEntry {
-    /// The (owned) [path](PathBuf)
+    /// The (owned) [path](PathBuf).
     ///
-    /// Corresponds to the target if this is a symlink  
+    /// Corresponds to the target if this is a symlink.  
     pub path: PathBuf,
     /// The [file type](fs::FileType)
     pub file_type: fs::FileType,
-    /// The original symlink path
+    /// The original symlink path.
     pub symlink_path_opt: Option<PathBuf>,
+    /// The file size in bytes.
+    /// 
+    /// Corresponds to the target file size if this is a symlink.
+    pub size: u64,
 }
 
 impl Eq for PathEntry {}
@@ -46,12 +51,19 @@ impl Deref for PathEntry {
 impl fmt::Display for PathEntry {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let path = self.path.to_string_lossy();
-        if let Some(symlink_path) = self.symlink_path_opt.as_ref() {
-            write!(f, "{} -> {path}", symlink_path.to_string_lossy())
-        } else if self.is_dir() {
-            write!(f, "(dir) {path}")
+        use humansize::FormatSize;
+        let size_formatting = if cfg!(windows) {
+            humansize::WINDOWS
         } else {
-            write!(f, "{path}")
+            humansize::DECIMAL
+        };
+        let size_string = self.size.format_size(size_formatting); 
+        if let Some(symlink_path) = self.symlink_path_opt.as_ref() {
+            write!(f, "{} -> {path} ({size_string})", symlink_path.to_string_lossy())
+        } else if self.is_dir() {
+            write!(f, "(dir) {path} ({size_string})")
+        } else {
+            write!(f, "{path} ({size_string})")
         }
     }
 }
@@ -69,10 +81,16 @@ impl TryFrom<&Path> for PathEntry {
                 } else {
                     (value.to_path_buf(), None)
                 };
+                let size = if target_metadata.is_dir() {
+                    0
+                } else {
+                    target_metadata.len()
+                };
                 Ok(Self {
                     path,
                     file_type: target_metadata.file_type(),
                     symlink_path_opt,
+                    size,
                 })
             })
     }
@@ -115,5 +133,29 @@ impl PathEntry {
     /// Is this path entry for a symlink?
     pub fn is_symlink(&self) -> bool {
         self.symlink_path_opt.is_some()
+    }
+
+    /// Sort by the given sorting mode 
+    pub fn sort_by_mode(a: &Self, b: &Self, sorting_mode: SortingMode) -> cmp::Ordering {
+        match sorting_mode {
+            SortingMode::Path => a.path.partial_cmp(&b.path).unwrap(),
+            SortingMode::Size => a.size.cmp(&b.size),
+            SortingMode::Extension => {
+                match (a.is_dir(), b.is_dir()) {
+                    (true, true) => Self::sort_by_mode(a, b, SortingMode::Path),
+                    (true, false) => cmp::Ordering::Less,
+                    (false, true) => cmp::Ordering::Greater,
+                    (false, false) => {
+                        a.path
+                        .extension()
+                        .unwrap_or_default()
+                        .cmp(&b.path
+                            .extension()
+                            .unwrap_or_default()
+                        )
+                    }
+                }
+            }  
+        }
     }
 }

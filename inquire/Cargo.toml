@@ -23,7 +23,7 @@ default = ["macros", "crossterm", "editor"]
 macros = []
 date = ["chrono"]
 editor = ["tempfile"]
-path = ["fs-err"]
+path = ["fs-err", "humansize"]
 
 [package.metadata.docs.rs]
 all-features = true
@@ -48,6 +48,7 @@ newline-converter = "0.3"
 
 unicode-segmentation = "1"
 unicode-width = "0.1"
+humansize = { version = "2.1.3", optional = true, features = ["impl_style"] }
 
 [[example]]
 name = "form"

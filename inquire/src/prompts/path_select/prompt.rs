@@ -12,7 +12,7 @@ use crate::{
     ui::MultiSelectBackend,
     utils::paginate,
     validator::ErrorMessage,
-    InquireError,
+    InquireError, SortingMode,
 };
 use std::{
     collections::{BTreeSet, HashSet},
@@ -28,6 +28,7 @@ pub struct PathSelectPrompt<'a> {
     divider: &'a str,
     show_symlinks: bool,
     select_multiple: bool,
+    sorting_mode: SortingMode,
     filtered_options: Vec<usize>,
     data_needs_refresh: bool,
     help_message: Option<&'a str>,
@@ -90,6 +91,7 @@ impl<'a> PathSelectPrompt<'a> {
         let mut checked = BTreeSet::<usize>::new();
         let show_hidden = pso.show_hidden;
         let show_symlinks = pso.show_symlinks;
+        let sorting_mode = pso.sorting_mode;
         let divider_index = Self::try_update_data_from_selection(
             &start_path,
             &mut options,
@@ -99,6 +101,7 @@ impl<'a> PathSelectPrompt<'a> {
             &mut filtered_options,
             show_hidden,
             show_symlinks,
+            sorting_mode,
         )?;
         Ok(Self {
             message: pso.message,
@@ -109,6 +112,7 @@ impl<'a> PathSelectPrompt<'a> {
             show_symlinks,
             show_hidden,
             select_multiple: pso.select_multiple,
+            sorting_mode,
             config,
             input: Input::new(),
             error: None,
@@ -132,6 +136,7 @@ impl<'a> PathSelectPrompt<'a> {
         filtered_options: &mut Vec<usize>,
         show_hidden: bool,
         show_symlinks: bool,
+        sorting_mode: SortingMode,
     ) -> InquireResult<usize> {
         PathSelectPrompt::try_get_valid_path_options::<&PathBuf>(
             start_path,
@@ -139,6 +144,7 @@ impl<'a> PathSelectPrompt<'a> {
             selection_mode,
             show_hidden,
             show_symlinks,
+            sorting_mode,
         )
         .map(|_| Self::update_checked(options, selected_options, checked, filtered_options))
     }
@@ -250,6 +256,7 @@ impl<'a> PathSelectPrompt<'a> {
         selection_mode: &PathSelectionMode<'a>,
         show_hidden: bool,
         show_symlinks: bool,
+        sorting_mode: SortingMode
     ) -> InquireResult<()> {
         options.clear();
         fs_err::read_dir(base_path.as_ref())
@@ -272,7 +279,10 @@ impl<'a> PathSelectPrompt<'a> {
                             Ok(())
                         })
                 })
-            })
+            })?;
+        options.sort_by(|a, b| PathEntry::sort_by_mode(a, b, sorting_mode));
+        Ok(())
+        
     }
 
     fn update_path_options(&mut self) -> InquireResult<()> {
@@ -286,6 +296,7 @@ impl<'a> PathSelectPrompt<'a> {
                 &mut self.filtered_options,
                 self.show_hidden,
                 self.show_symlinks,
+                self.sorting_mode,
             )?;
             self.data_needs_refresh = false;
         }
@@ -364,32 +375,6 @@ impl<'a> PathSelectPrompt<'a> {
         answer.reverse();
         answer
     }
-
-    // fn prompt<B: MultiSelectBackend>(
-    //     mut self,
-    //     backend: &mut B,
-    // ) -> InquireResult<Vec<ListOption<PathEntry>>> {
-    //     'render_listen: loop {
-    //         self.render(backend)?;
-
-    //         let key = backend.read_key()?;
-
-    //         match key {
-    //             Key::Char('c', KeyModifiers::CONTROL) => interrupt_prompt!(),
-    //             Key::Escape => cancel_prompt!(backend, self.message),
-    //             Key::Enter => break 'render_listen,
-    //             key => self.on_change(key),
-    //         }
-    //     }
-
-    //     let final_answer = self.get_final_answer();
-    //     let refs = final_answer
-    //         .iter()
-    //         .map(ListOption::as_ref)
-    //         .collect::<Vec<ListOption<_>>>();
-    //     let formatted = (self.formatter)(refs.as_slice());
-    //     finish_prompt_with_answer!(backend, self.message, &formatted, final_answer);
-    // }
 }
 
 impl<'a, B> Prompt<B, PathSelectConfig, PathSelectPromptAction, Vec<ListOption<PathEntry>>>
@@ -477,6 +462,7 @@ where
             ref mut filtered_options,
             ref mut current_path,
             ref mut data_needs_refresh,
+            ref mut sorting_mode,
             ..
         } = self;
         let result = match action {
@@ -487,7 +473,11 @@ where
             PathSelectPromptAction::MoveDown => self.move_cursor_down(1, true),
             PathSelectPromptAction::PageDown => self.move_cursor_down(*page_size, true),
             PathSelectPromptAction::MoveToEnd => self.move_cursor_down(usize::MAX, true),
-
+            PathSelectPromptAction::ChangeSortMode => {
+                *sorting_mode = (*sorting_mode).next();
+                *data_needs_refresh = true;
+                ActionResult::NeedsRedraw 
+            }
             PathSelectPromptAction::ToggleCurrentOption => self.toggle_cursor_selection(),
             PathSelectPromptAction::NavigateDeeper => {
                 match filtered_options.get(*cursor_index) {

@@ -34,6 +34,8 @@ pub enum PathSelectPromptAction {
     ///
     /// No-op if on a root directory.
     NavigateHigher,
+    /// Changes the [sorting mode](crate::PathSortingMode). 
+    ChangeSortMode,
 }
 
 impl InnerAction<PathSelectConfig> for PathSelectPromptAction {
@@ -52,6 +54,8 @@ impl InnerAction<PathSelectConfig> for PathSelectPromptAction {
             Key::Right(KeyModifiers::NONE) => Self::NavigateDeeper,
             Key::Left(KeyModifiers::SHIFT) => Self::ClearSelections,
             Key::Left(KeyModifiers::NONE) => Self::NavigateHigher,
+            Key::Tab => Self::ChangeSortMode,
+            
             key => match InputAction::from_key(key, &()) {
                 Some(action) => Self::FilterInput(action),
                 None => return None,
