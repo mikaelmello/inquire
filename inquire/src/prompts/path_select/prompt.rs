@@ -250,6 +250,41 @@ impl<'a> PathSelectPrompt<'a> {
         p.as_ref().to_string_lossy().to_string()
     }
 
+    /// Test if a path is hidden file.
+    ///
+    /// ### Problems
+    /// This is missing some things described here:
+    /// https://en.wikipedia.org/wiki/Hidden_file_and_hidden_directory
+    /// - android: .nomedia files that tell smartphone apps not to display/include a folder's contets
+    /// - gnome: filenames listed inside a file named ".hidden" in each directory should be hidden
+    /// - macos: files with Invisible attribute are usually hidden in Finder but not in `ls`
+    /// - windows: files with a Hidden file attribute
+    /// - windows: files in folders with a predefined CLSID on the end of their names (Windows Special Folders)
+    ///
+    /// ```
+    /// use inquire::PathSelect;
+    /// use std::path::Path;
+    ///
+    /// assert!(PathSelect::is_path_hidden_file(Path::new("/ra/set/.nut")));
+    /// assert!(!PathSelect::is_path_hidden_file(Path::new("/ra/set/nut")));
+    /// assert!(PathSelect::is_path_hidden_file(Path::new(".maat")));
+    /// assert!(!PathSelect::is_path_hidden_file(Path::new("maat")));
+    ///
+    /// ```
+    fn is_path_hidden_file<T: AsRef<Path>>(t: T) -> bool {
+        if cfg!(unix) {
+            t.as_ref()
+                .file_name()
+                .unwrap_or_default()
+                .to_str()
+                .unwrap_or_default()
+                .starts_with(".")
+        } else {
+            false
+        }
+    }
+
+
     fn try_get_valid_path_options<T: AsRef<Path>>(
         base_path: T,
         options: &mut Vec<PathEntry>,
@@ -268,7 +303,7 @@ impl<'a> PathSelectPrompt<'a> {
                         .and_then(|dir_entry| {
                             let path_entry = PathEntry::try_from(dir_entry)?;
                             let is_hidden =
-                                PathSelect::<&PathBuf>::is_path_hidden_file(&path_entry.path);
+                                Self::is_path_hidden_file(&path_entry.path);
                             if path_entry.is_dir() || path_entry.is_selectable(selection_mode) {
                                 if show_hidden || !is_hidden {
                                     if show_symlinks || !path_entry.is_symlink() {

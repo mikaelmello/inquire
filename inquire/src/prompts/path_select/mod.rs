@@ -204,40 +204,6 @@ where
         }
     }
 
-    /// Test if a path is hidden file
-    ///
-    /// ### Problems
-    /// This is missing some things described here:
-    /// https://en.wikipedia.org/wiki/Hidden_file_and_hidden_directory
-    /// - android: .nomedia files that tell smartphone apps not to display/include a folder's contets
-    /// - gnome: filenames listed inside a file named ".hidden" in each directory should be hidden
-    /// - macos: files with Invisible attribute are usually hidden in Finder but not in `ls`
-    /// - windows: files with a Hidden file attribute
-    /// - windows: files in folders with a predefined CLSID on the end of their names (Windows Special Folders)
-    ///
-    /// ```
-    /// use inquire::PathSelect;
-    /// use std::path::Path;
-    ///
-    /// assert!(PathSelect::is_path_hidden_file(Path::new("/ra/set/.nut")));
-    /// assert!(!PathSelect::is_path_hidden_file(Path::new("/ra/set/nut")));
-    /// assert!(PathSelect::is_path_hidden_file(Path::new(".maat")));
-    /// assert!(!PathSelect::is_path_hidden_file(Path::new("maat")));
-    ///
-    /// ```
-    pub fn is_path_hidden_file(t: T) -> bool {
-        if cfg!(unix) {
-            t.as_ref()
-                .file_name()
-                .unwrap_or_default()
-                .to_str()
-                .unwrap_or_default()
-                .starts_with(".")
-        } else {
-            false
-        }
-    }
-
     /// Sets the keep filter behavior.
     pub fn with_keep_filter(mut self, keep_filter: bool) -> Self {
         self.keep_filter = keep_filter;
