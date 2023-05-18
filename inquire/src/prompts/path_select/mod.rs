@@ -30,6 +30,7 @@ pub enum PathSelectionMode<'a> {
     /// The user may pick multiple paths
     Multiple(Vec<PathSelectionMode<'a>>),
 }
+
 impl<'a> Default for PathSelectionMode<'a> {
     fn default() -> Self {
         Self::Directory
