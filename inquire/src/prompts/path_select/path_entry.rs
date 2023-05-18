@@ -25,6 +25,8 @@ pub struct PathEntry {
     /// 
     /// Corresponds to the target file size if this is a symlink.
     pub size: u64,
+    /// If set, this prefix will be stripped from the path during  display.
+    pub strip_prefix_opt: Option<PathBuf>,
 }
 
 impl Eq for PathEntry {}
@@ -50,7 +52,13 @@ impl Deref for PathEntry {
 
 impl fmt::Display for PathEntry {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let path = self.path.to_string_lossy();
+        let path = if let Some(strip_prefix) = self.strip_prefix_opt.as_ref() {
+            self.path.strip_prefix(strip_prefix)
+                .unwrap_or_else(|_| &self.path)
+                .to_string_lossy()
+        } else {
+            self.path.to_string_lossy()
+        };
         use humansize::FormatSize;
         let size_formatting = if cfg!(windows) {
             humansize::WINDOWS
@@ -91,6 +99,7 @@ impl TryFrom<&Path> for PathEntry {
                     file_type: target_metadata.file_type(),
                     symlink_path_opt,
                     size,
+                    strip_prefix_opt: None
                 })
             })
     }

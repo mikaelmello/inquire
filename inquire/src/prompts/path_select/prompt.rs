@@ -369,7 +369,8 @@ impl<'a> PathSelectPrompt<'a> {
         } = self;
         let mut answer = Vec::with_capacity(checked.len());
         answer.extend(checked.iter().rev().cloned().map(|index| {
-            let value = options.swap_remove(index);
+            let mut value = options.swap_remove(index);
+            let _ = value.strip_prefix_opt.take();
             ListOption { value, index }
         }));
         answer.reverse();
@@ -420,10 +421,10 @@ where
         } = self;
 
         let prompt = &format!(
-            "{message} \
-            \n Currently in: {} \
-            \n Sorted by {sorting_mode}.
-            \n Type to filter: ",
+            r#"{message} 
+- Current directory: {} 
+- Sorted by {sorting_mode} (Press tab to change). 
+- Type to filter: "#,
             current_path.to_string_lossy() 
         );
 
@@ -438,7 +439,13 @@ where
             .iter()
             // .chain(selected.iter())
             .cloned()
-            .map(|i| ListOption::new(i, options.get(i).expect("must get path entry").clone()))
+            .map(|i| {
+                let mut entry = options.get(i)
+                    .expect("must get path entry")
+                    .clone();
+                let _ = entry.strip_prefix_opt.replace(current_path.to_path_buf()); 
+                ListOption::new(i, entry)
+            })
             .collect::<Vec<ListOption<PathEntry>>>();
 
         let page = paginate(*page_size, &choices, Some(*cursor_index));
