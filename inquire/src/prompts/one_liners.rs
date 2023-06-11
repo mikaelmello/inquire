@@ -18,12 +18,14 @@ use crate::{error::InquireResult, Confirm, CustomType, Password, Text};
 ///
 /// # Example
 ///
-/// ```
+/// ``` no_run
+/// # use inquire::{*, error::*};
 /// match prompt_confirmation("Are you sure you want to continue?") {
 ///     InquireResult::Ok(true) => println!("User confirmed."),
 ///     InquireResult::Ok(false) => println!("User did not confirm."),
-///     InquireResult::Err(InquireError)(e) => println!("An error occurred: {}", e),
+///     InquireResult::Err(err) => println!("An error occurred: {}", err),
 /// }
+/// # inquire::error::InquireResult::Ok(())
 /// ```
 ///
 /// # Errors
@@ -55,8 +57,10 @@ where
 ///
 /// # Example
 ///
-/// ```
+/// ``` no_run
+/// # use inquire::{*, error::*};
 /// let name = prompt_text("What is your name?")?;
+/// # inquire::error::InquireResult::Ok(())
 /// ```
 ///
 /// # Errors
@@ -88,8 +92,10 @@ where
 ///
 /// # Example
 ///
-/// ```
+/// ``` no_run
+/// # use inquire::{*, error::*};
 /// let token = prompt_secret("Access Token:")?;
+/// # inquire::error::InquireResult::Ok(())
 /// ```
 ///
 /// # Errors
@@ -121,8 +127,10 @@ where
 ///
 /// # Example
 ///
-/// ```
+/// ``` no_run
+/// # use inquire::{*, error::*};
 /// let token = prompt_secret("Access Token:")?;
+/// # inquire::error::InquireResult::Ok(())
 /// ```
 ///
 /// # Errors
@@ -155,8 +163,10 @@ where
 ///
 /// # Example
 ///
-/// ```
+/// ``` no_run
+/// # use inquire::{*, error::*};
 /// let kilograms = prompt_f64("Weight (kg):")?;
+/// # inquire::error::InquireResult::Ok(())
 /// ```
 ///
 /// # Errors
@@ -188,8 +198,10 @@ where
 ///
 /// # Example
 ///
-/// ```
+/// ``` no_run
+/// # use inquire::{*, error::*};
 /// let kilograms = prompt_f32("Weight (kg):")?;
+/// # inquire::error::InquireResult::Ok(())
 /// ```
 ///
 /// # Errors
@@ -221,8 +233,10 @@ where
 ///
 /// # Example
 ///
-/// ```
+/// ``` no_run
+/// # use inquire::{*, error::*};
 /// let kilograms = prompt_u64("Weight (kg):")?;
+/// # inquire::error::InquireResult::Ok(())
 /// ```
 ///
 /// # Errors
@@ -254,8 +268,10 @@ where
 ///
 /// # Example
 ///
-/// ```
+/// ``` no_run
+/// # use inquire::{*, error::*};
 /// let kilograms = prompt_u32("Weight (kg):")?;
+/// # inquire::error::InquireResult::Ok(())
 /// ```
 ///
 /// # Errors
@@ -287,8 +303,10 @@ where
 ///
 /// # Example
 ///
-/// ```
+/// ``` no_run
+/// # use inquire::{*, error::*};
 /// let kilograms = prompt_usize("Weight (kg):")?;
+/// # inquire::error::InquireResult::Ok(())
 /// ```
 ///
 /// # Errors
@@ -320,8 +338,10 @@ where
 ///
 /// # Example
 ///
-/// ```
+/// ``` no_run
+/// # use inquire::{*, error::*};
 /// let kilograms = prompt_u128("Weight (kg):")?;
+/// # inquire::error::InquireResult::Ok(())
 /// ```
 ///
 /// # Errors
