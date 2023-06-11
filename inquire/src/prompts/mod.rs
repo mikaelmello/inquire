@@ -8,6 +8,8 @@ mod editor;
 mod multiselect;
 mod one_liners;
 mod password;
+#[cfg(feature = "path")]
+mod path_select;
 mod prompt;
 mod select;
 mod text;
@@ -23,5 +25,7 @@ pub use multiselect::*;
 #[cfg(feature = "one-liners")]
 pub use one_liners::*;
 pub use password::*;
+#[cfg(feature = "path")]
+pub use path_select::*;
 pub use select::*;
 pub use text::*;
