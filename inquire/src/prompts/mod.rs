@@ -6,6 +6,7 @@ mod dateselect;
 #[cfg(feature = "editor")]
 mod editor;
 mod multiselect;
+mod one_liners;
 mod password;
 mod prompt;
 mod select;
@@ -19,6 +20,8 @@ pub use dateselect::*;
 #[cfg(feature = "editor")]
 pub use editor::*;
 pub use multiselect::*;
+#[cfg(feature = "one-liners")]
+pub use one_liners::*;
 pub use password::*;
 pub use select::*;
 pub use text::*;
