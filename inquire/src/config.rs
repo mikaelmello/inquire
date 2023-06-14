@@ -2,14 +2,12 @@
 
 use std::sync::Mutex;
 
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 
 use crate::ui::RenderConfig;
 
-lazy_static! {
-    static ref GLOBAL_RENDER_CONFIGURATION: Mutex<RenderConfig<'static>> =
-        Mutex::new(RenderConfig::default());
-}
+static GLOBAL_RENDER_CONFIGURATION: Lazy<Mutex<RenderConfig<'static>>> =
+    Lazy::new(|| Mutex::new(RenderConfig::default()));
 
 pub fn get_configuration() -> RenderConfig<'static> {
     *GLOBAL_RENDER_CONFIGURATION.lock().unwrap()
