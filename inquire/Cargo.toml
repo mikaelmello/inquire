@@ -24,6 +24,7 @@ macros = []
 one-liners = []
 date = ["chrono"]
 editor = ["tempfile"]
+preview-custom-key-handler = []
 
 [package.metadata.docs.rs]
 all-features = true

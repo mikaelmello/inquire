@@ -16,6 +16,7 @@ use crate::{
     terminal::get_default_terminal,
     ui::{Backend, RenderConfig, TextBackend},
     validator::StringValidator,
+    PromptKeyMapper,
 };
 
 use self::prompt::TextPrompt;
@@ -97,6 +98,8 @@ pub struct Text<'a> {
     /// Function that formats the user input and presents it to the user as the final rendering of the prompt.
     pub formatter: StringFormatter<'a>,
 
+    pub key_mapper: Option<PromptKeyMapper<TextPromptAction>>,
+
     /// Autocompleter responsible for handling suggestions and input completions.
     pub autocompleter: Option<Box<dyn Autocomplete>>,
 
@@ -142,7 +145,8 @@ impl<'a> Text<'a> {
             placeholder: None,
             initial_value: None,
             default: None,
-            help_message: Self::DEFAULT_HELP_MESSAGE,
+            help_message: None,
+            key_mapper: None,
             validators: Self::DEFAULT_VALIDATORS,
             formatter: Self::DEFAULT_FORMATTER,
             page_size: Self::DEFAULT_PAGE_SIZE,

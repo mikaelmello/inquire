@@ -1,6 +1,11 @@
 //! Definitions of common behavior shared amongst all different prompt types.
 
-use crate::{error::InquireResult, input::InputActionResult, ui::CommonBackend, InquireError};
+use crate::{
+    error::InquireResult,
+    input::InputActionResult,
+    ui::{CommonBackend, KeyMapper},
+    InquireError,
+};
 
 use super::action::{Action, InnerAction};
 
@@ -43,6 +48,20 @@ where
     /// or disabled, which affects how certain key events are parsed into
     /// actions to the prompt.
     fn config(&self) -> &Config;
+
+    /// Returns the key mapper used to parse key events into prompt actions.
+    ///
+    /// For example, a prompt might be configured to have vim mode enabled
+    /// or disabled, which affects how certain key events are parsed into
+    /// actions to the prompt.
+    fn key_mapper(&self) -> &dyn KeyMapper<Action<IAction>>;
+
+    /// Returns the key mapper used to parse key events into prompt actions.
+    ///
+    /// For example, a prompt might be configured to have vim mode enabled
+    /// or disabled, which affects how certain key events are parsed into
+    /// actions to the prompt.
+    fn external_action_hook(&self) -> &dyn KeyMapper<Action<IAction>>;
 
     /// Hook called when a prompt is finished. Returns a string
     /// to be rendered to the user as the final submission to the prompt.
@@ -100,6 +119,7 @@ where
     /// unless the situation really warrants it.
     fn prompt(mut self, backend: &mut Backend) -> InquireResult<ReturnType> {
         self.setup()?;
+        let key_mapper = self.key_mapper();
 
         let mut last_handle = ActionResult::NeedsRedraw;
         let final_answer = loop {
@@ -111,7 +131,7 @@ where
             }
 
             let key = backend.read_key()?;
-            let action = Action::from_key(key, self.config());
+            let action = key_mapper.map(key)?;
 
             if let Some(action) = action {
                 last_handle = match action {

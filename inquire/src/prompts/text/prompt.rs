@@ -7,10 +7,10 @@ use crate::{
     input::{Input, InputActionResult},
     list_option::ListOption,
     prompts::prompt::{ActionResult, Prompt},
-    ui::TextBackend,
+    ui::{KeyMapper, TextBackend},
     utils::paginate,
     validator::{ErrorMessage, StringValidator, Validation},
-    Autocomplete, InquireError, Text,
+    Autocomplete, DefaultKeyHandler, InquireError, PromptKeyMapper, Text,
 };
 
 use super::{action::TextPromptAction, config::TextConfig, DEFAULT_HELP_MESSAGE_WITH_AC};
@@ -21,6 +21,7 @@ pub struct TextPrompt<'a> {
     default: Option<&'a str>,
     help_message: Option<&'a str>,
     input: Input,
+    key_mapper: PromptKeyMapper<TextPromptAction>,
     formatter: StringFormatter<'a>,
     validators: Vec<Box<dyn StringValidator>>,
     error: Option<ErrorMessage>,
@@ -38,15 +39,20 @@ impl<'a> From<Text<'a>> for TextPrompt<'a> {
             input
         };
 
+        let config = (&so).into();
+
         Self {
             message: so.message,
-            config: (&so).into(),
+            config,
             default: so.default,
             help_message: so.help_message,
             formatter: so.formatter,
             autocompleter: so
                 .autocompleter
                 .unwrap_or_else(|| Box::<NoAutoCompletion>::default()),
+            key_mapper: so
+                .key_mapper
+                .unwrap_or_else(|| DefaultKeyHandler::new(config)),
             input,
             error: None,
             suggestion_cursor_index: None,

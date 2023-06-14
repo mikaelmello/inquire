@@ -772,18 +772,3 @@ where
         let _ = self.terminal.cursor_show();
     }
 }
-
-impl<'a, I, T> InputReader<I> for Backend<'a, T>
-where
-    T: Terminal,
-    I: Copy + Clone + PartialEq + Eq,
-{
-    fn next_action<C>(&mut self, config: &C) -> InquireResult<Option<Action<I>>>
-    where
-        I: InnerAction<C>,
-    {
-        let key = self.read_key()?;
-        let action = Action::from_key(key, config);
-        Ok(action)
-    }
-}

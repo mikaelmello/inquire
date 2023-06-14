@@ -8,7 +8,7 @@ mod render_config;
 mod style;
 
 pub(crate) use backend::*;
-pub(crate) use input_reader::*;
+//pub(crate) use input_reader::*;
 pub(crate) use key::*;
 
 pub use color::Color;

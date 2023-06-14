@@ -4,9 +4,12 @@ use std::io;
 
 use thiserror::Error;
 
+/// Type alias to define generic errors that might be thrown.
+pub type GenericError = Box<dyn std::error::Error + Send + Sync + 'static>;
+
 /// Type alias to define errors that might be thrown by the library user
 /// on callbacks such as validators.
-pub type CustomUserError = Box<dyn std::error::Error + Send + Sync + 'static>;
+pub type CustomUserError = GenericError;
 
 /// Possible errors returned by `inquire` prompts.
 #[derive(Error, Debug)]
