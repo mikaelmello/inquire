@@ -39,7 +39,6 @@ chrono = { version = "0.4", optional = true }
 
 tempfile = { version = "3", optional = true }
 
-thiserror = "1"
 bitflags = "2"
 dyn-clone = "1"
 lazy_static = "1.4"

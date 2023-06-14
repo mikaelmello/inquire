@@ -18,7 +18,6 @@
 //!
 //! - Cross-platform, supporting UNIX and Windows terminals (thanks to [crossterm](https://crates.io/crates/crossterm));
 //! - Several kinds of prompts to suit your needs;
-//! - Standardized error handling (thanks to [thiserror](https://crates.io/crates/thiserror));
 //! - Support for fine-grained configuration for each prompt type, allowing you to customize:
 //!   - Default values;
 //!   - Input validators and formatters;
