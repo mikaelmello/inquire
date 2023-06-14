@@ -152,11 +152,17 @@ password_test!(
     Password::new("")
 );
 
-// Anti-Regression test for https://github.com/mikaelmello/inquire/issues/149
+// Anti-regression test for UX issue: https://github.com/mikaelmello/inquire/issues/149
 password_test!(
-    incorrect_confirmation_flow,
+    prompt_with_hidden_should_clear_on_error,
     {
         let mut events = vec![];
+        events.append(&mut text_to_events!("anor").collect());
+        events.push(KeyCode::Enter);
+        events.append(&mut text_to_events!("anor2").collect());
+        events.push(KeyCode::Enter);
+        // The problem is that the 1st input values are not cleared
+        // and on a hidden password field, the user expects it to be reset.
         events.append(&mut text_to_events!("anor").collect());
         events.push(KeyCode::Enter);
         events.append(&mut text_to_events!("anor").collect());
@@ -164,5 +170,41 @@ password_test!(
         events
     },
     "anor",
-    Password::new("")
+    Password::new("").with_display_mode(crate::PasswordDisplayMode::Hidden)
+);
+
+// Anti-regression test for UX issue: https://github.com/mikaelmello/inquire/issues/149
+password_test!(
+    prompt_with_full_should_not_clear_1st_on_error,
+    {
+        let mut events = vec![];
+        events.append(&mut text_to_events!("anor").collect());
+        events.push(KeyCode::Enter);
+        events.append(&mut text_to_events!("anor2").collect());
+        events.push(KeyCode::Enter);
+        events.push(KeyCode::Enter);
+        events.append(&mut text_to_events!("anor").collect());
+        events.push(KeyCode::Enter);
+        events
+    },
+    "anor",
+    Password::new("").with_display_mode(crate::PasswordDisplayMode::Full)
+);
+
+// Anti-regression test for UX issue: https://github.com/mikaelmello/inquire/issues/149
+password_test!(
+    prompt_with_masked_should_not_clear_1st_on_error,
+    {
+        let mut events = vec![];
+        events.append(&mut text_to_events!("anor").collect());
+        events.push(KeyCode::Enter);
+        events.append(&mut text_to_events!("anor2").collect());
+        events.push(KeyCode::Enter);
+        events.push(KeyCode::Enter);
+        events.append(&mut text_to_events!("anor").collect());
+        events.push(KeyCode::Enter);
+        events
+    },
+    "anor",
+    Password::new("").with_display_mode(crate::PasswordDisplayMode::Masked)
 );
