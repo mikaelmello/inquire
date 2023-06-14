@@ -100,7 +100,7 @@ password_test!(
 );
 
 password_test!(
-    input_correction_after_validation,
+    input_correction_after_validation_when_masked,
     {
         let mut events = vec![];
         events.append(&mut text_to_events!("1234567890").collect());
@@ -116,6 +116,52 @@ password_test!(
     },
     "12345yes",
     Password::new("")
+        .with_display_mode(crate::PasswordDisplayMode::Masked)
+        .without_confirmation()
+        .with_validator(|ans: &str| match ans.len() {
+            len if len > 5 && len < 10 => Ok(Validation::Valid),
+            _ => Ok(Validation::Invalid(ErrorMessage::Default)),
+        })
+);
+
+password_test!(
+    input_correction_after_validation_when_full,
+    {
+        let mut events = vec![];
+        events.append(&mut text_to_events!("1234567890").collect());
+        events.push(KeyCode::Enter);
+        events.push(KeyCode::Backspace);
+        events.push(KeyCode::Backspace);
+        events.push(KeyCode::Backspace);
+        events.push(KeyCode::Backspace);
+        events.push(KeyCode::Backspace);
+        events.append(&mut text_to_events!("yes").collect());
+        events.push(KeyCode::Enter);
+        events
+    },
+    "12345yes",
+    Password::new("")
+        .with_display_mode(crate::PasswordDisplayMode::Full)
+        .without_confirmation()
+        .with_validator(|ans: &str| match ans.len() {
+            len if len > 5 && len < 10 => Ok(Validation::Valid),
+            _ => Ok(Validation::Invalid(ErrorMessage::Default)),
+        })
+);
+
+password_test!(
+    input_correction_after_validation_when_hidden,
+    {
+        let mut events = vec![];
+        events.append(&mut text_to_events!("1234567890").collect());
+        events.push(KeyCode::Enter);
+        events.append(&mut text_to_events!("yesyes").collect());
+        events.push(KeyCode::Enter);
+        events
+    },
+    "yesyes",
+    Password::new("")
+        .with_display_mode(crate::PasswordDisplayMode::Hidden)
         .without_confirmation()
         .with_validator(|ans: &str| match ans.len() {
             len if len > 5 && len < 10 => Ok(Validation::Valid),
@@ -154,15 +200,15 @@ password_test!(
 
 // Anti-regression test for UX issue: https://github.com/mikaelmello/inquire/issues/149
 password_test!(
-    prompt_with_hidden_should_clear_on_error,
+    prompt_with_hidden_should_clear_on_mismatch,
     {
         let mut events = vec![];
         events.append(&mut text_to_events!("anor").collect());
         events.push(KeyCode::Enter);
         events.append(&mut text_to_events!("anor2").collect());
         events.push(KeyCode::Enter);
-        // The problem is that the 1st input values are not cleared
-        // and on a hidden password field, the user expects it to be reset.
+        // The problem is that the 1st input values were not cleared
+        // and the lack of a change in the 1st prompt can be confusing.
         events.append(&mut text_to_events!("anor").collect());
         events.push(KeyCode::Enter);
         events.append(&mut text_to_events!("anor").collect());
@@ -175,13 +221,16 @@ password_test!(
 
 // Anti-regression test for UX issue: https://github.com/mikaelmello/inquire/issues/149
 password_test!(
-    prompt_with_full_should_not_clear_1st_on_error,
+    prompt_with_full_should_clear_1st_on_mismatch,
     {
         let mut events = vec![];
         events.append(&mut text_to_events!("anor").collect());
         events.push(KeyCode::Enter);
         events.append(&mut text_to_events!("anor2").collect());
         events.push(KeyCode::Enter);
+        // The problem is that the 1st input values were not cleared
+        // and the lack of a change in the 1st prompt can be confusing.
+        events.append(&mut text_to_events!("anor").collect());
         events.push(KeyCode::Enter);
         events.append(&mut text_to_events!("anor").collect());
         events.push(KeyCode::Enter);
@@ -193,13 +242,16 @@ password_test!(
 
 // Anti-regression test for UX issue: https://github.com/mikaelmello/inquire/issues/149
 password_test!(
-    prompt_with_masked_should_not_clear_1st_on_error,
+    prompt_with_masked_should_clear_1st_on_mismatch,
     {
         let mut events = vec![];
         events.append(&mut text_to_events!("anor").collect());
         events.push(KeyCode::Enter);
         events.append(&mut text_to_events!("anor2").collect());
         events.push(KeyCode::Enter);
+        // The problem is that the 1st input values were not cleared
+        // and the lack of a change in the 1st prompt can be confusing.
+        events.append(&mut text_to_events!("anor").collect());
         events.push(KeyCode::Enter);
         events.append(&mut text_to_events!("anor").collect());
         events.push(KeyCode::Enter);

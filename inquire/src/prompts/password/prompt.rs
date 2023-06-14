@@ -13,13 +13,13 @@ use super::{action::PasswordPromptAction, config::PasswordConfig};
 // Helper type for representing the password confirmation flow.
 struct PasswordConfirmation<'a> {
     // The message of the prompt.
-    message: &'a str,
+    pub message: &'a str,
 
     // The error message of the prompt.
-    error_message: &'a str,
+    pub error_message: &'a str,
 
     // The input to confirm.
-    input: Input,
+    pub input: Input,
 }
 
 pub struct PasswordPrompt<'a> {
@@ -70,18 +70,14 @@ impl<'a> From<&'a str> for Password<'a> {
 }
 
 impl<'a> PasswordPrompt<'a> {
-    fn active_input(&self) -> &Input {
-        match &self.confirmation {
-            Some(confirmation) if self.confirmation_stage => &confirmation.input,
-            _ => &self.input,
-        }
-    }
-
     fn active_input_mut(&mut self) -> &mut Input {
-        match &mut self.confirmation {
-            Some(confirmation) if self.confirmation_stage => &mut confirmation.input,
-            _ => &mut self.input,
+        if let Some(c) = &mut self.confirmation {
+            if self.confirmation_stage {
+                return &mut c.input;
+            }
         }
+
+        &mut self.input
     }
 
     fn toggle_display_mode(&mut self) -> ActionResult {
@@ -98,29 +94,26 @@ impl<'a> PasswordPrompt<'a> {
         }
     }
 
-    fn confirm_current_answer(&mut self) -> Option<String> {
-        let cur_answer = self.cur_answer();
+    fn confirmation_step(&mut self) -> ConfirmationStepResult {
+        let cur_answer = self.cur_answer().to_owned();
         match &mut self.confirmation {
-            None => Some(cur_answer),
+            None => ConfirmationStepResult::NoConfirmationRequired,
             Some(confirmation) => {
-                if !self.confirmation_stage {
-                    if self.current_mode == PasswordDisplayMode::Hidden {
+                if self.confirmation_stage {
+                    if cur_answer == confirmation.input.content() {
+                        ConfirmationStepResult::ConfirmationValidated
+                    } else {
+                        self.confirmation_stage = false;
                         confirmation.input.clear();
+                        ConfirmationStepResult::ConfirmationInvalidated(ErrorMessage::Custom(
+                            confirmation.error_message.to_owned(),
+                        ))
                     }
-
-                    self.error = None;
-                    self.confirmation_stage = true;
-
-                    None
-                } else if self.input.content() == cur_answer {
-                    Some(confirmation.input.content().into())
                 } else {
                     confirmation.input.clear();
+                    self.confirmation_stage = true;
 
-                    self.error = Some(confirmation.error_message.into());
-                    self.confirmation_stage = false;
-
-                    None
+                    ConfirmationStepResult::ConfirmationPending
                 }
             }
         }
@@ -128,7 +121,7 @@ impl<'a> PasswordPrompt<'a> {
 
     fn validate_current_answer(&self) -> InquireResult<Validation> {
         for validator in &self.validators {
-            match validator.validate(self.active_input().content()) {
+            match validator.validate(self.cur_answer()) {
                 Ok(Validation::Valid) => {}
                 Ok(Validation::Invalid(msg)) => return Ok(Validation::Invalid(msg)),
                 Err(err) => return Err(InquireError::Custom(err)),
@@ -138,8 +131,8 @@ impl<'a> PasswordPrompt<'a> {
         Ok(Validation::Valid)
     }
 
-    fn cur_answer(&self) -> String {
-        self.active_input().content().into()
+    fn cur_answer(&self) -> &str {
+        self.input.content()
     }
 }
 
@@ -160,30 +153,42 @@ where
     }
 
     fn pre_cancel(&mut self) -> InquireResult<bool> {
-        if self.confirmation_stage && self.confirmation.is_some() {
-            if self.current_mode == PasswordDisplayMode::Hidden {
-                self.input.clear();
+        if let Some(confirmation) = &mut self.confirmation {
+            if self.confirmation_stage {
+                confirmation.input.clear();
+                self.confirmation_stage = false;
+                return Ok(false);
             }
-
-            self.error = None;
-            self.confirmation_stage = false;
-
-            Ok(false)
-        } else {
-            Ok(true)
         }
+
+        Ok(true)
     }
 
     fn submit(&mut self) -> InquireResult<Option<String>> {
-        let answer = match self.validate_current_answer()? {
-            Validation::Valid => self.confirm_current_answer(),
-            Validation::Invalid(msg) => {
-                self.error = Some(msg);
+        if let Validation::Invalid(msg) = self.validate_current_answer()? {
+            self.error = Some(msg);
+            if self.config.display_mode == PasswordDisplayMode::Hidden {
+                self.input.clear();
+            }
+            return Ok(None);
+        }
+
+        let confirmation = self.confirmation_step();
+
+        let cur_answer = self.cur_answer().to_owned();
+
+        let result = match confirmation {
+            ConfirmationStepResult::NoConfirmationRequired => Some(cur_answer),
+            ConfirmationStepResult::ConfirmationPending => None,
+            ConfirmationStepResult::ConfirmationValidated => Some(cur_answer),
+            ConfirmationStepResult::ConfirmationInvalidated(message) => {
+                self.error = Some(message);
+                self.input.clear();
                 None
             }
         };
 
-        Ok(answer)
+        Ok(result)
     }
 
     fn handle(&mut self, action: PasswordPromptAction) -> InquireResult<ActionResult> {
@@ -247,4 +252,12 @@ where
 
         Ok(())
     }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ConfirmationStepResult {
+    NoConfirmationRequired,
+    ConfirmationPending,
+    ConfirmationValidated,
+    ConfirmationInvalidated(ErrorMessage),
 }
