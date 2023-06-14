@@ -18,6 +18,7 @@
 - Removed `thiserror` dependency in favor of implementing `InquireError` by hand. [#146](https://github.com/mikaelmello/inquire/issues/146)
 - Raised MSRV to 1.60 due to `log` dependency raising their MSRV to 1.60.
 - MSRV is now explicitly set in the package definition.
+- Replaced `lazy_static` with `once_cell` as `once_cell::sync::Lazy` is being standardized and `lazy_static` is not actively maintained anymore.
 
 ## [0.6.2] - 2023-05-07
 
