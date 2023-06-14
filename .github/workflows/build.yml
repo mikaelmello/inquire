@@ -48,7 +48,7 @@ jobs:
         run: cargo fmt --check
 
       - name: Check lint
-        run: cargo clippy -- -D warnings
+        run: cargo clippy --workspace --all-features -- -D warnings
 
   tests:
     runs-on: ${{ matrix.os }}
