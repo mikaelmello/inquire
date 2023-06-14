@@ -14,6 +14,7 @@
 - Upgraded underlying `termion` crate from v1.5 to v2.0.
 - Upgraded underlying `bitflags` from v1 to v2, which affects the `Attributes` and `KeyModifiers` crates. If you use any of bitflag's methods directly, you might be affected, refer to the [bitflags changelog](https://github.com/bitflags/bitflags/releases/tag/2.0.0) for more information.
 - Raised MSRV to 1.60 due to `log` dependency raising their MSRV to 1.60.
+- MSRV is now explicitly set in the package definition.
 
 ## [0.6.2] - 2023-05-07
 

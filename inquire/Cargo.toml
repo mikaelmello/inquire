@@ -12,6 +12,7 @@ authors = ["Mikael Mello <git@mikaelmello.com>"]
 keywords = ["cli", "ask", "prompt", "question", "interactive"]
 categories = ["command-line-interface", "value-formatting"]
 include = ["/examples", "/src", "/../LICENSE"]
+rust-version = "1.60.0"
 
 [lib]
 name = "inquire"
