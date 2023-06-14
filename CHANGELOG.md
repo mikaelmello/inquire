@@ -11,6 +11,10 @@
 - Add new option on MultiSelect prompts to set all options to be selected by default. Thanks to @conikeec for the suggestion (#151)!
 - Add strict clippy lints to improve code consistency and readability
 
+### Fixes
+
+- Fixed typos in the code's comments
+
 ### Dependency changes (some breaking)
 
 - Upgraded underlying `termion` crate from v1.5 to v2.0.
@@ -83,7 +87,7 @@
 
 Features #1 to #4 are all breaking changes and could break the compilation of your program.
 
-Fix #2 representes a change in usability and might be an unexpected behavior.
+Fix #2 represents a change in usability and might be an unexpected behavior.
 
 ### Features
 
@@ -203,7 +207,7 @@ The library is already featureful enough to warrant a higher version number, bum
 - By using a new method to identify the length of the rendered prompt, we avoid possible rendering errors (edge cases) when a string can not render into a single line in the terminal due to a smaller width. Inner calculations could previously predict that the rendered string would fit, by considering that 1 grapheme = 1 column width, but this is not true for e.g. emojis. Now we use unicode_width to fix this behavior.
 - Fixed case where Select/MultiSelect prompts were panicking when a user pressed the down arrow on an empty list, which happens when a filter input does not match any options. #30
 - Fixed incorrect indexes on the output of MultiSelect prompts, where the indexes inside a `ListOption` struct were relative to the output instead of the original input vector. #31
-- Fixed case where IO errors due to not finding a tty devices were not being catched and transformed to `InquireError::NotTTY`. #28
+- Fixed case where IO errors due to not finding a tty devices were not being caught and transformed to `InquireError::NotTTY`. #28
 
 ## [0.0.9] - 2021-08-28
 

@@ -98,7 +98,7 @@ pub struct Select<'a, T> {
     ///
     /// When overriding the config in a prompt, NO_COLOR is no longer considered and your
     /// config is treated as the only source of truth. If you want to customize colors
-    /// and still suport NO_COLOR, you will have to do this on your end.
+    /// and still support NO_COLOR, you will have to do this on your end.
     pub render_config: RenderConfig<'a>,
 }
 
@@ -227,7 +227,7 @@ where
     ///
     /// When overriding the config in a prompt, NO_COLOR is no longer considered and your
     /// config is treated as the only source of truth. If you want to customize colors
-    /// and still suport NO_COLOR, you will have to do this on your end.
+    /// and still support NO_COLOR, you will have to do this on your end.
     pub fn with_render_config(mut self, render_config: RenderConfig<'a>) -> Self {
         self.render_config = render_config;
         self
