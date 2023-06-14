@@ -11,6 +11,10 @@
 - Add new option on MultiSelect prompts to set all options to be selected by default. Thanks to @conikeec for the suggestion (#151)!
 - Add strict clippy lints to improve code consistency and readability
 
+### Fixes
+
+- Fixed typos in the code's comments
+
 ### Dependency changes (some breaking)
 
 - Upgraded underlying `termion` crate from v1.5 to v2.0.
