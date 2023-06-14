@@ -3,7 +3,7 @@
 [crates.io]: https://crates.io/crates/inquire
 [latest version]: https://img.shields.io/crates/v/inquire.svg
 [build status]: https://github.com/mikaelmello/inquire/actions/workflows/build.yml/badge.svg
-[unsafe forbidden]: https://github.com/rust-secure-code/safety-dance/
+[unsafe forbidden]: https://img.shields.io/badge/unsafe-forbidden-success.svg
 [supported platforms]: https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-success
 [license]: https://img.shields.io/crates/l/inquire.svg
 
