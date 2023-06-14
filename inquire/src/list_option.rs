@@ -1,7 +1,7 @@
 //! Utilities used to wrap user selections in [Select](crate::Select) and
 //! [`MultiSelect`](crate::MultiSelect) prompts.
 
-use std::fmt::{self, Display};
+use std::fmt;
 
 /// Represents a selection made by the user when prompted to select one or several
 /// options among those presented.
@@ -56,9 +56,9 @@ impl<T> ListOption<T> {
 
 impl<T> fmt::Display for ListOption<T>
 where
-    T: Display,
+    T: fmt::Display,
 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.value.fmt(f)
     }
 }

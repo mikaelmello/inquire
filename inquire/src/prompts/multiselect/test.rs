@@ -18,7 +18,7 @@ fn closure_formatter() {
     let mut read = read.iter();
 
     let formatted = String::from("Thanks!");
-    let formatter: MultiOptionFormatter<i32> = &|_| formatted.clone();
+    let formatter: MultiOptionFormatter<'_, i32> = &|_| formatted.clone();
 
     let options = vec![1, 2, 3];
 

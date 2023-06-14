@@ -86,8 +86,7 @@ impl<'a> PasswordPrompt<'a> {
 
     fn toggle_display_mode(&mut self) -> ActionResult {
         let new_mode = match self.current_mode {
-            PasswordDisplayMode::Hidden => PasswordDisplayMode::Full,
-            PasswordDisplayMode::Masked => PasswordDisplayMode::Full,
+            PasswordDisplayMode::Hidden | PasswordDisplayMode::Masked => PasswordDisplayMode::Full,
             PasswordDisplayMode::Full => self.config.display_mode,
         };
 
@@ -209,7 +208,7 @@ where
 
                 match &self.confirmation {
                     Some(confirmation) if self.confirmation_stage => {
-                        backend.render_prompt(confirmation.message)?
+                        backend.render_prompt(confirmation.message)?;
                     }
                     _ => {}
                 }

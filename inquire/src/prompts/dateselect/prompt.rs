@@ -55,7 +55,7 @@ impl<'a> DateSelectPrompt<'a> {
         })
     }
 
-    fn shift_date(&mut self, duration: chrono::Duration) -> ActionResult {
+    fn shift_date(&mut self, duration: Duration) -> ActionResult {
         self.update_date(self.current_date.add(duration))
     }
 

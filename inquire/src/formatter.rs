@@ -182,7 +182,7 @@ pub type DateFormatter<'a> = &'a dyn Fn(chrono::NaiveDate) -> String;
 /// assert_eq!(String::from("Times Square"), formatter("Times Square"));
 /// assert_eq!(String::from("times sQuare"), formatter("times sQuare"));
 /// ```
-pub const DEFAULT_STRING_FORMATTER: StringFormatter = &|val| String::from(val);
+pub const DEFAULT_STRING_FORMATTER: StringFormatter<'_> = &|val| String::from(val);
 
 /// String formatter used by default in [Confirm](crate::Confirm) prompts.
 /// Translates `bool` to `"Yes"` and `false` to `"No"`.
@@ -196,7 +196,7 @@ pub const DEFAULT_STRING_FORMATTER: StringFormatter = &|val| String::from(val);
 /// assert_eq!(String::from("Yes"), formatter(true));
 /// assert_eq!(String::from("No"), formatter(false));
 /// ```
-pub const DEFAULT_BOOL_FORMATTER: BoolFormatter = &|ans| {
+pub const DEFAULT_BOOL_FORMATTER: BoolFormatter<'_> = &|ans| {
     if ans {
         String::from("Yes")
     } else {
@@ -225,4 +225,4 @@ pub const DEFAULT_BOOL_FORMATTER: BoolFormatter = &|ans| {
 ///     formatter(NaiveDate::from_ymd(2021, 1, 1)),
 /// );
 /// ```
-pub const DEFAULT_DATE_FORMATTER: DateFormatter = &|val| val.format("%B %-e, %Y").to_string();
+pub const DEFAULT_DATE_FORMATTER: DateFormatter<'_> = &|val| val.format("%B %-e, %Y").to_string();

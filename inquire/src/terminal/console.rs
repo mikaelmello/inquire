@@ -88,13 +88,13 @@ impl Terminal for ConsoleTerminal {
     }
 
     fn clear_in_memory_content(&mut self) {
-        self.in_memory_content.clear()
+        self.in_memory_content.clear();
     }
 }
 
 impl Drop for ConsoleTerminal {
     fn drop(&mut self) {
-        let _ = self.flush();
+        let _unused = self.flush();
     }
 }
 
@@ -148,7 +148,7 @@ impl From<Key> for crate::ui::Key {
 
         match key {
             Key::Escape => Self::Escape,
-            Key::Char('\n') | Key::Char('\r') | Key::Enter => Self::Enter,
+            Key::Char('\n' | '\r') | Key::Enter => Self::Enter,
             Key::Char('\t') | Key::Tab => Self::Tab,
             Key::Backspace => Self::Backspace,
             Key::Del => Self::Delete(KeyModifiers::empty()),

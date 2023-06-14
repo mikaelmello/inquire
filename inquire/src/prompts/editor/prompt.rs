@@ -1,9 +1,4 @@
-use std::{
-    fs,
-    io::{Read, Write},
-    path::Path,
-    process,
-};
+use std::{fs, io::Write, path::Path, process};
 
 use tempfile::NamedTempFile;
 
@@ -89,10 +84,7 @@ impl<'a> EditorPrompt<'a> {
     }
 
     fn cur_answer(&self) -> InquireResult<String> {
-        let mut read_handler = fs::File::open(self.tmp_file.path())?;
-        let mut submission = String::new();
-        read_handler.read_to_string(&mut submission)?;
-
+        let mut submission = fs::read_to_string(self.tmp_file.path())?;
         let len = submission.trim_end_matches(&['\n', '\r'][..]).len();
         submission.truncate(len);
 

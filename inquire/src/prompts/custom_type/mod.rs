@@ -139,7 +139,7 @@ where
             help_message: None,
             formatter: &|val| val.to_string(),
             default_value_formatter: &|val| val.to_string(),
-            parser: &|a| a.parse::<T>().map_err(|_| ()),
+            parser: &|a| a.parse::<T>().map_err(|_e| ()),
             validators: Self::DEFAULT_VALIDATORS,
             error_message: "Invalid input".into(),
             render_config: get_configuration(),
