@@ -8,7 +8,7 @@ use crate::{
 
 #[test]
 fn move_previous_word() {
-    let content = "great 🌍, 🍞, 🚗, 1231321📞, 🎉, 🍆xsa232 s2da ake iak eaik";
+    let content = "great 🌍, 🍞, 🚗, 1231321📞, 🎉, 🍆xsa232 s2da ache iak eaik";
 
     let assert = |expected, initial| {
         let mut input = Input::new_with(content).with_cursor(initial);
