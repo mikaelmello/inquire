@@ -9,7 +9,6 @@ rustdocflags = [
 rustflags = [
     # https://doc.rust-lang.org/rustc/lints/index.html
     "-Wfuture_incompatible",
-    "-Wlet_underscore",
     "-Wrust_2018_compatibility",
     "-Wrust_2018_idioms",
     "-Wrust_2021_compatibility",
