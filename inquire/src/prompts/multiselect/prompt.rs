@@ -41,7 +41,7 @@ where
                 "Available options can not be empty".into(),
             ));
         }
-        if let Some(default) = mso.default {
+        if let Some(default) = &mso.default {
             for i in default {
                 if i >= &mso.options.len() {
                     return Err(InquireError::InvalidConfiguration(format!(
@@ -55,9 +55,12 @@ where
 
         let string_options = mso.options.iter().map(T::to_string).collect();
         let filtered_options = (0..mso.options.len()).collect();
-        let checked_options = mso
-            .default
-            .map_or_else(BTreeSet::new, |d| d.iter().cloned().collect());
+        let checked_options = mso.default.as_ref().map_or_else(BTreeSet::new, |d| {
+            d.iter()
+                .cloned()
+                .filter(|i| *i < mso.options.len())
+                .collect()
+        });
 
         Ok(Self {
             message: mso.message,
