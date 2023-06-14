@@ -41,7 +41,7 @@ impl<'a> TermionTerminal<'a> {
         let raw_mode = stderr()
             .into_raw_mode()
             .map_err(|e| match e.raw_os_error() {
-                Some(25) | Some(6) => InquireError::NotTTY,
+                Some(25 | 6) => InquireError::NotTTY,
                 _ => e.into(),
             });
 
@@ -198,13 +198,13 @@ impl<'a> Terminal for TermionTerminal<'a> {
     }
 
     fn clear_in_memory_content(&mut self) {
-        self.in_memory_content.clear()
+        self.in_memory_content.clear();
     }
 }
 
 impl<'a> Drop for TermionTerminal<'a> {
     fn drop(&mut self) {
-        let _ = self.flush();
+        let _unused = self.flush();
     }
 }
 
@@ -235,11 +235,11 @@ macro_rules! into_termion_color {
 }
 
 impl Color for crate::ui::Color {
-    fn write_fg(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn write_fg(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         into_termion_color!(self, write_fg, f)
     }
 
-    fn write_bg(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+    fn write_bg(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         into_termion_color!(self, write_bg, f)
     }
 }
@@ -250,7 +250,7 @@ impl From<Key> for crate::ui::Key {
 
         match key {
             Key::Esc => Self::Escape,
-            Key::Char('\n') | Key::Char('\r') => Self::Enter,
+            Key::Char('\n' | '\r') => Self::Enter,
             Key::Char('\t') => Self::Tab,
             Key::Backspace => Self::Backspace,
             Key::Delete => Self::Delete(KeyModifiers::empty()),

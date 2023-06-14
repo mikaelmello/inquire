@@ -7,7 +7,7 @@ fn main() -> InquireResult<()> {
 
     match ans {
         Currency::BRL | Currency::USD | Currency::CAD | Currency::EUR | Currency::GBP => {
-            bank_transfer()
+            bank_transfer();
         }
         Currency::BTC | Currency::LTC => crypto_transfer(),
     }

@@ -53,7 +53,7 @@ pub type BoolParser<'a> = &'a dyn Fn(&str) -> Result<bool, ()>;
 pub type CustomTypeParser<'a, T> = &'a dyn Fn(&str) -> Result<T, ()>;
 
 /// Bool formatter used  by default in [Confirm](crate::Confirm) prompts.
-pub const DEFAULT_BOOL_PARSER: BoolParser = &|ans| {
+pub const DEFAULT_BOOL_PARSER: BoolParser<'_> = &|ans| {
     if ans.len() > 3 {
         return Err(());
     }

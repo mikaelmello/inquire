@@ -30,7 +30,7 @@ fn main() {
         }
     };
 
-    let formatter: MultiOptionFormatter<&str> = &|a| format!("{} different fruits", a.len());
+    let formatter: MultiOptionFormatter<'_, &str> = &|a| format!("{} different fruits", a.len());
 
     let ans = MultiSelect::new("Select the fruits for your shopping list:", options)
         .with_validator(validator)

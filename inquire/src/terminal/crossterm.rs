@@ -35,7 +35,7 @@ pub struct CrosstermTerminal<'a> {
 impl<'a> CrosstermTerminal<'a> {
     pub fn new() -> InquireResult<Self> {
         enable_raw_mode().map_err(|e| match e.raw_os_error() {
-            Some(25) | Some(6) => InquireError::NotTTY,
+            Some(25 | 6) => InquireError::NotTTY,
             _ => InquireError::from(e),
         })?;
 
@@ -193,14 +193,14 @@ impl<'a> Terminal for CrosstermTerminal<'a> {
     }
 
     fn clear_in_memory_content(&mut self) {
-        self.in_memory_content.clear()
+        self.in_memory_content.clear();
     }
 }
 
 impl<'a> Drop for CrosstermTerminal<'a> {
     fn drop(&mut self) {
-        let _ = self.flush();
-        let _ = match self.io {
+        let _unused = self.flush();
+        let _unused = match self.io {
             IO::Std { w: _ } => terminal::disable_raw_mode(),
             IO::Custom { r: _, w: _ } => Ok(()),
         };
@@ -261,22 +261,11 @@ impl From<KeyEvent> for Key {
                 code: KeyCode::Esc, ..
             } => Self::Escape,
             KeyEvent {
-                code: KeyCode::Enter,
-                ..
-            }
-            | KeyEvent {
-                code: KeyCode::Char('\n'),
-                ..
-            }
-            | KeyEvent {
-                code: KeyCode::Char('\r'),
+                code: KeyCode::Enter | KeyCode::Char('\n' | '\r'),
                 ..
             } => Self::Enter,
             KeyEvent {
-                code: KeyCode::Tab, ..
-            }
-            | KeyEvent {
-                code: KeyCode::Char('\t'),
+                code: KeyCode::Tab | KeyCode::Char('\t'),
                 ..
             } => Self::Tab,
             KeyEvent {

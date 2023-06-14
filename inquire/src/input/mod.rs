@@ -304,8 +304,7 @@ pub enum InputActionResult {
 impl InputActionResult {
     pub fn needs_redraw(&self) -> bool {
         match self {
-            InputActionResult::ContentChanged => true,
-            InputActionResult::PositionChanged => true,
+            InputActionResult::ContentChanged | InputActionResult::PositionChanged => true,
             InputActionResult::Clean => false,
         }
     }

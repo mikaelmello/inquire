@@ -19,7 +19,7 @@ pub struct Page<'a, T> {
     pub total: usize,
 }
 
-pub fn paginate<T>(page_size: usize, choices: &[T], sel: Option<usize>) -> Page<T> {
+pub fn paginate<T>(page_size: usize, choices: &[T], sel: Option<usize>) -> Page<'_, T> {
     // if there is no selection, we default to the first page.
     // in practice, the same as selecting the 0 index.
 
@@ -70,7 +70,7 @@ pub fn paginate<T>(page_size: usize, choices: &[T], sel: Option<usize>) -> Page<
 
 pub fn int_log10<T>(mut i: T) -> usize
 where
-    T: std::ops::DivAssign + std::cmp::PartialOrd + From<u8> + Copy,
+    T: std::ops::DivAssign + PartialOrd + From<u8> + Copy,
 {
     let mut len = 0;
     let zero = T::from(0);
