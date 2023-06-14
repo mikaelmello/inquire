@@ -2,8 +2,8 @@ use inquire::{Password, PasswordDisplayMode};
 
 fn main() {
     let name = Password::new("RSA Encryption Key:")
-        .with_display_mode(PasswordDisplayMode::Masked)
-        .prompt();
+    .with_display_mode(PasswordDisplayMode::Masked)
+    .prompt();
 
     match name {
         Ok(_) => println!("This doesn't look like a key."),

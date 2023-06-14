@@ -151,3 +151,18 @@ password_test!(
     "",
     Password::new("")
 );
+
+// Anti-Regression test for https://github.com/mikaelmello/inquire/issues/149
+password_test!(
+    incorrect_confirmation_flow,
+    {
+        let mut events = vec![];
+        events.append(&mut text_to_events!("anor").collect());
+        events.push(KeyCode::Enter);
+        events.append(&mut text_to_events!("anor").collect());
+        events.push(KeyCode::Enter);
+        events
+    },
+    "anor",
+    Password::new("")
+);
