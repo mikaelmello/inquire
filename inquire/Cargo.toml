@@ -41,9 +41,8 @@ tempfile = { version = "3", optional = true }
 
 bitflags = "2"
 dyn-clone = "1"
-lazy_static = "1.4"
 newline-converter = "0.3"
-
+once_cell = "1.18.0"
 unicode-segmentation = "1"
 unicode-width = "0.1"
 

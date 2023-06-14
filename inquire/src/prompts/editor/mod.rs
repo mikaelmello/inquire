@@ -9,7 +9,7 @@ use std::{
     ffi::{OsStr, OsString},
 };
 
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 
 use crate::{
     error::{InquireError, InquireResult},
@@ -22,9 +22,7 @@ use crate::{
 
 use self::prompt::EditorPrompt;
 
-lazy_static! {
-    static ref DEFAULT_EDITOR: OsString = get_default_editor_command();
-}
+static DEFAULT_EDITOR: Lazy<OsString> = Lazy::new(get_default_editor_command);
 
 /// This prompt is meant for cases where you need the user to write some text that might not fit in a single line, such as long descriptions or commit messages.
 ///
