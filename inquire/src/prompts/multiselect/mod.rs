@@ -62,7 +62,7 @@ pub struct MultiSelect<'a, T> {
     pub options: Vec<T>,
 
     /// Default indexes of options to be selected from the start.
-    pub default: Option<&'a [usize]>,
+    pub default: Option<Vec<usize>>,
 
     /// Help message to be presented to the user.
     pub help_message: Option<&'a str>,
@@ -252,9 +252,21 @@ where
         self
     }
 
-    /// Sets the indexes to be selected by the default.
+    /// Sets the indexes to be selected by default.
+    ///
+    /// The values should be valid indexes for the given option list. Any
+    /// numbers larger than the option list or duplicates will be ignored.
     pub fn with_default(mut self, default: &'a [usize]) -> Self {
-        self.default = Some(default);
+        self.default = Some(default.to_vec());
+        self
+    }
+
+    /// Sets all options to be selected by default.
+    /// This overrides any previously set default and is equivalent to calling
+    /// `with_default` with a slice containing all indexes for the given
+    /// option list.
+    pub fn with_all_selected_by_default(mut self) -> Self {
+        self.default = Some((0..self.options.len()).collect::<Vec<_>>());
         self
     }
 
