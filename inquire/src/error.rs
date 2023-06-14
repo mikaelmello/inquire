@@ -5,7 +5,7 @@ use std::{error::Error, io};
 
 /// Type alias to define errors that might be thrown by the library user
 /// on callbacks such as validators.
-pub type CustomUserError = Box<dyn std::error::Error + Send + Sync + 'static>;
+pub type CustomUserError = Box<dyn Error + Send + Sync + 'static>;
 
 /// Possible errors returned by `inquire` prompts.
 #[derive(Debug)]

@@ -55,12 +55,16 @@ where
 
         let string_options = mso.options.iter().map(T::to_string).collect();
         let filtered_options = (0..mso.options.len()).collect();
-        let checked_options = mso.default.as_ref().map_or_else(BTreeSet::new, |d| {
-            d.iter()
-                .cloned()
-                .filter(|i| *i < mso.options.len())
-                .collect()
-        });
+        let checked_options = mso
+            .default
+            .as_ref()
+            .map(|d| {
+                d.iter()
+                    .cloned()
+                    .filter(|i| *i < mso.options.len())
+                    .collect()
+            })
+            .unwrap_or_else(BTreeSet::new);
 
         Ok(Self {
             message: mso.message,
