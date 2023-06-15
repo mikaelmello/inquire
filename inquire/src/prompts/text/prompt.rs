@@ -7,7 +7,7 @@ use crate::{
     input::{Input, InputActionResult},
     list_option::ListOption,
     prompts::prompt::{ActionResult, Prompt},
-    ui::{HelpMessage, TextBackend},
+    ui::TextBackend,
     utils::paginate,
     validator::{ErrorMessage, StringValidator, Validation},
     Autocomplete, InquireError, Text,
@@ -19,7 +19,7 @@ pub struct TextPrompt<'a> {
     message: &'a str,
     config: TextConfig,
     default: Option<&'a str>,
-    help_message: HelpMessage,
+    help_message: Option<String>,
     input: Input,
     formatter: StringFormatter<'a>,
     validators: Vec<Box<dyn StringValidator>>,
@@ -31,6 +31,7 @@ pub struct TextPrompt<'a> {
 
 impl<'a> From<Text<'a>> for TextPrompt<'a> {
     fn from(so: Text<'a>) -> Self {
+        let config = (&so).into();
         let input = Input::new_with(so.initial_value.unwrap_or_default());
         let input = if let Some(placeholder) = so.placeholder {
             input.with_placeholder(placeholder)
@@ -38,11 +39,20 @@ impl<'a> From<Text<'a>> for TextPrompt<'a> {
             input
         };
 
+        let default_help_message = if so.autocompleter.is_some() {
+            Some("↑↓ to move, tab to autocomplete, enter to submit")
+        } else {
+            None
+        };
+        let help_message = so
+            .help_message
+            .into_or_default(default_help_message.map(|s| s.into()));
+
         Self {
             message: so.message,
-            config: (&so).into(),
+            config,
             default: so.default,
-            help_message: so.help_message,
+            help_message,
             formatter: so.formatter,
             autocompleter: so.autocompleter,
             input,
@@ -61,10 +71,6 @@ impl<'a> From<&'a str> for Text<'a> {
 }
 
 impl<'a> TextPrompt<'a> {
-    fn has_autocompleter(&self) -> bool {
-        self.autocompleter.is_some()
-    }
-
     fn update_suggestions(&mut self) -> InquireResult<()> {
         if let Some(autocompleter) = &mut self.autocompleter {
             self.suggested_options = autocompleter.get_suggestions(self.input.content())?;
@@ -174,16 +180,8 @@ where
         self.message
     }
 
-    fn help_message(&self) -> &HelpMessage {
-        &self.help_message
-    }
-
-    fn default_help_message(&self) -> Option<&str> {
-        if self.has_autocompleter() {
-            Some("↑↓ to move, tab to autocomplete, enter to submit")
-        } else {
-            None
-        }
+    fn help_message(&self) -> Option<&str> {
+        self.help_message.as_deref()
     }
 
     fn config(&self) -> &TextConfig {

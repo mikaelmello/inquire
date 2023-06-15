@@ -1,11 +1,6 @@
 //! Definitions of common behavior shared amongst all different prompt types.
 
-use crate::{
-    error::InquireResult,
-    input::InputActionResult,
-    ui::{CommonBackend, HelpMessage},
-    InquireError,
-};
+use crate::{error::InquireResult, input::InputActionResult, ui::CommonBackend, InquireError};
 
 use super::action::{Action, InnerAction};
 
@@ -57,12 +52,9 @@ where
     /// * `answer` - Answer returned by the prompt.
     fn format_answer(&self, answer: &ReturnType) -> String;
 
-    /// Hook called to retrieve the configured help message preference of the prompt.
-    fn help_message(&self) -> &HelpMessage;
-
-    /// Hook called to retrieve the appropriate default help message,
-    /// based on the current state of the prompt.
-    fn default_help_message(&self) -> Option<&str>;
+    /// Hook called to retrieve the help message to display at the end
+    /// of the prompt.
+    fn help_message(&self) -> Option<&str>;
 
     /// Hook called when a prompt is first started, before the first
     /// draw happens.
@@ -118,10 +110,7 @@ where
             if let ActionResult::NeedsRedraw = last_handle {
                 backend.frame_setup()?;
                 self.render(backend)?;
-                backend.render_help_message(
-                    self.help_message()
-                        .unwrap_or_default(|| self.default_help_message()),
-                )?;
+                backend.render_help_message(self.help_message())?;
                 backend.frame_finish()?;
                 last_handle = ActionResult::Clean;
             }

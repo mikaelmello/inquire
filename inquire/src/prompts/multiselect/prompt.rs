@@ -7,7 +7,7 @@ use crate::{
     list_option::ListOption,
     prompts::prompt::{ActionResult, Prompt},
     type_aliases::Filter,
-    ui::{HelpMessage, MultiSelectBackend},
+    ui::MultiSelectBackend,
     utils::paginate,
     validator::{ErrorMessage, MultiOptionValidator, Validation},
     InquireError, MultiSelect,
@@ -20,7 +20,7 @@ pub struct MultiSelectPrompt<'a, T> {
     config: MultiSelectConfig,
     options: Vec<T>,
     string_options: Vec<String>,
-    help_message: HelpMessage,
+    help_message: Option<String>,
     cursor_index: usize,
     checked: BTreeSet<usize>,
     input: Input,
@@ -36,6 +36,7 @@ where
     T: Display,
 {
     pub fn new(mso: MultiSelect<'a, T>) -> InquireResult<Self> {
+        let config = (&mso).into();
         if mso.options.is_empty() {
             return Err(InquireError::InvalidConfiguration(
                 "Available options can not be empty".into(),
@@ -66,13 +67,18 @@ where
             })
             .unwrap_or_else(BTreeSet::new);
 
+        let default_help_message =
+            Some("↑↓ to move, space to select one, → to all, ← to none, type to filter");
+        let help_message = mso
+            .help_message
+            .into_or_default(default_help_message.map(|s| s.into()));
         Ok(Self {
             message: mso.message,
-            config: (&mso).into(),
+            config,
             options: mso.options,
             string_options,
             filtered_options,
-            help_message: mso.help_message,
+            help_message,
             cursor_index: mso.starting_cursor,
             input: Input::new(),
             filter: mso.filter,
@@ -199,12 +205,8 @@ where
         self.message
     }
 
-    fn help_message(&self) -> &HelpMessage {
-        &self.help_message
-    }
-
-    fn default_help_message(&self) -> Option<&str> {
-        Some("↑↓ to move, space to select one, → to all, ← to none, type to filter")
+    fn help_message(&self) -> Option<&str> {
+        self.help_message.as_deref()
     }
 
     fn config(&self) -> &MultiSelectConfig {

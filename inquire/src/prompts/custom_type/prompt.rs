@@ -4,7 +4,7 @@ use crate::{
     input::Input,
     parser::CustomTypeParser,
     prompts::prompt::{ActionResult, Prompt},
-    ui::{CustomTypeBackend, HelpMessage},
+    ui::CustomTypeBackend,
     validator::{CustomTypeValidator, ErrorMessage, Validation},
     CustomType, InquireError,
 };
@@ -15,7 +15,7 @@ pub struct CustomTypePrompt<'a, T> {
     message: &'a str,
     config: CustomTypeConfig,
     error: Option<ErrorMessage>,
-    help_message: HelpMessage,
+    help_message: Option<String>,
     default: Option<T>,
     input: Input,
     formatter: CustomTypeFormatter<'a, T>,
@@ -35,7 +35,7 @@ where
             config: (&co).into(),
             error: None,
             default: co.default,
-            help_message: co.help_message,
+            help_message: co.help_message.into_or_default(None),
             formatter: co.formatter,
             default_value_formatter: co.default_value_formatter,
             validators: co.validators,
@@ -88,12 +88,8 @@ where
         self.message
     }
 
-    fn help_message(&self) -> &HelpMessage {
-        &self.help_message
-    }
-
-    fn default_help_message(&self) -> Option<&str> {
-        None
+    fn help_message(&self) -> Option<&str> {
+        self.help_message.as_deref()
     }
 
     fn config(&self) -> &CustomTypeConfig {

@@ -3,7 +3,7 @@ use crate::{
     formatter::StringFormatter,
     input::Input,
     prompts::prompt::{ActionResult, Prompt},
-    ui::{HelpMessage, PasswordBackend},
+    ui::PasswordBackend,
     validator::{ErrorMessage, StringValidator, Validation},
     InquireError, Password, PasswordDisplayMode,
 };
@@ -25,7 +25,7 @@ struct PasswordConfirmation<'a> {
 pub struct PasswordPrompt<'a> {
     message: &'a str,
     config: PasswordConfig,
-    help_message: HelpMessage,
+    help_message: Option<String>,
     input: Input,
     current_mode: PasswordDisplayMode,
     confirmation: Option<PasswordConfirmation<'a>>, // if `None`, confirmation is disabled, `Some(_)` confirmation is enabled
@@ -51,7 +51,7 @@ impl<'a> From<Password<'a>> for PasswordPrompt<'a> {
         Self {
             message: so.message,
             config: (&so).into(),
-            help_message: so.help_message,
+            help_message: so.help_message.into_or_default(None),
             current_mode: so.display_mode,
             confirmation,
             confirmation_stage: false,
@@ -144,12 +144,8 @@ where
         self.message
     }
 
-    fn help_message(&self) -> &HelpMessage {
-        &self.help_message
-    }
-
-    fn default_help_message(&self) -> Option<&str> {
-        None
+    fn help_message(&self) -> Option<&str> {
+        self.help_message.as_deref()
     }
 
     fn config(&self) -> &PasswordConfig {

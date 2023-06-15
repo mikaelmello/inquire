@@ -7,7 +7,7 @@ use crate::{
     list_option::ListOption,
     prompts::prompt::{ActionResult, Prompt},
     type_aliases::Filter,
-    ui::{HelpMessage, SelectBackend},
+    ui::SelectBackend,
     utils::paginate,
     InquireError, Select,
 };
@@ -20,7 +20,7 @@ pub struct SelectPrompt<'a, T> {
     options: Vec<T>,
     string_options: Vec<String>,
     filtered_options: Vec<usize>,
-    help_message: HelpMessage,
+    help_message: Option<String>,
     cursor_index: usize,
     input: Input,
     filter: Filter<'a, T>,
@@ -32,6 +32,7 @@ where
     T: Display,
 {
     pub fn new(so: Select<'a, T>) -> InquireResult<Self> {
+        let config = (&so).into();
         if so.options.is_empty() {
             return Err(InquireError::InvalidConfiguration(
                 "Available options can not be empty".into(),
@@ -49,13 +50,18 @@ where
         let string_options = so.options.iter().map(T::to_string).collect();
         let filtered_options = (0..so.options.len()).collect();
 
+        let default_help_message = Some("↑↓ to move, enter to select, type to filter");
+        let help_message = so
+            .help_message
+            .into_or_default(default_help_message.map(|s| s.into()));
+
         Ok(Self {
             message: so.message,
-            config: (&so).into(),
+            config,
             options: so.options,
             string_options,
             filtered_options,
-            help_message: so.help_message,
+            help_message,
             cursor_index: so.starting_cursor,
             input: Input::new(),
             filter: so.filter,
@@ -138,12 +144,8 @@ where
         self.message
     }
 
-    fn help_message(&self) -> &HelpMessage {
-        &self.help_message
-    }
-
-    fn default_help_message(&self) -> Option<&str> {
-        Some("↑↓ to move, enter to select, type to filter")
+    fn help_message(&self) -> Option<&str> {
+        self.help_message.as_deref()
     }
 
     fn config(&self) -> &SelectConfig {
