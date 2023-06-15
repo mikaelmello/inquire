@@ -28,10 +28,6 @@ pub struct DateSelectPrompt<'a> {
 }
 
 impl<'a> DateSelectPrompt<'a> {
-    /// Default help message.
-    pub const DEFAULT_HELP_MESSAGE: Option<&'static str> =
-        Some("arrows to move, with ctrl to move months and years, enter to select");
-
     pub fn new(so: DateSelect<'a>) -> InquireResult<Self> {
         if let Some(min_date) = so.min_date {
             if min_date > so.starting_date {
@@ -120,12 +116,21 @@ impl<'a> DateSelectPrompt<'a> {
     }
 }
 
-impl<'a, B> Prompt<B, DateSelectConfig, DateSelectPromptAction, NaiveDate> for DateSelectPrompt<'a>
+impl<'a, B> Prompt<'a, B, DateSelectConfig, DateSelectPromptAction, NaiveDate>
+    for DateSelectPrompt<'a>
 where
     B: DateSelectBackend,
 {
     fn message(&self) -> &str {
         self.message
+    }
+
+    fn help_message(&self) -> &HelpMessage {
+        &self.help_message
+    }
+
+    fn default_help_message(&self) -> Option<&str> {
+        Some("arrows to move, with ctrl to move months and years, enter to select")
     }
 
     fn format_answer(&self, answer: &NaiveDate) -> String {
@@ -181,8 +186,6 @@ where
             self.config.min_date,
             self.config.max_date,
         )?;
-
-        backend.render_help_message(self.help_message.as_str_opt(Self::DEFAULT_HELP_MESSAGE))?;
 
         Ok(())
     }

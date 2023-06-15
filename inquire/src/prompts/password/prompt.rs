@@ -136,12 +136,20 @@ impl<'a> PasswordPrompt<'a> {
     }
 }
 
-impl<'a, B> Prompt<B, PasswordConfig, PasswordPromptAction, String> for PasswordPrompt<'a>
+impl<'a, B> Prompt<'a, B, PasswordConfig, PasswordPromptAction, String> for PasswordPrompt<'a>
 where
     B: PasswordBackend,
 {
     fn message(&self) -> &str {
         self.message
+    }
+
+    fn help_message(&self) -> &HelpMessage {
+        &self.help_message
+    }
+
+    fn default_help_message(&self) -> Option<&str> {
+        None
     }
 
     fn config(&self) -> &PasswordConfig {
@@ -245,8 +253,6 @@ where
                 }
             }
         }
-
-        backend.render_help_message(self.help_message.as_str_opt(None))?;
 
         Ok(())
     }

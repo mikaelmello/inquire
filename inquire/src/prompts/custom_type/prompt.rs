@@ -78,13 +78,22 @@ where
     }
 }
 
-impl<'a, B, T> Prompt<B, CustomTypeConfig, CustomTypePromptAction, T> for CustomTypePrompt<'a, T>
+impl<'a, B, T> Prompt<'a, B, CustomTypeConfig, CustomTypePromptAction, T>
+    for CustomTypePrompt<'a, T>
 where
     B: CustomTypeBackend,
     T: Clone,
 {
     fn message(&self) -> &str {
         self.message
+    }
+
+    fn help_message(&self) -> &HelpMessage {
+        &self.help_message
+    }
+
+    fn default_help_message(&self) -> Option<&str> {
+        None
     }
 
     fn config(&self) -> &CustomTypeConfig {
@@ -137,8 +146,6 @@ where
             .map(|val| default_value_formatter(val.clone()));
 
         backend.render_prompt(prompt, default_message.as_deref(), &self.input)?;
-
-        backend.render_help_message(self.help_message.as_str_opt(None))?;
 
         Ok(())
     }

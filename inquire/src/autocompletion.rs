@@ -66,8 +66,12 @@ impl Clone for Box<dyn Autocomplete> {
 /// Empty struct and implementation of Autocomplete trait. Used for the default
 /// autocompleter of `Text` prompts.
 #[derive(Clone, Default)]
+#[deprecated(
+    note = "All applicable APIs accept a Option<Autocomplete>, so use None instead. This struct will be removed in a future release."
+)]
 pub struct NoAutoCompletion;
 
+#[allow(deprecated)]
 impl Autocomplete for NoAutoCompletion {
     fn get_suggestions(&mut self, _: &str) -> Result<Vec<String>, CustomUserError> {
         Ok(vec![])

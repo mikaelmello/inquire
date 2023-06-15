@@ -92,12 +92,20 @@ impl<'a> EditorPrompt<'a> {
     }
 }
 
-impl<'a, B> Prompt<B, EditorConfig<'a>, EditorPromptAction, String> for EditorPrompt<'a>
+impl<'a, B> Prompt<'a, B, EditorConfig<'a>, EditorPromptAction, String> for EditorPrompt<'a>
 where
     B: EditorBackend,
 {
     fn message(&self) -> &str {
         self.message
+    }
+
+    fn help_message(&self) -> &HelpMessage {
+        &self.help_message
+    }
+
+    fn default_help_message(&self) -> Option<&str> {
+        None
     }
 
     fn config(&self) -> &EditorConfig<'a> {
@@ -143,8 +151,6 @@ where
             .unwrap_or("editor");
 
         backend.render_prompt(prompt, editor_name)?;
-
-        backend.render_help_message(self.help_message.as_str_opt(None))?;
 
         Ok(())
     }

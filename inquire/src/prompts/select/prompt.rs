@@ -31,10 +31,6 @@ impl<'a, T> SelectPrompt<'a, T>
 where
     T: Display,
 {
-    /// Default help message.
-    pub const DEFAULT_HELP_MESSAGE: Option<&'a str> =
-        Some("↑↓ to move, enter to select, type to filter");
-
     pub fn new(so: Select<'a, T>) -> InquireResult<Self> {
         if so.options.is_empty() {
             return Err(InquireError::InvalidConfiguration(
@@ -132,13 +128,22 @@ where
     }
 }
 
-impl<'a, B, T> Prompt<B, SelectConfig, SelectPromptAction, ListOption<T>> for SelectPrompt<'a, T>
+impl<'a, B, T> Prompt<'a, B, SelectConfig, SelectPromptAction, ListOption<T>>
+    for SelectPrompt<'a, T>
 where
     B: SelectBackend,
     T: Display,
 {
     fn message(&self) -> &str {
         self.message
+    }
+
+    fn help_message(&self) -> &HelpMessage {
+        &self.help_message
+    }
+
+    fn default_help_message(&self) -> Option<&str> {
+        Some("↑↓ to move, enter to select, type to filter")
     }
 
     fn config(&self) -> &SelectConfig {
@@ -200,8 +205,6 @@ where
         let page = paginate(self.config.page_size, &choices, Some(self.cursor_index));
 
         backend.render_options(page)?;
-
-        backend.render_help_message(self.help_message.as_str_opt(Self::DEFAULT_HELP_MESSAGE))?;
 
         Ok(())
     }

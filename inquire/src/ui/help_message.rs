@@ -20,13 +20,14 @@ pub enum HelpMessage {
 
 impl HelpMessage {
     /// Returns the help message as a string slice, or `None` if the help message is `None`.
-    pub fn as_str_opt<'a, 'b>(&'a self, default_msg: Option<&'b str>) -> Option<&'a str>
+    pub(crate) fn unwrap_or_default<'a, 'b, F>(&'a self, default: F) -> Option<&'a str>
     where
+        F: FnOnce() -> Option<&'b str>,
         'b: 'a,
     {
         match self {
             Self::None => None,
-            Self::Default => default_msg,
+            Self::Default => default(),
             Self::Custom(s) => Some(s),
         }
     }
