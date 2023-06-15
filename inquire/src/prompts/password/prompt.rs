@@ -178,9 +178,9 @@ where
         let cur_answer = self.cur_answer().to_owned();
 
         let result = match confirmation {
-            ConfirmationStepResult::NoConfirmationRequired => Some(cur_answer),
+            ConfirmationStepResult::NoConfirmationRequired
+            | ConfirmationStepResult::ConfirmationValidated => Some(cur_answer),
             ConfirmationStepResult::ConfirmationPending => None,
-            ConfirmationStepResult::ConfirmationValidated => Some(cur_answer),
             ConfirmationStepResult::ConfirmationInvalidated(message) => {
                 self.error = Some(message);
                 self.input.clear();
