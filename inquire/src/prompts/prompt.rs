@@ -119,7 +119,7 @@ where
                         if let Some(answer) = self.submit()? {
                             break answer;
                         }
-                        ActionResult::Clean
+                        ActionResult::NeedsRedraw
                     }
                     Action::Cancel => {
                         let pre_cancel_result = self.pre_cancel()?;

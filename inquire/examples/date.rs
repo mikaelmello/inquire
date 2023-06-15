@@ -24,7 +24,7 @@ fn custom_type_parsed_date_prompt() {
 
     let amount = CustomType::<NaiveDate>::new("When are you going to visit the office?")
         .with_placeholder("dd/mm/yyyy")
-        .with_parser(&|i| NaiveDate::parse_from_str(i, "%d/%m/%Y").map_err(|_| ()))
+        .with_parser(&|i| NaiveDate::parse_from_str(i, "%d/%m/%Y").map_err(|_e| ()))
         .with_formatter(DEFAULT_DATE_FORMATTER)
         .with_error_message("Please type a valid date.")
         .with_help_message("The necessary arrangements will be made")
