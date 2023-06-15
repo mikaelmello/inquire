@@ -7,7 +7,7 @@ use crate::{
     list_option::ListOption,
     prompts::prompt::{ActionResult, Prompt},
     type_aliases::Filter,
-    ui::SelectBackend,
+    ui::{HelpMessage, SelectBackend},
     utils::paginate,
     InquireError, Select,
 };
@@ -20,7 +20,7 @@ pub struct SelectPrompt<'a, T> {
     options: Vec<T>,
     string_options: Vec<String>,
     filtered_options: Vec<usize>,
-    help_message: Option<&'a str>,
+    help_message: HelpMessage,
     cursor_index: usize,
     input: Input,
     filter: Filter<'a, T>,
@@ -31,6 +31,10 @@ impl<'a, T> SelectPrompt<'a, T>
 where
     T: Display,
 {
+    /// Default help message.
+    pub const DEFAULT_HELP_MESSAGE: Option<&'a str> =
+        Some("↑↓ to move, enter to select, type to filter");
+
     pub fn new(so: Select<'a, T>) -> InquireResult<Self> {
         if so.options.is_empty() {
             return Err(InquireError::InvalidConfiguration(
@@ -197,9 +201,7 @@ where
 
         backend.render_options(page)?;
 
-        if let Some(help_message) = self.help_message {
-            backend.render_help_message(help_message)?;
-        }
+        backend.render_help_message(self.help_message.as_str_opt(Self::DEFAULT_HELP_MESSAGE))?;
 
         Ok(())
     }

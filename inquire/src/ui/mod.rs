@@ -2,6 +2,7 @@
 
 mod backend;
 mod color;
+mod help_message;
 mod input_reader;
 mod key;
 mod render_config;
@@ -12,5 +13,6 @@ pub(crate) use input_reader::*;
 pub(crate) use key::*;
 
 pub use color::Color;
+pub use help_message::*;
 pub use render_config::*;
 pub use style::{Attributes, StyleSheet, Styled};

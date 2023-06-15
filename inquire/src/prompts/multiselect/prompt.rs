@@ -7,7 +7,7 @@ use crate::{
     list_option::ListOption,
     prompts::prompt::{ActionResult, Prompt},
     type_aliases::Filter,
-    ui::MultiSelectBackend,
+    ui::{HelpMessage, MultiSelectBackend},
     utils::paginate,
     validator::{ErrorMessage, MultiOptionValidator, Validation},
     InquireError, MultiSelect,
@@ -20,7 +20,7 @@ pub struct MultiSelectPrompt<'a, T> {
     config: MultiSelectConfig,
     options: Vec<T>,
     string_options: Vec<String>,
-    help_message: Option<&'a str>,
+    help_message: HelpMessage,
     cursor_index: usize,
     checked: BTreeSet<usize>,
     input: Input,
@@ -35,6 +35,10 @@ impl<'a, T> MultiSelectPrompt<'a, T>
 where
     T: Display,
 {
+    /// Default help message.
+    pub const DEFAULT_HELP_MESSAGE: Option<&'a str> =
+        Some("↑↓ to move, space to select one, → to all, ← to none, type to filter");
+
     pub fn new(mso: MultiSelect<'a, T>) -> InquireResult<Self> {
         if mso.options.is_empty() {
             return Err(InquireError::InvalidConfiguration(
@@ -291,9 +295,7 @@ where
 
         backend.render_options(page, &self.checked)?;
 
-        if let Some(help_message) = self.help_message {
-            backend.render_help_message(help_message)?;
-        }
+        backend.render_help_message(self.help_message.as_str_opt(Self::DEFAULT_HELP_MESSAGE))?;
 
         Ok(())
     }

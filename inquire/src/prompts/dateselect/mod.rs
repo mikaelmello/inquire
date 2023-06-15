@@ -16,7 +16,7 @@ use crate::{
     formatter::{self, DateFormatter},
     prompts::prompt::Prompt,
     terminal::{get_default_terminal, Terminal},
-    ui::{Backend, RenderConfig},
+    ui::{Backend, HelpMessage, RenderConfig},
     validator::DateValidator,
 };
 
@@ -82,7 +82,7 @@ pub struct DateSelect<'a> {
     pub max_date: Option<NaiveDate>,
 
     /// Help message to be presented to the user.
-    pub help_message: Option<&'a str>,
+    pub help_message: HelpMessage,
 
     /// Whether vim mode is enabled. When enabled, the user can
     /// navigate through the options using hjkl.
@@ -117,10 +117,6 @@ impl<'a> DateSelect<'a> {
     /// Default value of vim mode. It is true because there is no typing functionality to be lost here.
     pub const DEFAULT_VIM_MODE: bool = true;
 
-    /// Default help message.
-    pub const DEFAULT_HELP_MESSAGE: Option<&'a str> =
-        Some("arrows to move, with ctrl to move months and years, enter to select");
-
     /// Default validators added to the [DateSelect] prompt, none.
     pub const DEFAULT_VALIDATORS: Vec<Box<dyn DateValidator>> = vec![];
 
@@ -140,7 +136,7 @@ impl<'a> DateSelect<'a> {
             starting_date: get_current_date(),
             min_date: Self::DEFAULT_MIN_DATE,
             max_date: Self::DEFAULT_MAX_DATE,
-            help_message: Self::DEFAULT_HELP_MESSAGE,
+            help_message: HelpMessage::default(),
             vim_mode: Self::DEFAULT_VIM_MODE,
             formatter: Self::DEFAULT_FORMATTER,
             validators: Self::DEFAULT_VALIDATORS,
@@ -150,14 +146,14 @@ impl<'a> DateSelect<'a> {
     }
 
     /// Sets the help message of the prompt.
-    pub fn with_help_message(mut self, message: &'a str) -> Self {
-        self.help_message = Some(message);
+    pub fn with_help_message(mut self, message: &str) -> Self {
+        self.help_message = message.into();
         self
     }
 
-    /// Removes the set help message.
+    /// Sets the prompt to not display a help message.
     pub fn without_help_message(mut self) -> Self {
-        self.help_message = None;
+        self.help_message = HelpMessage::None;
         self
     }
 

@@ -10,7 +10,7 @@ use crate::{
     error::InquireResult,
     formatter::DateFormatter,
     prompts::prompt::{ActionResult, Prompt},
-    ui::date::DateSelectBackend,
+    ui::{date::DateSelectBackend, HelpMessage},
     validator::{DateValidator, ErrorMessage, Validation},
     DateSelect, InquireError,
 };
@@ -21,13 +21,17 @@ pub struct DateSelectPrompt<'a> {
     message: &'a str,
     config: DateSelectConfig,
     current_date: NaiveDate,
-    help_message: Option<&'a str>,
+    help_message: HelpMessage,
     formatter: DateFormatter<'a>,
     validators: Vec<Box<dyn DateValidator>>,
     error: Option<ErrorMessage>,
 }
 
 impl<'a> DateSelectPrompt<'a> {
+    /// Default help message.
+    pub const DEFAULT_HELP_MESSAGE: Option<&'static str> =
+        Some("arrows to move, with ctrl to move months and years, enter to select");
+
     pub fn new(so: DateSelect<'a>) -> InquireResult<Self> {
         if let Some(min_date) = so.min_date {
             if min_date > so.starting_date {
@@ -178,9 +182,7 @@ where
             self.config.max_date,
         )?;
 
-        if let Some(help_message) = self.help_message {
-            backend.render_help_message(help_message)?;
-        }
+        backend.render_help_message(self.help_message.as_str_opt(Self::DEFAULT_HELP_MESSAGE))?;
 
         Ok(())
     }

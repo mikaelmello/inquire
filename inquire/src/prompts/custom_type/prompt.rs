@@ -4,7 +4,7 @@ use crate::{
     input::Input,
     parser::CustomTypeParser,
     prompts::prompt::{ActionResult, Prompt},
-    ui::CustomTypeBackend,
+    ui::{CustomTypeBackend, HelpMessage},
     validator::{CustomTypeValidator, ErrorMessage, Validation},
     CustomType, InquireError,
 };
@@ -15,7 +15,7 @@ pub struct CustomTypePrompt<'a, T> {
     message: &'a str,
     config: CustomTypeConfig,
     error: Option<ErrorMessage>,
-    help_message: Option<&'a str>,
+    help_message: HelpMessage,
     default: Option<T>,
     input: Input,
     formatter: CustomTypeFormatter<'a, T>,
@@ -138,9 +138,7 @@ where
 
         backend.render_prompt(prompt, default_message.as_deref(), &self.input)?;
 
-        if let Some(message) = self.help_message {
-            backend.render_help_message(message)?;
-        }
+        backend.render_help_message(self.help_message.as_str_opt(None))?;
 
         Ok(())
     }

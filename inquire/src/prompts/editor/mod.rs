@@ -16,7 +16,7 @@ use crate::{
     formatter::StringFormatter,
     prompts::prompt::Prompt,
     terminal::get_default_terminal,
-    ui::{Backend, EditorBackend, RenderConfig},
+    ui::{Backend, EditorBackend, HelpMessage, RenderConfig},
     validator::StringValidator,
 };
 
@@ -66,7 +66,7 @@ pub struct Editor<'a> {
     pub predefined_text: Option<&'a str>,
 
     /// Help message to be presented to the user.
-    pub help_message: Option<&'a str>,
+    pub help_message: HelpMessage,
 
     /// Function that formats the user input and presents it to the user as the final rendering of the prompt.
     pub formatter: StringFormatter<'a>,
@@ -97,9 +97,6 @@ impl<'a> Editor<'a> {
     /// Default validators added to the [Editor] prompt, none.
     pub const DEFAULT_VALIDATORS: Vec<Box<dyn StringValidator>> = vec![];
 
-    /// Default help message.
-    pub const DEFAULT_HELP_MESSAGE: Option<&'a str> = None;
-
     /// Creates a [Editor] with the provided message and default options.
     pub fn new(message: &'a str) -> Self {
         Self {
@@ -108,7 +105,7 @@ impl<'a> Editor<'a> {
             editor_command_args: &[],
             file_extension: ".txt",
             predefined_text: None,
-            help_message: Self::DEFAULT_HELP_MESSAGE,
+            help_message: HelpMessage::default(),
             validators: Self::DEFAULT_VALIDATORS,
             formatter: Self::DEFAULT_FORMATTER,
             render_config: RenderConfig::default(),
@@ -116,8 +113,14 @@ impl<'a> Editor<'a> {
     }
 
     /// Sets the help message of the prompt.
-    pub fn with_help_message(mut self, message: &'a str) -> Self {
-        self.help_message = Some(message);
+    pub fn with_help_message(mut self, message: &str) -> Self {
+        self.help_message = message.into();
+        self
+    }
+
+    /// Sets the prompt to not display a help message.
+    pub fn without_help_message(mut self) -> Self {
+        self.help_message = HelpMessage::None;
         self
     }
 

@@ -3,7 +3,7 @@ use crate::{
     formatter::StringFormatter,
     input::Input,
     prompts::prompt::{ActionResult, Prompt},
-    ui::PasswordBackend,
+    ui::{HelpMessage, PasswordBackend},
     validator::{ErrorMessage, StringValidator, Validation},
     InquireError, Password, PasswordDisplayMode,
 };
@@ -25,7 +25,7 @@ struct PasswordConfirmation<'a> {
 pub struct PasswordPrompt<'a> {
     message: &'a str,
     config: PasswordConfig,
-    help_message: Option<&'a str>,
+    help_message: HelpMessage,
     input: Input,
     current_mode: PasswordDisplayMode,
     confirmation: Option<PasswordConfirmation<'a>>, // if `None`, confirmation is disabled, `Some(_)` confirmation is enabled
@@ -246,9 +246,7 @@ where
             }
         }
 
-        if let Some(message) = self.help_message {
-            backend.render_help_message(message)?;
-        }
+        backend.render_help_message(self.help_message.as_str_opt(None))?;
 
         Ok(())
     }

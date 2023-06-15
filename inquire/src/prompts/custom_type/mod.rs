@@ -13,7 +13,7 @@ use crate::{
     parser::CustomTypeParser,
     prompts::prompt::Prompt,
     terminal::get_default_terminal,
-    ui::{Backend, CustomTypeBackend, RenderConfig},
+    ui::{Backend, CustomTypeBackend, HelpMessage, RenderConfig},
     validator::CustomTypeValidator,
 };
 
@@ -87,7 +87,7 @@ pub struct CustomType<'a, T> {
     pub placeholder: Option<&'a str>,
 
     /// Help message to be presented to the user.
-    pub help_message: Option<&'a str>,
+    pub help_message: HelpMessage,
 
     /// Function that formats the user input and presents it to the user as the final rendering of the prompt.
     pub formatter: CustomTypeFormatter<'a, T>,
@@ -136,7 +136,7 @@ where
             message,
             default: None,
             placeholder: None,
-            help_message: None,
+            help_message: HelpMessage::default(),
             formatter: &|val| val.to_string(),
             default_value_formatter: &|val| val.to_string(),
             parser: &|a| a.parse::<T>().map_err(|_e| ()),
@@ -159,8 +159,14 @@ where
     }
 
     /// Sets the help message of the prompt.
-    pub fn with_help_message(mut self, message: &'a str) -> Self {
-        self.help_message = Some(message);
+    pub fn with_help_message(mut self, message: &str) -> Self {
+        self.help_message = message.into();
+        self
+    }
+
+    /// Sets the prompt to not display a help message.
+    pub fn without_help_message(mut self) -> Self {
+        self.help_message = HelpMessage::None;
         self
     }
 

@@ -26,7 +26,7 @@ pub trait CommonBackend {
     fn render_prompt_with_answer(&mut self, prompt: &str, answer: &str) -> Result<()>;
 
     fn render_error_message(&mut self, error: &ErrorMessage) -> Result<()>;
-    fn render_help_message(&mut self, help: &str) -> Result<()>;
+    fn render_help_message(&mut self, help: Option<&str>) -> Result<()>;
 }
 
 pub trait TextBackend: CommonBackend {
@@ -435,17 +435,22 @@ where
         Ok(())
     }
 
-    fn render_help_message(&mut self, help: &str) -> Result<()> {
-        self.terminal
-            .write_styled(&Styled::new("[").with_style_sheet(self.render_config.help_message))?;
+    fn render_help_message(&mut self, help_message: Option<&str>) -> Result<()> {
+        if let Some(help_message) = help_message {
+            self.terminal.write_styled(
+                &Styled::new("[").with_style_sheet(self.render_config.help_message),
+            )?;
 
-        self.terminal
-            .write_styled(&Styled::new(help).with_style_sheet(self.render_config.help_message))?;
+            self.terminal.write_styled(
+                &Styled::new(help_message).with_style_sheet(self.render_config.help_message),
+            )?;
 
-        self.terminal
-            .write_styled(&Styled::new("]").with_style_sheet(self.render_config.help_message))?;
+            self.terminal.write_styled(
+                &Styled::new("]").with_style_sheet(self.render_config.help_message),
+            )?;
 
-        self.new_line()?;
+            self.new_line()?;
+        }
 
         Ok(())
     }

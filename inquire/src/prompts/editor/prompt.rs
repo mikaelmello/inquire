@@ -6,7 +6,7 @@ use crate::{
     error::InquireResult,
     formatter::StringFormatter,
     prompts::prompt::{ActionResult, Prompt},
-    ui::EditorBackend,
+    ui::{EditorBackend, HelpMessage},
     validator::{ErrorMessage, StringValidator, Validation},
     Editor, InquireError,
 };
@@ -16,7 +16,7 @@ use super::{action::EditorPromptAction, config::EditorConfig};
 pub struct EditorPrompt<'a> {
     message: &'a str,
     config: EditorConfig<'a>,
-    help_message: Option<&'a str>,
+    help_message: HelpMessage,
     formatter: StringFormatter<'a>,
     validators: Vec<Box<dyn StringValidator>>,
     error: Option<ErrorMessage>,
@@ -144,9 +144,7 @@ where
 
         backend.render_prompt(prompt, editor_name)?;
 
-        if let Some(message) = self.help_message {
-            backend.render_help_message(message)?;
-        }
+        backend.render_help_message(self.help_message.as_str_opt(None))?;
 
         Ok(())
     }

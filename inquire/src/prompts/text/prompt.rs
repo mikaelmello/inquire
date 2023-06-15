@@ -7,7 +7,7 @@ use crate::{
     input::{Input, InputActionResult},
     list_option::ListOption,
     prompts::prompt::{ActionResult, Prompt},
-    ui::TextBackend,
+    ui::{HelpMessage, TextBackend},
     utils::paginate,
     validator::{ErrorMessage, StringValidator, Validation},
     Autocomplete, InquireError, Text,
@@ -19,7 +19,7 @@ pub struct TextPrompt<'a> {
     message: &'a str,
     config: TextConfig,
     default: Option<&'a str>,
-    help_message: Option<&'a str>,
+    help_message: HelpMessage,
     input: Input,
     formatter: StringFormatter<'a>,
     validators: Vec<Box<dyn StringValidator>>,
@@ -240,11 +240,13 @@ where
 
         backend.render_suggestions(page)?;
 
-        if let Some(message) = self.help_message {
-            backend.render_help_message(message)?;
-        } else if !choices.is_empty() {
-            backend.render_help_message(DEFAULT_HELP_MESSAGE_WITH_AC)?;
-        }
+        let default_help_message = if !choices.is_empty() {
+            Some(DEFAULT_HELP_MESSAGE_WITH_AC)
+        } else {
+            None
+        };
+
+        backend.render_help_message(self.help_message.as_str_opt(default_help_message))?;
 
         Ok(())
     }
