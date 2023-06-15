@@ -1,7 +1,9 @@
-[![Latest Version]][crates.io] ![Build status] ![Unsafe forbidden] ![Supported platforms] ![License]
+[![Latest Version]][crates.io] [![Docs]][docs.rs] ![Build status] ![Unsafe forbidden] ![Supported platforms] ![License]
 
 [crates.io]: https://crates.io/crates/inquire
 [latest version]: https://img.shields.io/crates/v/inquire.svg
+[docs]: https://img.shields.io/docsrs/inquire/latest?logo=docs.rs
+[docs.rs]: https://docs.rs/inquire
 [build status]: https://github.com/mikaelmello/inquire/actions/workflows/build.yml/badge.svg
 [unsafe forbidden]: https://img.shields.io/badge/unsafe-forbidden-success.svg
 [supported platforms]: https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-success
