@@ -10,6 +10,7 @@
 - Allow lifetime customization of RenderConfig. [#101](https://github.com/mikaelmello/inquire/pull/101). Thanks to @arturfast for the suggestion [#95](https://github.com/mikaelmello/inquire/issues/95).
 - Add new option on MultiSelect prompts to set all options to be selected by default. Thanks to @conikeec for the suggestion (#151)!
 - Add strict clippy lints to improve code consistency and readability
+- Expand workflow clippy task to lint all-features in workspace
 - Add docs badge to readme
 
 ### Fixes
