@@ -284,3 +284,9 @@ impl<'a> Text<'a> {
         TextPrompt::from(self).prompt(backend)
     }
 }
+
+impl<'a> From<&'a str> for Text<'a> {
+    fn from(val: &'a str) -> Self {
+        Text::new(val)
+    }
+}

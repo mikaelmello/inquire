@@ -64,12 +64,6 @@ impl<'a> From<Text<'a>> for TextPrompt<'a> {
     }
 }
 
-impl<'a> From<&'a str> for Text<'a> {
-    fn from(val: &'a str) -> Self {
-        Text::new(val)
-    }
-}
-
 impl<'a> TextPrompt<'a> {
     fn update_suggestions(&mut self) -> InquireResult<()> {
         if let Some(autocompleter) = &mut self.autocompleter {

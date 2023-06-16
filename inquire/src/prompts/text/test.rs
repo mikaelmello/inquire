@@ -114,3 +114,15 @@ text_test!(
         _ => Ok(Validation::Invalid(ErrorMessage::Default)),
     })
 );
+
+text_test!(
+    text_from_str_is_implemented,
+    {
+        let mut events = vec![];
+        events.append(&mut text_to_events!("12345").collect());
+        events.push(KeyCode::Enter);
+        events
+    },
+    "12345",
+    Text::from("12345")
+);
