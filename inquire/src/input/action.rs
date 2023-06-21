@@ -21,8 +21,7 @@ pub enum InputAction {
 impl InputAction {
     /// Generates a list of `Write(char)` actions with the contents
     /// of a source string.
-    #[allow(unused)]
-    fn gen_write_from_str(value: &str) -> Vec<InputAction> {
+    pub fn gen_write_from_str(value: &str) -> Vec<InputAction> {
         value.chars().map(InputAction::Write).collect()
     }
 }
