@@ -14,13 +14,11 @@ use crate::{
     formatter::{StringFormatter, DEFAULT_STRING_FORMATTER},
     prompts::prompt::Prompt,
     terminal::get_default_terminal,
-    ui::{Backend, RenderConfig, TextBackend},
+    ui::{Backend, HelpMessage, RenderConfig, TextBackend},
     validator::StringValidator,
 };
 
 use self::prompt::TextPrompt;
-
-const DEFAULT_HELP_MESSAGE_WITH_AC: &str = "↑↓ to move, tab to autocomplete, enter to submit";
 
 /// Standard text prompt that returns the user string input.
 ///
@@ -92,7 +90,7 @@ pub struct Text<'a> {
     pub placeholder: Option<&'a str>,
 
     /// Help message to be presented to the user.
-    pub help_message: Option<&'a str>,
+    pub help_message: HelpMessage,
 
     /// Function that formats the user input and presents it to the user as the final rendering of the prompt.
     pub formatter: StringFormatter<'a>,
@@ -132,9 +130,6 @@ impl<'a> Text<'a> {
     /// Default validators added to the [Text] prompt, none.
     pub const DEFAULT_VALIDATORS: Vec<Box<dyn StringValidator>> = vec![];
 
-    /// Default help message.
-    pub const DEFAULT_HELP_MESSAGE: Option<&'a str> = None;
-
     /// Creates a [Text] with the provided message and default options.
     pub fn new(message: &'a str) -> Self {
         Self {
@@ -142,7 +137,7 @@ impl<'a> Text<'a> {
             placeholder: None,
             initial_value: None,
             default: None,
-            help_message: Self::DEFAULT_HELP_MESSAGE,
+            help_message: HelpMessage::default(),
             validators: Self::DEFAULT_VALIDATORS,
             formatter: Self::DEFAULT_FORMATTER,
             page_size: Self::DEFAULT_PAGE_SIZE,
@@ -152,8 +147,14 @@ impl<'a> Text<'a> {
     }
 
     /// Sets the help message of the prompt.
-    pub fn with_help_message(mut self, message: &'a str) -> Self {
-        self.help_message = Some(message);
+    pub fn with_help_message(mut self, message: &str) -> Self {
+        self.help_message = message.into();
+        self
+    }
+
+    /// Sets the prompt to not display a help message.
+    pub fn without_help_message(mut self) -> Self {
+        self.help_message = HelpMessage::None;
         self
     }
 
@@ -281,5 +282,11 @@ impl<'a> Text<'a> {
         backend: &mut B,
     ) -> InquireResult<String> {
         TextPrompt::from(self).prompt(backend)
+    }
+}
+
+impl<'a> From<&'a str> for Text<'a> {
+    fn from(val: &'a str) -> Self {
+        Text::new(val)
     }
 }

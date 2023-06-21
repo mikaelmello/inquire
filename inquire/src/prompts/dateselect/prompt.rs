@@ -21,7 +21,7 @@ pub struct DateSelectPrompt<'a> {
     message: &'a str,
     config: DateSelectConfig,
     current_date: NaiveDate,
-    help_message: Option<&'a str>,
+    help_message: Option<String>,
     formatter: DateFormatter<'a>,
     validators: Vec<Box<dyn DateValidator>>,
     error: Option<ErrorMessage>,
@@ -29,6 +29,7 @@ pub struct DateSelectPrompt<'a> {
 
 impl<'a> DateSelectPrompt<'a> {
     pub fn new(so: DateSelect<'a>) -> InquireResult<Self> {
+        let config = (&so).into();
         if let Some(min_date) = so.min_date {
             if min_date > so.starting_date {
                 return Err(InquireError::InvalidConfiguration(
@@ -44,11 +45,16 @@ impl<'a> DateSelectPrompt<'a> {
             }
         }
 
+        let default_help_message =
+            Some("arrows to move, with ctrl to move months and years, enter to select");
+        let help_message = so
+            .help_message
+            .into_or_default(default_help_message.map(|s| s.into()));
         Ok(Self {
             message: so.message,
             current_date: so.starting_date,
-            config: (&so).into(),
-            help_message: so.help_message,
+            config,
+            help_message,
             formatter: so.formatter,
             validators: so.validators,
             error: None,
@@ -116,12 +122,17 @@ impl<'a> DateSelectPrompt<'a> {
     }
 }
 
-impl<'a, B> Prompt<B, DateSelectConfig, DateSelectPromptAction, NaiveDate> for DateSelectPrompt<'a>
+impl<'a, B> Prompt<'a, B, DateSelectConfig, DateSelectPromptAction, NaiveDate>
+    for DateSelectPrompt<'a>
 where
     B: DateSelectBackend,
 {
     fn message(&self) -> &str {
         self.message
+    }
+
+    fn help_message(&self) -> Option<&str> {
+        self.help_message.as_deref()
     }
 
     fn format_answer(&self, answer: &NaiveDate) -> String {
@@ -177,10 +188,6 @@ where
             self.config.min_date,
             self.config.max_date,
         )?;
-
-        if let Some(help_message) = self.help_message {
-            backend.render_help_message(help_message)?;
-        }
 
         Ok(())
     }

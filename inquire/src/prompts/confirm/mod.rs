@@ -8,7 +8,7 @@ use crate::{
     formatter::{BoolFormatter, DEFAULT_BOOL_FORMATTER},
     parser::{BoolParser, DEFAULT_BOOL_PARSER},
     terminal::{get_default_terminal, Terminal},
-    ui::{Backend, RenderConfig},
+    ui::{Backend, HelpMessage, RenderConfig},
     CustomType,
 };
 
@@ -68,7 +68,7 @@ pub struct Confirm<'a> {
     pub placeholder: Option<&'a str>,
 
     /// Help message to be presented to the user.
-    pub help_message: Option<&'a str>,
+    pub help_message: HelpMessage,
 
     /// Function that formats the user input and presents it to the user as the final rendering of the prompt.
     pub formatter: BoolFormatter<'a>,
@@ -117,7 +117,7 @@ impl<'a> Confirm<'a> {
             message,
             default: None,
             placeholder: None,
-            help_message: None,
+            help_message: HelpMessage::default(),
             formatter: Self::DEFAULT_FORMATTER,
             parser: Self::DEFAULT_PARSER,
             default_value_formatter: Self::DEFAULT_DEFAULT_VALUE_FORMATTER,
@@ -139,8 +139,14 @@ impl<'a> Confirm<'a> {
     }
 
     /// Sets the help message of the prompt.
-    pub fn with_help_message(mut self, message: &'a str) -> Self {
-        self.help_message = Some(message);
+    pub fn with_help_message(mut self, message: &str) -> Self {
+        self.help_message = message.into();
+        self
+    }
+
+    /// Sets the prompt to not display a help message.
+    pub fn without_help_message(mut self) -> Self {
+        self.help_message = HelpMessage::None;
         self
     }
 

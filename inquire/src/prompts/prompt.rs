@@ -27,7 +27,7 @@ impl From<InputActionResult> for ActionResult {
 }
 
 /// Shared behavior among all different prompt types.
-pub trait Prompt<Backend, Config, IAction, ReturnType>
+pub trait Prompt<'a, Backend, Config, IAction, ReturnType>
 where
     Backend: CommonBackend,
     IAction: InnerAction<Config>,
@@ -51,6 +51,10 @@ where
     ///
     /// * `answer` - Answer returned by the prompt.
     fn format_answer(&self, answer: &ReturnType) -> String;
+
+    /// Hook called to retrieve the help message to display at the end
+    /// of the prompt.
+    fn help_message(&self) -> Option<&str>;
 
     /// Hook called when a prompt is first started, before the first
     /// draw happens.
@@ -106,6 +110,7 @@ where
             if let ActionResult::NeedsRedraw = last_handle {
                 backend.frame_setup()?;
                 self.render(backend)?;
+                backend.render_help_message(self.help_message())?;
                 backend.frame_finish()?;
                 last_handle = ActionResult::Clean;
             }

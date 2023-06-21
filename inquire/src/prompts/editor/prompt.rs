@@ -16,7 +16,7 @@ use super::{action::EditorPromptAction, config::EditorConfig};
 pub struct EditorPrompt<'a> {
     message: &'a str,
     config: EditorConfig<'a>,
-    help_message: Option<&'a str>,
+    help_message: Option<String>,
     formatter: StringFormatter<'a>,
     validators: Vec<Box<dyn StringValidator>>,
     error: Option<ErrorMessage>,
@@ -34,7 +34,7 @@ impl<'a> EditorPrompt<'a> {
         Ok(Self {
             message: so.message,
             config: (&so).into(),
-            help_message: so.help_message,
+            help_message: so.help_message.into_or_default(None),
             formatter: so.formatter,
             validators: so.validators,
             error: None,
@@ -92,12 +92,16 @@ impl<'a> EditorPrompt<'a> {
     }
 }
 
-impl<'a, B> Prompt<B, EditorConfig<'a>, EditorPromptAction, String> for EditorPrompt<'a>
+impl<'a, B> Prompt<'a, B, EditorConfig<'a>, EditorPromptAction, String> for EditorPrompt<'a>
 where
     B: EditorBackend,
 {
     fn message(&self) -> &str {
         self.message
+    }
+
+    fn help_message(&self) -> Option<&str> {
+        self.help_message.as_deref()
     }
 
     fn config(&self) -> &EditorConfig<'a> {
@@ -143,10 +147,6 @@ where
             .unwrap_or("editor");
 
         backend.render_prompt(prompt, editor_name)?;
-
-        if let Some(message) = self.help_message {
-            backend.render_help_message(message)?;
-        }
 
         Ok(())
     }

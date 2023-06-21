@@ -19,7 +19,7 @@ fn main() {
         message: "Are you happy?",
         default: Some(false),
         placeholder: Some("si|no"),
-        help_message: Some("It's alright if you're not"),
+        help_message: "It's alright if you're not".into(),
         formatter: &|ans| match ans {
             true => "si".to_owned(),
             false => "no".to_owned(),

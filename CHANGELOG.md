@@ -10,6 +10,7 @@
 - **Breaking**. Allow lifetime customization of RenderConfig. [#101](https://github.com/mikaelmello/inquire/pull/101). Thanks to @arturfast for the suggestion [#95](https://github.com/mikaelmello/inquire/issues/95).
 - Add new option on MultiSelect prompts to set all options to be selected by default. Thanks to @conikeec for the suggestion (#151)!
 - **Breaking**. Improved user experience on Password prompts. When there is a validation error, the input is cleared if the password is rendered using the `Hidden` display mode, matching the user expectation of having to write the password from scratch again. Thanks to @CM-IV for the questions on #149!
+- **Breaking**. Help messages are now defined through a new type, `HelpMessage`, containing three variants: `None`, `Default` and `Custom(String)`. This allows better default help messages tailored to the customizations of each prompt, e.g. hint `esc` to leave the prompt only when applicable. Thanks to @dariocurr for the request on #143! #161.
 - Add strict clippy lints to improve code consistency and readability.
 - Expand workflow clippy task to lint all-features in workspace.
 - Add docs badge to readme.

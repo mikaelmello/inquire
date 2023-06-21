@@ -17,7 +17,7 @@ use crate::{
     prompts::prompt::Prompt,
     terminal::get_default_terminal,
     type_aliases::Filter,
-    ui::{Backend, MultiSelectBackend, RenderConfig},
+    ui::{Backend, HelpMessage, MultiSelectBackend, RenderConfig},
     validator::MultiOptionValidator,
 };
 
@@ -65,7 +65,7 @@ pub struct MultiSelect<'a, T> {
     pub default: Option<Vec<usize>>,
 
     /// Help message to be presented to the user.
-    pub help_message: Option<&'a str>,
+    pub help_message: HelpMessage,
 
     /// Page size of the options displayed to the user.
     pub page_size: usize,
@@ -175,17 +175,13 @@ where
     /// Default behavior of keeping or cleaning the current filter value.
     pub const DEFAULT_KEEP_FILTER: bool = true;
 
-    /// Default help message.
-    pub const DEFAULT_HELP_MESSAGE: Option<&'a str> =
-        Some("↑↓ to move, space to select one, → to all, ← to none, type to filter");
-
     /// Creates a [MultiSelect] with the provided message and options, along with default configuration values.
     pub fn new(message: &'a str, options: Vec<T>) -> Self {
         Self {
             message,
             options,
             default: None,
-            help_message: Self::DEFAULT_HELP_MESSAGE,
+            help_message: HelpMessage::default(),
             page_size: Self::DEFAULT_PAGE_SIZE,
             vim_mode: Self::DEFAULT_VIM_MODE,
             starting_cursor: Self::DEFAULT_STARTING_CURSOR,
@@ -198,14 +194,14 @@ where
     }
 
     /// Sets the help message of the prompt.
-    pub fn with_help_message(mut self, message: &'a str) -> Self {
-        self.help_message = Some(message);
+    pub fn with_help_message(mut self, message: &str) -> Self {
+        self.help_message = message.into();
         self
     }
 
-    /// Removes the set help message.
+    /// Sets the prompt to not display a help message.
     pub fn without_help_message(mut self) -> Self {
-        self.help_message = None;
+        self.help_message = HelpMessage::None;
         self
     }
 

@@ -20,7 +20,7 @@ pub struct SelectPrompt<'a, T> {
     options: Vec<T>,
     string_options: Vec<String>,
     filtered_options: Vec<usize>,
-    help_message: Option<&'a str>,
+    help_message: Option<String>,
     cursor_index: usize,
     input: Input,
     filter: Filter<'a, T>,
@@ -32,6 +32,7 @@ where
     T: Display,
 {
     pub fn new(so: Select<'a, T>) -> InquireResult<Self> {
+        let config = (&so).into();
         if so.options.is_empty() {
             return Err(InquireError::InvalidConfiguration(
                 "Available options can not be empty".into(),
@@ -49,13 +50,18 @@ where
         let string_options = so.options.iter().map(T::to_string).collect();
         let filtered_options = (0..so.options.len()).collect();
 
+        let default_help_message = Some("↑↓ to move, enter to select, type to filter");
+        let help_message = so
+            .help_message
+            .into_or_default(default_help_message.map(|s| s.into()));
+
         Ok(Self {
             message: so.message,
-            config: (&so).into(),
+            config,
             options: so.options,
             string_options,
             filtered_options,
-            help_message: so.help_message,
+            help_message,
             cursor_index: so.starting_cursor,
             input: Input::new(),
             filter: so.filter,
@@ -128,13 +134,18 @@ where
     }
 }
 
-impl<'a, B, T> Prompt<B, SelectConfig, SelectPromptAction, ListOption<T>> for SelectPrompt<'a, T>
+impl<'a, B, T> Prompt<'a, B, SelectConfig, SelectPromptAction, ListOption<T>>
+    for SelectPrompt<'a, T>
 where
     B: SelectBackend,
     T: Display,
 {
     fn message(&self) -> &str {
         self.message
+    }
+
+    fn help_message(&self) -> Option<&str> {
+        self.help_message.as_deref()
     }
 
     fn config(&self) -> &SelectConfig {
@@ -196,10 +207,6 @@ where
         let page = paginate(self.config.page_size, &choices, Some(self.cursor_index));
 
         backend.render_options(page)?;
-
-        if let Some(help_message) = self.help_message {
-            backend.render_help_message(help_message)?;
-        }
 
         Ok(())
     }

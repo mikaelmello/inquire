@@ -15,7 +15,7 @@ pub struct CustomTypePrompt<'a, T> {
     message: &'a str,
     config: CustomTypeConfig,
     error: Option<ErrorMessage>,
-    help_message: Option<&'a str>,
+    help_message: Option<String>,
     default: Option<T>,
     input: Input,
     formatter: CustomTypeFormatter<'a, T>,
@@ -35,7 +35,7 @@ where
             config: (&co).into(),
             error: None,
             default: co.default,
-            help_message: co.help_message,
+            help_message: co.help_message.into_or_default(None),
             formatter: co.formatter,
             default_value_formatter: co.default_value_formatter,
             validators: co.validators,
@@ -78,13 +78,18 @@ where
     }
 }
 
-impl<'a, B, T> Prompt<B, CustomTypeConfig, CustomTypePromptAction, T> for CustomTypePrompt<'a, T>
+impl<'a, B, T> Prompt<'a, B, CustomTypeConfig, CustomTypePromptAction, T>
+    for CustomTypePrompt<'a, T>
 where
     B: CustomTypeBackend,
     T: Clone,
 {
     fn message(&self) -> &str {
         self.message
+    }
+
+    fn help_message(&self) -> Option<&str> {
+        self.help_message.as_deref()
     }
 
     fn config(&self) -> &CustomTypeConfig {
@@ -137,10 +142,6 @@ where
             .map(|val| default_value_formatter(val.clone()));
 
         backend.render_prompt(prompt, default_message.as_deref(), &self.input)?;
-
-        if let Some(message) = self.help_message {
-            backend.render_help_message(message)?;
-        }
 
         Ok(())
     }

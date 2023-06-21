@@ -20,7 +20,7 @@ pub struct MultiSelectPrompt<'a, T> {
     config: MultiSelectConfig,
     options: Vec<T>,
     string_options: Vec<String>,
-    help_message: Option<&'a str>,
+    help_message: Option<String>,
     cursor_index: usize,
     checked: BTreeSet<usize>,
     input: Input,
@@ -36,6 +36,7 @@ where
     T: Display,
 {
     pub fn new(mso: MultiSelect<'a, T>) -> InquireResult<Self> {
+        let config = (&mso).into();
         if mso.options.is_empty() {
             return Err(InquireError::InvalidConfiguration(
                 "Available options can not be empty".into(),
@@ -66,13 +67,18 @@ where
             })
             .unwrap_or_else(BTreeSet::new);
 
+        let default_help_message =
+            Some("↑↓ to move, space to select one, → to all, ← to none, type to filter");
+        let help_message = mso
+            .help_message
+            .into_or_default(default_help_message.map(|s| s.into()));
         Ok(Self {
             message: mso.message,
-            config: (&mso).into(),
+            config,
             options: mso.options,
             string_options,
             filtered_options,
-            help_message: mso.help_message,
+            help_message,
             cursor_index: mso.starting_cursor,
             input: Input::new(),
             filter: mso.filter,
@@ -189,7 +195,7 @@ where
     }
 }
 
-impl<'a, B, T> Prompt<B, MultiSelectConfig, MultiSelectPromptAction, Vec<ListOption<T>>>
+impl<'a, B, T> Prompt<'a, B, MultiSelectConfig, MultiSelectPromptAction, Vec<ListOption<T>>>
     for MultiSelectPrompt<'a, T>
 where
     B: MultiSelectBackend,
@@ -197,6 +203,10 @@ where
 {
     fn message(&self) -> &str {
         self.message
+    }
+
+    fn help_message(&self) -> Option<&str> {
+        self.help_message.as_deref()
     }
 
     fn config(&self) -> &MultiSelectConfig {
@@ -290,10 +300,6 @@ where
         let page = paginate(self.config.page_size, &choices, Some(self.cursor_index));
 
         backend.render_options(page, &self.checked)?;
-
-        if let Some(help_message) = self.help_message {
-            backend.render_help_message(help_message)?;
-        }
 
         Ok(())
     }

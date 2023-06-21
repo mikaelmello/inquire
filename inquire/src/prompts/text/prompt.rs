@@ -1,7 +1,7 @@
 use std::cmp::min;
 
 use crate::{
-    autocompletion::{NoAutoCompletion, Replacement},
+    autocompletion::Replacement,
     error::InquireResult,
     formatter::StringFormatter,
     input::{Input, InputActionResult},
@@ -13,24 +13,25 @@ use crate::{
     Autocomplete, InquireError, Text,
 };
 
-use super::{action::TextPromptAction, config::TextConfig, DEFAULT_HELP_MESSAGE_WITH_AC};
+use super::{action::TextPromptAction, config::TextConfig};
 
 pub struct TextPrompt<'a> {
     message: &'a str,
     config: TextConfig,
     default: Option<&'a str>,
-    help_message: Option<&'a str>,
+    help_message: Option<String>,
     input: Input,
     formatter: StringFormatter<'a>,
     validators: Vec<Box<dyn StringValidator>>,
     error: Option<ErrorMessage>,
-    autocompleter: Box<dyn Autocomplete>,
+    autocompleter: Option<Box<dyn Autocomplete>>,
     suggested_options: Vec<String>,
     suggestion_cursor_index: Option<usize>,
 }
 
 impl<'a> From<Text<'a>> for TextPrompt<'a> {
     fn from(so: Text<'a>) -> Self {
+        let config = (&so).into();
         let input = Input::new_with(so.initial_value.unwrap_or_default());
         let input = if let Some(placeholder) = so.placeholder {
             input.with_placeholder(placeholder)
@@ -38,15 +39,22 @@ impl<'a> From<Text<'a>> for TextPrompt<'a> {
             input
         };
 
+        let default_help_message = if so.autocompleter.is_some() {
+            Some("↑↓ to move, tab to autocomplete, enter to submit")
+        } else {
+            None
+        };
+        let help_message = so
+            .help_message
+            .into_or_default(default_help_message.map(|s| s.into()));
+
         Self {
             message: so.message,
-            config: (&so).into(),
+            config,
             default: so.default,
-            help_message: so.help_message,
+            help_message,
             formatter: so.formatter,
-            autocompleter: so
-                .autocompleter
-                .unwrap_or_else(|| Box::<NoAutoCompletion>::default()),
+            autocompleter: so.autocompleter,
             input,
             error: None,
             suggestion_cursor_index: None,
@@ -56,16 +64,12 @@ impl<'a> From<Text<'a>> for TextPrompt<'a> {
     }
 }
 
-impl<'a> From<&'a str> for Text<'a> {
-    fn from(val: &'a str) -> Self {
-        Text::new(val)
-    }
-}
-
 impl<'a> TextPrompt<'a> {
     fn update_suggestions(&mut self) -> InquireResult<()> {
-        self.suggested_options = self.autocompleter.get_suggestions(self.input.content())?;
-        self.suggestion_cursor_index = None;
+        if let Some(autocompleter) = &mut self.autocompleter {
+            self.suggested_options = autocompleter.get_suggestions(self.input.content())?;
+            self.suggestion_cursor_index = None;
+        }
 
         Ok(())
     }
@@ -119,15 +123,16 @@ impl<'a> TextPrompt<'a> {
 
     fn use_current_suggestion(&mut self) -> InquireResult<ActionResult> {
         let suggestion = self.get_highlighted_suggestion().map(|s| s.to_owned());
-        match self
-            .autocompleter
-            .get_completion(self.input.content(), suggestion)?
-        {
-            Replacement::Some(value) => {
-                self.input = Input::new_with(value);
-                Ok(ActionResult::NeedsRedraw)
+        if let Some(autocompleter) = &mut self.autocompleter {
+            match autocompleter.get_completion(self.input.content(), suggestion)? {
+                Replacement::Some(value) => {
+                    self.input = Input::new_with(value);
+                    Ok(ActionResult::NeedsRedraw)
+                }
+                Replacement::None => Ok(ActionResult::Clean),
             }
-            Replacement::None => Ok(ActionResult::Clean),
+        } else {
+            Ok(ActionResult::Clean)
         }
     }
 
@@ -161,12 +166,16 @@ impl<'a> TextPrompt<'a> {
     }
 }
 
-impl<'a, B> Prompt<B, TextConfig, TextPromptAction, String> for TextPrompt<'a>
+impl<'a, B> Prompt<'a, B, TextConfig, TextPromptAction, String> for TextPrompt<'a>
 where
     B: TextBackend,
 {
     fn message(&self) -> &str {
         self.message
+    }
+
+    fn help_message(&self) -> Option<&str> {
+        self.help_message.as_deref()
     }
 
     fn config(&self) -> &TextConfig {
@@ -239,12 +248,6 @@ where
         );
 
         backend.render_suggestions(page)?;
-
-        if let Some(message) = self.help_message {
-            backend.render_help_message(message)?;
-        } else if !choices.is_empty() {
-            backend.render_help_message(DEFAULT_HELP_MESSAGE_WITH_AC)?;
-        }
 
         Ok(())
     }

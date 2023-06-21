@@ -25,7 +25,7 @@ struct PasswordConfirmation<'a> {
 pub struct PasswordPrompt<'a> {
     message: &'a str,
     config: PasswordConfig,
-    help_message: Option<&'a str>,
+    help_message: Option<String>,
     input: Input,
     current_mode: PasswordDisplayMode,
     confirmation: Option<PasswordConfirmation<'a>>, // if `None`, confirmation is disabled, `Some(_)` confirmation is enabled
@@ -51,7 +51,7 @@ impl<'a> From<Password<'a>> for PasswordPrompt<'a> {
         Self {
             message: so.message,
             config: (&so).into(),
-            help_message: so.help_message,
+            help_message: so.help_message.into_or_default(None),
             current_mode: so.display_mode,
             confirmation,
             confirmation_stage: false,
@@ -136,12 +136,16 @@ impl<'a> PasswordPrompt<'a> {
     }
 }
 
-impl<'a, B> Prompt<B, PasswordConfig, PasswordPromptAction, String> for PasswordPrompt<'a>
+impl<'a, B> Prompt<'a, B, PasswordConfig, PasswordPromptAction, String> for PasswordPrompt<'a>
 where
     B: PasswordBackend,
 {
     fn message(&self) -> &str {
         self.message
+    }
+
+    fn help_message(&self) -> Option<&str> {
+        self.help_message.as_deref()
     }
 
     fn config(&self) -> &PasswordConfig {
@@ -244,10 +248,6 @@ where
                     _ => {}
                 }
             }
-        }
-
-        if let Some(message) = self.help_message {
-            backend.render_help_message(message)?;
         }
 
         Ok(())

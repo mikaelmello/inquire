@@ -13,7 +13,7 @@ use crate::{
     formatter::StringFormatter,
     prompts::prompt::Prompt,
     terminal::get_default_terminal,
-    ui::{Backend, PasswordBackend, RenderConfig},
+    ui::{Backend, HelpMessage, PasswordBackend, RenderConfig},
     validator::StringValidator,
 };
 
@@ -96,7 +96,7 @@ pub struct Password<'a> {
     pub custom_confirmation_error_message: Option<&'a str>,
 
     /// Help message to be presented to the user.
-    pub help_message: Option<&'a str>,
+    pub help_message: HelpMessage,
 
     /// Function that formats the user input and presents it to the user as the final rendering of the prompt.
     pub formatter: StringFormatter<'a>,
@@ -136,9 +136,6 @@ impl<'a> Password<'a> {
     /// Default validators added to the [Password] prompt, none.
     pub const DEFAULT_VALIDATORS: Vec<Box<dyn StringValidator>> = vec![];
 
-    /// Default help message.
-    pub const DEFAULT_HELP_MESSAGE: Option<&'a str> = None;
-
     /// Default value for the allow display toggle variable.
     pub const DEFAULT_ENABLE_DISPLAY_TOGGLE: bool = false;
 
@@ -157,7 +154,7 @@ impl<'a> Password<'a> {
             enable_confirmation: Self::DEFAULT_ENABLE_CONFIRMATION,
             enable_display_toggle: Self::DEFAULT_ENABLE_DISPLAY_TOGGLE,
             display_mode: Self::DEFAULT_DISPLAY_MODE,
-            help_message: Self::DEFAULT_HELP_MESSAGE,
+            help_message: HelpMessage::default(),
             formatter: Self::DEFAULT_FORMATTER,
             validators: Self::DEFAULT_VALIDATORS,
             render_config: get_configuration(),
@@ -165,8 +162,14 @@ impl<'a> Password<'a> {
     }
 
     /// Sets the help message of the prompt.
-    pub fn with_help_message(mut self, message: &'a str) -> Self {
-        self.help_message = Some(message);
+    pub fn with_help_message(mut self, message: &str) -> Self {
+        self.help_message = message.into();
+        self
+    }
+
+    /// Sets the prompt to not display a help message.
+    pub fn without_help_message(mut self) -> Self {
+        self.help_message = HelpMessage::None;
         self
     }
 

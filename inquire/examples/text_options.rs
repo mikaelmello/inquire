@@ -15,7 +15,7 @@ fn main() {
         initial_value: None,
         default: None,
         placeholder: Some("Good"),
-        help_message: None,
+        help_message: None.into(),
         formatter: Text::DEFAULT_FORMATTER,
         validators: Vec::new(),
         page_size: Text::DEFAULT_PAGE_SIZE,
