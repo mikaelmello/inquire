@@ -8,7 +8,7 @@ use crate::{
     formatter::{BoolFormatter, DEFAULT_BOOL_FORMATTER},
     parser::{BoolParser, DEFAULT_BOOL_PARSER},
     terminal::get_default_terminal,
-    ui::{Backend, CustomTypeBackend, RenderConfig},
+    ui::{Backend, CustomTypePromptRenderer, InputReader, RenderConfig},
     Action, CustomType, CustomTypePromptAction,
 };
 
@@ -206,7 +206,9 @@ impl<'a> Confirm<'a> {
         self.prompt_with_backend(&mut backend)
     }
 
-    pub(crate) fn prompt_with_backend<B: CustomTypeBackend<Action<CustomTypePromptAction>>>(
+    pub(crate) fn prompt_with_backend<
+        B: CustomTypePromptRenderer + InputReader<Action<CustomTypePromptAction>>,
+    >(
         self,
         backend: &mut B,
     ) -> InquireResult<bool> {

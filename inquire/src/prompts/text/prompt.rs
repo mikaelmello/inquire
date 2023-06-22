@@ -7,7 +7,7 @@ use crate::{
     input::{Input, InputActionResult},
     list_option::ListOption,
     prompts::prompt::{ActionResult, Prompt},
-    ui::TextBackend,
+    ui::{InputReader, TextPromptRenderer},
     utils::paginate,
     validator::{ErrorMessage, StringValidator, Validation},
     Action, Autocomplete, InquireError, Text,
@@ -163,7 +163,7 @@ impl<'a> TextPrompt<'a> {
 
 impl<'a, B> Prompt<B, TextConfig, TextPromptAction, String> for TextPrompt<'a>
 where
-    B: TextBackend<Action<TextPromptAction>>,
+    B: TextPromptRenderer + InputReader<Action<TextPromptAction>>,
 {
     fn message(&self) -> &str {
         self.message

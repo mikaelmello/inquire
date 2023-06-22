@@ -1,6 +1,11 @@
 //! Definitions of common behavior shared amongst all different prompt types.
 
-use crate::{error::InquireResult, input::InputActionResult, ui::CommonBackend, InquireError};
+use crate::{
+    error::InquireResult,
+    input::InputActionResult,
+    ui::{InputReader, PromptRenderer},
+    InquireError,
+};
 
 use super::action::{Action, InnerAction};
 
@@ -29,7 +34,7 @@ impl From<InputActionResult> for ActionResult {
 /// Shared behavior among all different prompt types.
 pub trait Prompt<Backend, Config, IAction, ReturnType>
 where
-    Backend: CommonBackend<Action<IAction>>,
+    Backend: PromptRenderer + InputReader<Action<IAction>>,
     IAction: InnerAction<Config>,
     Self: Sized,
 {
@@ -110,11 +115,7 @@ where
                 last_handle = ActionResult::Clean;
             }
 
-            let (key, has, action) = backend.next_action()?;
-            if !has {
-                panic!("Backend returned no action");
-            }
-            let action = action.or_else(|| Action::from_key(key, self.config()));
+            let action = backend.next_action()?;
 
             if let Some(action) = action {
                 last_handle = match action {

@@ -10,7 +10,7 @@ use crate::{
     error::InquireResult,
     formatter::DateFormatter,
     prompts::prompt::{ActionResult, Prompt},
-    ui::date::DateSelectBackend,
+    ui::{DateSelectRenderer, InputReader},
     validator::{DateValidator, ErrorMessage, Validation},
     Action, DateSelect, InquireError,
 };
@@ -118,7 +118,7 @@ impl<'a> DateSelectPrompt<'a> {
 
 impl<'a, B> Prompt<B, DateSelectConfig, DateSelectAction, NaiveDate> for DateSelectPrompt<'a>
 where
-    B: DateSelectBackend<Action<DateSelectAction>>,
+    B: DateSelectRenderer + InputReader<Action<DateSelectAction>>,
 {
     fn message(&self) -> &str {
         self.message

@@ -1,4 +1,4 @@
-use crate::{ansi::AnsiStrippable, ActionMapper};
+use crate::{ansi::AnsiStrippable, error::InquireResult, ActionMapper, InquireError};
 use std::{collections::BTreeSet, fmt::Display, io::Result};
 
 use unicode_width::UnicodeWidthChar;
@@ -7,68 +7,15 @@ use crate::{
     input::Input,
     list_option::ListOption,
     terminal::{Terminal, TerminalSize},
-    ui::{IndexPrefix, Key, RenderConfig, Styled},
+    ui::{IndexPrefix, RenderConfig, Styled},
     utils::{int_log10, Page},
     validator::ErrorMessage,
 };
 
-pub trait CommonBackend<A> {
-    fn read_key(&mut self) -> Result<Key>;
-    fn next_action(&mut self) -> Result<(Key, bool, Option<A>)>;
-
-    fn frame_setup(&mut self) -> Result<()>;
-    fn frame_finish(&mut self) -> Result<()>;
-
-    fn render_canceled_prompt(&mut self, prompt: &str) -> Result<()>;
-    fn render_prompt_with_answer(&mut self, prompt: &str, answer: &str) -> Result<()>;
-
-    fn render_error_message(&mut self, error: &ErrorMessage) -> Result<()>;
-    fn render_help_message(&mut self, help: &str) -> Result<()>;
-}
-
-pub trait TextBackend<A>: CommonBackend<A> {
-    fn render_prompt(
-        &mut self,
-        prompt: &str,
-        default: Option<&str>,
-        cur_input: &Input,
-    ) -> Result<()>;
-    fn render_suggestions<D: Display>(&mut self, page: Page<'_, ListOption<D>>) -> Result<()>;
-}
-
-#[cfg(feature = "editor")]
-pub trait EditorBackend<A>: CommonBackend<A> {
-    fn render_prompt(&mut self, prompt: &str, editor_command: &str) -> Result<()>;
-}
-
-pub trait SelectBackend<A>: CommonBackend<A> {
-    fn render_select_prompt(&mut self, prompt: &str, cur_input: &Input) -> Result<()>;
-    fn render_options<D: Display>(&mut self, page: Page<'_, ListOption<D>>) -> Result<()>;
-}
-
-pub trait MultiSelectBackend<A>: CommonBackend<A> {
-    fn render_multiselect_prompt(&mut self, prompt: &str, cur_input: &Input) -> Result<()>;
-    fn render_options<D: Display>(
-        &mut self,
-        page: Page<'_, ListOption<D>>,
-        checked: &BTreeSet<usize>,
-    ) -> Result<()>;
-}
-
-pub trait CustomTypeBackend<A>: CommonBackend<A> {
-    fn render_prompt(
-        &mut self,
-        prompt: &str,
-        default: Option<&str>,
-        cur_input: &Input,
-    ) -> Result<()>;
-}
-
-pub trait PasswordBackend<A>: CommonBackend<A> {
-    fn render_prompt(&mut self, prompt: &str) -> Result<()>;
-    fn render_prompt_with_masked_input(&mut self, prompt: &str, cur_input: &Input) -> Result<()>;
-    fn render_prompt_with_full_input(&mut self, prompt: &str, cur_input: &Input) -> Result<()>;
-}
+use super::{
+    CustomTypePromptRenderer, InputReader, MultiSelectRenderer, PasswordPromptRenderer,
+    PromptRenderer, SelectRenderer, TextPromptRenderer,
+};
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct Position {
@@ -380,7 +327,7 @@ where
     }
 }
 
-impl<'a, A, T> CommonBackend<A> for Backend<'a, A, T>
+impl<'a, A, T> PromptRenderer for Backend<'a, A, T>
 where
     T: Terminal,
 {
@@ -435,10 +382,6 @@ where
         Ok(())
     }
 
-    fn read_key(&mut self) -> Result<Key> {
-        self.terminal.read_key()
-    }
-
     fn render_error_message(&mut self, error: &ErrorMessage) -> Result<()> {
         self.terminal
             .write_styled(&self.render_config.error_message.prefix)?;
@@ -475,18 +418,9 @@ where
 
         Ok(())
     }
-
-    fn next_action(&mut self) -> Result<(Key, bool, Option<A>)> {
-        let key = self.read_key()?;
-        if let Some(mapper) = &self.action_mapper {
-            return Ok((key, true, mapper.get_action(key)));
-        }
-
-        Ok((key, false, None))
-    }
 }
 
-impl<'a, A, T> TextBackend<A> for Backend<'a, A, T>
+impl<'a, A, T> TextPromptRenderer for Backend<'a, A, T>
 where
     T: Terminal,
 {
@@ -514,7 +448,7 @@ where
 }
 
 #[cfg(feature = "editor")]
-impl<'a, A, T> EditorBackend<A> for Backend<'a, A, T>
+impl<'a, A, T> super::renderer::EditorPromptRenderer for Backend<'a, A, T>
 where
     T: Terminal,
 {
@@ -533,7 +467,7 @@ where
     }
 }
 
-impl<'a, A, T> SelectBackend<A> for Backend<'a, A, T>
+impl<'a, A, T> SelectRenderer for Backend<'a, A, T>
 where
     T: Terminal,
 {
@@ -561,7 +495,7 @@ where
     }
 }
 
-impl<'a, A, T> MultiSelectBackend<A> for Backend<'a, A, T>
+impl<'a, A, T> MultiSelectRenderer for Backend<'a, A, T>
 where
     T: Terminal,
 {
@@ -613,27 +547,15 @@ pub mod date {
 
     use chrono::{Datelike, Duration};
 
-    use crate::{date_utils::get_start_date, terminal::Terminal, ui::Styled};
+    use crate::{
+        date_utils::get_start_date,
+        terminal::Terminal,
+        ui::{DateSelectRenderer, Styled},
+    };
 
-    use super::{Backend, CommonBackend};
+    use super::Backend;
 
-    pub trait DateSelectBackend<A>: CommonBackend<A> {
-        fn render_calendar_prompt(&mut self, prompt: &str) -> Result<()>;
-
-        #[allow(clippy::too_many_arguments)]
-        fn render_calendar(
-            &mut self,
-            month: chrono::Month,
-            year: i32,
-            week_start: chrono::Weekday,
-            today: chrono::NaiveDate,
-            selected_date: chrono::NaiveDate,
-            min_date: Option<chrono::NaiveDate>,
-            max_date: Option<chrono::NaiveDate>,
-        ) -> Result<()>;
-    }
-
-    impl<'a, A, T> DateSelectBackend<A> for Backend<'a, A, T>
+    impl<'a, A, T> DateSelectRenderer for Backend<'a, A, T>
     where
         T: Terminal,
     {
@@ -760,7 +682,7 @@ pub mod date {
     }
 }
 
-impl<'a, A, T> CustomTypeBackend<A> for Backend<'a, A, T>
+impl<'a, A, T> CustomTypePromptRenderer for Backend<'a, A, T>
 where
     T: Terminal,
 {
@@ -774,7 +696,7 @@ where
     }
 }
 
-impl<'a, A, T> PasswordBackend<A> for Backend<'a, A, T>
+impl<'a, A, T> PasswordPromptRenderer for Backend<'a, A, T>
 where
     T: Terminal,
 {
@@ -796,6 +718,22 @@ where
 
     fn render_prompt_with_full_input(&mut self, prompt: &str, cur_input: &Input) -> Result<()> {
         self.print_prompt_with_input(prompt, None, cur_input)
+    }
+}
+
+impl<'a, A, T> InputReader<A> for Backend<'a, A, T>
+where
+    T: Terminal,
+{
+    fn next_action(&mut self) -> InquireResult<Option<A>> {
+        let key = self.terminal.read_key()?;
+        let action = self
+            .action_mapper
+            .as_ref()
+            .ok_or(InquireError::InvalidConfiguration("XD".to_string()))?
+            .get_action(key);
+
+        Ok(action)
     }
 }
 

@@ -7,7 +7,7 @@ use crate::{
     list_option::ListOption,
     prompts::prompt::{ActionResult, Prompt},
     type_aliases::Filter,
-    ui::SelectBackend,
+    ui::{InputReader, SelectRenderer},
     utils::paginate,
     Action, InquireError, Select,
 };
@@ -130,7 +130,7 @@ where
 
 impl<'a, B, T> Prompt<B, SelectConfig, SelectPromptAction, ListOption<T>> for SelectPrompt<'a, T>
 where
-    B: SelectBackend<Action<SelectPromptAction>>,
+    B: SelectRenderer + InputReader<Action<SelectPromptAction>>,
     T: Display,
 {
     fn message(&self) -> &str {

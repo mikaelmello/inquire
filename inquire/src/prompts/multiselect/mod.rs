@@ -17,7 +17,7 @@ use crate::{
     prompts::prompt::Prompt,
     terminal::get_default_terminal,
     type_aliases::Filter,
-    ui::{Backend, MultiSelectBackend, RenderConfig},
+    ui::{Backend, InputReader, MultiSelectRenderer, RenderConfig},
     validator::MultiOptionValidator,
     Action,
 };
@@ -349,7 +349,9 @@ where
         self.prompt_with_backend(&mut backend)
     }
 
-    pub(crate) fn prompt_with_backend<B: MultiSelectBackend<Action<MultiSelectPromptAction>>>(
+    pub(crate) fn prompt_with_backend<
+        B: MultiSelectRenderer + InputReader<Action<MultiSelectPromptAction>>,
+    >(
         self,
         backend: &mut B,
     ) -> InquireResult<Vec<ListOption<T>>> {

@@ -7,7 +7,7 @@ use crate::{
     list_option::ListOption,
     prompts::prompt::{ActionResult, Prompt},
     type_aliases::Filter,
-    ui::MultiSelectBackend,
+    ui::{InputReader, MultiSelectRenderer},
     utils::paginate,
     validator::{ErrorMessage, MultiOptionValidator, Validation},
     Action, InquireError, MultiSelect,
@@ -192,7 +192,7 @@ where
 impl<'a, B, T> Prompt<B, MultiSelectConfig, MultiSelectPromptAction, Vec<ListOption<T>>>
     for MultiSelectPrompt<'a, T>
 where
-    B: MultiSelectBackend<Action<MultiSelectPromptAction>>,
+    B: MultiSelectRenderer + InputReader<Action<MultiSelectPromptAction>>,
     T: Display,
 {
     fn message(&self) -> &str {
