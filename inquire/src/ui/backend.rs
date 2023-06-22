@@ -1,23 +1,24 @@
-use crate::ansi::AnsiStrippable;
+use crate::{
+    ansi::AnsiStrippable, ActionMapper, CustomTypePromptAction, EditorPromptAction,
+    MultiSelectPromptAction, PasswordPromptAction, SelectPromptAction, TextPromptAction,
+};
 use std::{collections::BTreeSet, fmt::Display, io::Result};
 
 use unicode_width::UnicodeWidthChar;
 
 use crate::{
-    error::InquireResult,
     input::Input,
     list_option::ListOption,
     terminal::{Terminal, TerminalSize},
     ui::{IndexPrefix, Key, RenderConfig, Styled},
     utils::{int_log10, Page},
     validator::ErrorMessage,
-    {Action, InnerAction},
+    Action,
 };
 
-use super::InputReader;
-
-pub trait CommonBackend {
+pub trait CommonBackend<A> {
     fn read_key(&mut self) -> Result<Key>;
+    fn next_action(&mut self) -> Result<Option<A>>;
 
     fn frame_setup(&mut self) -> Result<()>;
     fn frame_finish(&mut self) -> Result<()>;
@@ -29,7 +30,7 @@ pub trait CommonBackend {
     fn render_help_message(&mut self, help: &str) -> Result<()>;
 }
 
-pub trait TextBackend: CommonBackend {
+pub trait TextBackend: CommonBackend<Action<TextPromptAction>> {
     fn render_prompt(
         &mut self,
         prompt: &str,
@@ -40,16 +41,16 @@ pub trait TextBackend: CommonBackend {
 }
 
 #[cfg(feature = "editor")]
-pub trait EditorBackend: CommonBackend {
+pub trait EditorBackend: CommonBackend<Action<EditorPromptAction>> {
     fn render_prompt(&mut self, prompt: &str, editor_command: &str) -> Result<()>;
 }
 
-pub trait SelectBackend: CommonBackend {
+pub trait SelectBackend: CommonBackend<Action<SelectPromptAction>> {
     fn render_select_prompt(&mut self, prompt: &str, cur_input: &Input) -> Result<()>;
     fn render_options<D: Display>(&mut self, page: Page<'_, ListOption<D>>) -> Result<()>;
 }
 
-pub trait MultiSelectBackend: CommonBackend {
+pub trait MultiSelectBackend: CommonBackend<Action<MultiSelectPromptAction>> {
     fn render_multiselect_prompt(&mut self, prompt: &str, cur_input: &Input) -> Result<()>;
     fn render_options<D: Display>(
         &mut self,
@@ -58,7 +59,7 @@ pub trait MultiSelectBackend: CommonBackend {
     ) -> Result<()>;
 }
 
-pub trait CustomTypeBackend: CommonBackend {
+pub trait CustomTypeBackend: CommonBackend<Action<CustomTypePromptAction>> {
     fn render_prompt(
         &mut self,
         prompt: &str,
@@ -67,7 +68,7 @@ pub trait CustomTypeBackend: CommonBackend {
     ) -> Result<()>;
 }
 
-pub trait PasswordBackend: CommonBackend {
+pub trait PasswordBackend: CommonBackend<Action<PasswordPromptAction>> {
     fn render_prompt(&mut self, prompt: &str) -> Result<()>;
     fn render_prompt_with_masked_input(&mut self, prompt: &str, cur_input: &Input) -> Result<()>;
     fn render_prompt_with_full_input(&mut self, prompt: &str, cur_input: &Input) -> Result<()>;
@@ -79,7 +80,7 @@ pub struct Position {
     pub col: u16,
 }
 
-pub struct Backend<'a, T>
+pub struct Backend<'a, A, T>
 where
     T: Terminal,
 {
@@ -89,11 +90,12 @@ where
     prompt_cursor_position: Option<Position>,
     show_cursor: bool,
     terminal: T,
+    action_mapper: Option<dyn ActionMapper<A>>,
     terminal_size: TerminalSize,
     render_config: RenderConfig<'a>,
 }
 
-impl<'a, T> Backend<'a, T>
+impl<'a, A, T> Backend<'a, A, T>
 where
     T: Terminal,
 {
@@ -111,6 +113,34 @@ where
             prompt_cursor_position: None,
             show_cursor: false,
             terminal,
+            action_mapper: None,
+            render_config,
+            terminal_size,
+        };
+
+        backend.terminal.cursor_hide()?;
+
+        Ok(backend)
+    }
+
+    pub fn New2(
+        terminal: T,
+        action_mapper: dyn ActionMapper<A>,
+        render_config: RenderConfig<'a>,
+    ) -> Result<Self> {
+        let terminal_size = terminal.get_size().unwrap_or(TerminalSize {
+            width: 1000,
+            height: 1000,
+        });
+
+        let mut backend = Self {
+            prompt_current_position: Position::default(),
+            prompt_end_position: Position::default(),
+            prompt_cursor_offset: None,
+            prompt_cursor_position: None,
+            show_cursor: false,
+            terminal,
+            action_mapper: Some(action_mapper),
             render_config,
             terminal_size,
         };
@@ -354,7 +384,7 @@ where
     }
 }
 
-impl<'a, T> CommonBackend for Backend<'a, T>
+impl<'a, A, T> CommonBackend<A> for Backend<'a, A, T>
 where
     T: Terminal,
 {
@@ -449,9 +479,13 @@ where
 
         Ok(())
     }
+
+    fn next_action(&mut self) -> Result<Option<A>> {
+        todo!()
+    }
 }
 
-impl<'a, T> TextBackend for Backend<'a, T>
+impl<'a, A, T> TextBackend for Backend<'a, A, T>
 where
     T: Terminal,
 {
@@ -479,7 +513,7 @@ where
 }
 
 #[cfg(feature = "editor")]
-impl<'a, T> EditorBackend for Backend<'a, T>
+impl<'a, A, T> EditorBackend for Backend<'a, A, T>
 where
     T: Terminal,
 {
@@ -498,7 +532,7 @@ where
     }
 }
 
-impl<'a, T> SelectBackend for Backend<'a, T>
+impl<'a, A, T> SelectBackend for Backend<'a, A, T>
 where
     T: Terminal,
 {
@@ -526,7 +560,7 @@ where
     }
 }
 
-impl<'a, T> MultiSelectBackend for Backend<'a, T>
+impl<'a, A, T> MultiSelectBackend for Backend<'a, A, T>
 where
     T: Terminal,
 {
@@ -578,11 +612,13 @@ pub mod date {
 
     use chrono::{Datelike, Duration};
 
-    use crate::{date_utils::get_start_date, terminal::Terminal, ui::Styled};
+    use crate::{
+        date_utils::get_start_date, terminal::Terminal, ui::Styled, Action, DateSelectAction,
+    };
 
     use super::{Backend, CommonBackend};
 
-    pub trait DateSelectBackend: CommonBackend {
+    pub trait DateSelectBackend: CommonBackend<Action<DateSelectAction>> {
         fn render_calendar_prompt(&mut self, prompt: &str) -> Result<()>;
 
         #[allow(clippy::too_many_arguments)]
@@ -598,7 +634,7 @@ pub mod date {
         ) -> Result<()>;
     }
 
-    impl<'a, T> DateSelectBackend for Backend<'a, T>
+    impl<'a, A, T> DateSelectBackend for Backend<'a, A, T>
     where
         T: Terminal,
     {
@@ -725,7 +761,7 @@ pub mod date {
     }
 }
 
-impl<'a, T> CustomTypeBackend for Backend<'a, T>
+impl<'a, A, T> CustomTypeBackend for Backend<'a, A, T>
 where
     T: Terminal,
 {
@@ -739,7 +775,7 @@ where
     }
 }
 
-impl<'a, T> PasswordBackend for Backend<'a, T>
+impl<'a, A, T> PasswordBackend for Backend<'a, A, T>
 where
     T: Terminal,
 {
@@ -764,27 +800,12 @@ where
     }
 }
 
-impl<'a, T> Drop for Backend<'a, T>
+impl<'a, A, T> Drop for Backend<'a, A, T>
 where
     T: Terminal,
 {
     fn drop(&mut self) {
         let _unused = self.move_cursor_to_end_position();
         let _unused = self.terminal.cursor_show();
-    }
-}
-
-impl<'a, I, T> InputReader<I> for Backend<'a, T>
-where
-    T: Terminal,
-    I: Copy + Clone + PartialEq + Eq,
-{
-    fn next_action<C>(&mut self, config: &C) -> InquireResult<Option<Action<I>>>
-    where
-        I: InnerAction<C>,
-    {
-        let key = self.read_key()?;
-        let action = Action::from_key(key, config);
-        Ok(action)
     }
 }

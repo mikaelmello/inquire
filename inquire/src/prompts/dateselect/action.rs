@@ -1,6 +1,6 @@
 use crate::{
     ui::{Key, KeyModifiers},
-    InnerAction,
+    ActionMapper, InnerAction,
 };
 
 use super::config::DateSelectConfig;
@@ -8,7 +8,7 @@ use super::config::DateSelectConfig;
 /// Set of actions for a DateSelectPrompt.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 #[allow(clippy::enum_variant_names)]
-pub enum DateSelectPromptAction {
+pub enum DateSelectAction {
     /// Move day cursor to the previous day.
     GoToPrevDay,
     /// Move day cursor to the next day.
@@ -27,7 +27,7 @@ pub enum DateSelectPromptAction {
     GoToNextYear,
 }
 
-impl InnerAction<DateSelectConfig> for DateSelectPromptAction {
+impl InnerAction<DateSelectConfig> for DateSelectAction {
     fn from_key(key: Key, config: &DateSelectConfig) -> Option<Self> {
         if config.vim_mode {
             let action = match key {
@@ -52,6 +52,42 @@ impl InnerAction<DateSelectConfig> for DateSelectPromptAction {
             Key::Right(KeyModifiers::CONTROL) => Self::GoToNextMonth,
             Key::Up(KeyModifiers::CONTROL) => Self::GoToPrevYear,
             Key::Down(KeyModifiers::CONTROL) => Self::GoToNextYear,
+            _ => return None,
+        };
+
+        Some(action)
+    }
+}
+
+pub(crate) struct BuiltinDateSelectActionMapper {
+    config: DateSelectConfig,
+}
+
+impl ActionMapper<DateSelectAction> for BuiltinDateSelectActionMapper {
+    fn get_action(&self, key: Key) -> Option<DateSelectAction> {
+        if self.config.vim_mode {
+            let action = match key {
+                Key::Char('k', KeyModifiers::NONE) => Some(DateSelectAction::GoToPrevWeek),
+                Key::Char('j', KeyModifiers::NONE) => Some(DateSelectAction::GoToNextWeek),
+                Key::Char('h', KeyModifiers::NONE) => Some(DateSelectAction::GoToPrevDay),
+                Key::Char('l', KeyModifiers::NONE) => Some(DateSelectAction::GoToNextDay),
+                _ => None,
+            };
+
+            if action.is_some() {
+                return action;
+            }
+        }
+
+        let action = match key {
+            Key::Left(KeyModifiers::NONE) => DateSelectAction::GoToPrevDay,
+            Key::Right(KeyModifiers::NONE) => DateSelectAction::GoToNextDay,
+            Key::Up(KeyModifiers::NONE) => DateSelectAction::GoToPrevWeek,
+            Key::Down(KeyModifiers::NONE) | Key::Tab => DateSelectAction::GoToNextWeek,
+            Key::Left(KeyModifiers::CONTROL) => DateSelectAction::GoToPrevMonth,
+            Key::Right(KeyModifiers::CONTROL) => DateSelectAction::GoToNextMonth,
+            Key::Up(KeyModifiers::CONTROL) => DateSelectAction::GoToPrevYear,
+            Key::Down(KeyModifiers::CONTROL) => DateSelectAction::GoToNextYear,
             _ => return None,
         };
 

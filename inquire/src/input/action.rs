@@ -1,6 +1,6 @@
 use crate::{
     ui::{Key, KeyModifiers},
-    InnerAction,
+    ActionMapper, InnerAction,
 };
 
 use super::{LineDirection, Magnitude};
@@ -58,6 +58,44 @@ impl InnerAction<()> for InputAction {
             Key::Right(_) => Self::MoveCursor(Magnitude::Char, LineDirection::Right),
 
             Key::Char(c, _) => Self::Write(c),
+            _ => return None,
+        };
+
+        Some(action)
+    }
+}
+
+pub(crate) struct BuiltinInputActionMapper {}
+
+impl ActionMapper<InputAction> for BuiltinInputActionMapper {
+    fn get_action(&self, key: Key) -> Option<InputAction> {
+        let action = match key {
+            Key::Backspace => InputAction::Delete(Magnitude::Char, LineDirection::Left),
+            Key::Char('h', m) if m.contains(KeyModifiers::CONTROL) => {
+                // Ctrl+Backspace is tricky, we don't want to handle a Ctrl+H
+                // but also don't want ctrl+h to simply write h.
+                // Let's catch this combination and ignore it.
+                return None;
+            }
+
+            Key::Delete(m) if m.contains(KeyModifiers::CONTROL) => {
+                InputAction::Delete(Magnitude::Word, LineDirection::Right)
+            }
+            Key::Delete(_) => InputAction::Delete(Magnitude::Char, LineDirection::Right),
+
+            Key::Home => InputAction::MoveCursor(Magnitude::Line, LineDirection::Left),
+            Key::Left(m) if m.contains(KeyModifiers::CONTROL) => {
+                InputAction::MoveCursor(Magnitude::Word, LineDirection::Left)
+            }
+            Key::Left(_) => InputAction::MoveCursor(Magnitude::Char, LineDirection::Left),
+
+            Key::End => InputAction::MoveCursor(Magnitude::Line, LineDirection::Right),
+            Key::Right(m) if m.contains(KeyModifiers::CONTROL) => {
+                InputAction::MoveCursor(Magnitude::Word, LineDirection::Right)
+            }
+            Key::Right(_) => InputAction::MoveCursor(Magnitude::Char, LineDirection::Right),
+
+            Key::Char(c, _) => InputAction::Write(c),
             _ => return None,
         };
 

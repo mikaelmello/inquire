@@ -12,10 +12,7 @@ use crate::ui::{Key, KeyModifiers};
 /// which is parsed and stored in the Inner variant, if applicable,
 /// on the normal execution flow of a prompt.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum Action<I>
-where
-    I: Copy + Clone + PartialEq + Eq,
-{
+pub enum Action<I> {
     /// Submits the current prompt answer, finishing the prompt if valid.
     Submit,
     /// Cancels the prompt execution with a graceful shutdown.
@@ -56,4 +53,23 @@ where
     fn from_key(key: Key, config: &C) -> Option<Self>
     where
         Self: Sized;
+}
+
+pub(crate) trait ActionMapper<A> {
+    fn get_action(&self, key: Key) -> Option<A>;
+}
+
+pub(crate) struct BuiltinActionMapper<IA> {
+    inner_action_mapper: dyn ActionMapper<IA>,
+}
+
+impl<IA> ActionMapper<Action<IA>> for BuiltinActionMapper<IA> {
+    fn get_action(&self, key: Key) -> Option<Action<IA>> {
+        match key {
+            Key::Enter => Some(Action::Submit),
+            Key::Escape => Some(Action::Cancel),
+            Key::Char('c', KeyModifiers::CONTROL) => Some(Action::Interrupt),
+            key => self.inner_action_mapper.get_action(key).map(Action::Inner),
+        }
+    }
 }

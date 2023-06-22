@@ -7,8 +7,8 @@ use crate::{
     error::{InquireError, InquireResult},
     formatter::{BoolFormatter, DEFAULT_BOOL_FORMATTER},
     parser::{BoolParser, DEFAULT_BOOL_PARSER},
-    terminal::{get_default_terminal, Terminal},
-    ui::{Backend, RenderConfig},
+    terminal::get_default_terminal,
+    ui::{Backend, CustomTypeBackend, RenderConfig},
     CustomType,
 };
 
@@ -206,9 +206,9 @@ impl<'a> Confirm<'a> {
         self.prompt_with_backend(&mut backend)
     }
 
-    pub(crate) fn prompt_with_backend<T: Terminal>(
+    pub(crate) fn prompt_with_backend<B: CustomTypeBackend>(
         self,
-        backend: &mut Backend<'a, T>,
+        backend: &mut B,
     ) -> InquireResult<bool> {
         CustomType::from(self).prompt_with_backend(backend)
     }

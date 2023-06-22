@@ -15,7 +15,7 @@ use crate::{
     DateSelect, InquireError,
 };
 
-use super::{action::DateSelectPromptAction, config::DateSelectConfig};
+use super::{action::DateSelectAction, config::DateSelectConfig};
 
 pub struct DateSelectPrompt<'a> {
     message: &'a str,
@@ -116,7 +116,7 @@ impl<'a> DateSelectPrompt<'a> {
     }
 }
 
-impl<'a, B> Prompt<B, DateSelectConfig, DateSelectPromptAction, NaiveDate> for DateSelectPrompt<'a>
+impl<'a, B> Prompt<B, DateSelectConfig, DateSelectAction, NaiveDate> for DateSelectPrompt<'a>
 where
     B: DateSelectBackend,
 {
@@ -144,16 +144,16 @@ where
         Ok(answer)
     }
 
-    fn handle(&mut self, action: DateSelectPromptAction) -> InquireResult<ActionResult> {
+    fn handle(&mut self, action: DateSelectAction) -> InquireResult<ActionResult> {
         let result = match action {
-            DateSelectPromptAction::GoToPrevWeek => self.shift_date(Duration::weeks(-1)),
-            DateSelectPromptAction::GoToNextWeek => self.shift_date(Duration::weeks(1)),
-            DateSelectPromptAction::GoToPrevDay => self.shift_date(Duration::days(-1)),
-            DateSelectPromptAction::GoToNextDay => self.shift_date(Duration::days(1)),
-            DateSelectPromptAction::GoToPrevYear => self.shift_months(-12),
-            DateSelectPromptAction::GoToNextYear => self.shift_months(12),
-            DateSelectPromptAction::GoToPrevMonth => self.shift_months(-1),
-            DateSelectPromptAction::GoToNextMonth => self.shift_months(1),
+            DateSelectAction::GoToPrevWeek => self.shift_date(Duration::weeks(-1)),
+            DateSelectAction::GoToNextWeek => self.shift_date(Duration::weeks(1)),
+            DateSelectAction::GoToPrevDay => self.shift_date(Duration::days(-1)),
+            DateSelectAction::GoToNextDay => self.shift_date(Duration::days(1)),
+            DateSelectAction::GoToPrevYear => self.shift_months(-12),
+            DateSelectAction::GoToNextYear => self.shift_months(12),
+            DateSelectAction::GoToPrevMonth => self.shift_months(-1),
+            DateSelectAction::GoToNextMonth => self.shift_months(1),
         };
 
         Ok(result)

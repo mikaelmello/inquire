@@ -29,7 +29,7 @@ impl From<InputActionResult> for ActionResult {
 /// Shared behavior among all different prompt types.
 pub trait Prompt<Backend, Config, IAction, ReturnType>
 where
-    Backend: CommonBackend,
+    Backend: CommonBackend<Action<IAction>>,
     IAction: InnerAction<Config>,
     Self: Sized,
 {
