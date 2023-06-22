@@ -10,7 +10,7 @@ use crate::{
     ui::MultiSelectBackend,
     utils::paginate,
     validator::{ErrorMessage, MultiOptionValidator, Validation},
-    InquireError, MultiSelect,
+    Action, InquireError, MultiSelect,
 };
 
 use super::{action::MultiSelectPromptAction, config::MultiSelectConfig};
@@ -192,7 +192,7 @@ where
 impl<'a, B, T> Prompt<B, MultiSelectConfig, MultiSelectPromptAction, Vec<ListOption<T>>>
     for MultiSelectPrompt<'a, T>
 where
-    B: MultiSelectBackend,
+    B: MultiSelectBackend<Action<MultiSelectPromptAction>>,
     T: Display,
 {
     fn message(&self) -> &str {

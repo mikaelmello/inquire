@@ -18,6 +18,7 @@ use crate::{
     terminal::get_default_terminal,
     type_aliases::Filter,
     ui::{Backend, RenderConfig, SelectBackend},
+    Action,
 };
 
 use self::prompt::SelectPrompt;
@@ -269,7 +270,7 @@ where
         self.prompt_with_backend(&mut backend)
     }
 
-    pub(crate) fn prompt_with_backend<B: SelectBackend>(
+    pub(crate) fn prompt_with_backend<B: SelectBackend<Action<SelectPromptAction>>>(
         self,
         backend: &mut B,
     ) -> InquireResult<ListOption<T>> {

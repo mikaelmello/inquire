@@ -15,6 +15,7 @@ use crate::{
     terminal::get_default_terminal,
     ui::{Backend, CustomTypeBackend, RenderConfig},
     validator::CustomTypeValidator,
+    Action,
 };
 
 use self::prompt::CustomTypePrompt;
@@ -266,7 +267,7 @@ where
         self.prompt_with_backend(&mut backend)
     }
 
-    pub(crate) fn prompt_with_backend<B: CustomTypeBackend>(
+    pub(crate) fn prompt_with_backend<B: CustomTypeBackend<Action<CustomTypePromptAction>>>(
         self,
         backend: &mut B,
     ) -> InquireResult<T> {

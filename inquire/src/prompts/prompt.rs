@@ -110,8 +110,11 @@ where
                 last_handle = ActionResult::Clean;
             }
 
-            let key = backend.read_key()?;
-            let action = Action::from_key(key, self.config());
+            let (key, has, action) = backend.next_action()?;
+            if !has {
+                panic!("Backend returned no action");
+            }
+            let action = action.or_else(|| Action::from_key(key, self.config()));
 
             if let Some(action) = action {
                 last_handle = match action {

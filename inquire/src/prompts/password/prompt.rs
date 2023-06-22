@@ -5,7 +5,7 @@ use crate::{
     prompts::prompt::{ActionResult, Prompt},
     ui::PasswordBackend,
     validator::{ErrorMessage, StringValidator, Validation},
-    InquireError, Password, PasswordDisplayMode,
+    Action, InquireError, Password, PasswordDisplayMode,
 };
 
 use super::{action::PasswordPromptAction, config::PasswordConfig};
@@ -138,7 +138,7 @@ impl<'a> PasswordPrompt<'a> {
 
 impl<'a, B> Prompt<B, PasswordConfig, PasswordPromptAction, String> for PasswordPrompt<'a>
 where
-    B: PasswordBackend,
+    B: PasswordBackend<Action<PasswordPromptAction>>,
 {
     fn message(&self) -> &str {
         self.message

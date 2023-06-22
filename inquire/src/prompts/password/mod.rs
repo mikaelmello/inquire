@@ -15,6 +15,7 @@ use crate::{
     terminal::get_default_terminal,
     ui::{Backend, PasswordBackend, RenderConfig},
     validator::StringValidator,
+    Action,
 };
 
 use self::prompt::PasswordPrompt;
@@ -280,7 +281,7 @@ impl<'a> Password<'a> {
         self.prompt_with_backend(&mut backend)
     }
 
-    pub(crate) fn prompt_with_backend<B: PasswordBackend>(
+    pub(crate) fn prompt_with_backend<B: PasswordBackend<Action<PasswordPromptAction>>>(
         self,
         backend: &mut B,
     ) -> InquireResult<String> {

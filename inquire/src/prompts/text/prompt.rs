@@ -10,7 +10,7 @@ use crate::{
     ui::TextBackend,
     utils::paginate,
     validator::{ErrorMessage, StringValidator, Validation},
-    Autocomplete, InquireError, Text,
+    Action, Autocomplete, InquireError, Text,
 };
 
 use super::{action::TextPromptAction, config::TextConfig, DEFAULT_HELP_MESSAGE_WITH_AC};
@@ -163,7 +163,7 @@ impl<'a> TextPrompt<'a> {
 
 impl<'a, B> Prompt<B, TextConfig, TextPromptAction, String> for TextPrompt<'a>
 where
-    B: TextBackend,
+    B: TextBackend<Action<TextPromptAction>>,
 {
     fn message(&self) -> &str {
         self.message

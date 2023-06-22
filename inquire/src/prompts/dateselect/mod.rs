@@ -18,6 +18,7 @@ use crate::{
     terminal::get_default_terminal,
     ui::{date::DateSelectBackend, Backend, RenderConfig},
     validator::DateValidator,
+    Action,
 };
 
 use self::prompt::DateSelectPrompt;
@@ -272,11 +273,15 @@ impl<'a> DateSelect<'a> {
     /// the CLI user for input according to the defined rules.
     pub fn prompt(self) -> InquireResult<NaiveDate> {
         let terminal = get_default_terminal()?;
-        let mut backend = Backend::new(terminal, self.render_config)?;
+        let mut backend = Backend::New2(
+            terminal,
+            Box::new(BuiltinDateSelectActionMapper::new(&self)),
+            self.render_config,
+        )?;
         self.prompt_with_backend(&mut backend)
     }
 
-    pub(crate) fn prompt_with_backend<B: DateSelectBackend>(
+    pub(crate) fn prompt_with_backend<B: DateSelectBackend<Action<DateSelectAction>>>(
         self,
         backend: &mut B,
     ) -> InquireResult<NaiveDate> {

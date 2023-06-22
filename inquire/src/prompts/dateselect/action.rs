@@ -1,6 +1,6 @@
 use crate::{
     ui::{Key, KeyModifiers},
-    ActionMapper, InnerAction,
+    ActionMapper, BuiltinActionMapper, DateSelect, InnerAction,
 };
 
 use super::config::DateSelectConfig;
@@ -61,6 +61,16 @@ impl InnerAction<DateSelectConfig> for DateSelectAction {
 
 pub(crate) struct BuiltinDateSelectActionMapper {
     config: DateSelectConfig,
+}
+
+impl BuiltinDateSelectActionMapper {
+    pub(crate) fn new(
+        prompt: &DateSelect<'_>,
+    ) -> BuiltinActionMapper<DateSelectAction, BuiltinDateSelectActionMapper> {
+        BuiltinActionMapper::new(Self {
+            config: prompt.into(),
+        })
+    }
 }
 
 impl ActionMapper<DateSelectAction> for BuiltinDateSelectActionMapper {

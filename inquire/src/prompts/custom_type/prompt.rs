@@ -6,7 +6,7 @@ use crate::{
     prompts::prompt::{ActionResult, Prompt},
     ui::CustomTypeBackend,
     validator::{CustomTypeValidator, ErrorMessage, Validation},
-    CustomType, InquireError,
+    Action, CustomType, InquireError,
 };
 
 use super::{action::CustomTypePromptAction, config::CustomTypeConfig};
@@ -80,7 +80,7 @@ where
 
 impl<'a, B, T> Prompt<B, CustomTypeConfig, CustomTypePromptAction, T> for CustomTypePrompt<'a, T>
 where
-    B: CustomTypeBackend,
+    B: CustomTypeBackend<Action<CustomTypePromptAction>>,
     T: Clone,
 {
     fn message(&self) -> &str {

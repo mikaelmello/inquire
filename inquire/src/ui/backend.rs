@@ -1,7 +1,4 @@
-use crate::{
-    ansi::AnsiStrippable, ActionMapper, CustomTypePromptAction, EditorPromptAction,
-    MultiSelectPromptAction, PasswordPromptAction, SelectPromptAction, TextPromptAction,
-};
+use crate::{ansi::AnsiStrippable, ActionMapper};
 use std::{collections::BTreeSet, fmt::Display, io::Result};
 
 use unicode_width::UnicodeWidthChar;
@@ -13,12 +10,11 @@ use crate::{
     ui::{IndexPrefix, Key, RenderConfig, Styled},
     utils::{int_log10, Page},
     validator::ErrorMessage,
-    Action,
 };
 
 pub trait CommonBackend<A> {
     fn read_key(&mut self) -> Result<Key>;
-    fn next_action(&mut self) -> Result<Option<A>>;
+    fn next_action(&mut self) -> Result<(Key, bool, Option<A>)>;
 
     fn frame_setup(&mut self) -> Result<()>;
     fn frame_finish(&mut self) -> Result<()>;
@@ -30,7 +26,7 @@ pub trait CommonBackend<A> {
     fn render_help_message(&mut self, help: &str) -> Result<()>;
 }
 
-pub trait TextBackend: CommonBackend<Action<TextPromptAction>> {
+pub trait TextBackend<A>: CommonBackend<A> {
     fn render_prompt(
         &mut self,
         prompt: &str,
@@ -41,16 +37,16 @@ pub trait TextBackend: CommonBackend<Action<TextPromptAction>> {
 }
 
 #[cfg(feature = "editor")]
-pub trait EditorBackend: CommonBackend<Action<EditorPromptAction>> {
+pub trait EditorBackend<A>: CommonBackend<A> {
     fn render_prompt(&mut self, prompt: &str, editor_command: &str) -> Result<()>;
 }
 
-pub trait SelectBackend: CommonBackend<Action<SelectPromptAction>> {
+pub trait SelectBackend<A>: CommonBackend<A> {
     fn render_select_prompt(&mut self, prompt: &str, cur_input: &Input) -> Result<()>;
     fn render_options<D: Display>(&mut self, page: Page<'_, ListOption<D>>) -> Result<()>;
 }
 
-pub trait MultiSelectBackend: CommonBackend<Action<MultiSelectPromptAction>> {
+pub trait MultiSelectBackend<A>: CommonBackend<A> {
     fn render_multiselect_prompt(&mut self, prompt: &str, cur_input: &Input) -> Result<()>;
     fn render_options<D: Display>(
         &mut self,
@@ -59,7 +55,7 @@ pub trait MultiSelectBackend: CommonBackend<Action<MultiSelectPromptAction>> {
     ) -> Result<()>;
 }
 
-pub trait CustomTypeBackend: CommonBackend<Action<CustomTypePromptAction>> {
+pub trait CustomTypeBackend<A>: CommonBackend<A> {
     fn render_prompt(
         &mut self,
         prompt: &str,
@@ -68,7 +64,7 @@ pub trait CustomTypeBackend: CommonBackend<Action<CustomTypePromptAction>> {
     ) -> Result<()>;
 }
 
-pub trait PasswordBackend: CommonBackend<Action<PasswordPromptAction>> {
+pub trait PasswordBackend<A>: CommonBackend<A> {
     fn render_prompt(&mut self, prompt: &str) -> Result<()>;
     fn render_prompt_with_masked_input(&mut self, prompt: &str, cur_input: &Input) -> Result<()>;
     fn render_prompt_with_full_input(&mut self, prompt: &str, cur_input: &Input) -> Result<()>;
@@ -90,7 +86,7 @@ where
     prompt_cursor_position: Option<Position>,
     show_cursor: bool,
     terminal: T,
-    action_mapper: Option<dyn ActionMapper<A>>,
+    action_mapper: Option<Box<dyn ActionMapper<A>>>,
     terminal_size: TerminalSize,
     render_config: RenderConfig<'a>,
 }
@@ -123,9 +119,9 @@ where
         Ok(backend)
     }
 
-    pub fn New2(
+    pub(crate) fn New2(
         terminal: T,
-        action_mapper: dyn ActionMapper<A>,
+        action_mapper: Box<dyn ActionMapper<A>>,
         render_config: RenderConfig<'a>,
     ) -> Result<Self> {
         let terminal_size = terminal.get_size().unwrap_or(TerminalSize {
@@ -480,12 +476,17 @@ where
         Ok(())
     }
 
-    fn next_action(&mut self) -> Result<Option<A>> {
-        todo!()
+    fn next_action(&mut self) -> Result<(Key, bool, Option<A>)> {
+        let key = self.read_key()?;
+        if let Some(mapper) = &self.action_mapper {
+            return Ok((key, true, mapper.get_action(key)));
+        }
+
+        Ok((key, false, None))
     }
 }
 
-impl<'a, A, T> TextBackend for Backend<'a, A, T>
+impl<'a, A, T> TextBackend<A> for Backend<'a, A, T>
 where
     T: Terminal,
 {
@@ -513,7 +514,7 @@ where
 }
 
 #[cfg(feature = "editor")]
-impl<'a, A, T> EditorBackend for Backend<'a, A, T>
+impl<'a, A, T> EditorBackend<A> for Backend<'a, A, T>
 where
     T: Terminal,
 {
@@ -532,7 +533,7 @@ where
     }
 }
 
-impl<'a, A, T> SelectBackend for Backend<'a, A, T>
+impl<'a, A, T> SelectBackend<A> for Backend<'a, A, T>
 where
     T: Terminal,
 {
@@ -560,7 +561,7 @@ where
     }
 }
 
-impl<'a, A, T> MultiSelectBackend for Backend<'a, A, T>
+impl<'a, A, T> MultiSelectBackend<A> for Backend<'a, A, T>
 where
     T: Terminal,
 {
@@ -612,13 +613,11 @@ pub mod date {
 
     use chrono::{Datelike, Duration};
 
-    use crate::{
-        date_utils::get_start_date, terminal::Terminal, ui::Styled, Action, DateSelectAction,
-    };
+    use crate::{date_utils::get_start_date, terminal::Terminal, ui::Styled};
 
     use super::{Backend, CommonBackend};
 
-    pub trait DateSelectBackend: CommonBackend<Action<DateSelectAction>> {
+    pub trait DateSelectBackend<A>: CommonBackend<A> {
         fn render_calendar_prompt(&mut self, prompt: &str) -> Result<()>;
 
         #[allow(clippy::too_many_arguments)]
@@ -634,7 +633,7 @@ pub mod date {
         ) -> Result<()>;
     }
 
-    impl<'a, A, T> DateSelectBackend for Backend<'a, A, T>
+    impl<'a, A, T> DateSelectBackend<A> for Backend<'a, A, T>
     where
         T: Terminal,
     {
@@ -761,7 +760,7 @@ pub mod date {
     }
 }
 
-impl<'a, A, T> CustomTypeBackend for Backend<'a, A, T>
+impl<'a, A, T> CustomTypeBackend<A> for Backend<'a, A, T>
 where
     T: Terminal,
 {
@@ -775,7 +774,7 @@ where
     }
 }
 
-impl<'a, A, T> PasswordBackend for Backend<'a, A, T>
+impl<'a, A, T> PasswordBackend<A> for Backend<'a, A, T>
 where
     T: Terminal,
 {

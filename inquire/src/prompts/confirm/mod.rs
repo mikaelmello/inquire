@@ -9,7 +9,7 @@ use crate::{
     parser::{BoolParser, DEFAULT_BOOL_PARSER},
     terminal::get_default_terminal,
     ui::{Backend, CustomTypeBackend, RenderConfig},
-    CustomType,
+    Action, CustomType, CustomTypePromptAction,
 };
 
 /// Prompt to ask the user for simple yes/no questions, commonly known by asking the user displaying the `(y/n)` text.
@@ -206,7 +206,7 @@ impl<'a> Confirm<'a> {
         self.prompt_with_backend(&mut backend)
     }
 
-    pub(crate) fn prompt_with_backend<B: CustomTypeBackend>(
+    pub(crate) fn prompt_with_backend<B: CustomTypeBackend<Action<CustomTypePromptAction>>>(
         self,
         backend: &mut B,
     ) -> InquireResult<bool> {

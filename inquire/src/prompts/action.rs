@@ -1,7 +1,7 @@
 //! Definitions for the broad Action type which encompasses
 //! the directives for prompts.
 
-use std::fmt::Debug;
+use std::{fmt::Debug, marker::PhantomData};
 
 use crate::ui::{Key, KeyModifiers};
 
@@ -59,11 +59,30 @@ pub(crate) trait ActionMapper<A> {
     fn get_action(&self, key: Key) -> Option<A>;
 }
 
-pub(crate) struct BuiltinActionMapper<IA> {
-    inner_action_mapper: dyn ActionMapper<IA>,
+pub(crate) struct BuiltinActionMapper<IA, M>
+where
+    M: ActionMapper<IA>,
+{
+    __phantom: PhantomData<IA>,
+    inner_action_mapper: M,
 }
 
-impl<IA> ActionMapper<Action<IA>> for BuiltinActionMapper<IA> {
+impl<IA, M> BuiltinActionMapper<IA, M>
+where
+    M: ActionMapper<IA>,
+{
+    pub fn new(inner_action_mapper: M) -> Self {
+        Self {
+            __phantom: PhantomData,
+            inner_action_mapper,
+        }
+    }
+}
+
+impl<IA, M> ActionMapper<Action<IA>> for BuiltinActionMapper<IA, M>
+where
+    M: ActionMapper<IA>,
+{
     fn get_action(&self, key: Key) -> Option<Action<IA>> {
         match key {
             Key::Enter => Some(Action::Submit),

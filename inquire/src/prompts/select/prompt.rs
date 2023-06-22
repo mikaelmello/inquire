@@ -9,7 +9,7 @@ use crate::{
     type_aliases::Filter,
     ui::SelectBackend,
     utils::paginate,
-    InquireError, Select,
+    Action, InquireError, Select,
 };
 
 use super::{action::SelectPromptAction, config::SelectConfig};
@@ -130,7 +130,7 @@ where
 
 impl<'a, B, T> Prompt<B, SelectConfig, SelectPromptAction, ListOption<T>> for SelectPrompt<'a, T>
 where
-    B: SelectBackend,
+    B: SelectBackend<Action<SelectPromptAction>>,
     T: Display,
 {
     fn message(&self) -> &str {

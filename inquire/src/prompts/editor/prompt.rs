@@ -8,7 +8,7 @@ use crate::{
     prompts::prompt::{ActionResult, Prompt},
     ui::EditorBackend,
     validator::{ErrorMessage, StringValidator, Validation},
-    Editor, InquireError,
+    Action, Editor, InquireError,
 };
 
 use super::{action::EditorPromptAction, config::EditorConfig};
@@ -94,7 +94,7 @@ impl<'a> EditorPrompt<'a> {
 
 impl<'a, B> Prompt<B, EditorConfig<'a>, EditorPromptAction, String> for EditorPrompt<'a>
 where
-    B: EditorBackend,
+    B: EditorBackend<Action<EditorPromptAction>>,
 {
     fn message(&self) -> &str {
         self.message
