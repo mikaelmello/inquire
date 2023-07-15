@@ -14,7 +14,9 @@ pub enum PasswordPromptAction {
     ToggleDisplayMode,
 }
 
-impl InnerAction<PasswordConfig> for PasswordPromptAction {
+impl InnerAction for PasswordPromptAction {
+    type Config = PasswordConfig;
+
     fn from_key(key: Key, config: &PasswordConfig) -> Option<Self> {
         let action = match key {
             Key::Char('r' | 'R', m)

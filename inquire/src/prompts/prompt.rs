@@ -33,7 +33,7 @@ where
     Self: Sized,
 {
     type Config;
-    type InnerAction: InnerAction<Self::Config>;
+    type InnerAction: InnerAction<Config = Self::Config>;
     type Output;
 
     /// Prompt header rendered to the user.

@@ -30,7 +30,9 @@ pub enum MultiSelectPromptAction {
     ClearSelections,
 }
 
-impl InnerAction<MultiSelectConfig> for MultiSelectPromptAction {
+impl InnerAction for MultiSelectPromptAction {
+    type Config = MultiSelectConfig;
+
     fn from_key(key: Key, config: &MultiSelectConfig) -> Option<Self> {
         if config.vim_mode {
             let action = match key {

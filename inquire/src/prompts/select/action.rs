@@ -24,7 +24,9 @@ pub enum SelectPromptAction {
     MoveToEnd,
 }
 
-impl InnerAction<SelectConfig> for SelectPromptAction {
+impl InnerAction for SelectPromptAction {
+    type Config = SelectConfig;
+
     fn from_key(key: Key, config: &SelectConfig) -> Option<Self> {
         if config.vim_mode {
             let action = match key {

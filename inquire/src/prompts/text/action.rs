@@ -23,7 +23,9 @@ pub enum TextPromptAction {
     UseCurrentSuggestion,
 }
 
-impl InnerAction<TextConfig> for TextPromptAction {
+impl InnerAction for TextPromptAction {
+    type Config = TextConfig;
+
     fn from_key(key: Key, _config: &TextConfig) -> Option<Self> {
         let action = match key {
             Key::Up(KeyModifiers::NONE) => Self::MoveToSuggestionAbove,
