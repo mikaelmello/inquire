@@ -92,10 +92,14 @@ impl<'a> EditorPrompt<'a> {
     }
 }
 
-impl<'a, B> Prompt<B, EditorConfig<'a>, EditorPromptAction, String> for EditorPrompt<'a>
+impl<'a, Backend> Prompt<Backend> for EditorPrompt<'a>
 where
-    B: EditorBackend,
+    Backend: EditorBackend,
 {
+    type Config = EditorConfig<'a>;
+    type InnerAction = EditorPromptAction;
+    type Output = String;
+
     fn message(&self) -> &str {
         self.message
     }
@@ -129,7 +133,7 @@ where
         }
     }
 
-    fn render(&self, backend: &mut B) -> InquireResult<()> {
+    fn render(&self, backend: &mut Backend) -> InquireResult<()> {
         let prompt = &self.message;
 
         if let Some(err) = &self.error {

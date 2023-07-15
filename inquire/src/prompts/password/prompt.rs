@@ -136,10 +136,14 @@ impl<'a> PasswordPrompt<'a> {
     }
 }
 
-impl<'a, B> Prompt<B, PasswordConfig, PasswordPromptAction, String> for PasswordPrompt<'a>
+impl<'a, Backend> Prompt<Backend> for PasswordPrompt<'a>
 where
-    B: PasswordBackend,
+    Backend: PasswordBackend,
 {
+    type Config = PasswordConfig;
+    type InnerAction = PasswordPromptAction;
+    type Output = String;
+
     fn message(&self) -> &str {
         self.message
     }
@@ -202,7 +206,7 @@ where
         Ok(result)
     }
 
-    fn render(&self, backend: &mut B) -> InquireResult<()> {
+    fn render(&self, backend: &mut Backend) -> InquireResult<()> {
         if let Some(err) = &self.error {
             backend.render_error_message(err)?;
         }

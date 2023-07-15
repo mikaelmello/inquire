@@ -189,12 +189,15 @@ where
     }
 }
 
-impl<'a, B, T> Prompt<B, MultiSelectConfig, MultiSelectPromptAction, Vec<ListOption<T>>>
-    for MultiSelectPrompt<'a, T>
+impl<'a, Backend, T> Prompt<Backend> for MultiSelectPrompt<'a, T>
 where
-    B: MultiSelectBackend,
+    Backend: MultiSelectBackend,
     T: Display,
 {
+    type Config = MultiSelectConfig;
+    type InnerAction = MultiSelectPromptAction;
+    type Output = Vec<ListOption<T>>;
+
     fn message(&self) -> &str {
         self.message
     }
@@ -271,7 +274,7 @@ where
         Ok(result)
     }
 
-    fn render(&self, backend: &mut B) -> InquireResult<()> {
+    fn render(&self, backend: &mut Backend) -> InquireResult<()> {
         let prompt = &self.message;
 
         if let Some(err) = &self.error {

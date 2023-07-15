@@ -116,10 +116,14 @@ impl<'a> DateSelectPrompt<'a> {
     }
 }
 
-impl<'a, B> Prompt<B, DateSelectConfig, DateSelectPromptAction, NaiveDate> for DateSelectPrompt<'a>
+impl<'a, B> Prompt<B> for DateSelectPrompt<'a>
 where
     B: DateSelectBackend,
 {
+    type Config = DateSelectConfig;
+    type InnerAction = DateSelectPromptAction;
+    type Output = NaiveDate;
+
     fn message(&self) -> &str {
         self.message
     }
