@@ -54,7 +54,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        build: [msrv, stable, beta, nightly]
+        build: [msrv, stable]
         os: ["ubuntu-latest", "macOS-latest", "windows-latest"]
 
     steps:
