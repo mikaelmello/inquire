@@ -9,7 +9,9 @@ pub enum CustomTypePromptAction {
     ValueInput(InputAction),
 }
 
-impl InnerAction<CustomTypeConfig> for CustomTypePromptAction {
+impl InnerAction for CustomTypePromptAction {
+    type Config = CustomTypeConfig;
+
     fn from_key(key: Key, _config: &CustomTypeConfig) -> Option<Self> {
         let action = match InputAction::from_key(key, &()) {
             Some(action) => Self::ValueInput(action),

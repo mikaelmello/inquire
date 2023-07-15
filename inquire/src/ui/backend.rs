@@ -781,7 +781,7 @@ where
 {
     fn next_action<C>(&mut self, config: &C) -> InquireResult<Option<Action<I>>>
     where
-        I: InnerAction<C>,
+        I: InnerAction<Config = C>,
     {
         let key = self.read_key()?;
         let action = Action::from_key(key, config);

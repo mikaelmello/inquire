@@ -9,8 +9,10 @@ pub enum EditorPromptAction {
     OpenEditor,
 }
 
-impl<'a> InnerAction<EditorConfig<'a>> for EditorPromptAction {
-    fn from_key(key: Key, _config: &EditorConfig<'_>) -> Option<Self> {
+impl InnerAction for EditorPromptAction {
+    type Config = EditorConfig;
+
+    fn from_key(key: Key, _config: &EditorConfig) -> Option<Self> {
         let action = match key {
             Key::Char('e', _) => Self::OpenEditor,
             _ => return None,

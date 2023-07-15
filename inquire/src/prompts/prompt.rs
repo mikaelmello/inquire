@@ -27,12 +27,15 @@ impl From<InputActionResult> for ActionResult {
 }
 
 /// Shared behavior among all different prompt types.
-pub trait Prompt<Backend, Config, IAction, ReturnType>
+pub trait Prompt<Backend>
 where
     Backend: CommonBackend,
-    IAction: InnerAction<Config>,
     Self: Sized,
 {
+    type Config;
+    type InnerAction: InnerAction<Config = Self::Config>;
+    type Output;
+
     /// Prompt header rendered to the user.
     fn message(&self) -> &str;
 
@@ -42,7 +45,7 @@ where
     /// For example, a prompt might be configured to have vim mode enabled
     /// or disabled, which affects how certain key events are parsed into
     /// actions to the prompt.
-    fn config(&self) -> &Config;
+    fn config(&self) -> &Self::Config;
 
     /// Hook called when a prompt is finished. Returns a string
     /// to be rendered to the user as the final submission to the prompt.
@@ -50,7 +53,7 @@ where
     /// # Arguments
     ///
     /// * `answer` - Answer returned by the prompt.
-    fn format_answer(&self, answer: &ReturnType) -> String;
+    fn format_answer(&self, answer: &Self::Output) -> String;
 
     /// Hook called when a prompt is first started, before the first
     /// draw happens.
@@ -74,7 +77,7 @@ where
     /// this method should return `Ok(None)`.
     ///
     /// On `Err(*)`, the prompt is teared down.
-    fn submit(&mut self) -> InquireResult<Option<ReturnType>>;
+    fn submit(&mut self) -> InquireResult<Option<Self::Output>>;
 
     /// Entrypoint for any business logic for the prompt. Returns the result
     /// of the action. If the result is `Clean`, the prompt will
@@ -85,7 +88,7 @@ where
     ///
     /// On testing scenarios, developers might provide a stream of actions
     /// to the prompt, which will then be submitted to this method just the same.
-    fn handle(&mut self, action: IAction) -> InquireResult<ActionResult>;
+    fn handle(&mut self, action: Self::InnerAction) -> InquireResult<ActionResult>;
 
     /// Hook called for the rendering of the prompt UI.
     ///
@@ -98,7 +101,7 @@ where
     ///
     /// This should not be reimplemented by types that implement this trait,
     /// unless the situation really warrants it.
-    fn prompt(mut self, backend: &mut Backend) -> InquireResult<ReturnType> {
+    fn prompt(mut self, backend: &mut Backend) -> InquireResult<Self::Output> {
         self.setup()?;
 
         let mut last_handle = ActionResult::NeedsRedraw;

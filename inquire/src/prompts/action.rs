@@ -33,7 +33,7 @@ where
     /// Derives a prompt action from a Key event.
     pub fn from_key<C>(key: Key, config: &C) -> Option<Action<I>>
     where
-        I: InnerAction<C>,
+        I: InnerAction<Config = C>,
     {
         match key {
             Key::Enter => Some(Action::Submit),
@@ -48,12 +48,17 @@ where
 ///
 /// They must provide an implementation to optionally derive an action
 /// from a key event.
-pub trait InnerAction<C>
+pub trait InnerAction
 where
     Self: Sized + Copy + Clone + PartialEq + Eq,
 {
+    /// Configuration type for the prompt.
+    ///
+    /// This is used to derive the action from a key event.
+    type Config;
+
     /// Derives a prompt action from a Key event and the prompt configuration.
-    fn from_key(key: Key, config: &C) -> Option<Self>
+    fn from_key(key: Key, config: &Self::Config) -> Option<Self>
     where
         Self: Sized;
 }

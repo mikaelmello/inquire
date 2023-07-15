@@ -128,11 +128,15 @@ where
     }
 }
 
-impl<'a, B, T> Prompt<B, SelectConfig, SelectPromptAction, ListOption<T>> for SelectPrompt<'a, T>
+impl<'a, Backend, T> Prompt<Backend> for SelectPrompt<'a, T>
 where
-    B: SelectBackend,
+    Backend: SelectBackend,
     T: Display,
 {
+    type Config = SelectConfig;
+    type InnerAction = SelectPromptAction;
+    type Output = ListOption<T>;
+
     fn message(&self) -> &str {
         self.message
     }
@@ -181,7 +185,7 @@ where
         Ok(result)
     }
 
-    fn render(&self, backend: &mut B) -> InquireResult<()> {
+    fn render(&self, backend: &mut Backend) -> InquireResult<()> {
         let prompt = &self.message;
 
         backend.render_select_prompt(prompt, &self.input)?;

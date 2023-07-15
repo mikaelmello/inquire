@@ -27,7 +27,9 @@ pub enum DateSelectPromptAction {
     GoToNextYear,
 }
 
-impl InnerAction<DateSelectConfig> for DateSelectPromptAction {
+impl InnerAction for DateSelectPromptAction {
+    type Config = DateSelectConfig;
+
     fn from_key(key: Key, config: &DateSelectConfig) -> Option<Self> {
         if config.vim_mode {
             let action = match key {

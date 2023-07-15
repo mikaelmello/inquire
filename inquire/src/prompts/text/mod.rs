@@ -232,7 +232,7 @@ impl<'a> Text<'a> {
     /// The possible error is displayed to the user one line above the prompt.
     pub fn with_validators(mut self, validators: &[Box<dyn StringValidator>]) -> Self {
         for validator in validators {
-            #[allow(clippy::clone_double_ref)]
+            #[allow(suspicious_double_ref_op)]
             self.validators.push(validator.clone());
         }
         self

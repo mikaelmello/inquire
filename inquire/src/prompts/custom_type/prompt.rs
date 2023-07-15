@@ -78,11 +78,15 @@ where
     }
 }
 
-impl<'a, B, T> Prompt<B, CustomTypeConfig, CustomTypePromptAction, T> for CustomTypePrompt<'a, T>
+impl<'a, Backend, T> Prompt<Backend> for CustomTypePrompt<'a, T>
 where
-    B: CustomTypeBackend,
+    Backend: CustomTypeBackend,
     T: Clone,
 {
+    type Config = CustomTypeConfig;
+    type InnerAction = CustomTypePromptAction;
+    type Output = T;
+
     fn message(&self) -> &str {
         self.message
     }
@@ -123,7 +127,7 @@ where
         Ok(result)
     }
 
-    fn render(&self, backend: &mut B) -> InquireResult<()> {
+    fn render(&self, backend: &mut Backend) -> InquireResult<()> {
         let prompt = &self.message;
 
         if let Some(error) = &self.error {

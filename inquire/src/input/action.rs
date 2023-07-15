@@ -27,7 +27,9 @@ impl InputAction {
     }
 }
 
-impl InnerAction<()> for InputAction {
+impl InnerAction for InputAction {
+    type Config = ();
+
     fn from_key(key: Key, _config: &()) -> Option<Self>
     where
         Self: Sized,

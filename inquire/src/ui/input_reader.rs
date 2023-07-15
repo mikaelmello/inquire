@@ -6,7 +6,7 @@ use crate::{
 pub trait InputReader<I> {
     fn next_action<C>(&mut self, config: &C) -> InquireResult<Option<Action<I>>>
     where
-        I: InnerAction<C>;
+        I: InnerAction<Config = C>;
 }
 
 impl<I, T> InputReader<I> for T
@@ -16,7 +16,7 @@ where
 {
     fn next_action<C>(&mut self, _config: &C) -> InquireResult<Option<Action<I>>>
     where
-        I: InnerAction<C>,
+        I: InnerAction<Config = C>,
     {
         Ok(self.next())
     }

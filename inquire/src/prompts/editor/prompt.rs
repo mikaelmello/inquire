@@ -15,7 +15,7 @@ use super::{action::EditorPromptAction, config::EditorConfig};
 
 pub struct EditorPrompt<'a> {
     message: &'a str,
-    config: EditorConfig<'a>,
+    config: EditorConfig,
     help_message: Option<&'a str>,
     formatter: StringFormatter<'a>,
     validators: Vec<Box<dyn StringValidator>>,
@@ -61,8 +61,8 @@ impl<'a> EditorPrompt<'a> {
     }
 
     fn run_editor(&mut self) -> InquireResult<()> {
-        process::Command::new(self.config.editor_command)
-            .args(self.config.editor_command_args)
+        process::Command::new(&self.config.editor_command)
+            .args(&self.config.editor_command_args)
             .arg(self.tmp_file.path())
             .spawn()?
             .wait()?;
@@ -92,15 +92,19 @@ impl<'a> EditorPrompt<'a> {
     }
 }
 
-impl<'a, B> Prompt<B, EditorConfig<'a>, EditorPromptAction, String> for EditorPrompt<'a>
+impl<'a, Backend> Prompt<Backend> for EditorPrompt<'a>
 where
-    B: EditorBackend,
+    Backend: EditorBackend,
 {
+    type Config = EditorConfig;
+    type InnerAction = EditorPromptAction;
+    type Output = String;
+
     fn message(&self) -> &str {
         self.message
     }
 
-    fn config(&self) -> &EditorConfig<'a> {
+    fn config(&self) -> &EditorConfig {
         &self.config
     }
 
@@ -129,14 +133,14 @@ where
         }
     }
 
-    fn render(&self, backend: &mut B) -> InquireResult<()> {
+    fn render(&self, backend: &mut Backend) -> InquireResult<()> {
         let prompt = &self.message;
 
         if let Some(err) = &self.error {
             backend.render_error_message(err)?;
         }
 
-        let path = Path::new(self.config.editor_command);
+        let path = Path::new(&self.config.editor_command);
         let editor_name = path
             .file_stem()
             .and_then(|f| f.to_str())
