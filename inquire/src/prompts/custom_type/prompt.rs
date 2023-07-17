@@ -4,7 +4,7 @@ use crate::{
     input::Input,
     parser::CustomTypeParser,
     prompts::prompt::{ActionResult, Prompt},
-    ui::CustomTypeBackend,
+    ui::{CustomTypePromptRenderer, InputReader},
     validator::{CustomTypeValidator, ErrorMessage, Validation},
     CustomType, InquireError,
 };
@@ -80,7 +80,7 @@ where
 
 impl<'a, Backend, T> Prompt<Backend> for CustomTypePrompt<'a, T>
 where
-    Backend: CustomTypeBackend,
+    Backend: InputReader + CustomTypePromptRenderer,
     T: Clone,
 {
     type Config = CustomTypeConfig;

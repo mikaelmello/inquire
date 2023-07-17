@@ -7,7 +7,7 @@ use crate::{
     list_option::ListOption,
     prompts::prompt::{ActionResult, Prompt},
     type_aliases::Filter,
-    ui::MultiSelectBackend,
+    ui::{InputReader, MultiSelectPromptRenderer},
     utils::paginate,
     validator::{ErrorMessage, MultiOptionValidator, Validation},
     InquireError, MultiSelect,
@@ -191,7 +191,7 @@ where
 
 impl<'a, Backend, T> Prompt<Backend> for MultiSelectPrompt<'a, T>
 where
-    Backend: MultiSelectBackend,
+    Backend: InputReader + MultiSelectPromptRenderer,
     T: Display,
 {
     type Config = MultiSelectConfig;

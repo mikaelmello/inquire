@@ -14,7 +14,7 @@ use crate::{
     formatter::{StringFormatter, DEFAULT_STRING_FORMATTER},
     prompts::prompt::Prompt,
     terminal::get_default_terminal,
-    ui::{Backend, RenderConfig, TextBackend},
+    ui::{Backend, InputReader, RenderConfig, TextPromptRenderer},
     validator::StringValidator,
 };
 
@@ -276,7 +276,7 @@ impl<'a> Text<'a> {
         self.prompt_with_backend(&mut backend)
     }
 
-    pub(crate) fn prompt_with_backend<B: TextBackend>(
+    pub(crate) fn prompt_with_backend<B: InputReader + TextPromptRenderer>(
         self,
         backend: &mut B,
     ) -> InquireResult<String> {

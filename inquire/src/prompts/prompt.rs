@@ -1,6 +1,11 @@
 //! Definitions of common behavior shared amongst all different prompt types.
 
-use crate::{error::InquireResult, input::InputActionResult, ui::CommonBackend, InquireError};
+use crate::{
+    error::InquireResult,
+    input::InputActionResult,
+    ui::{InputReader, Renderer},
+    InquireError,
+};
 
 use super::action::{Action, InnerAction};
 
@@ -29,7 +34,7 @@ impl From<InputActionResult> for ActionResult {
 /// Shared behavior among all different prompt types.
 pub trait Prompt<Backend>
 where
-    Backend: CommonBackend,
+    Backend: InputReader + Renderer + InputReader,
     Self: Sized,
 {
     type Config;

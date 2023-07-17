@@ -13,7 +13,7 @@ use crate::{
     parser::CustomTypeParser,
     prompts::prompt::Prompt,
     terminal::get_default_terminal,
-    ui::{Backend, CustomTypeBackend, RenderConfig},
+    ui::{Backend, CustomTypePromptRenderer, InputReader, RenderConfig},
     validator::CustomTypeValidator,
 };
 
@@ -266,7 +266,7 @@ where
         self.prompt_with_backend(&mut backend)
     }
 
-    pub(crate) fn prompt_with_backend<B: CustomTypeBackend>(
+    pub(crate) fn prompt_with_backend<B: InputReader + CustomTypePromptRenderer>(
         self,
         backend: &mut B,
     ) -> InquireResult<T> {

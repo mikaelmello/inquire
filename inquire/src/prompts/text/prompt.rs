@@ -7,7 +7,7 @@ use crate::{
     input::{Input, InputActionResult},
     list_option::ListOption,
     prompts::prompt::{ActionResult, Prompt},
-    ui::TextBackend,
+    ui::{InputReader, TextPromptRenderer},
     utils::paginate,
     validator::{ErrorMessage, StringValidator, Validation},
     Autocomplete, InquireError, Text,
@@ -163,7 +163,7 @@ impl<'a> TextPrompt<'a> {
 
 impl<'a, Backend> Prompt<Backend> for TextPrompt<'a>
 where
-    Backend: TextBackend,
+    Backend: InputReader + TextPromptRenderer,
 {
     type Config = TextConfig;
     type InnerAction = TextPromptAction;

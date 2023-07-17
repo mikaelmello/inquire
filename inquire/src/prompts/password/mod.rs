@@ -13,7 +13,7 @@ use crate::{
     formatter::StringFormatter,
     prompts::prompt::Prompt,
     terminal::get_default_terminal,
-    ui::{Backend, PasswordBackend, RenderConfig},
+    ui::{Backend, InputReader, PasswordPromptRenderer, RenderConfig},
     validator::StringValidator,
 };
 
@@ -280,7 +280,7 @@ impl<'a> Password<'a> {
         self.prompt_with_backend(&mut backend)
     }
 
-    pub(crate) fn prompt_with_backend<B: PasswordBackend>(
+    pub(crate) fn prompt_with_backend<B: InputReader + PasswordPromptRenderer>(
         self,
         backend: &mut B,
     ) -> InquireResult<String> {

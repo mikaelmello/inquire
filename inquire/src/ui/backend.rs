@@ -11,14 +11,11 @@ use crate::{
     ui::{IndexPrefix, Key, RenderConfig, Styled},
     utils::{int_log10, Page},
     validator::ErrorMessage,
-    {Action, InnerAction},
 };
 
 use super::InputReader;
 
-pub trait CommonBackend {
-    fn read_key(&mut self) -> Result<Key>;
-
+pub trait Renderer {
     fn frame_setup(&mut self) -> Result<()>;
     fn frame_finish(&mut self) -> Result<()>;
 
@@ -29,7 +26,7 @@ pub trait CommonBackend {
     fn render_help_message(&mut self, help: &str) -> Result<()>;
 }
 
-pub trait TextBackend: CommonBackend {
+pub trait TextPromptRenderer: Renderer {
     fn render_prompt(
         &mut self,
         prompt: &str,
@@ -40,16 +37,16 @@ pub trait TextBackend: CommonBackend {
 }
 
 #[cfg(feature = "editor")]
-pub trait EditorBackend: CommonBackend {
+pub trait EditorPromptRenderer: Renderer {
     fn render_prompt(&mut self, prompt: &str, editor_command: &str) -> Result<()>;
 }
 
-pub trait SelectBackend: CommonBackend {
+pub trait SelectPromptRenderer: Renderer {
     fn render_select_prompt(&mut self, prompt: &str, cur_input: &Input) -> Result<()>;
     fn render_options<D: Display>(&mut self, page: Page<'_, ListOption<D>>) -> Result<()>;
 }
 
-pub trait MultiSelectBackend: CommonBackend {
+pub trait MultiSelectPromptRenderer: Renderer {
     fn render_multiselect_prompt(&mut self, prompt: &str, cur_input: &Input) -> Result<()>;
     fn render_options<D: Display>(
         &mut self,
@@ -58,7 +55,7 @@ pub trait MultiSelectBackend: CommonBackend {
     ) -> Result<()>;
 }
 
-pub trait CustomTypeBackend: CommonBackend {
+pub trait CustomTypePromptRenderer: Renderer {
     fn render_prompt(
         &mut self,
         prompt: &str,
@@ -67,7 +64,7 @@ pub trait CustomTypeBackend: CommonBackend {
     ) -> Result<()>;
 }
 
-pub trait PasswordBackend: CommonBackend {
+pub trait PasswordPromptRenderer: Renderer {
     fn render_prompt(&mut self, prompt: &str) -> Result<()>;
     fn render_prompt_with_masked_input(&mut self, prompt: &str, cur_input: &Input) -> Result<()>;
     fn render_prompt_with_full_input(&mut self, prompt: &str, cur_input: &Input) -> Result<()>;
@@ -354,7 +351,7 @@ where
     }
 }
 
-impl<'a, T> CommonBackend for Backend<'a, T>
+impl<'a, T> Renderer for Backend<'a, T>
 where
     T: Terminal,
 {
@@ -409,10 +406,6 @@ where
         Ok(())
     }
 
-    fn read_key(&mut self) -> Result<Key> {
-        self.terminal.read_key()
-    }
-
     fn render_error_message(&mut self, error: &ErrorMessage) -> Result<()> {
         self.terminal
             .write_styled(&self.render_config.error_message.prefix)?;
@@ -451,7 +444,7 @@ where
     }
 }
 
-impl<'a, T> TextBackend for Backend<'a, T>
+impl<'a, T> TextPromptRenderer for Backend<'a, T>
 where
     T: Terminal,
 {
@@ -479,7 +472,7 @@ where
 }
 
 #[cfg(feature = "editor")]
-impl<'a, T> EditorBackend for Backend<'a, T>
+impl<'a, T> EditorPromptRenderer for Backend<'a, T>
 where
     T: Terminal,
 {
@@ -498,7 +491,7 @@ where
     }
 }
 
-impl<'a, T> SelectBackend for Backend<'a, T>
+impl<'a, T> SelectPromptRenderer for Backend<'a, T>
 where
     T: Terminal,
 {
@@ -526,7 +519,7 @@ where
     }
 }
 
-impl<'a, T> MultiSelectBackend for Backend<'a, T>
+impl<'a, T> MultiSelectPromptRenderer for Backend<'a, T>
 where
     T: Terminal,
 {
@@ -580,9 +573,9 @@ pub mod date {
 
     use crate::{date_utils::get_start_date, terminal::Terminal, ui::Styled};
 
-    use super::{Backend, CommonBackend};
+    use super::{Backend, Renderer};
 
-    pub trait DateSelectBackend: CommonBackend {
+    pub trait DateSelectPromptRenderer: Renderer {
         fn render_calendar_prompt(&mut self, prompt: &str) -> Result<()>;
 
         #[allow(clippy::too_many_arguments)]
@@ -598,7 +591,7 @@ pub mod date {
         ) -> Result<()>;
     }
 
-    impl<'a, T> DateSelectBackend for Backend<'a, T>
+    impl<'a, T> DateSelectPromptRenderer for Backend<'a, T>
     where
         T: Terminal,
     {
@@ -725,7 +718,7 @@ pub mod date {
     }
 }
 
-impl<'a, T> CustomTypeBackend for Backend<'a, T>
+impl<'a, T> CustomTypePromptRenderer for Backend<'a, T>
 where
     T: Terminal,
 {
@@ -739,7 +732,7 @@ where
     }
 }
 
-impl<'a, T> PasswordBackend for Backend<'a, T>
+impl<'a, T> PasswordPromptRenderer for Backend<'a, T>
 where
     T: Terminal,
 {
@@ -774,17 +767,11 @@ where
     }
 }
 
-impl<'a, I, T> InputReader<I> for Backend<'a, T>
+impl<'a, T> InputReader for Backend<'a, T>
 where
     T: Terminal,
-    I: Copy + Clone + PartialEq + Eq,
 {
-    fn next_action<C>(&mut self, config: &C) -> InquireResult<Option<Action<I>>>
-    where
-        I: InnerAction<Config = C>,
-    {
-        let key = self.read_key()?;
-        let action = Action::from_key(key, config);
-        Ok(action)
+    fn read_key(&mut self) -> InquireResult<Key> {
+        self.terminal.read_key().map_err(|e| e.into())
     }
 }

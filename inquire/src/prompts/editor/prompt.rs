@@ -6,7 +6,7 @@ use crate::{
     error::InquireResult,
     formatter::StringFormatter,
     prompts::prompt::{ActionResult, Prompt},
-    ui::EditorBackend,
+    ui::{EditorPromptRenderer, InputReader},
     validator::{ErrorMessage, StringValidator, Validation},
     Editor, InquireError,
 };
@@ -94,7 +94,7 @@ impl<'a> EditorPrompt<'a> {
 
 impl<'a, Backend> Prompt<Backend> for EditorPrompt<'a>
 where
-    Backend: EditorBackend,
+    Backend: InputReader + EditorPromptRenderer,
 {
     type Config = EditorConfig;
     type InnerAction = EditorPromptAction;

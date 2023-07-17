@@ -3,7 +3,7 @@ use crate::{
     formatter::StringFormatter,
     input::Input,
     prompts::prompt::{ActionResult, Prompt},
-    ui::PasswordBackend,
+    ui::{InputReader, PasswordPromptRenderer},
     validator::{ErrorMessage, StringValidator, Validation},
     InquireError, Password, PasswordDisplayMode,
 };
@@ -138,7 +138,7 @@ impl<'a> PasswordPrompt<'a> {
 
 impl<'a, Backend> Prompt<Backend> for PasswordPrompt<'a>
 where
-    Backend: PasswordBackend,
+    Backend: InputReader + PasswordPromptRenderer,
 {
     type Config = PasswordConfig;
     type InnerAction = PasswordPromptAction;

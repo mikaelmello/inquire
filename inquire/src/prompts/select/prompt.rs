@@ -7,7 +7,7 @@ use crate::{
     list_option::ListOption,
     prompts::prompt::{ActionResult, Prompt},
     type_aliases::Filter,
-    ui::SelectBackend,
+    ui::{InputReader, SelectPromptRenderer},
     utils::paginate,
     InquireError, Select,
 };
@@ -130,7 +130,7 @@ where
 
 impl<'a, Backend, T> Prompt<Backend> for SelectPrompt<'a, T>
 where
-    Backend: SelectBackend,
+    Backend: InputReader + SelectPromptRenderer,
     T: Display,
 {
     type Config = SelectConfig;

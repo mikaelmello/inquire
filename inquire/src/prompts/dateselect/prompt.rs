@@ -10,7 +10,7 @@ use crate::{
     error::InquireResult,
     formatter::DateFormatter,
     prompts::prompt::{ActionResult, Prompt},
-    ui::date::DateSelectBackend,
+    ui::{date::DateSelectPromptRenderer, InputReader},
     validator::{DateValidator, ErrorMessage, Validation},
     DateSelect, InquireError,
 };
@@ -118,7 +118,7 @@ impl<'a> DateSelectPrompt<'a> {
 
 impl<'a, B> Prompt<B> for DateSelectPrompt<'a>
 where
-    B: DateSelectBackend,
+    B: InputReader + DateSelectPromptRenderer,
 {
     type Config = DateSelectConfig;
     type InnerAction = DateSelectPromptAction;
