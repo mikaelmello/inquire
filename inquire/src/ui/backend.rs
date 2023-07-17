@@ -13,62 +13,10 @@ use crate::{
     validator::ErrorMessage,
 };
 
-use super::InputReader;
-
-pub trait Renderer {
-    fn frame_setup(&mut self) -> Result<()>;
-    fn frame_finish(&mut self) -> Result<()>;
-
-    fn render_canceled_prompt(&mut self, prompt: &str) -> Result<()>;
-    fn render_prompt_with_answer(&mut self, prompt: &str, answer: &str) -> Result<()>;
-
-    fn render_error_message(&mut self, error: &ErrorMessage) -> Result<()>;
-    fn render_help_message(&mut self, help: &str) -> Result<()>;
-}
-
-pub trait TextPromptRenderer: Renderer {
-    fn render_prompt(
-        &mut self,
-        prompt: &str,
-        default: Option<&str>,
-        cur_input: &Input,
-    ) -> Result<()>;
-    fn render_suggestions<D: Display>(&mut self, page: Page<'_, ListOption<D>>) -> Result<()>;
-}
-
-#[cfg(feature = "editor")]
-pub trait EditorPromptRenderer: Renderer {
-    fn render_prompt(&mut self, prompt: &str, editor_command: &str) -> Result<()>;
-}
-
-pub trait SelectPromptRenderer: Renderer {
-    fn render_select_prompt(&mut self, prompt: &str, cur_input: &Input) -> Result<()>;
-    fn render_options<D: Display>(&mut self, page: Page<'_, ListOption<D>>) -> Result<()>;
-}
-
-pub trait MultiSelectPromptRenderer: Renderer {
-    fn render_multiselect_prompt(&mut self, prompt: &str, cur_input: &Input) -> Result<()>;
-    fn render_options<D: Display>(
-        &mut self,
-        page: Page<'_, ListOption<D>>,
-        checked: &BTreeSet<usize>,
-    ) -> Result<()>;
-}
-
-pub trait CustomTypePromptRenderer: Renderer {
-    fn render_prompt(
-        &mut self,
-        prompt: &str,
-        default: Option<&str>,
-        cur_input: &Input,
-    ) -> Result<()>;
-}
-
-pub trait PasswordPromptRenderer: Renderer {
-    fn render_prompt(&mut self, prompt: &str) -> Result<()>;
-    fn render_prompt_with_masked_input(&mut self, prompt: &str, cur_input: &Input) -> Result<()>;
-    fn render_prompt_with_full_input(&mut self, prompt: &str, cur_input: &Input) -> Result<()>;
-}
+use super::{
+    CustomTypePromptRenderer, EditorPromptRenderer, InputReader, MultiSelectPromptRenderer,
+    PasswordPromptRenderer, Renderer, SelectPromptRenderer, TextPromptRenderer,
+};
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct Position {
@@ -153,7 +101,7 @@ where
         self.prompt_end_position = cur_pos;
     }
 
-    fn move_cursor_to_end_position(&mut self) -> Result<()> {
+    fn move_cursor_to_end_position(&mut self) -> InquireResult<()> {
         if self.prompt_current_position.row != self.prompt_end_position.row {
             let diff = self
                 .prompt_end_position
@@ -167,11 +115,13 @@ where
         Ok(())
     }
 
-    fn update_cursor_status(&mut self) -> Result<()> {
+    fn update_cursor_status(&mut self) -> InquireResult<()> {
         match self.show_cursor {
-            true => self.terminal.cursor_show(),
-            false => self.terminal.cursor_hide(),
-        }
+            true => self.terminal.cursor_show()?,
+            false => self.terminal.cursor_hide()?,
+        };
+
+        Ok(())
     }
 
     fn mark_prompt_cursor_position(&mut self, offset: usize) {
@@ -182,7 +132,7 @@ where
         self.prompt_cursor_offset = Some(position);
     }
 
-    fn reset_prompt(&mut self) -> Result<()> {
+    fn reset_prompt(&mut self) -> InquireResult<()> {
         self.move_cursor_to_end_position()?;
 
         for _ in 0..self.prompt_end_position.row {
@@ -209,7 +159,7 @@ where
         &mut self,
         option_relative_index: usize,
         page: &Page<'_, ListOption<D>>,
-    ) -> Result<()> {
+    ) -> InquireResult<()> {
         let empty_prefix = Styled::new(" ");
 
         let x = if page.cursor == Some(option_relative_index) {
@@ -222,7 +172,9 @@ where
             empty_prefix
         };
 
-        self.terminal.write_styled(&x)
+        self.terminal.write_styled(&x)?;
+
+        Ok(())
     }
 
     fn print_option_value<D: Display>(
@@ -230,7 +182,7 @@ where
         option_relative_index: usize,
         option: &ListOption<D>,
         page: &Page<'_, ListOption<D>>,
-    ) -> Result<()> {
+    ) -> InquireResult<()> {
         let stylesheet = if let Some(selected_option_style) = self.render_config.selected_option {
             match page.cursor {
                 Some(cursor) if cursor == option_relative_index => selected_option_style,
@@ -241,7 +193,9 @@ where
         };
 
         self.terminal
-            .write_styled(&Styled::new(&option.value).with_style_sheet(stylesheet))
+            .write_styled(&Styled::new(&option.value).with_style_sheet(stylesheet))?;
+
+        Ok(())
     }
 
     fn print_option_index_prefix(&mut self, index: usize, max_index: usize) -> Option<Result<()>> {
@@ -266,14 +220,20 @@ where
         })
     }
 
-    fn print_default_value(&mut self, value: &str) -> Result<()> {
+    fn print_default_value(&mut self, value: &str) -> InquireResult<()> {
         let content = format!("({value})");
         let token = Styled::new(content).with_style_sheet(self.render_config.default_value);
 
-        self.terminal.write_styled(&token)
+        self.terminal.write_styled(&token)?;
+
+        Ok(())
     }
 
-    fn print_prompt_with_prefix(&mut self, prefix: Styled<&str>, prompt: &str) -> Result<()> {
+    fn print_prompt_with_prefix(
+        &mut self,
+        prefix: Styled<&str>,
+        prompt: &str,
+    ) -> InquireResult<()> {
         self.terminal.write_styled(&prefix)?;
 
         self.terminal.write(" ")?;
@@ -284,11 +244,11 @@ where
         Ok(())
     }
 
-    fn print_prompt(&mut self, prompt: &str) -> Result<()> {
+    fn print_prompt(&mut self, prompt: &str) -> InquireResult<()> {
         self.print_prompt_with_prefix(self.render_config.prompt_prefix, prompt)
     }
 
-    fn print_input(&mut self, input: &Input) -> Result<()> {
+    fn print_input(&mut self, input: &Input) -> InquireResult<()> {
         self.terminal.write(" ")?;
 
         let cursor_offset = input.pre_cursor().chars().count();
@@ -324,7 +284,7 @@ where
         prompt: &str,
         default: Option<&str>,
         input: &Input,
-    ) -> Result<()> {
+    ) -> InquireResult<()> {
         self.print_prompt(prompt)?;
 
         if let Some(default) = default {
@@ -339,13 +299,13 @@ where
         Ok(())
     }
 
-    fn flush(&mut self) -> Result<()> {
+    fn flush(&mut self) -> InquireResult<()> {
         self.terminal.flush()?;
 
         Ok(())
     }
 
-    fn new_line(&mut self) -> Result<()> {
+    fn new_line(&mut self) -> InquireResult<()> {
         self.terminal.write("\r\n")?;
         Ok(())
     }
@@ -355,14 +315,14 @@ impl<'a, T> Renderer for Backend<'a, T>
 where
     T: Terminal,
 {
-    fn frame_setup(&mut self) -> Result<()> {
+    fn frame_setup(&mut self) -> InquireResult<()> {
         self.terminal.cursor_hide()?;
         self.terminal.flush()?;
 
         self.reset_prompt()
     }
 
-    fn frame_finish(&mut self) -> Result<()> {
+    fn frame_finish(&mut self) -> InquireResult<()> {
         self.update_position_info();
 
         if let Some(prompt_cursor_position) = self.prompt_cursor_position {
@@ -380,7 +340,7 @@ where
         self.flush()
     }
 
-    fn render_canceled_prompt(&mut self, prompt: &str) -> Result<()> {
+    fn render_canceled_prompt(&mut self, prompt: &str) -> InquireResult<()> {
         self.print_prompt(prompt)?;
 
         self.terminal.write(" ")?;
@@ -393,7 +353,7 @@ where
         Ok(())
     }
 
-    fn render_prompt_with_answer(&mut self, prompt: &str, answer: &str) -> Result<()> {
+    fn render_prompt_with_answer(&mut self, prompt: &str, answer: &str) -> InquireResult<()> {
         self.print_prompt_with_prefix(self.render_config.answered_prompt_prefix, prompt)?;
 
         self.terminal.write(" ")?;
@@ -406,7 +366,7 @@ where
         Ok(())
     }
 
-    fn render_error_message(&mut self, error: &ErrorMessage) -> Result<()> {
+    fn render_error_message(&mut self, error: &ErrorMessage) -> InquireResult<()> {
         self.terminal
             .write_styled(&self.render_config.error_message.prefix)?;
 
@@ -428,7 +388,7 @@ where
         Ok(())
     }
 
-    fn render_help_message(&mut self, help: &str) -> Result<()> {
+    fn render_help_message(&mut self, help: &str) -> InquireResult<()> {
         self.terminal
             .write_styled(&Styled::new("[").with_style_sheet(self.render_config.help_message))?;
 
@@ -453,11 +413,14 @@ where
         prompt: &str,
         default: Option<&str>,
         cur_input: &Input,
-    ) -> Result<()> {
+    ) -> InquireResult<()> {
         self.print_prompt_with_input(prompt, default, cur_input)
     }
 
-    fn render_suggestions<D: Display>(&mut self, page: Page<'_, ListOption<D>>) -> Result<()> {
+    fn render_suggestions<D: Display>(
+        &mut self,
+        page: Page<'_, ListOption<D>>,
+    ) -> InquireResult<()> {
         for (idx, option) in page.content.iter().enumerate() {
             self.print_option_prefix(idx, &page)?;
 
@@ -476,7 +439,7 @@ impl<'a, T> EditorPromptRenderer for Backend<'a, T>
 where
     T: Terminal,
 {
-    fn render_prompt(&mut self, prompt: &str, editor_command: &str) -> Result<()> {
+    fn render_prompt(&mut self, prompt: &str, editor_command: &str) -> InquireResult<()> {
         self.print_prompt(prompt)?;
 
         self.terminal.write(" ")?;
@@ -495,11 +458,11 @@ impl<'a, T> SelectPromptRenderer for Backend<'a, T>
 where
     T: Terminal,
 {
-    fn render_select_prompt(&mut self, prompt: &str, cur_input: &Input) -> Result<()> {
+    fn render_select_prompt(&mut self, prompt: &str, cur_input: &Input) -> InquireResult<()> {
         self.print_prompt_with_input(prompt, None, cur_input)
     }
 
-    fn render_options<D: Display>(&mut self, page: Page<'_, ListOption<D>>) -> Result<()> {
+    fn render_options<D: Display>(&mut self, page: Page<'_, ListOption<D>>) -> InquireResult<()> {
         for (idx, option) in page.content.iter().enumerate() {
             self.print_option_prefix(idx, &page)?;
 
@@ -523,7 +486,7 @@ impl<'a, T> MultiSelectPromptRenderer for Backend<'a, T>
 where
     T: Terminal,
 {
-    fn render_multiselect_prompt(&mut self, prompt: &str, cur_input: &Input) -> Result<()> {
+    fn render_multiselect_prompt(&mut self, prompt: &str, cur_input: &Input) -> InquireResult<()> {
         self.print_prompt_with_input(prompt, None, cur_input)
     }
 
@@ -531,7 +494,7 @@ where
         &mut self,
         page: Page<'_, ListOption<D>>,
         checked: &BTreeSet<usize>,
-    ) -> Result<()> {
+    ) -> InquireResult<()> {
         for (idx, option) in page.content.iter().enumerate() {
             self.print_option_prefix(idx, &page)?;
 
@@ -566,36 +529,25 @@ where
 }
 
 #[cfg(feature = "date")]
-pub mod date {
-    use std::{io::Result, ops::Sub};
+pub mod date_impl {
+    use std::ops::Sub;
 
     use chrono::{Datelike, Duration};
 
-    use crate::{date_utils::get_start_date, terminal::Terminal, ui::Styled};
+    use crate::{
+        date_utils::get_start_date,
+        error::InquireResult,
+        terminal::Terminal,
+        ui::{renderer::date::DateSelectPromptRenderer, Styled},
+    };
 
-    use super::{Backend, Renderer};
-
-    pub trait DateSelectPromptRenderer: Renderer {
-        fn render_calendar_prompt(&mut self, prompt: &str) -> Result<()>;
-
-        #[allow(clippy::too_many_arguments)]
-        fn render_calendar(
-            &mut self,
-            month: chrono::Month,
-            year: i32,
-            week_start: chrono::Weekday,
-            today: chrono::NaiveDate,
-            selected_date: chrono::NaiveDate,
-            min_date: Option<chrono::NaiveDate>,
-            max_date: Option<chrono::NaiveDate>,
-        ) -> Result<()>;
-    }
+    use super::Backend;
 
     impl<'a, T> DateSelectPromptRenderer for Backend<'a, T>
     where
         T: Terminal,
     {
-        fn render_calendar_prompt(&mut self, prompt: &str) -> Result<()> {
+        fn render_calendar_prompt(&mut self, prompt: &str) -> InquireResult<()> {
             self.print_prompt(prompt)?;
             self.new_line()?;
             Ok(())
@@ -610,7 +562,7 @@ pub mod date {
             selected_date: chrono::NaiveDate,
             min_date: Option<chrono::NaiveDate>,
             max_date: Option<chrono::NaiveDate>,
-        ) -> Result<()> {
+        ) -> InquireResult<()> {
             macro_rules! write_prefix {
                 () => {{
                     self.terminal
@@ -727,7 +679,7 @@ where
         prompt: &str,
         default: Option<&str>,
         cur_input: &Input,
-    ) -> Result<()> {
+    ) -> InquireResult<()> {
         self.print_prompt_with_input(prompt, default, cur_input)
     }
 }
@@ -736,13 +688,17 @@ impl<'a, T> PasswordPromptRenderer for Backend<'a, T>
 where
     T: Terminal,
 {
-    fn render_prompt(&mut self, prompt: &str) -> Result<()> {
+    fn render_prompt(&mut self, prompt: &str) -> InquireResult<()> {
         self.print_prompt(prompt)?;
         self.new_line()?;
         Ok(())
     }
 
-    fn render_prompt_with_masked_input(&mut self, prompt: &str, cur_input: &Input) -> Result<()> {
+    fn render_prompt_with_masked_input(
+        &mut self,
+        prompt: &str,
+        cur_input: &Input,
+    ) -> InquireResult<()> {
         let masked_string: String = (0..cur_input.length())
             .map(|_| self.render_config.password_mask)
             .collect();
@@ -752,7 +708,11 @@ where
         self.print_prompt_with_input(prompt, None, &masked_input)
     }
 
-    fn render_prompt_with_full_input(&mut self, prompt: &str, cur_input: &Input) -> Result<()> {
+    fn render_prompt_with_full_input(
+        &mut self,
+        prompt: &str,
+        cur_input: &Input,
+    ) -> InquireResult<()> {
         self.print_prompt_with_input(prompt, None, cur_input)
     }
 }

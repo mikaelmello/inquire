@@ -34,7 +34,7 @@ impl From<InputActionResult> for ActionResult {
 /// Shared behavior among all different prompt types.
 pub trait Prompt<Backend>
 where
-    Backend: InputReader + Renderer + InputReader,
+    Backend: InputReader + Renderer,
     Self: Sized,
 {
     type Config;
