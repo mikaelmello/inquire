@@ -45,10 +45,6 @@ pub struct PathSelect<'a, T> {
     /// Page size of the options displayed to the user.
     pub page_size: usize,
 
-    /// Whether vim mode is enabled. When enabled, the user can
-    /// navigate through the options using hjkl.
-    pub vim_mode: bool,
-
     /// Whether to show hidden files.
     pub show_hidden: bool,
 
