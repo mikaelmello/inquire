@@ -75,6 +75,7 @@ pub struct PathSelect<'a, T> {
     /// config is treated as the only source of truth. If you want to customize colors
     /// and still suport NO_COLOR, you will have to do this on your end.
     pub render_config: RenderConfig<'a>,
+
     /// The [path selection mode](PathSelectionMode) determines what the user can select.
     pub selection_mode: PathSelectionMode<'a>,
 }
