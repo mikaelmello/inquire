@@ -1,6 +1,6 @@
 //! Path entries
 use super::{PathSelectionMode, PathSortingMode};
-use crate::{InquireError, };
+use crate::InquireError;
 use std::{
     cmp, 
     convert::TryFrom,
