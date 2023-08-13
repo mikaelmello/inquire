@@ -427,7 +427,7 @@ where
             r#"{message} 
 - Current directory: {} 
 - Sorted by {sorting_mode} (Press tab to change). 
-- Type to filter: "#,
+- Type to filter:"#,
             current_path.to_string_lossy() 
         );
 
