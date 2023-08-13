@@ -180,10 +180,10 @@ where
     pub const DEFAULT_DIVIDER: &'a str = "-----";
 
     /// Creates a [PathSelect] with the provided message and options, along with default configuration values.
-    pub fn new(message: &'a str, start_path_opt: Option<T>) -> Self {
+    pub fn new(message: &'a str) -> Self {
         Self {
             message,
-            start_path_opt,
+            start_path_opt: None,
             default: None,
             divider: Self::DEFAULT_DIVIDER,
             help_message: Self::DEFAULT_HELP_MESSAGE,
