@@ -115,7 +115,6 @@ where
     /// ans.push(ListOption::new(7, &c));
     /// assert_eq!(String::from("/ra/set/nefer.rs, /maat/nut.rs, ptah.rs"), formatter(ans.as_slice()));
     /// ```
-
     pub const DEFAULT_PATH_FORMATTER: MultiOptionFormatter<'a, T> = &|ans| {
         ans.iter()
             .map(|t| PathSelectPrompt::get_path_string(t.value))
