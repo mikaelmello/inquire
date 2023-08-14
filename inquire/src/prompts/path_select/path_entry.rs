@@ -4,7 +4,6 @@ use crate::InquireError;
 use std::{
     cmp, 
     convert::TryFrom,
-    ffi::OsStr,
     fmt, fs,
     ops::Deref,
     path::{Path, PathBuf}
@@ -122,20 +121,12 @@ impl TryFrom<fs_err::DirEntry> for PathEntry {
 impl PathEntry {
     /// Is this path entry selectable based on the given selection mode?
     pub fn is_selectable<'a>(&self, selection_mode: &PathSelectionMode<'a>) -> bool {
-        let is_dir = self.is_dir();
-        let is_file = self.is_file();
-        let file_ext_opt = self.path.extension().map(OsStr::to_os_string);
-        match (selection_mode, is_dir, is_file) {
-            (PathSelectionMode::Directory, true, _) => true,
-            (PathSelectionMode::File(None), _, true) => true,
-            (PathSelectionMode::File(Some(extension)), _, true) => file_ext_opt
-                .as_ref()
-                .map(|osstr| osstr.to_string_lossy().eq_ignore_ascii_case(*extension))
-                .unwrap_or_default(),
-            (PathSelectionMode::Multiple(ref path_selection_modes), _, _) => path_selection_modes
-                .iter()
-                .any(|submode| self.is_selectable(submode)),
-            _ => false,
+        match selection_mode {
+            PathSelectionMode::Directory(filter) => self.is_dir() 
+                && filter.check(&self.path),
+            PathSelectionMode::File(filter) => self.is_file() 
+                && filter.check(&self.path),
+            PathSelectionMode::FileOrDirectory(filter) => filter.check(&self.path)
         }
     }
 

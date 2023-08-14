@@ -1,7 +1,8 @@
 //! Path picker example
 use inquire::{
+    PathFilter,
     PathSelect,
-    PathSelectionMode
+    PathSelectionMode,
 };
 
 fn main() {
@@ -9,15 +10,17 @@ fn main() {
 
     let toml_extension = "toml";
     let rs_extension = "rs";
-    let selection_mode = PathSelectionMode::Multiple(vec![
-        PathSelectionMode::File(Some(toml_extension)),
-        PathSelectionMode::File(Some(rs_extension)),
-    ]);
+    let selection_mode = PathSelectionMode::File(
+        PathFilter::AcceptAny(vec![
+            PathFilter::AcceptExtension(toml_extension),
+            PathFilter::AcceptExtension(rs_extension),
+        ])
+    );
 
     let ans = PathSelect::new(
         &format!("pick an .{toml_extension} or .{rs_extension} file"),
-        Some(start_path),
     )
+    .with_start_path(start_path)
     .with_select_multiple(true)
     .with_selection_mode(selection_mode)
     .prompt();

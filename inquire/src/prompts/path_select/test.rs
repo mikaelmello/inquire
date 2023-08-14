@@ -3,7 +3,10 @@ use std::{iter::FromIterator, path::{Path, PathBuf}};
 
 use crate::{
   PathSelect, 
-  prompts::path_select::{PathSelectionMode, PathSortingMode}, terminal::crossterm::CrosstermTerminal, ui::{Backend, RenderConfig}, list_option::ListOption, 
+  prompts::path_select::{PathSelectionMode, PathFilter, PathSortingMode}, 
+  terminal::crossterm::CrosstermTerminal, 
+  ui::{Backend, RenderConfig}, 
+  list_option::ListOption, 
 };
 use lazy_static::lazy_static;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers, KeyEventKind};
@@ -145,12 +148,10 @@ fn filtering_entries() -> Result <(), std::io::Error> {
   let terminal = CrosstermTerminal::new_with_io(write, read);
   let backend = &mut Backend::new(terminal, RenderConfig::default())?;
 
-  let answer = PathSelect::new(
-    "select path", 
-    Some(SUBDIR.to_path_buf())
-  )
+  let answer = PathSelect::new("select path")
+      .with_start_path(SUBDIR.to_path_buf())
       .with_select_multiple(true)
-      .with_selection_mode(PathSelectionMode::File(Some("rs")))
+      .with_selection_mode(PathSelectionMode::File(PathFilter::AcceptExtension("rs")))
       .with_sorting_mode(PathSortingMode::Size)
       // .raw_prompt()
       .prompt_with_backend(backend)
