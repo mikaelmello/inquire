@@ -25,15 +25,45 @@ use crate::{
 };
 use std::path::Path;
 
-/// Prompt for choosing one or multiple files.  
+/// Prompt for choosing one or multiple files or directories represented by their filesystem paths.  
 ///
-/// The user can
+/// The user can:
+/// - Navigate at the current level in the file tree pressing ↑ or ↓,
+/// - Select or deselect the current path by pressing space,
+/// - Navigate higher in the file tree by pressing ← 
+/// - Navigate deeper in the file tree by pressing → on a directory
+/// - Select all paths by pressing shift + →
+/// - Clear selection by pressing shift + ←
+/// - Cycle through sorting modes by pressing tab
+/// 
+/// ### Customizable options:
+/// 
+/// #### Required:
+/// - **Prompt message**: Message shown to the user with the prompt
+/// 
+/// #### Optional
+/// - **Start path**: The path the user begins navigating from.
+/// - **Default**: Paths selected when the prompt is first rendered
+/// - **Help message**: Message displayed at the line below the prompt.
+/// - **Formatter**: Custom formatter in case you need to pre-process the user input before showing it as the final answer.
+///   - Prints the selected paths string value, joined using a comma as the separator, by default.
+/// - **Show hidden**: Whether to show hidden file path entries.
+/// - **Show symlinks**: Whether to show symlink path entries.
+/// - **Select multiple**: Whether to allow the user to make multiple selections.
+/// - **Selection mode**: What files is the user shown and able to select? (See [PathSelectionMode])
+/// - **Sorting mode**: How to sort the paths ( See [PathSortingMode] ).
+/// - **Page size**: Number of options displayed at once, 7 by default.
+/// - **Keep filter flag**: Whether the current filter input should be cleared or not after a selection is made. Defaults to true.
+///
+/// # Example
+///
+/// For a full-featured example, check the [GitHub repository](https://github.com/mikaelmello/inquire/blob/main/examples/path_select.rs).
 #[derive(Clone)]
 pub struct PathSelect<'a, T> {
     /// Message to be presented to the user.
     pub message: &'a str,
 
-    /// Start path shown to the user.
+    /// Start path the user will navigate from.
     pub start_path_opt: Option<T>,
 
     /// Default selected paths  
@@ -153,9 +183,6 @@ where
     /// Default page size, equal to the global default page size [config::DEFAULT_PAGE_SIZE]
     pub const DEFAULT_PAGE_SIZE: usize = crate::config::DEFAULT_PAGE_SIZE;
 
-    /// Default value of vim mode, equal to the global default value [config::DEFAULT_PAGE_SIZE]
-    pub const DEFAULT_VIM_MODE: bool = crate::config::DEFAULT_VIM_MODE;
-
     /// Default value of showing hidden files
     pub const DEFAULT_SHOW_HIDDEN: bool = false;
 
@@ -191,7 +218,6 @@ where
             show_symlinks: Self::DEFAULT_SHOW_SYMLINKS,
             select_multiple: Self::DEFAULT_SELECT_MULTIPLE,
             page_size: Self::DEFAULT_PAGE_SIZE,
-            vim_mode: Self::DEFAULT_VIM_MODE,
             formatter: Self::DEFAULT_FORMATTER,
             keep_filter: Self::DEFAULT_KEEP_FILTER,
             render_config: get_configuration(),
@@ -245,12 +271,6 @@ where
     /// Sets the page size.
     pub fn with_page_size(mut self, page_size: usize) -> Self {
         self.page_size = page_size;
-        self
-    }
-
-    /// Enables or disables vim_mode.
-    pub fn with_vim_mode(mut self, vim_mode: bool) -> Self {
-        self.vim_mode = vim_mode;
         self
     }
 
@@ -318,7 +338,9 @@ where
     ///
     /// Returns the owned objects selected by the user.
     pub fn prompt(self) -> InquireResult<Vec<PathEntry>> {
-        self.raw_prompt()
+        let terminal = get_default_terminal()?;
+        let backend = & mut Backend::new(terminal, self.render_config)?;
+        self.prompt_with_backend(backend)
             .map(|op| op.into_iter().map(|o| o.value).collect())
     }
 
