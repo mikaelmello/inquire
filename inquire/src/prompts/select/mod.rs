@@ -6,6 +6,7 @@ mod prompt;
 mod test;
 
 pub use action::*;
+use fuzzy_matcher::{skim::SkimMatcherV2, FuzzyMatcher};
 
 use std::fmt::Display;
 
@@ -16,7 +17,7 @@ use crate::{
     list_option::ListOption,
     prompts::prompt::Prompt,
     terminal::get_default_terminal,
-    type_aliases::Filter,
+    type_aliases::Scorer,
     ui::{Backend, RenderConfig, SelectBackend},
 };
 
@@ -86,7 +87,10 @@ pub struct Select<'a, T> {
 
     /// Function called with the current user input to filter the provided
     /// options.
-    pub filter: Filter<'a, T>,
+    // pub filter: Filter<'a, T>,
+
+    /// TODO Docs
+    pub scorer: Scorer<'a, T>,
 
     /// Function that formats the user input and presents it to the user as the final rendering of the prompt.
     pub formatter: OptionFormatter<'a, T>,
@@ -144,11 +148,16 @@ where
     /// assert_eq!(false, filter("sa", &"Jacksonville",  "Jacksonville", 11));
     /// assert_eq!(true,  filter("sa", &"San Jose",      "San Jose",     12));
     /// ```
-    pub const DEFAULT_FILTER: Filter<'a, T> = &|filter, _, string_value, _| -> bool {
-        let filter = filter.to_lowercase();
+    pub const DEFAULT_SCORER: Scorer<'a, T> =
+        &|filter, _option, string_value, _idx| -> Option<usize> {
+            let matcher = SkimMatcherV2::default().ignore_case();
 
-        string_value.to_lowercase().contains(&filter)
-    };
+            match matcher.fuzzy_match(string_value, filter) {
+                Some(t) if t <= usize::MAX as i64 => Some(t as usize),
+                Some(t) if t > usize::MAX as i64 => Some(usize::MAX),
+                Some(_) | None => None,
+            }
+        };
 
     /// Default page size.
     pub const DEFAULT_PAGE_SIZE: usize = crate::config::DEFAULT_PAGE_SIZE;
@@ -172,7 +181,7 @@ where
             page_size: Self::DEFAULT_PAGE_SIZE,
             vim_mode: Self::DEFAULT_VIM_MODE,
             starting_cursor: Self::DEFAULT_STARTING_CURSOR,
-            filter: Self::DEFAULT_FILTER,
+            scorer: Self::DEFAULT_SCORER,
             formatter: Self::DEFAULT_FORMATTER,
             render_config: get_configuration(),
         }
@@ -203,8 +212,8 @@ where
     }
 
     /// Sets the filter function.
-    pub fn with_filter(mut self, filter: Filter<'a, T>) -> Self {
-        self.filter = filter;
+    pub fn with_scorer(mut self, scorer: Scorer<'a, T>) -> Self {
+        self.scorer = scorer;
         self
     }
 

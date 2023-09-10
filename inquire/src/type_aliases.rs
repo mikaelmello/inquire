@@ -36,7 +36,7 @@ use crate::error::CustomUserError;
 /// assert_eq!(false, filter("san", "Jacksonville",  "Jacksonville", 11));
 /// assert_eq!(true,  filter("san", "San Jose",      "San Jose",     12));
 /// ```
-pub type Filter<'a, T> = &'a dyn Fn(&str, &T, &str, usize) -> bool;
+pub type Scorer<'a, T> = &'a dyn Fn(&str, &T, &str, usize) -> Option<usize>;
 
 /// Type alias to represent the function used to retrieve text input suggestions.
 /// The function receives the current input and should return a collection of strings
