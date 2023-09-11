@@ -46,7 +46,7 @@ use self::prompt::MultiSelectPrompt;
 ///   - No validators are on by default.
 /// - **Page size**: Number of options displayed at once, 7 by default.
 /// - **Display option indexes**: On long lists, it might be helpful to display the indexes of the options to the user. Via the `RenderConfig`, you can set the display mode of the indexes as a prefix of an option. The default configuration is `None`, to not render any index when displaying the options.
-/// - **Filter function**: Function that defines if an option is displayed or not based on the current filter input.
+/// - **Scorer function**: Function that defines the order of options and if displayed as all.
 /// - **Keep filter flag**: Whether the current filter input should be cleared or not after a selection is made. Defaults to true.
 ///
 /// # Example
@@ -78,11 +78,9 @@ pub struct MultiSelect<'a, T> {
     /// Starting cursor index of the selection.
     pub starting_cursor: usize,
 
-    /// Function called with the current user input to filter the provided
+    /// Function called with the current user input to score the provided
     /// options.
-    // pub filter: Filter<'a, T>,
-
-    /// TODO Docs
+    /// The list of options is sorted in descending order (highest score first)
     pub scorer: Scorer<'a, T>,
 
     /// Whether the current filter typed by the user is kept or cleaned after a selection is made.
@@ -138,36 +136,29 @@ where
             .join(", ")
     };
 
-    /// Default filter function, which checks if the current filter value is a substring of the option value.
-    /// If it is, the option is displayed.
+    /// Default scoring function, which will create a score for the current option using the input value.
+    /// The return will be sorted in Descending order, leaving options with None as a score.
     ///
     /// # Examples
     ///
     /// ```
     /// use inquire::MultiSelect;
     ///
-    /// let filter = MultiSelect::<&str>::DEFAULT_FILTER;
-    /// assert_eq!(false, filter("sa", &"New York",      "New York",      0));
-    /// assert_eq!(true,  filter("sa", &"Sacramento",    "Sacramento",    1));
-    /// assert_eq!(true,  filter("sa", &"Kansas",        "Kansas",        2));
-    /// assert_eq!(true,  filter("sa", &"Mesa",          "Mesa",          3));
-    /// assert_eq!(false, filter("sa", &"Phoenix",       "Phoenix",       4));
-    /// assert_eq!(false, filter("sa", &"Philadelphia",  "Philadelphia",  5));
-    /// assert_eq!(true,  filter("sa", &"San Antonio",   "San Antonio",   6));
-    /// assert_eq!(true,  filter("sa", &"San Diego",     "San Diego",     7));
-    /// assert_eq!(false, filter("sa", &"Dallas",        "Dallas",        8));
-    /// assert_eq!(true,  filter("sa", &"San Francisco", "San Francisco", 9));
-    /// assert_eq!(false, filter("sa", &"Austin",        "Austin",       10));
-    /// assert_eq!(false, filter("sa", &"Jacksonville",  "Jacksonville", 11));
-    /// assert_eq!(true,  filter("sa", &"San Jose",      "San Jose",     12));
+    /// let scorer = MultiSelect::<&str>::DEFAULT_SCORER;
+    /// assert_eq!(None,     scorer("sa", &"New York",      "New York",      0));
+    /// assert_eq!(Some(49), scorer("sa", &"Sacramento",    "Sacramento",    1));
+    /// assert_eq!(Some(35), scorer("sa", &"Kansas",        "Kansas",        2));
+    /// assert_eq!(Some(35), scorer("sa", &"Mesa",          "Mesa",          3));
+    /// assert_eq!(None,     scorer("sa", &"Phoenix",       "Phoenix",       4));
+    /// assert_eq!(None,     scorer("sa", &"Philadelphia",  "Philadelphia",  5));
+    /// assert_eq!(Some(49), scorer("sa", &"San Antonio",   "San Antonio",   6));
+    /// assert_eq!(Some(49), scorer("sa", &"San Diego",     "San Diego",     7));
+    /// assert_eq!(None,     scorer("sa", &"Dallas",        "Dallas",        8));
+    /// assert_eq!(Some(49), scorer("sa", &"San Francisco", "San Francisco", 9));
+    /// assert_eq!(None,     scorer("sa", &"Austin",        "Austin",        10));
+    /// assert_eq!(None,     scorer("sa", &"Jacksonville",  "Jacksonville",  11));
+    /// assert_eq!(Some(49), scorer("sa", &"San Jose",      "San Jose",      12));
     /// ```
-    // pub const DEFAULT_FILTER: Filter<'a, T> = &|filter, _, string_value, _| -> bool {
-    //     let filter = filter.to_lowercase();
-
-    //     string_value.to_lowercase().contains(&filter)
-    // };
-
-    /// TODO Docs
     pub const DEFAULT_SCORER: Scorer<'a, T> =
         &|input, _option, string_value, _idx| -> Option<i64> {
             // TODO Figure out how to move matcher instantiation out of scoring function. once_ cell/lock or member on Type?
@@ -239,7 +230,7 @@ where
         self
     }
 
-    /// Sets the filter function.
+    /// Sets the scoring function.
     pub fn with_scorer(mut self, scorer: Scorer<'a, T>) -> Self {
         self.scorer = scorer;
         self
