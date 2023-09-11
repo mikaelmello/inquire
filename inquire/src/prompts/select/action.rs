@@ -9,7 +9,7 @@ use super::config::SelectConfig;
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum SelectPromptAction {
     /// Action on the value text input handler.
-    FilterInput(InputAction),
+    ScoreInput(InputAction),
     /// Moves the cursor to the option above.
     MoveUp,
     /// Moves the cursor to the option below.
@@ -50,7 +50,7 @@ impl InnerAction for SelectPromptAction {
             Key::End => Self::MoveToEnd,
 
             key => match InputAction::from_key(key, &()) {
-                Some(action) => Self::FilterInput(action),
+                Some(action) => Self::ScoreInput(action),
                 None => return None,
             },
         };

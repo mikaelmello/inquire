@@ -63,7 +63,7 @@ where
         })
     }
 
-    fn score_options(&self) -> Vec<(usize, usize)> {
+    fn score_options(&self) -> Vec<(usize, i64)> {
         self.options
             .iter()
             .enumerate()
@@ -76,7 +76,7 @@ where
                 )
                 .map(|score| (i, score))
             })
-            .collect::<Vec<(usize, usize)>>()
+            .collect::<Vec<(usize, i64)>>()
     }
 
     fn move_cursor_up(&mut self, qty: usize, wrap: bool) -> ActionResult {
@@ -170,7 +170,7 @@ where
             SelectPromptAction::PageDown => self.move_cursor_down(self.config.page_size, false),
             SelectPromptAction::MoveToStart => self.move_cursor_up(usize::MAX, false),
             SelectPromptAction::MoveToEnd => self.move_cursor_down(usize::MAX, false),
-            SelectPromptAction::FilterInput(input_action) => {
+            SelectPromptAction::ScoreInput(input_action) => {
                 let result = self.input.handle(input_action);
 
                 if let InputActionResult::ContentChanged = result {

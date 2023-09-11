@@ -83,7 +83,7 @@ where
         })
     }
 
-    fn score_options(&self) -> Vec<(usize, usize)> {
+    fn score_options(&self) -> Vec<(usize, i64)> {
         self.options
             .iter()
             .enumerate()
@@ -96,7 +96,7 @@ where
                 )
                 .map(|score| (i, score))
             })
-            .collect::<Vec<(usize, usize)>>()
+            .collect::<Vec<(usize, i64)>>()
     }
 
     fn move_cursor_up(&mut self, qty: usize, wrap: bool) -> ActionResult {
@@ -259,7 +259,7 @@ where
 
                 ActionResult::NeedsRedraw
             }
-            MultiSelectPromptAction::FilterInput(input_action) => {
+            MultiSelectPromptAction::ScoreInput(input_action) => {
                 let result = self.input.handle(input_action);
 
                 if let InputActionResult::ContentChanged = result {

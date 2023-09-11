@@ -169,14 +169,10 @@ where
 
     /// TODO Docs
     pub const DEFAULT_SCORER: Scorer<'a, T> =
-        &|filter, _option, string_value, _idx| -> Option<usize> {
+        &|input, _option, string_value, _idx| -> Option<i64> {
+            // TODO Figure out how to move matcher instantiation out of scoring function. once_ cell/lock or member on Type?
             let matcher = SkimMatcherV2::default().ignore_case();
-
-            match matcher.fuzzy_match(string_value, filter) {
-                Some(t) if t <= usize::MAX as i64 => Some(t as usize),
-                Some(t) if t > usize::MAX as i64 => Some(usize::MAX),
-                Some(_) | None => None,
-            }
+            matcher.fuzzy_match(string_value, input)
         };
 
     /// Default page size, equal to the global default page size [config::DEFAULT_PAGE_SIZE]
