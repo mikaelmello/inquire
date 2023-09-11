@@ -7,6 +7,7 @@ mod test;
 
 pub use action::*;
 use fuzzy_matcher::{skim::SkimMatcherV2, FuzzyMatcher};
+use once_cell::sync::Lazy;
 
 use std::fmt::Display;
 
@@ -24,6 +25,7 @@ use crate::{
 
 use self::prompt::MultiSelectPrompt;
 
+static DEFAULT_MATCHER: Lazy<SkimMatcherV2> = Lazy::new(|| SkimMatcherV2::default().ignore_case());
 /// Prompt suitable for when you need the user to select many options (including none if applicable) among a list of them.
 ///
 /// The user can select (or deselect) the current highlighted option by pressing space, clean all selections by pressing the left arrow and select all options by pressing the right arrow.
@@ -161,9 +163,7 @@ where
     /// ```
     pub const DEFAULT_SCORER: Scorer<'a, T> =
         &|input, _option, string_value, _idx| -> Option<i64> {
-            // TODO Figure out how to move matcher instantiation out of scoring function. once_ cell/lock or member on Type?
-            let matcher = SkimMatcherV2::default().ignore_case();
-            matcher.fuzzy_match(string_value, input)
+            DEFAULT_MATCHER.fuzzy_match(string_value, input)
         };
 
     /// Default page size, equal to the global default page size [config::DEFAULT_PAGE_SIZE]
