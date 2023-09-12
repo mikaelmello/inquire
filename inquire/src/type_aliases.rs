@@ -27,47 +27,49 @@ use crate::error::CustomUserError;
 ///            true => Some(0),
 ///            false => None,
 ///        }
-///     }
-/// };
+///     };
 ///
-/// assert_eq!(Some(0), scorer("san", "New York",      "New York",      0));
-/// assert_eq!(Some(0), scorer("san", "Los Angeles",   "Los Angeles",   1));
-/// assert_eq!(Some(0), scorer("san", "Chicago",       "Chicago",       2));
-/// assert_eq!(Some(0), scorer("san", "Houston",       "Houston",       3));
-/// assert_eq!(Some(0), scorer("san", "Phoenix",       "Phoenix",       4));
-/// assert_eq!(Some(0), scorer("san", "Philadelphia",  "Philadelphia",  5));
-/// assert_eq!(Some(0), scorer("san", "San Antonio",   "San Antonio",   6));
-/// assert_eq!(Some(0), scorer("san", "San Diego",     "San Diego",     7));
-/// assert_eq!(Some(0), scorer("san", "Dallas",        "Dallas",        8));
-/// assert_eq!(Some(0), scorer("san", "San Francisco", "San Francisco", 9));
-/// assert_eq!(Some(0), scorer("san", "Austin",        "Austin",       10));
-/// assert_eq!(Some(0), scorer("san", "Jacksonville",  "Jacksonville", 11));
-/// assert_eq!(Some(0), scorer("san", "San Jose",      "San Jose",     12));
+/// assert_eq!(None, filter("sa", "New York",      "New York",      0));
+/// assert_eq!(None, filter("sa", "Los Angeles",   "Los Angeles",   1));
+/// assert_eq!(None, filter("sa", "Chicago",       "Chicago",       2));
+/// assert_eq!(None, filter("sa", "Houston",       "Houston",       3));
+/// assert_eq!(None, filter("sa", "Phoenix",       "Phoenix",       4));
+/// assert_eq!(None, filter("sa", "Philadelphia",  "Philadelphia",  5));
+/// assert_eq!(Some(0), filter("sa", "San Antonio",   "San Antonio",   6));
+/// assert_eq!(Some(0), filter("sa", "San Diego",     "San Diego",     7));
+/// assert_eq!(None, filter("sa", "Dallas",        "Dallas",        8));
+/// assert_eq!(Some(0), filter("sa", "San Francisco", "San Francisco", 9));
+/// assert_eq!(None, filter("sa", "Austin",        "Austin",       10));
+/// assert_eq!(None, filter("sa", "Jacksonville",  "Jacksonville", 11));
+/// assert_eq!(Some(0), filter("sa", "San Jose",      "San Jose",     12));
+///```
 ///
 ///
-/// // Default implementation for fuzzy search
+///
+/// Default implementation for fuzzy search
+///```
 /// use inquire::type_aliases::Scorer;
 /// use fuzzy_matcher::{skim::SkimMatcherV2, FuzzyMatcher};
 ///
-/// pub const DEFAULT_SCORER: Scorer<'a, T> =
+/// pub const DEFAULT_SCORER: Scorer<str> =
 ///     &|input, _option, string_value, _idx| -> Option<i64> {
 ///         let matcher = SkimMatcherV2::default().ignore_case();
 ///         matcher.fuzzy_match(string_value, input)
 ///     };
 ///
-/// assert_eq!(None,     scorer("sa", &"New York",      "New York",      0));
-/// assert_eq!(Some(49), scorer("sa", &"Sacramento",    "Sacramento",    1));
-/// assert_eq!(Some(35), scorer("sa", &"Kansas",        "Kansas",        2));
-/// assert_eq!(Some(35), scorer("sa", &"Mesa",          "Mesa",          3));
-/// assert_eq!(None,     scorer("sa", &"Phoenix",       "Phoenix",       4));
-/// assert_eq!(None,     scorer("sa", &"Philadelphia",  "Philadelphia",  5));
-/// assert_eq!(Some(49), scorer("sa", &"San Antonio",   "San Antonio",   6));
-/// assert_eq!(Some(49), scorer("sa", &"San Diego",     "San Diego",     7));
-/// assert_eq!(None,     scorer("sa", &"Dallas",        "Dallas",        8));
-/// assert_eq!(Some(49), scorer("sa", &"San Francisco", "San Francisco", 9));
-/// assert_eq!(None,     scorer("sa", &"Austin",        "Austin",        10));
-/// assert_eq!(None,     scorer("sa", &"Jacksonville",  "Jacksonville",  11));
-/// assert_eq!(Some(49), scorer("sa", &"San Jose",      "San Jose",      12));
+/// assert_eq!(None,     DEFAULT_SCORER("sa", &"New York",      "New York",      0));
+/// assert_eq!(Some(49), DEFAULT_SCORER("sa", &"Sacramento",    "Sacramento",    1));
+/// assert_eq!(Some(35), DEFAULT_SCORER("sa", &"Kansas",        "Kansas",        2));
+/// assert_eq!(Some(35), DEFAULT_SCORER("sa", &"Mesa",          "Mesa",          3));
+/// assert_eq!(None,     DEFAULT_SCORER("sa", &"Phoenix",       "Phoenix",       4));
+/// assert_eq!(None,     DEFAULT_SCORER("sa", &"Philadelphia",  "Philadelphia",  5));
+/// assert_eq!(Some(49), DEFAULT_SCORER("sa", &"San Antonio",   "San Antonio",   6));
+/// assert_eq!(Some(49), DEFAULT_SCORER("sa", &"San Diego",     "San Diego",     7));
+/// assert_eq!(None,     DEFAULT_SCORER("sa", &"Dallas",        "Dallas",        8));
+/// assert_eq!(Some(49), DEFAULT_SCORER("sa", &"San Francisco", "San Francisco", 9));
+/// assert_eq!(None,     DEFAULT_SCORER("sa", &"Austin",        "Austin",        10));
+/// assert_eq!(None,     DEFAULT_SCORER("sa", &"Jacksonville",  "Jacksonville",  11));
+/// assert_eq!(Some(49), DEFAULT_SCORER("sa", &"San Jose",      "San Jose",      12));
 /// ```
 pub type Scorer<'a, T> = &'a dyn Fn(&str, &T, &str, usize) -> Option<i64>;
 
