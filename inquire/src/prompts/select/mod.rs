@@ -6,9 +6,6 @@ mod prompt;
 mod test;
 
 pub use action::*;
-use fuzzy_matcher::{skim::SkimMatcherV2, FuzzyMatcher};
-use once_cell::sync::Lazy;
-
 use std::fmt::Display;
 
 use crate::{
@@ -24,6 +21,11 @@ use crate::{
 
 use self::prompt::SelectPrompt;
 
+#[cfg(feature = "fuzzy")]
+use fuzzy_matcher::{skim::SkimMatcherV2, FuzzyMatcher};
+#[cfg(feature = "fuzzy")]
+use once_cell::sync::Lazy;
+#[cfg(feature = "fuzzy")]
 static DEFAULT_MATCHER: Lazy<SkimMatcherV2> = Lazy::new(|| SkimMatcherV2::default().ignore_case());
 /// Prompt suitable for when you need the user to select one option among many.
 ///
@@ -147,9 +149,20 @@ where
     /// assert_eq!(None,     scorer("sa", &"Jacksonville",  "Jacksonville",  11));
     /// assert_eq!(Some(49), scorer("sa", &"San Jose",      "San Jose",      12));
     /// ```
+    #[cfg(feature = "fuzzy")]
     pub const DEFAULT_SCORER: Scorer<'a, T> =
         &|input, _option, string_value, _idx| -> Option<i64> {
             DEFAULT_MATCHER.fuzzy_match(string_value, input)
+        };
+
+    #[cfg(not(feature = "fuzzy"))]
+    pub const DEFAULT_SCORER: Scorer<'a, T> =
+        &|input, _option, string_value, _idx| -> Option<i64> {
+            let filter = input.to_lowercase();
+            match string_value.to_lowercase().contains(&filter) {
+                true => Some(0),
+                false => None,
+            }
         };
 
     /// Default page size.
