@@ -83,6 +83,10 @@ pub struct MultiSelect<'a, T> {
     /// Starting cursor index of the selection.
     pub starting_cursor: usize,
 
+    /// Reset cursor position to first option on filter input change.
+    /// Defaults to true when 'fuzzy' is enabled.
+    pub reset_cursor: bool,
+
     /// Function called with the current user input to score the provided
     /// options.
     /// The list of options is sorted in descending order (highest score first)
@@ -189,6 +193,10 @@ where
     /// Default starting cursor index.
     pub const DEFAULT_STARTING_CURSOR: usize = 0;
 
+    /// Default cursor behaviour on filter input change.
+    /// Defaults to true if 'fuzzy' is enabled.
+    pub const DEFAULT_RESET_CURSOR: bool = cfg!(feature = "fuzzy");
+
     /// Default behavior of keeping or cleaning the current filter value.
     pub const DEFAULT_KEEP_FILTER: bool = true;
 
@@ -206,6 +214,7 @@ where
             page_size: Self::DEFAULT_PAGE_SIZE,
             vim_mode: Self::DEFAULT_VIM_MODE,
             starting_cursor: Self::DEFAULT_STARTING_CURSOR,
+            reset_cursor: Self::DEFAULT_RESET_CURSOR,
             keep_filter: Self::DEFAULT_KEEP_FILTER,
             scorer: Self::DEFAULT_SCORER,
             formatter: Self::DEFAULT_FORMATTER,
@@ -290,6 +299,14 @@ where
     /// Sets the starting cursor index.
     pub fn with_starting_cursor(mut self, starting_cursor: usize) -> Self {
         self.starting_cursor = starting_cursor;
+        self
+    }
+
+    /// Sets the reset_cursor behaviour.
+    /// Will reset cursor to first option on filter input change.
+    /// Defaults to true if 'fuzzy' is enabled.
+    pub fn with_reset_cursor(mut self, reset_cursor: bool) -> Self {
+        self.reset_cursor = reset_cursor;
         self
     }
 

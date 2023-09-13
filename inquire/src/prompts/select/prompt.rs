@@ -178,7 +178,9 @@ where
                     options.sort_unstable_by_key(|(_idx, score)| Reverse(*score));
 
                     self.scored_options = options.into_iter().map(|(idx, _)| idx).collect();
-                    if self.scored_options.len() <= self.cursor_index {
+                    if self.config.reset_cursor {
+                        let _ = self.update_cursor_position(0);
+                    } else if self.scored_options.len() <= self.cursor_index {
                         let _ = self
                             .update_cursor_position(self.scored_options.len().saturating_sub(1));
                     }
