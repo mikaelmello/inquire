@@ -8,7 +8,7 @@ on:
       - main
 
 env:
-  MSRV: 1.60.0
+  MSRV: 1.63.0
 
 jobs:
   lint:

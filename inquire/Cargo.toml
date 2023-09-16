@@ -12,7 +12,7 @@ authors = ["Mikael Mello <git@mikaelmello.com>"]
 keywords = ["cli", "ask", "prompt", "question", "interactive"]
 categories = ["command-line-interface", "value-formatting"]
 include = ["/examples", "/src", "/../LICENSE"]
-rust-version = "1.60.0"
+rust-version = "1.63.0"
 
 [lib]
 name = "inquire"
@@ -39,7 +39,7 @@ console = { version = "0.15", optional = true, features = [
 
 chrono = { version = "0.4", optional = true }
 
-tempfile = { version = "3.5", optional = true }
+tempfile = { version = "3", optional = true }
 
 bitflags = "2"
 dyn-clone = "1"
