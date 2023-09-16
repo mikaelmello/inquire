@@ -12,8 +12,10 @@
 //! - [`CustomType`] for text prompts that you would like to parse to a custom type, such as numbers or UUIDs;
 //! - [`Password`] for secretive text prompts.
 //!
-//! Check out the [GitHub repository](https://github.com/mikaelmello/inquire) to see demos of what you can do with `inquire`.
+//! \* The Editor and DateSelect prompts are available by enabling the `editor` and `date` features, respectively.
 //!
+//! Check out the [GitHub repository](https://github.com/mikaelmello/inquire) to see demos of what you can do with `inquire`.
+//! 
 //! # Features
 //!
 //! - Cross-platform, supporting UNIX and Windows terminals (thanks to [crossterm](https://crates.io/crates/crossterm));
