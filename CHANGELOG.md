@@ -23,7 +23,7 @@
 - Upgraded underlying `termion` crate from v1.5 to v2.0.
 - Upgraded underlying `bitflags` from v1 to v2, which affects the `Attributes` and `KeyModifiers` crates. If you use any of bitflag's methods directly, you might be affected, refer to the [bitflags changelog](https://github.com/bitflags/bitflags/releases/tag/2.0.0) for more information.
 - Removed `thiserror` dependency in favor of implementing `InquireError` by hand. [#146](https://github.com/mikaelmello/inquire/issues/146)
-- Raised MSRV to 1.60 due to `log` dependency raising their MSRV to 1.60.
+- Raised MSRV to 1.63 due to requirements in downstream dependencies.
 - MSRV is now explicitly set in the package definition.
 - Replaced `lazy_static` with `once_cell` as `once_cell::sync::Lazy` is being standardized and `lazy_static` is not actively maintained anymore.
 
