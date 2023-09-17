@@ -259,7 +259,7 @@ where
 
                 ActionResult::NeedsRedraw
             }
-            MultiSelectPromptAction::ScoreInput(input_action) => {
+            MultiSelectPromptAction::FilterInput(input_action) => {
                 let result = self.input.handle(input_action);
 
                 if let InputActionResult::ContentChanged = result {

@@ -9,7 +9,7 @@ use super::config::MultiSelectConfig;
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum MultiSelectPromptAction {
     /// Action on the value text input handler.
-    ScoreInput(InputAction),
+    FilterInput(InputAction),
     /// Moves the cursor to the option above.
     MoveUp,
     /// Moves the cursor to the option below.
@@ -59,7 +59,7 @@ impl InnerAction for MultiSelectPromptAction {
             Key::Right(KeyModifiers::NONE) => Self::SelectAll,
             Key::Left(KeyModifiers::NONE) => Self::ClearSelections,
             key => match InputAction::from_key(key, &()) {
-                Some(action) => Self::ScoreInput(action),
+                Some(action) => Self::FilterInput(action),
                 None => return None,
             },
         };

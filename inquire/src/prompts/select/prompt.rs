@@ -170,7 +170,7 @@ where
             SelectPromptAction::PageDown => self.move_cursor_down(self.config.page_size, false),
             SelectPromptAction::MoveToStart => self.move_cursor_up(usize::MAX, false),
             SelectPromptAction::MoveToEnd => self.move_cursor_down(usize::MAX, false),
-            SelectPromptAction::ScoreInput(input_action) => {
+            SelectPromptAction::FilterInput(input_action) => {
                 let result = self.input.handle(input_action);
 
                 if let InputActionResult::ContentChanged = result {
