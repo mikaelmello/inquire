@@ -13,6 +13,7 @@
 - Add strict clippy lints to improve code consistency and readability.
 - Expand workflow clippy task to lint all-features in workspace.
 - Add docs badge to readme.
+- Add date select option to apply style to a list of given days [#181](https://github.com/mikaelmello/inquire/pull/181).
 
 ### Fixes
 
