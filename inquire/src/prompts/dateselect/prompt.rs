@@ -24,6 +24,7 @@ pub struct DateSelectPrompt<'a> {
     help_message: Option<&'a str>,
     formatter: DateFormatter<'a>,
     validators: Vec<Box<dyn DateValidator>>,
+    marked_dates: &'a [NaiveDate],
     error: Option<ErrorMessage>,
 }
 
@@ -51,6 +52,7 @@ impl<'a> DateSelectPrompt<'a> {
             help_message: so.help_message,
             formatter: so.formatter,
             validators: so.validators,
+            marked_dates: so.marked_dates,
             error: None,
         })
     }
@@ -180,6 +182,7 @@ where
             self.current_date,
             self.config.min_date,
             self.config.max_date,
+            self.marked_dates,
         )?;
 
         if let Some(help_message) = self.help_message {
