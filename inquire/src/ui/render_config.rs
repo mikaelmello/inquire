@@ -467,6 +467,9 @@ pub mod calendar {
         /// Style sheet for dates that can not be selected due to the
         /// min/max settings.
         pub unavailable_date: StyleSheet,
+
+        /// Style sheet for weekends
+        pub weekend: StyleSheet,
     }
 
     impl<'a> CalendarRenderConfig<'a> {
@@ -480,6 +483,7 @@ pub mod calendar {
                 today_date: StyleSheet::empty(),
                 different_month_date: StyleSheet::empty(),
                 unavailable_date: StyleSheet::empty(),
+                weekend: StyleSheet::empty(),
             }
         }
 
@@ -497,6 +501,7 @@ pub mod calendar {
                 today_date: StyleSheet::empty().with_fg(Color::LightGreen),
                 different_month_date: StyleSheet::empty().with_fg(Color::DarkGrey),
                 unavailable_date: StyleSheet::empty().with_fg(Color::DarkGrey),
+                weekend: StyleSheet::empty().with_fg(Color::DarkRed),
             }
         }
 
