@@ -81,6 +81,9 @@ pub struct DateSelect<'a> {
     /// Max date allowed to be selected.
     pub max_date: Option<NaiveDate>,
 
+    /// Dates to mark with special styling.
+    pub marked_dates: &'a [NaiveDate],
+
     /// Help message to be presented to the user.
     pub help_message: Option<&'a str>,
 
@@ -133,6 +136,9 @@ impl<'a> DateSelect<'a> {
     /// Default max date.
     pub const DEFAULT_MAX_DATE: Option<NaiveDate> = None;
 
+    /// Default marked dates.
+    pub const DEFAULT_MARKED_DATES: &'a [NaiveDate] = &[];
+
     /// Creates a [DateSelect] with the provided message, along with default configuration values.
     pub fn new(message: &'a str) -> Self {
         Self {
@@ -140,6 +146,7 @@ impl<'a> DateSelect<'a> {
             starting_date: get_current_date(),
             min_date: Self::DEFAULT_MIN_DATE,
             max_date: Self::DEFAULT_MAX_DATE,
+            marked_dates: Self::DEFAULT_MARKED_DATES,
             help_message: Self::DEFAULT_HELP_MESSAGE,
             vim_mode: Self::DEFAULT_VIM_MODE,
             formatter: Self::DEFAULT_FORMATTER,
@@ -181,6 +188,12 @@ impl<'a> DateSelect<'a> {
     /// Sets the max date.
     pub fn with_max_date(mut self, max_date: NaiveDate) -> Self {
         self.max_date = Some(max_date);
+        self
+    }
+
+    /// Sets the marked dates.
+    pub fn with_marked_dates(mut self, marked_dates: &'a [NaiveDate]) -> Self {
+        self.marked_dates = marked_dates;
         self
     }
 
