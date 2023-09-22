@@ -1,6 +1,6 @@
 use core::panic;
 
-use chrono::NaiveDate;
+use chrono::{Datelike, NaiveDate, Weekday};
 
 pub fn get_current_date() -> NaiveDate {
     chrono::Local::now().date_naive()
@@ -26,4 +26,8 @@ pub fn get_month(month: u32) -> chrono::Month {
         12 => chrono::Month::December,
         _ => panic!("Invalid month"),
     }
+}
+
+pub fn is_weekend(date: NaiveDate) -> bool {
+    date.weekday() == Weekday::Sat || date.weekday() == Weekday::Sun
 }

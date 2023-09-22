@@ -578,7 +578,9 @@ pub mod date {
 
     use chrono::{Datelike, Duration};
 
-    use crate::{date_utils::get_start_date, terminal::Terminal, ui::Styled};
+    use crate::{
+        date_utils::get_start_date, date_utils::is_weekend, terminal::Terminal, ui::Styled,
+    };
 
     use super::{Backend, CommonBackend};
 
@@ -695,6 +697,8 @@ pub mod date {
                         }
                     } else if date_it == today {
                         style_sheet = self.render_config.calendar.today_date;
+                    } else if is_weekend(date_it) {
+                        style_sheet = self.render_config.calendar.weekend;
                     } else if date_it.month() != month.number_from_month() {
                         style_sheet = self.render_config.calendar.different_month_date;
                     }
