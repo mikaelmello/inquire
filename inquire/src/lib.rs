@@ -30,8 +30,6 @@
 //!   - Custom extensions for files created by [`Editor`] prompts;
 //!   - and many others!
 //!
-//! \* Date-related features are available by enabling the `date` feature and enable the `editor` feature for the text editor features
-//!
 //! # Simple Example
 //!
 //! ```rust no_run
