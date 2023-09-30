@@ -28,10 +28,14 @@ impl InnerAction for TextPromptAction {
 
     fn from_key(key: Key, _config: &TextConfig) -> Option<Self> {
         let action = match key {
-            Key::Up(KeyModifiers::NONE) => Self::MoveToSuggestionAbove,
+            Key::Up(KeyModifiers::NONE) | Key::Char('p', KeyModifiers::CONTROL) => {
+                Self::MoveToSuggestionAbove
+            }
             Key::PageUp => Self::MoveToSuggestionPageUp,
 
-            Key::Down(KeyModifiers::NONE) => Self::MoveToSuggestionBelow,
+            Key::Down(KeyModifiers::NONE) | Key::Char('n', KeyModifiers::CONTROL) => {
+                Self::MoveToSuggestionBelow
+            }
             Key::PageDown => Self::MoveToSuggestionPageDown,
 
             Key::Tab => Self::UseCurrentSuggestion,
