@@ -84,7 +84,7 @@ pub struct MultiSelect<'a, T> {
     pub starting_cursor: usize,
 
     /// Reset cursor position to first option on filter input change.
-    /// Defaults to true when 'fuzzy' is enabled.
+    /// Defaults to true.
     pub reset_cursor: bool,
 
     /// Function called with the current user input to score the provided
@@ -194,7 +194,7 @@ where
     pub const DEFAULT_STARTING_CURSOR: usize = 0;
 
     /// Default cursor behaviour on filter input change.
-    /// Defaults to true if 'fuzzy' is enabled.
+    /// Defaults to true.
     pub const DEFAULT_RESET_CURSOR: bool = true;
 
     /// Default behavior of keeping or cleaning the current filter value.
@@ -304,7 +304,7 @@ where
 
     /// Sets the reset_cursor behaviour.
     /// Will reset cursor to first option on filter input change.
-    /// Defaults to true if 'fuzzy' is enabled.
+    /// Defaults to true.
     pub fn with_reset_cursor(mut self, reset_cursor: bool) -> Self {
         self.reset_cursor = reset_cursor;
         self

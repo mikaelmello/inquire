@@ -46,7 +46,7 @@ use crate::error::CustomUserError;
 ///
 ///
 ///
-/// Default implementation for fuzzy search
+/// Default implementation for fuzzy search (almost)
 ///```
 /// use inquire::type_aliases::Scorer;
 /// use fuzzy_matcher::{skim::SkimMatcherV2, FuzzyMatcher};
