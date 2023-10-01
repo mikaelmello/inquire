@@ -180,7 +180,7 @@ where
 
     /// Default cursor behaviour on filter input change.
     /// Defaults to true if 'fuzzy' is enabled.
-    pub const DEFAULT_RESET_CURSOR: bool = cfg!(feature = "fuzzy");
+    pub const DEFAULT_RESET_CURSOR: bool = true;
 
     /// Default help message.
     pub const DEFAULT_HELP_MESSAGE: Option<&'a str> =

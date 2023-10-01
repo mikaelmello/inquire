@@ -195,7 +195,7 @@ where
 
     /// Default cursor behaviour on filter input change.
     /// Defaults to true if 'fuzzy' is enabled.
-    pub const DEFAULT_RESET_CURSOR: bool = cfg!(feature = "fuzzy");
+    pub const DEFAULT_RESET_CURSOR: bool = true;
 
     /// Default behavior of keeping or cleaning the current filter value.
     pub const DEFAULT_KEEP_FILTER: bool = true;
