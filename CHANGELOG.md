@@ -17,7 +17,8 @@
     `None`: Will not be displayed in the list of options.
     `Some(score)`: score determines the order of options, higher score, higher on the list of options.
 - Implement fuzzy search as default on Select and MultiSelect prompts. [#176](https://github.com/mikaelmello/inquire/pull/176)
-- Add new option on Select/MultiSelect prompts to reset selection to the first item on filter input changes. [#176](https://github.com/mikaelmello/inquire/pull/176)
+- Add new option on Select/MultiSelect prompts allowing to reset selection to the first item on filter-input changes. [#176](https://github.com/mikaelmello/inquire/pull/176)
+- Keybindings Ctrl-p and Ctrl-n added for Up and Down actions
 
 ### Fixes
 
