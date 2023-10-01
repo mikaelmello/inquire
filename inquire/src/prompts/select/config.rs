@@ -7,6 +7,8 @@ pub struct SelectConfig {
     pub vim_mode: bool,
     /// Page size of the list of options.
     pub page_size: usize,
+    /// Whether to reset the cursor to the first option on filter input change.
+    pub reset_cursor: bool,
 }
 
 impl<T> From<&Select<'_, T>> for SelectConfig {
@@ -14,6 +16,7 @@ impl<T> From<&Select<'_, T>> for SelectConfig {
         Self {
             vim_mode: value.vim_mode,
             page_size: value.page_size,
+            reset_cursor: value.reset_cursor,
         }
     }
 }

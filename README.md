@@ -50,7 +50,7 @@ It provides several different prompts in order to interactively ask the user for
   - Help messages;
   - Autocompletion for [`Text`] prompts;
   - Confirmation messages for [`Password`] prompts;
-  - Custom list filters for Select and [`MultiSelect`] prompts;
+  - Custom list filters for [`Select`] and [`MultiSelect`] prompts;
   - Custom parsers for [`Confirm`] and [`CustomType`] prompts;
   - Custom extensions for files created by [`Editor`] prompts;
   - and many others!
@@ -154,13 +154,13 @@ The default parser for [`CustomType`] prompts calls the `parse::<T>()` method on
 
 In the [demo](#demo) you can see this behavior in action with the _amount_ (CustomType) prompt.
 
-## Filtering
+## Scoring
 
-Filtering is applicable to two prompts: [`Select`] and [`MultiSelect`]. They provide the user the ability to filter the options based on their text input. This is specially useful when there are a lot of options for the user to choose from, allowing them to quickly find their expected options.
+Scoring is applicable to two prompts: [`Select`] and [`MultiSelect`]. They provide the user the ability to sort and filter the list of options based on their text input. This is specially useful when there are a lot of options for the user to choose from, allowing them to quickly find their expected options.
 
-Filter functions receive three arguments: the current user input, the option string value and the option index. They must return a `bool` value indicating whether the option should be part of the results or not.
+Scoring functions receive four arguments: the current user input, the option, the option string value and the option index. They must return a `Option<i64>` value indicating whether the option should be part of the results or not.
 
-The default filter function does a naive case-insensitive comparison between the option string value and the current user input, returning `true` if the option string value contains the user input as a substring.
+The default scoring function calculates a match value with the current user input and each option using SkimV2 from [fuzzy_matcher](https://crates.io/crates/fuzzy-matcher), resulting in fuzzy searching and filtering, returning `Some(<score>_i64)` if SkimV2 detects a match.
 
 In the [demo](#demo) you can see this behavior in action with the _account_ (Select) and _tags_ (MultiSelect) prompts.
 
@@ -313,7 +313,7 @@ Like all others, this prompt also allows you to customize several aspects of it:
   - Prints the selected option string value by default.
 - **Page size**: Number of options displayed at once, 7 by default.
 - **Display option indexes**: On long lists, it might be helpful to display the indexes of the options to the user. Via the `RenderConfig`, you can set the display mode of the indexes as a prefix of an option. The default configuration is `None`, to not render any index when displaying the options.
-- **Filter function**: Function that defines if an option is displayed or not based on the current filter input.
+- **Scoring function**: Function that defines the order of options and if an option is displayed or not based on the current user input.
 
 ## MultiSelect
 
@@ -344,7 +344,7 @@ Customizable options:
   - No validators are on by default.
 - **Page size**: Number of options displayed at once, 7 by default.
 - **Display option indexes**: On long lists, it might be helpful to display the indexes of the options to the user. Via the `RenderConfig`, you can set the display mode of the indexes as a prefix of an option. The default configuration is `None`, to not render any index when displaying the options.
-- **Filter function**: Function that defines if an option is displayed or not based on the current filter input.
+- **Scoring function**: Function that defines the order of options and if an option is displayed or not based on the current user input.
 - **Keep filter flag**: Whether the current filter input should be cleared or not after a selection is made. Defaults to true.
 
 ## Editor
