@@ -43,6 +43,7 @@ static DEFAULT_MATCHER: Lazy<SkimMatcherV2> = Lazy::new(|| SkimMatcherV2::defaul
 /// - **Prompt message**: Required when creating the prompt.
 /// - **Options list**: Options displayed to the user. Must be **non-empty**.
 /// - **Starting cursor**: Index of the cursor when the prompt is first rendered. Default is 0 (first option). If the index is out-of-range of the option list, the prompt will fail with an [`InquireError::InvalidConfiguration`] error.
+/// - **Starting filter input**: Sets the initial value of the filter section of the prompt.
 /// - **Help message**: Message displayed at the line below the prompt.
 /// - **Formatter**: Custom formatter in case you need to pre-process the user input before showing it as the final answer.
 ///   - Prints the selected option string value by default.
@@ -88,6 +89,9 @@ pub struct Select<'a, T> {
 
     /// Starting cursor index of the selection.
     pub starting_cursor: usize,
+
+    /// Starting filter input
+    pub starting_filter_input: Option<&'a str>,
 
     /// Reset cursor position to first option on filter input change.
     /// Defaults to true.
@@ -199,6 +203,7 @@ where
             scorer: Self::DEFAULT_SCORER,
             formatter: Self::DEFAULT_FORMATTER,
             render_config: get_configuration(),
+            starting_filter_input: None,
         }
     }
 
@@ -241,6 +246,12 @@ where
     /// Sets the starting cursor index.
     pub fn with_starting_cursor(mut self, starting_cursor: usize) -> Self {
         self.starting_cursor = starting_cursor;
+        self
+    }
+
+    /// Sets the starting filter input
+    pub fn with_starting_filter_input(mut self, starting_filter_input: &'a str) -> Self {
+        self.starting_filter_input = Some(starting_filter_input);
         self
     }
 

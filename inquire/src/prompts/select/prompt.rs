@@ -57,7 +57,10 @@ where
             scored_options,
             help_message: so.help_message,
             cursor_index: so.starting_cursor,
-            input: Input::new(),
+            input: so
+                .starting_filter_input
+                .map(|si| Input::new_with(si))
+                .unwrap_or_else(|| Input::new()),
             scorer: so.scorer,
             formatter: so.formatter,
         })
