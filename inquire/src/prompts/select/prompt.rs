@@ -59,8 +59,8 @@ where
             cursor_index: so.starting_cursor,
             input: so
                 .starting_filter_input
-                .map(|si| Input::new_with(si))
-                .unwrap_or_else(|| Input::new()),
+                .map(Input::new_with)
+                .unwrap_or_else(Input::new),
             scorer: so.scorer,
             formatter: so.formatter,
         })
