@@ -74,7 +74,10 @@ where
             scored_options,
             help_message: mso.help_message,
             cursor_index: mso.starting_cursor,
-            input: Input::new(),
+            input: mso
+                .starting_filter_input
+                .map(Input::new_with)
+                .unwrap_or_else(Input::new),
             scorer: mso.scorer,
             formatter: mso.formatter,
             validator: mso.validator,
