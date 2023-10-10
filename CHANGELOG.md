@@ -19,6 +19,7 @@
 - Implement fuzzy search as default on Select and MultiSelect prompts. [#176](https://github.com/mikaelmello/inquire/pull/176)
 - Add new option on Select/MultiSelect prompts allowing to reset selection to the first item on filter-input changes. [#176](https://github.com/mikaelmello/inquire/pull/176)
 - Keybindings Ctrl-p and Ctrl-n added for Up and Down actions
+- Added 'with_starting_filter_input' to both Select and MultiSelect, which allows for setting an initial value to the filter section of the prompt.
 
 ### Fixes
 
