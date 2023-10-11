@@ -46,10 +46,18 @@ impl InnerAction for DateSelectPromptAction {
         }
 
         let action = match key {
-            Key::Left(KeyModifiers::NONE) => Self::GoToPrevDay,
-            Key::Right(KeyModifiers::NONE) => Self::GoToNextDay,
-            Key::Up(KeyModifiers::NONE) => Self::GoToPrevWeek,
-            Key::Down(KeyModifiers::NONE) | Key::Tab => Self::GoToNextWeek,
+            Key::Left(KeyModifiers::NONE) | Key::Char('b', KeyModifiers::CONTROL) => {
+                Self::GoToPrevDay
+            }
+            Key::Right(KeyModifiers::NONE) | Key::Char('f', KeyModifiers::CONTROL) => {
+                Self::GoToNextDay
+            }
+            Key::Up(KeyModifiers::NONE) | Key::Char('p', KeyModifiers::CONTROL) => {
+                Self::GoToPrevWeek
+            }
+            Key::Down(KeyModifiers::NONE) | Key::Char('n', KeyModifiers::CONTROL) | Key::Tab => {
+                Self::GoToNextWeek
+            }
             Key::Left(KeyModifiers::CONTROL) => Self::GoToPrevMonth,
             Key::Right(KeyModifiers::CONTROL) => Self::GoToNextMonth,
             Key::Up(KeyModifiers::CONTROL) => Self::GoToPrevYear,
