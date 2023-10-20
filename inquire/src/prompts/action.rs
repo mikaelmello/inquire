@@ -37,7 +37,9 @@ where
     {
         match key {
             Key::Enter => Some(Action::Submit),
+            Key::Char('j', KeyModifiers::CONTROL) => Some(Action::Submit),
             Key::Escape => Some(Action::Cancel),
+            Key::Char('g', KeyModifiers::CONTROL) => Some(Action::Cancel),
             Key::Char('c', KeyModifiers::CONTROL) => Some(Action::Interrupt),
             key => I::from_key(key, config).map(Action::Inner),
         }
