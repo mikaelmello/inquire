@@ -133,6 +133,18 @@ where
 
         ListOption::new(index, value)
     }
+
+    fn run_scorer(&mut self) {
+        let mut options = self.score_options();
+        options.sort_unstable_by_key(|(_idx, score)| Reverse(*score));
+
+        self.scored_options = options.into_iter().map(|(idx, _)| idx).collect();
+        if self.config.reset_cursor {
+            let _ = self.update_cursor_position(0);
+        } else if self.scored_options.len() <= self.cursor_index {
+            let _ = self.update_cursor_position(self.scored_options.len().saturating_sub(1));
+        }
+    }
 }
 
 impl<'a, Backend, T> Prompt<Backend> for SelectPrompt<'a, T>
@@ -156,6 +168,11 @@ where
         (self.formatter)(answer.as_ref())
     }
 
+    fn setup(&mut self) -> InquireResult<()> {
+        self.run_scorer();
+        Ok(())
+    }
+
     fn submit(&mut self) -> InquireResult<Option<ListOption<T>>> {
         let answer = match self.has_answer_highlighted() {
             true => Some(self.get_final_answer()),
@@ -177,16 +194,7 @@ where
                 let result = self.input.handle(input_action);
 
                 if let InputActionResult::ContentChanged = result {
-                    let mut options = self.score_options();
-                    options.sort_unstable_by_key(|(_idx, score)| Reverse(*score));
-
-                    self.scored_options = options.into_iter().map(|(idx, _)| idx).collect();
-                    if self.config.reset_cursor {
-                        let _ = self.update_cursor_position(0);
-                    } else if self.scored_options.len() <= self.cursor_index {
-                        let _ = self
-                            .update_cursor_position(self.scored_options.len().saturating_sub(1));
-                    }
+                    self.run_scorer();
                 }
 
                 result.into()
