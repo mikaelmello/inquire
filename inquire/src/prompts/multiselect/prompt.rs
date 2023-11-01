@@ -1,4 +1,4 @@
-use std::{collections::BTreeSet, fmt::Display};
+use std::{cmp::Reverse, collections::BTreeSet, fmt::Display};
 
 use crate::{
     error::InquireResult,
@@ -6,7 +6,7 @@ use crate::{
     input::{Input, InputActionResult},
     list_option::ListOption,
     prompts::prompt::{ActionResult, Prompt},
-    type_aliases::Filter,
+    type_aliases::Scorer,
     ui::MultiSelectBackend,
     utils::paginate,
     validator::{ErrorMessage, MultiOptionValidator, Validation},
@@ -24,8 +24,8 @@ pub struct MultiSelectPrompt<'a, T> {
     cursor_index: usize,
     checked: BTreeSet<usize>,
     input: Input,
-    filtered_options: Vec<usize>,
-    filter: Filter<'a, T>,
+    scored_options: Vec<usize>,
+    scorer: Scorer<'a, T>,
     formatter: MultiOptionFormatter<'a, T>,
     validator: Option<Box<dyn MultiOptionValidator<T>>>,
     error: Option<ErrorMessage>,
@@ -54,7 +54,7 @@ where
         }
 
         let string_options = mso.options.iter().map(T::to_string).collect();
-        let filtered_options = (0..mso.options.len()).collect();
+        let scored_options = (0..mso.options.len()).collect();
         let checked_options = mso
             .default
             .as_ref()
@@ -64,18 +64,18 @@ where
                     .filter(|i| *i < mso.options.len())
                     .collect()
             })
-            .unwrap_or_else(BTreeSet::new);
+            .unwrap_or_default();
 
         Ok(Self {
             message: mso.message,
             config: (&mso).into(),
             options: mso.options,
             string_options,
-            filtered_options,
+            scored_options,
             help_message: mso.help_message,
             cursor_index: mso.starting_cursor,
             input: Input::new(),
-            filter: mso.filter,
+            scorer: mso.scorer,
             formatter: mso.formatter,
             validator: mso.validator,
             error: None,
@@ -83,16 +83,20 @@ where
         })
     }
 
-    fn filter_options(&self) -> Vec<usize> {
+    fn score_options(&self) -> Vec<(usize, i64)> {
         self.options
             .iter()
             .enumerate()
-            .filter_map(|(i, opt)| match self.input.content() {
-                val if val.is_empty() => Some(i),
-                val if (self.filter)(val, opt, self.string_options.get(i).unwrap(), i) => Some(i),
-                _ => None,
+            .filter_map(|(i, opt)| {
+                (self.scorer)(
+                    self.input.content(),
+                    opt,
+                    self.string_options.get(i).unwrap(),
+                    i,
+                )
+                .map(|score| (i, score))
             })
-            .collect()
+            .collect::<Vec<(usize, i64)>>()
     }
 
     fn move_cursor_up(&mut self, qty: usize, wrap: bool) -> ActionResult {
@@ -100,7 +104,7 @@ where
             let after_wrap = qty.saturating_sub(self.cursor_index);
             self.cursor_index
                 .checked_sub(qty)
-                .unwrap_or_else(|| self.filtered_options.len().saturating_sub(after_wrap))
+                .unwrap_or_else(|| self.scored_options.len().saturating_sub(after_wrap))
         } else {
             self.cursor_index.saturating_sub(qty)
         };
@@ -111,13 +115,13 @@ where
     fn move_cursor_down(&mut self, qty: usize, wrap: bool) -> ActionResult {
         let mut new_position = self.cursor_index.saturating_add(qty);
 
-        if new_position >= self.filtered_options.len() {
-            new_position = if self.filtered_options.is_empty() {
+        if new_position >= self.scored_options.len() {
+            new_position = if self.scored_options.is_empty() {
                 0
             } else if wrap {
-                new_position % self.filtered_options.len()
+                new_position % self.scored_options.len()
             } else {
-                self.filtered_options.len().saturating_sub(1)
+                self.scored_options.len().saturating_sub(1)
             }
         }
 
@@ -134,7 +138,7 @@ where
     }
 
     fn toggle_cursor_selection(&mut self) -> ActionResult {
-        let idx = match self.filtered_options.get(self.cursor_index) {
+        let idx = match self.scored_options.get(self.cursor_index) {
             Some(val) => val,
             None => return ActionResult::Clean,
         };
@@ -236,7 +240,7 @@ where
             MultiSelectPromptAction::ToggleCurrentOption => self.toggle_cursor_selection(),
             MultiSelectPromptAction::SelectAll => {
                 self.checked.clear();
-                for idx in &self.filtered_options {
+                for idx in &self.scored_options {
                     self.checked.insert(*idx);
                 }
 
@@ -259,11 +263,15 @@ where
                 let result = self.input.handle(input_action);
 
                 if let InputActionResult::ContentChanged = result {
-                    let options = self.filter_options();
-                    self.filtered_options = options;
-                    if self.filtered_options.len() <= self.cursor_index {
+                    let mut options = self.score_options();
+                    options.sort_unstable_by_key(|(_idx, score)| Reverse(*score));
+
+                    self.scored_options = options.into_iter().map(|(idx, _)| idx).collect();
+                    if self.config.reset_cursor {
+                        let _ = self.update_cursor_position(0);
+                    } else if self.scored_options.len() <= self.cursor_index {
                         let _ = self
-                            .update_cursor_position(self.filtered_options.len().saturating_sub(1));
+                            .update_cursor_position(self.scored_options.len().saturating_sub(1));
                     }
                 }
 
@@ -284,7 +292,7 @@ where
         backend.render_multiselect_prompt(prompt, &self.input)?;
 
         let choices = self
-            .filtered_options
+            .scored_options
             .iter()
             .cloned()
             .map(|i| ListOption::new(i, self.options.get(i).unwrap()))

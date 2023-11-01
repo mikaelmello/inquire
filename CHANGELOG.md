@@ -13,6 +13,12 @@
 - Add strict clippy lints to improve code consistency and readability.
 - Expand workflow clippy task to lint all-features in workspace.
 - Add docs badge to readme.
+- **Breaking** The Select and Multiselect Filter now scores input and is now expected to return an `Option<i64>`, making it possible to order/rank the list of options. [#176](https://github.com/mikaelmello/inquire/pull/176)
+    `None`: Will not be displayed in the list of options.
+    `Some(score)`: score determines the order of options, higher score, higher on the list of options.
+- Implement fuzzy search as default on Select and MultiSelect prompts. [#176](https://github.com/mikaelmello/inquire/pull/176)
+- Add new option on Select/MultiSelect prompts allowing to reset selection to the first item on filter-input changes. [#176](https://github.com/mikaelmello/inquire/pull/176)
+- Keybindings Ctrl-p and Ctrl-n added for Up and Down actions
 
 ### Fixes
 
@@ -23,9 +29,10 @@
 - Upgraded underlying `termion` crate from v1.5 to v2.0.
 - Upgraded underlying `bitflags` from v1 to v2, which affects the `Attributes` and `KeyModifiers` crates. If you use any of bitflag's methods directly, you might be affected, refer to the [bitflags changelog](https://github.com/bitflags/bitflags/releases/tag/2.0.0) for more information.
 - Removed `thiserror` dependency in favor of implementing `InquireError` by hand. [#146](https://github.com/mikaelmello/inquire/issues/146)
-- Raised MSRV to 1.60 due to `log` dependency raising their MSRV to 1.60.
+- Raised MSRV to 1.63 due to requirements in downstream dependencies.
 - MSRV is now explicitly set in the package definition.
 - Replaced `lazy_static` with `once_cell` as `once_cell::sync::Lazy` is being standardized and `lazy_static` is not actively maintained anymore.
+- Added `fuzzy-matcher` as an optional dependency for fuzzy filtering in Select and MultiSelect prompts [#176](https://github.com/mikaelmello/inquire/pull/176)
 
 ### Internals
 

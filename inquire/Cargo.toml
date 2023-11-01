@@ -12,7 +12,7 @@ authors = ["Mikael Mello <git@mikaelmello.com>"]
 keywords = ["cli", "ask", "prompt", "question", "interactive"]
 categories = ["command-line-interface", "value-formatting"]
 include = ["/examples", "/src", "/../LICENSE"]
-rust-version = "1.60.0"
+rust-version = "1.63.0"
 
 [lib]
 name = "inquire"
@@ -20,11 +20,12 @@ path = "src/lib.rs"
 doctest = true
 
 [features]
-default = ["macros", "crossterm", "one-liners"]
+default = ["macros", "crossterm", "one-liners", "fuzzy"]
 macros = []
 one-liners = []
 date = ["chrono"]
 editor = ["tempfile"]
+fuzzy = ["fuzzy-matcher"]
 
 [package.metadata.docs.rs]
 all-features = true
@@ -33,11 +34,15 @@ rustdoc-args = ["--cfg", "docsrs"]
 [dependencies]
 crossterm = { version = "0.25", optional = true }
 termion = { version = "2.0", optional = true }
-console = { version = "0.15", optional = true, features = ["windows-console-colors"] }
+console = { version = "0.15", optional = true, features = [
+  "windows-console-colors",
+] }
 
 chrono = { version = "0.4", optional = true }
 
 tempfile = { version = "3", optional = true }
+
+fuzzy-matcher = { version = "0.3.7", default-features = false, optional = true }
 
 bitflags = "2"
 dyn-clone = "1"
