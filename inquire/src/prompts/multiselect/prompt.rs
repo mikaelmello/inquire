@@ -74,7 +74,10 @@ where
             scored_options,
             help_message: mso.help_message,
             cursor_index: mso.starting_cursor,
-            input: Input::new(),
+            input: mso
+                .starting_filter_input
+                .map(Input::new_with)
+                .unwrap_or_else(Input::new),
             scorer: mso.scorer,
             formatter: mso.formatter,
             validator: mso.validator,
@@ -191,6 +194,18 @@ where
 
         answer
     }
+
+    fn run_scorer(&mut self) {
+        let mut options = self.score_options();
+        options.sort_unstable_by_key(|(_idx, score)| Reverse(*score));
+
+        self.scored_options = options.into_iter().map(|(idx, _)| idx).collect();
+        if self.config.reset_cursor {
+            let _ = self.update_cursor_position(0);
+        } else if self.scored_options.len() <= self.cursor_index {
+            let _ = self.update_cursor_position(self.scored_options.len().saturating_sub(1));
+        }
+    }
 }
 
 impl<'a, Backend, T> Prompt<Backend> for MultiSelectPrompt<'a, T>
@@ -213,6 +228,11 @@ where
     fn format_answer(&self, answer: &Vec<ListOption<T>>) -> String {
         let refs: Vec<ListOption<&T>> = answer.iter().map(ListOption::as_ref).collect();
         (self.formatter)(&refs)
+    }
+
+    fn setup(&mut self) -> InquireResult<()> {
+        self.run_scorer();
+        Ok(())
     }
 
     fn submit(&mut self) -> InquireResult<Option<Vec<ListOption<T>>>> {
@@ -263,16 +283,7 @@ where
                 let result = self.input.handle(input_action);
 
                 if let InputActionResult::ContentChanged = result {
-                    let mut options = self.score_options();
-                    options.sort_unstable_by_key(|(_idx, score)| Reverse(*score));
-
-                    self.scored_options = options.into_iter().map(|(idx, _)| idx).collect();
-                    if self.config.reset_cursor {
-                        let _ = self.update_cursor_position(0);
-                    } else if self.scored_options.len() <= self.cursor_index {
-                        let _ = self
-                            .update_cursor_position(self.scored_options.len().saturating_sub(1));
-                    }
+                    self.run_scorer();
                 }
 
                 result.into()
