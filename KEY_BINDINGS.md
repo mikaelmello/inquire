@@ -124,5 +124,5 @@ These key bindings may be used in [`Editor`] prompts.
 [`MultiSelect`]: https://docs.rs/inquire/*/inquire/prompts/multiselect/struct.MultiSelect.html
 [`Confirm`]: https://docs.rs/inquire/*/inquire/prompts/confirm/struct.Confirm.html
 [`Editor`]: https://docs.rs/inquire/*/inquire/prompts/editor/struct.Editor.html
-[`CustomType`]: https://docs.rs/inquire/*/inquire/prompts/customtype/struct.CustomType.html
+[`customtype`]: https://docs.rs/inquire/*/inquire/struct.CustomType.html
 [`Password`]: https://docs.rs/inquire/*/inquire/prompts/password/struct.Password.html

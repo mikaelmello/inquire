@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{cmp::Reverse, fmt::Display};
 
 use crate::{
     error::InquireResult,
@@ -6,7 +6,7 @@ use crate::{
     input::{Input, InputActionResult},
     list_option::ListOption,
     prompts::prompt::{ActionResult, Prompt},
-    type_aliases::Filter,
+    type_aliases::Scorer,
     ui::SelectBackend,
     utils::paginate,
     InquireError, Select,
@@ -19,11 +19,11 @@ pub struct SelectPrompt<'a, T> {
     config: SelectConfig,
     options: Vec<T>,
     string_options: Vec<String>,
-    filtered_options: Vec<usize>,
+    scored_options: Vec<usize>,
     help_message: Option<&'a str>,
     cursor_index: usize,
     input: Input,
-    filter: Filter<'a, T>,
+    scorer: Scorer<'a, T>,
     formatter: OptionFormatter<'a, T>,
 }
 
@@ -47,32 +47,39 @@ where
         }
 
         let string_options = so.options.iter().map(T::to_string).collect();
-        let filtered_options = (0..so.options.len()).collect();
+        let scored_options = (0..so.options.len()).collect();
 
         Ok(Self {
             message: so.message,
             config: (&so).into(),
             options: so.options,
             string_options,
-            filtered_options,
+            scored_options,
             help_message: so.help_message,
             cursor_index: so.starting_cursor,
-            input: Input::new(),
-            filter: so.filter,
+            input: so
+                .starting_filter_input
+                .map(Input::new_with)
+                .unwrap_or_else(Input::new),
+            scorer: so.scorer,
             formatter: so.formatter,
         })
     }
 
-    fn filter_options(&self) -> Vec<usize> {
+    fn score_options(&self) -> Vec<(usize, i64)> {
         self.options
             .iter()
             .enumerate()
-            .filter_map(|(i, opt)| match self.input.content() {
-                val if val.is_empty() => Some(i),
-                val if (self.filter)(val, opt, self.string_options.get(i).unwrap(), i) => Some(i),
-                _ => None,
+            .filter_map(|(i, opt)| {
+                (self.scorer)(
+                    self.input.content(),
+                    opt,
+                    self.string_options.get(i).unwrap(),
+                    i,
+                )
+                .map(|score| (i, score))
             })
-            .collect()
+            .collect::<Vec<(usize, i64)>>()
     }
 
     fn move_cursor_up(&mut self, qty: usize, wrap: bool) -> ActionResult {
@@ -80,7 +87,7 @@ where
             let after_wrap = qty.saturating_sub(self.cursor_index);
             self.cursor_index
                 .checked_sub(qty)
-                .unwrap_or_else(|| self.filtered_options.len().saturating_sub(after_wrap))
+                .unwrap_or_else(|| self.scored_options.len().saturating_sub(after_wrap))
         } else {
             self.cursor_index.saturating_sub(qty)
         };
@@ -91,13 +98,13 @@ where
     fn move_cursor_down(&mut self, qty: usize, wrap: bool) -> ActionResult {
         let mut new_position = self.cursor_index.saturating_add(qty);
 
-        if new_position >= self.filtered_options.len() {
-            new_position = if self.filtered_options.is_empty() {
+        if new_position >= self.scored_options.len() {
+            new_position = if self.scored_options.is_empty() {
                 0
             } else if wrap {
-                new_position % self.filtered_options.len()
+                new_position % self.scored_options.len()
             } else {
-                self.filtered_options.len().saturating_sub(1)
+                self.scored_options.len().saturating_sub(1)
             }
         }
 
@@ -114,17 +121,29 @@ where
     }
 
     fn has_answer_highlighted(&mut self) -> bool {
-        self.filtered_options.get(self.cursor_index).is_some()
+        self.scored_options.get(self.cursor_index).is_some()
     }
 
     fn get_final_answer(&mut self) -> ListOption<T> {
         // should only be called after current cursor index is validated
         // on has_answer_highlighted
 
-        let index = *self.filtered_options.get(self.cursor_index).unwrap();
+        let index = *self.scored_options.get(self.cursor_index).unwrap();
         let value = self.options.swap_remove(index);
 
         ListOption::new(index, value)
+    }
+
+    fn run_scorer(&mut self) {
+        let mut options = self.score_options();
+        options.sort_unstable_by_key(|(_idx, score)| Reverse(*score));
+
+        self.scored_options = options.into_iter().map(|(idx, _)| idx).collect();
+        if self.config.reset_cursor {
+            let _ = self.update_cursor_position(0);
+        } else if self.scored_options.len() <= self.cursor_index {
+            let _ = self.update_cursor_position(self.scored_options.len().saturating_sub(1));
+        }
     }
 }
 
@@ -149,6 +168,11 @@ where
         (self.formatter)(answer.as_ref())
     }
 
+    fn setup(&mut self) -> InquireResult<()> {
+        self.run_scorer();
+        Ok(())
+    }
+
     fn submit(&mut self) -> InquireResult<Option<ListOption<T>>> {
         let answer = match self.has_answer_highlighted() {
             true => Some(self.get_final_answer()),
@@ -170,12 +194,7 @@ where
                 let result = self.input.handle(input_action);
 
                 if let InputActionResult::ContentChanged = result {
-                    let options = self.filter_options();
-                    self.filtered_options = options;
-                    if self.filtered_options.len() <= self.cursor_index {
-                        let _ = self
-                            .update_cursor_position(self.filtered_options.len().saturating_sub(1));
-                    }
+                    self.run_scorer();
                 }
 
                 result.into()
@@ -191,7 +210,7 @@ where
         backend.render_select_prompt(prompt, &self.input)?;
 
         let choices = self
-            .filtered_options
+            .scored_options
             .iter()
             .cloned()
             .map(|i| ListOption::new(i, self.options.get(i).unwrap()))

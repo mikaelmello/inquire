@@ -13,6 +13,14 @@
 - Add strict clippy lints to improve code consistency and readability.
 - Expand workflow clippy task to lint all-features in workspace.
 - Add docs badge to readme.
+- **Breaking** The Select and Multiselect Filter now scores input and is now expected to return an `Option<i64>`, making it possible to order/rank the list of options. [#176](https://github.com/mikaelmello/inquire/pull/176)
+    `None`: Will not be displayed in the list of options.
+    `Some(score)`: score determines the order of options, higher score, higher on the list of options.
+- Implement fuzzy search as default on Select and MultiSelect prompts. [#176](https://github.com/mikaelmello/inquire/pull/176)
+- Add new option on Select/MultiSelect prompts allowing to reset selection to the first item on filter-input changes. [#176](https://github.com/mikaelmello/inquire/pull/176)
+- Keybindings Ctrl-p and Ctrl-n added for Up and Down actions
+- Added 'with_starting_filter_input' to both Select and MultiSelect, which allows for setting an initial value to the filter section of the prompt.
+- Keybindings Ctrl-j and Ctrl-g added for Enter and Cancel actions
 
 ### Fixes
 
@@ -26,6 +34,7 @@
 - Raised MSRV to 1.63 due to requirements in downstream dependencies.
 - MSRV is now explicitly set in the package definition.
 - Replaced `lazy_static` with `once_cell` as `once_cell::sync::Lazy` is being standardized and `lazy_static` is not actively maintained anymore.
+- Added `fuzzy-matcher` as an optional dependency for fuzzy filtering in Select and MultiSelect prompts [#176](https://github.com/mikaelmello/inquire/pull/176)
 
 ## [0.6.2] - 2023-05-07
 

@@ -20,11 +20,12 @@ path = "src/lib.rs"
 doctest = true
 
 [features]
-default = ["macros", "crossterm", "one-liners"]
+default = ["macros", "crossterm", "one-liners", "fuzzy"]
 macros = []
 one-liners = []
 date = ["chrono"]
 editor = ["tempfile"]
+fuzzy = ["fuzzy-matcher"]
 
 [package.metadata.docs.rs]
 all-features = true
@@ -40,6 +41,8 @@ console = { version = "0.15", optional = true, features = [
 chrono = { version = "0.4", optional = true }
 
 tempfile = { version = "3", optional = true }
+
+fuzzy-matcher = { version = "0.3.7", default-features = false, optional = true }
 
 bitflags = "2"
 dyn-clone = "1"

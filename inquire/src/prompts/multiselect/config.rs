@@ -9,6 +9,8 @@ pub struct MultiSelectConfig {
     pub page_size: usize,
     /// Whether to keep the filter text when an option is selected.
     pub keep_filter: bool,
+    /// Whether to reset the cursor to the first option on filter input change.
+    pub reset_cursor: bool,
 }
 
 impl<T> From<&MultiSelect<'_, T>> for MultiSelectConfig {
@@ -17,6 +19,7 @@ impl<T> From<&MultiSelect<'_, T>> for MultiSelectConfig {
             vim_mode: value.vim_mode,
             page_size: value.page_size,
             keep_filter: value.keep_filter,
+            reset_cursor: value.reset_cursor,
         }
     }
 }
