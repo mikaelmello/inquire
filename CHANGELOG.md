@@ -38,6 +38,10 @@
 - Replaced `lazy_static` with `once_cell` as `once_cell::sync::Lazy` is being standardized and `lazy_static` is not actively maintained anymore.
 - Added `fuzzy-matcher` as an optional dependency for fuzzy filtering in Select and MultiSelect prompts [#176](https://github.com/mikaelmello/inquire/pull/176)
 
+### Internals
+
+- Removed some useless `Vec::reserve()` calls
+
 ## [0.6.2] - 2023-05-07
 
 - Allow usage of ANSI escape codes in prompts. [#136](https://github.com/mikaelmello/inquire/pull/136). Thanks to [@JimLynchCodes](https://github.com/JimLynchCodes) for reporting on [#135](https://github.com/mikaelmello/inquire/issues/135).
