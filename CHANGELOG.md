@@ -18,9 +18,11 @@
     `Some(score)`: score determines the order of options, higher score, higher on the list of options.
 - Implement fuzzy search as default on Select and MultiSelect prompts. [#176](https://github.com/mikaelmello/inquire/pull/176)
 - Add new option on Select/MultiSelect prompts allowing to reset selection to the first item on filter-input changes. [#176](https://github.com/mikaelmello/inquire/pull/176)
-- Keybindings Ctrl-p and Ctrl-n added for Up and Down actions
+- Emacs-like keybindings added where applicable:
+ - Ctrl-p/Ctrl-n for up/down
+ - Ctrl-b/Ctrl-f for left/right
+ - Ctrl-j/Ctrl-g for enter/cancel
 - Added 'with_starting_filter_input' to both Select and MultiSelect, which allows for setting an initial value to the filter section of the prompt.
-- Keybindings Ctrl-j and Ctrl-g added for Enter and Cancel actions
 
 ### Fixes
 
