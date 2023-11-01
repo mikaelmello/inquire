@@ -12,6 +12,8 @@
 //! - [`CustomType`] for text prompts that you would like to parse to a custom type, such as numbers or UUIDs;
 //! - [`Password`] for secretive text prompts.
 //!
+//! \* The Editor and DateSelect prompts are available by enabling the `editor` and `date` features, respectively.
+//!
 //! Check out the [GitHub repository](https://github.com/mikaelmello/inquire) to see demos of what you can do with `inquire`.
 //!
 //! # Features
@@ -27,8 +29,6 @@
 //!   - Custom parsers for [`Confirm`] and [`CustomType`] prompts;
 //!   - Custom extensions for files created by [`Editor`] prompts;
 //!   - and many others!
-//!
-//! \* Date-related features are available by enabling the `date` feature.
 //!
 //! # Simple Example
 //!
