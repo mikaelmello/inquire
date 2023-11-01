@@ -64,7 +64,7 @@ where
                     .filter(|i| *i < mso.options.len())
                     .collect()
             })
-            .unwrap_or_else(BTreeSet::new);
+            .unwrap_or_default();
 
         Ok(Self {
             message: mso.message,
