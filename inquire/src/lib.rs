@@ -74,6 +74,7 @@ pub mod error;
 pub mod formatter;
 mod input;
 pub mod list_option;
+mod new_prompts;
 pub mod parser;
 mod prompts;
 mod terminal;

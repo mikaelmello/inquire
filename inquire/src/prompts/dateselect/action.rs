@@ -1,4 +1,5 @@
 use crate::{
+    new_prompts::base::Action,
     ui::{Key, KeyModifiers},
     InnerAction,
 };
@@ -66,5 +67,29 @@ impl InnerAction for DateSelectPromptAction {
         };
 
         Some(action)
+    }
+}
+
+impl Action for DateSelectPromptAction {
+    fn from_key(key: Key) -> Option<Self> {
+        match key {
+            Key::Left(KeyModifiers::NONE) | Key::Char('b', KeyModifiers::CONTROL) => {
+                Some(Self::GoToPrevDay)
+            }
+            Key::Right(KeyModifiers::NONE) | Key::Char('f', KeyModifiers::CONTROL) => {
+                Some(Self::GoToNextDay)
+            }
+            Key::Up(KeyModifiers::NONE) | Key::Char('p', KeyModifiers::CONTROL) => {
+                Some(Self::GoToPrevWeek)
+            }
+            Key::Down(KeyModifiers::NONE) | Key::Char('n', KeyModifiers::CONTROL) | Key::Tab => {
+                Some(Self::GoToNextWeek)
+            }
+            Key::Left(KeyModifiers::CONTROL) => Some(Self::GoToPrevMonth),
+            Key::Right(KeyModifiers::CONTROL) => Some(Self::GoToNextMonth),
+            Key::Up(KeyModifiers::CONTROL) => Some(Self::GoToPrevYear),
+            Key::Down(KeyModifiers::CONTROL) => Some(Self::GoToNextYear),
+            _ => None,
+        }
     }
 }

@@ -61,6 +61,25 @@ pub enum Validation {
     Invalid(ErrorMessage),
 }
 
+pub trait SubmissionValidator<I>: DynClone {
+    fn validate(&self, input: &I) -> Result<Validation, CustomUserError>;
+}
+
+impl<I> Clone for Box<dyn SubmissionValidator<I>> {
+    fn clone(&self) -> Self {
+        dyn_clone::clone_box(&**self)
+    }
+}
+
+impl<I, F> SubmissionValidator<I> for F
+where
+    F: Fn(&I) -> Result<Validation, CustomUserError> + Clone,
+{
+    fn validate(&self, input: &I) -> Result<Validation, CustomUserError> {
+        (self)(input)
+    }
+}
+
 /// Validator that receives a string slice as the input, such as [`Text`](crate::Text) and
 /// [`Password`](crate::Password).
 ///

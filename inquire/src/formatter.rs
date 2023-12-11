@@ -46,7 +46,29 @@
 //! ? What's your name? My name is Mikael
 //! ```
 
+use chrono::NaiveDate;
+use dyn_clone::DynClone;
+
 use crate::list_option::ListOption;
+
+pub trait SubmissionFormatter<T>: DynClone {
+    fn format(&self, output: &T) -> String;
+}
+
+impl<T> Clone for Box<dyn SubmissionFormatter<T>> {
+    fn clone(&self) -> Self {
+        dyn_clone::clone_box(&**self)
+    }
+}
+
+impl<T, F> SubmissionFormatter<T> for F
+where
+    F: Fn(&T) -> String + Clone,
+{
+    fn format(&self, output: &T) -> String {
+        (self)(output)
+    }
+}
 
 /// Type alias for formatters that receive a string slice as the input,
 /// required by [Text](crate::Text) and [Password](crate::Password) for example.
@@ -226,3 +248,12 @@ pub const DEFAULT_BOOL_FORMATTER: BoolFormatter<'_> = &|ans| {
 /// );
 /// ```
 pub const DEFAULT_DATE_FORMATTER: DateFormatter<'_> = &|val| val.format("%B %-e, %Y").to_string();
+
+#[derive(Copy, Clone)]
+pub struct DefaultDateFormatter;
+
+impl SubmissionFormatter<NaiveDate> for DefaultDateFormatter {
+    fn format(&self, output: &NaiveDate) -> String {
+        output.format("%B %-e, %Y").to_string()
+    }
+}
