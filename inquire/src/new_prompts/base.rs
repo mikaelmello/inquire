@@ -1,46 +1,17 @@
 use crate::{
     error::InquireResult,
     formatter::SubmissionFormatter,
-    input::{Input, InputActionResult},
-    ui::{CommonBackend, Key, KeyModifiers},
+    input::Input,
+    ui::CommonBackend,
     validator::{ErrorMessage, SubmissionValidator, Validation},
     InnerAction, InputAction, InquireError,
 };
 
-/// Represents the result of an action on the prompt.
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum ActionResult {
-    /// The action resulted in a state change that requires the prompt to be
-    /// re-rendered.
-    NeedsRedraw,
-
-    /// The action either didn't result in a state change or the state
-    /// change does not require a redraw.
-    Clean,
-}
-
-impl ActionResult {
-    pub fn reset(&mut self) {
-        *self = Self::Clean;
-    }
-
-    pub fn merge(&mut self, other: Self) {
-        if *self == Self::Clean {
-            *self = other;
-        }
-    }
-}
-
-impl From<InputActionResult> for ActionResult {
-    fn from(input_action_result: InputActionResult) -> Self {
-        match input_action_result {
-            InputActionResult::Clean => Self::Clean,
-            InputActionResult::ContentChanged | InputActionResult::PositionChanged => {
-                Self::NeedsRedraw
-            }
-        }
-    }
-}
+use super::{
+    action::{ControlAction, ParseKey},
+    action_result::ActionResult,
+    prompt_state::PromptState,
+};
 
 pub trait PromptImpl<B> {
     type Action: Copy;
@@ -64,59 +35,6 @@ pub trait PromptImpl<B> {
     fn into_output(self) -> Self::Output;
 }
 
-pub trait Action: Sized {
-    fn from_key(key: Key) -> Option<Self>;
-}
-
-/// Top-level type to describe the directives a prompt
-/// receives.
-///
-/// Each prompt should implement its own custom InnerAction type
-/// which is parsed and stored in the Inner variant, if applicable,
-/// on the normal execution flow of a prompt.
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum ControlAction {
-    /// Submits the current prompt answer, finishing the prompt if valid.
-    Submit,
-    /// Cancels the prompt execution with a graceful shutdown.
-    Cancel,
-    /// Interrupts the prompt execution without a graceful shutdown.
-    Interrupt,
-}
-
-impl Action for ControlAction {
-    fn from_key(key: Key) -> Option<Self> {
-        match key {
-            Key::Enter | Key::Char('j', KeyModifiers::CONTROL) => Some(Self::Submit),
-            Key::Escape | Key::Char('d', KeyModifiers::CONTROL) => Some(Self::Cancel),
-            Key::Char('c', KeyModifiers::CONTROL) => Some(Self::Interrupt),
-            _ => None,
-        }
-    }
-}
-
-enum PromptState {
-    Active(ActionResult),
-    Canceled,
-    Submitted,
-}
-
-impl PromptState {
-    fn needs_rendering(&self) -> bool {
-        match self {
-            Self::Active(result) => *result == ActionResult::NeedsRedraw,
-            Self::Canceled | Self::Submitted => true,
-        }
-    }
-
-    fn require_redraw(&mut self) {
-        match self {
-            Self::Active(result) => *result = ActionResult::NeedsRedraw,
-            Self::Canceled | Self::Submitted => {}
-        }
-    }
-}
-
 pub struct Prompt<'a, InnerImpl, InnerActionType, Backend>
 where
     InnerImpl: PromptImpl<Backend, Action = InnerActionType>,
@@ -137,7 +55,7 @@ impl<'a, InnerImpl, InnerActionType, Backend> Prompt<'a, InnerImpl, InnerActionT
 where
     InnerImpl: PromptImpl<Backend, Action = InnerActionType>,
     Backend: CommonBackend,
-    InnerActionType: Action,
+    InnerActionType: ParseKey,
 {
     pub fn new(
         message: impl Into<String>,
@@ -230,6 +148,7 @@ where
 
         loop {
             self.render()?;
+            last_handle.reset();
 
             let key = self.backend.read_key()?;
 

@@ -66,6 +66,7 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![allow(clippy::bool_to_int_with_if)]
 mod ansi;
+pub mod api;
 pub mod autocompletion;
 mod config;
 #[cfg(feature = "date")]
@@ -83,6 +84,7 @@ pub mod ui;
 mod utils;
 pub mod validator;
 
+pub use crate::api::*;
 pub use crate::autocompletion::Autocomplete;
 pub use crate::config::set_global_render_config;
 pub use crate::error::{CustomUserError, InquireError};
