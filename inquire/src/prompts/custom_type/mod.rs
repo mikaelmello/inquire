@@ -80,6 +80,13 @@ pub struct CustomType<'a, T> {
     /// Message to be presented to the user.
     pub message: &'a str,
 
+    /// Initial value of the prompt's text input.
+    ///
+    /// If you want to set a default value for the prompt, returned when the user's submission is empty, see [`default`].
+    ///
+    /// [`default`]: Self::default
+    pub initial_str_value: Option<&'a str>,
+
     /// Default value, returned when the user input is empty.
     pub default: Option<T>,
 
@@ -134,6 +141,7 @@ where
     {
         Self {
             message,
+            initial_str_value: None,
             default: None,
             placeholder: None,
             help_message: None,
@@ -144,6 +152,16 @@ where
             error_message: "Invalid input".into(),
             render_config: get_configuration(),
         }
+    }
+
+    /// Sets the initial value of the prompt's text input.
+    ///
+    /// If you want to set a default value for the prompt, returned when the user's submission is empty, see [`with_default`].
+    ///
+    /// [`with_default`]: Self::with_default
+    pub fn with_initial_str_value(mut self, message: &'a str) -> Self {
+        self.initial_str_value = Some(message);
+        self
     }
 
     /// Sets the default input.

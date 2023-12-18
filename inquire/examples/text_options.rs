@@ -12,7 +12,7 @@ fn main() {
 
     let _input = Text {
         message: "How are you feeling?",
-        initial_value: None,
+        initial_value: Some("Good"),
         default: None,
         placeholder: Some("Good"),
         help_message: None,
