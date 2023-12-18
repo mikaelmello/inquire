@@ -17,8 +17,8 @@ fn main() {
 
     let ans = Confirm {
         message: "Are you happy?",
-        initial_str_value: Some("si"),
-        default: None,
+        initial_str_value: None,
+        default: Some(false),
         placeholder: Some("si|no"),
         help_message: Some("It's alright if you're not"),
         formatter: &|ans| match ans {
