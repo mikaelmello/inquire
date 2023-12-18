@@ -42,6 +42,7 @@ use self::prompt::CustomTypePrompt;
 ///
 /// let amount_prompt: CustomType<f64> = CustomType {
 ///     message: "How much is your travel going to cost?",
+///     initial_str_value: None,
 ///     formatter: &|i| format!("${:.2}", i),
 ///     default_value_formatter: &|i| format!("${:.2}", i),
 ///     default: None,
