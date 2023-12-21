@@ -184,7 +184,7 @@ where
 
     /// Default cursor behaviour on filter input change.
     /// Defaults to true.
-    pub const DEFAULT_RESET_CURSOR: bool = true;
+    pub const DEFAULT_RESET_CURSOR: bool = false;
 
     /// Default help message.
     pub const DEFAULT_HELP_MESSAGE: Option<&'a str> =
