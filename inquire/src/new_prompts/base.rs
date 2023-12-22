@@ -1,10 +1,10 @@
 use crate::{
     error::InquireResult,
     formatter::SubmissionFormatter,
-    input::{Input, InputActionResult},
+    input::Input,
     ui::CommonBackend,
     validator::{ErrorMessage, SubmissionValidator, Validation},
-    InnerAction, InputAction, InquireError,
+    InquireError,
 };
 
 use super::{

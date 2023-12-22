@@ -60,7 +60,7 @@ impl<'a> DateSelect<'a> {
     const DEFAULT_HELP_MESSAGE: Option<&'a str> =
         Some("arrows to move, with ctrl to move months and years, enter to select");
 
-    const DEFAULT_DATE_FORMATTER: &dyn Fn(&NaiveDate) -> String =
+    const DEFAULT_DATE_FORMATTER: &'static dyn Fn(&NaiveDate) -> String =
         &|date: &NaiveDate| date.format("%B %-e, %Y").to_string();
 
     common_config_builder_methods!(NaiveDate);
