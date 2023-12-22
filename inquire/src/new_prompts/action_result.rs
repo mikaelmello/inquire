@@ -12,18 +12,6 @@ pub enum ActionResult {
     Clean,
 }
 
-impl ActionResult {
-    pub fn reset(&mut self) {
-        *self = Self::Clean;
-    }
-
-    pub fn merge(&mut self, other: Self) {
-        if *self == Self::Clean {
-            *self = other;
-        }
-    }
-}
-
 impl From<InputActionResult> for ActionResult {
     fn from(input_action_result: InputActionResult) -> Self {
         match input_action_result {

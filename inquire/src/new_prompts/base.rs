@@ -1,14 +1,14 @@
 use crate::{
     error::InquireResult,
     formatter::SubmissionFormatter,
-    input::Input,
+    input::{Input, InputActionResult},
     ui::CommonBackend,
     validator::{ErrorMessage, SubmissionValidator, Validation},
     InnerAction, InputAction, InquireError,
 };
 
 use super::{
-    action::{ControlAction, ParseKey},
+    action::{Action, ControlAction, ParseKey},
     action_result::ActionResult,
     prompt_state::PromptState,
 };
@@ -111,7 +111,7 @@ where
         Ok(())
     }
 
-    fn submit(&mut self) -> InquireResult<()> {
+    fn submit(&mut self) -> InquireResult<PromptState> {
         let cur_submission = self.inner_impl.current_submission();
 
         for validator in &self.validators {
@@ -119,58 +119,54 @@ where
                 Ok(Validation::Valid) => {}
                 Ok(Validation::Invalid(msg)) => {
                     self.error_message = Some(msg);
-                    self.state.require_redraw();
-                    return Ok(());
+                    return Ok(PromptState::Active(ActionResult::NeedsRedraw));
                 }
                 Err(err) => return Err(InquireError::Custom(err)),
             }
         }
 
-        self.state = PromptState::Submitted;
-
-        Ok(())
+        Ok(PromptState::Submitted)
     }
 
-    fn cancel(&mut self) -> InquireResult<()> {
+    fn cancel(&mut self) -> InquireResult<PromptState> {
         let pre_cancel_result = self.inner_impl.pre_cancel()?;
 
         if pre_cancel_result {
-            self.state = PromptState::Canceled;
+            return Ok(PromptState::Canceled);
         }
 
-        Ok(())
+        Ok(self.state)
     }
 
     pub fn prompt(mut self) -> InquireResult<InnerImpl::Output> {
         self.inner_impl.setup()?;
 
-        let mut last_handle = ActionResult::NeedsRedraw;
-
         loop {
             self.render()?;
-            last_handle.reset();
 
             let key = self.backend.read_key()?;
 
-            if let Some(control_action) = ControlAction::from_key(key) {
-                match control_action {
-                    ControlAction::Submit => self.submit()?,
-                    ControlAction::Cancel => self.cancel()?,
-                    ControlAction::Interrupt => return Err(InquireError::OperationInterrupted),
-                };
+            self.state = match Action::<InnerImpl::Action>::from_key(key) {
+                Some(action) => match action {
+                    Action::Control(control_action) => match control_action {
+                        ControlAction::Submit => self.submit()?,
+                        ControlAction::Cancel => self.cancel()?,
+                        ControlAction::Interrupt => return Err(InquireError::OperationInterrupted),
+                    },
+                    Action::Inner(inner_action) => {
+                        let result = self.inner_impl.handle(inner_action)?;
+                        PromptState::Active(result)
+                    }
+                    Action::Input(input_action) => match self.input.as_mut() {
+                        Some(input) => {
+                            let result = input.handle(input_action);
+                            PromptState::Active(result.into())
+                        }
+                        None => self.state,
+                    },
+                },
+                None => self.state,
             };
-
-            if let Some(prompt_action) = InnerActionType::from_key(key) {
-                let result = self.inner_impl.handle(prompt_action)?;
-                last_handle.merge(result);
-            }
-
-            if let Some(input) = self.input.as_mut() {
-                if let Some(input_action) = InputAction::from_key(key, &()) {
-                    let result = input.handle(input_action);
-                    last_handle.merge(result.into());
-                }
-            }
 
             match self.state {
                 PromptState::Canceled => return Err(InquireError::OperationCanceled),

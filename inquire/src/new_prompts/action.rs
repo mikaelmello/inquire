@@ -1,16 +1,10 @@
 use crate::{
     ui::{Key, KeyModifiers},
-    InputAction,
+    InnerAction, InputAction,
 };
 
 pub trait ParseKey: Sized {
     fn from_key(key: Key) -> Option<Self>;
-}
-
-pub enum Action<InnerAction> {
-    Control(ControlAction),
-    Input(InputAction),
-    Inner(InnerAction),
 }
 
 /// Top-level type to describe the directives a prompt
@@ -37,5 +31,23 @@ impl ParseKey for ControlAction {
             Key::Char('c', KeyModifiers::CONTROL) => Some(Self::Interrupt),
             _ => None,
         }
+    }
+}
+
+pub enum Action<InnerAction> {
+    Control(ControlAction),
+    Input(InputAction),
+    Inner(InnerAction),
+}
+
+impl<InnerAction> ParseKey for Action<InnerAction>
+where
+    InnerAction: ParseKey,
+{
+    fn from_key(key: Key) -> Option<Self> {
+        ControlAction::from_key(key)
+            .map(Self::Control)
+            .or_else(|| InnerAction::from_key(key).map(Self::Inner))
+            .or_else(|| InputAction::from_key(key, &()).map(Self::Input))
     }
 }
