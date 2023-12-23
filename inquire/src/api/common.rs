@@ -8,6 +8,9 @@ pub struct CommonConfig<'a, OutputType> {
     /// Help message to be presented to the user.
     pub help_message: Option<String>,
 
+    /// Default value to be used.
+    pub default: Option<OutputType>,
+
     /// Function that formats the user input and presents it to the user as the final rendering of the prompt.
     pub formatter: Box<dyn SubmissionFormatter<OutputType>>,
 
@@ -57,6 +60,11 @@ macro_rules! common_config_builder_methods {
         /// If you want a non-optional alternative to this method, you can use [`with_help_message`].
         pub fn with_opt_help_message(mut self, help_message: Option<impl Into<String>>) -> Self {
             self.common.help_message = help_message.map(Into::into);
+            self
+        }
+
+        pub fn with_default(mut self, default: $output_type) -> Self {
+            self.common.default = Some(default);
             self
         }
 
@@ -133,6 +141,7 @@ macro_rules! common_config_builder_methods {
         ///
         /// Meanwhile, if the user does submit an answer, the method wraps the return
         /// type with `Some`.
+        #[allow(unused_qualifications)]
         pub fn prompt_skippable(self) -> crate::error::InquireResult<Option<$output_type>> {
             match self.prompt() {
                 Ok(answer) => Ok(Some(answer)),
@@ -143,24 +152,26 @@ macro_rules! common_config_builder_methods {
 
         /// Parses the provided behavioral and rendering options and prompts
         /// the CLI user for input according to the defined rules.
+        #[allow(unused_qualifications)]
         pub fn prompt(self) -> crate::error::InquireResult<$output_type> {
             let terminal = crate::terminal::get_default_terminal()?;
             let mut backend = crate::ui::Backend::new(terminal, self.common.render_config)?;
             self.prompt_with_backend(&mut backend)
         }
 
+        #[allow(unused_qualifications)]
         pub(crate) fn prompt_with_backend<T: crate::terminal::Terminal>(
             self,
             backend: &mut crate::ui::Backend<'a, T>,
         ) -> crate::error::InquireResult<$output_type> {
-            let inner = self.inner_impl();
+            let (common_config, inner_impl) = self.inner_impl()?;
             let prompt = crate::new_prompts::base::Prompt::new(
-                self.common.message,
-                self.common.help_message,
-                self.common.validators,
-                self.common.formatter,
+                common_config.message,
+                common_config.help_message,
+                common_config.validators,
+                common_config.formatter,
                 backend,
-                inner,
+                inner_impl,
             );
 
             prompt.prompt()

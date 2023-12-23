@@ -11,26 +11,8 @@ use crate::{
     error::InquireResult,
     new_prompts::{action::ParseKey, action_result::ActionResult, base::PromptImpl},
     ui::{date::DateSelectBackend, Key, KeyModifiers},
+    DateSelectConfig,
 };
-
-#[derive(Clone, Copy)]
-pub struct DateSelectConfig {
-    pub week_start: chrono::Weekday,
-    pub min_date: Option<NaiveDate>,
-    pub max_date: Option<NaiveDate>,
-    pub starting_date: NaiveDate,
-}
-
-impl Default for DateSelectConfig {
-    fn default() -> Self {
-        Self {
-            week_start: chrono::Weekday::Sun,
-            min_date: None,
-            max_date: None,
-            starting_date: get_current_date(),
-        }
-    }
-}
 
 impl ParseKey for DateSelectPromptAction {
     fn from_key(key: Key) -> Option<Self> {

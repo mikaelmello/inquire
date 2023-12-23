@@ -46,7 +46,6 @@
 //! ? What's your name? My name is Mikael
 //! ```
 
-use chrono::NaiveDate;
 use dyn_clone::DynClone;
 
 use crate::list_option::ListOption;
@@ -248,12 +247,3 @@ pub const DEFAULT_BOOL_FORMATTER: BoolFormatter<'_> = &|ans| {
 /// );
 /// ```
 pub const DEFAULT_DATE_FORMATTER: DateFormatter<'_> = &|val| val.format("%B %-e, %Y").to_string();
-
-#[derive(Copy, Clone)]
-pub struct DefaultDateFormatter;
-
-impl SubmissionFormatter<NaiveDate> for DefaultDateFormatter {
-    fn format(&self, output: &NaiveDate) -> String {
-        output.format("%B %-e, %Y").to_string()
-    }
-}

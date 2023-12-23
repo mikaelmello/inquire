@@ -1,8 +1,8 @@
 use chrono::NaiveDate;
 
 use crate::{
-    config::get_configuration,
-    new_prompts::variants::dateselect::{DateSelectConfig, DateSelectPrompt},
+    config::get_configuration, date_utils::get_current_date, error::InquireResult,
+    new_prompts::variants::dateselect::DateSelectPrompt,
 };
 
 use super::common::CommonConfig;
@@ -70,6 +70,7 @@ impl<'a> DateSelect<'a> {
         Self {
             common: CommonConfig {
                 message: message.into(),
+                default: None,
                 help_message: Self::DEFAULT_HELP_MESSAGE.map(String::from),
                 formatter: Box::new(Self::DEFAULT_DATE_FORMATTER),
                 validators: vec![],
@@ -91,10 +92,43 @@ impl<'a> DateSelect<'a> {
         self
     }
 
-    fn inner_impl(&self) -> DateSelectPrompt {
-        DateSelectPrompt {
-            config: self.config,
-            current_date: self.config.starting_date,
+    /// Sets the max date.
+    pub fn with_max_date(mut self, max_date: NaiveDate) -> Self {
+        self.config.max_date = Some(max_date);
+        self
+    }
+
+    /// Sets the date initially selected when the prompt starts, same as [`with_default`].
+    pub fn with_starting_date(self, starting_date: NaiveDate) -> Self {
+        self.with_default(starting_date)
+    }
+
+    fn inner_impl(self) -> InquireResult<(CommonConfig<'a, NaiveDate>, DateSelectPrompt)> {
+        let current_date = self.common.default.unwrap_or_else(get_current_date);
+        let common_config = self.common;
+        Ok((
+            common_config,
+            DateSelectPrompt {
+                config: self.config,
+                current_date,
+            },
+        ))
+    }
+}
+
+#[derive(Clone, Copy)]
+pub(crate) struct DateSelectConfig {
+    pub week_start: chrono::Weekday,
+    pub min_date: Option<NaiveDate>,
+    pub max_date: Option<NaiveDate>,
+}
+
+impl Default for DateSelectConfig {
+    fn default() -> Self {
+        Self {
+            week_start: chrono::Weekday::Sun,
+            min_date: None,
+            max_date: None,
         }
     }
 }
