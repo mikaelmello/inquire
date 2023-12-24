@@ -199,7 +199,14 @@ where
         let mut options = self.score_options();
         options.sort_unstable_by_key(|(_idx, score)| Reverse(*score));
 
-        self.scored_options = options.into_iter().map(|(idx, _)| idx).collect();
+        let new_scored_options = options.iter().map(|(idx, _)| *idx).collect::<Vec<usize>>();
+
+        if self.scored_options == new_scored_options {
+            return;
+        }
+
+        self.scored_options = new_scored_options;
+
         if self.config.reset_cursor {
             let _ = self.update_cursor_position(0);
         } else if self.scored_options.len() <= self.cursor_index {

@@ -302,6 +302,9 @@ where
     }
 
     /// Sets the starting cursor index.
+    ///
+    /// This index might be overriden if the `reset_cursor` option is set to true (default)
+    /// and starting_filter_input is set to something other than None.
     pub fn with_starting_cursor(mut self, starting_cursor: usize) -> Self {
         self.starting_cursor = starting_cursor;
         self
@@ -313,9 +316,10 @@ where
         self
     }
 
-    /// Sets the reset_cursor behaviour.
-    /// Will reset cursor to first option on filter input change.
-    /// Defaults to true.
+    /// Sets the reset_cursor behaviour. Defaults to true.
+    ///
+    /// When there's an input change that results in a different list of options being displayed,
+    /// whether by filtering or re-ordering, the cursor will be reset to highlight the first option.
     pub fn with_reset_cursor(mut self, reset_cursor: bool) -> Self {
         self.reset_cursor = reset_cursor;
         self
