@@ -8,7 +8,7 @@ fn main() -> InquireResult<()> {
     let _title = Text::new("Title:").prompt()?;
 
     let _description = Editor::new("Description:")
-        .with_formatter(&|submission| {
+        .with_formatter(|submission| {
             let char_count = submission.chars().count();
             if char_count == 0 {
                 String::from("<skipped>")

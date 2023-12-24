@@ -62,7 +62,7 @@ pub enum Validation {
 }
 
 pub trait SubmissionValidator<I>: DynClone {
-    fn validate(&self, input: &I) -> Result<Validation, CustomUserError>;
+    fn validate(&self, input: I) -> Result<Validation, CustomUserError>;
 }
 
 impl<I> Clone for Box<dyn SubmissionValidator<I>> {
@@ -73,9 +73,9 @@ impl<I> Clone for Box<dyn SubmissionValidator<I>> {
 
 impl<I, F> SubmissionValidator<I> for F
 where
-    F: Fn(&I) -> Result<Validation, CustomUserError> + Clone,
+    F: Fn(I) -> Result<Validation, CustomUserError> + Clone,
 {
-    fn validate(&self, input: &I) -> Result<Validation, CustomUserError> {
+    fn validate(&self, input: I) -> Result<Validation, CustomUserError> {
         (self)(input)
     }
 }

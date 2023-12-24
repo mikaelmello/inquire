@@ -36,12 +36,12 @@ static DEFAULT_EDITOR: Lazy<OsString> = Lazy::new(get_default_editor_command);
 ///   - By default, a successfully submitted answer is displayed to the user simply as `<received>`.
 #[derive(Clone)]
 pub struct Editor<'a> {
-    common: CommonConfig<'a, String>,
+    common: CommonConfig<'a, String, &'a str>,
     config: EditorConfig,
 }
 
 impl<'a> Editor<'a> {
-    common_config_builder_methods!(String);
+    common_config_builder_methods!(String, &'a str);
 
     /// Creates a [DateSelect] with the provided message, along with default configuration values.
     pub fn new(message: &'a str) -> Self {
@@ -50,7 +50,7 @@ impl<'a> Editor<'a> {
                 message: message.into(),
                 help_message: None,
                 default: None,
-                formatter: Box::new(&|_: &String| String::from("<received>")),
+                formatter: Box::new(&|_| String::from("<received>")),
                 validators: vec![],
                 render_config: get_configuration(),
             },
@@ -76,7 +76,7 @@ impl<'a> Editor<'a> {
         self
     }
 
-    fn inner_impl(self) -> InquireResult<(CommonConfig<'a, String>, EditorPrompt)> {
+    fn inner_impl(self) -> InquireResult<(CommonConfig<'a, String, &'a str>, EditorPrompt)> {
         let default_value = self.common.default.clone();
         let common = self.common;
         let inner_impl = EditorPrompt::new(self.config, default_value)?;

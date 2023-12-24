@@ -1,7 +1,7 @@
 use crate::{formatter::SubmissionFormatter, ui::RenderConfig, validator::SubmissionValidator};
 
 #[derive(Clone)]
-pub struct CommonConfig<'a, OutputType> {
+pub struct CommonConfig<'a, OutputType, OutputAsArgumentType> {
     /// Message to be presented to the user.
     pub message: String,
 
@@ -12,7 +12,7 @@ pub struct CommonConfig<'a, OutputType> {
     pub default: Option<OutputType>,
 
     /// Function that formats the user input and presents it to the user as the final rendering of the prompt.
-    pub formatter: Box<dyn SubmissionFormatter<OutputType>>,
+    pub formatter: Box<dyn SubmissionFormatter<OutputAsArgumentType>>,
 
     /// Collection of validators to apply to the user input.
     ///
@@ -20,7 +20,7 @@ pub struct CommonConfig<'a, OutputType> {
     /// only the first validation error that might appear.
     ///
     /// The possible error is displayed to the user one line above the prompt.
-    pub validators: Vec<Box<dyn SubmissionValidator<OutputType>>>,
+    pub validators: Vec<Box<dyn SubmissionValidator<OutputAsArgumentType>>>,
 
     /// RenderConfig to apply to the rendered interface.
     ///
@@ -35,7 +35,7 @@ pub struct CommonConfig<'a, OutputType> {
 
 macro_rules! common_config_builder_methods {
     // macro with generic type as arg
-    ($output_type:ty) => {
+    ($output_type:ty, $output_as_arg_type:ty) => {
         /// Sets the message of the prompt.
         /// The message is presented to the user as the first line of the prompt.
         pub fn with_message(mut self, message: impl Into<String>) -> Self {
@@ -85,7 +85,7 @@ macro_rules! common_config_builder_methods {
         #[allow(unused_qualifications)]
         pub fn with_formatter(
             mut self,
-            formatter: impl crate::formatter::SubmissionFormatter<$output_type> + 'static,
+            formatter: impl crate::formatter::SubmissionFormatter<$output_as_arg_type> + 'static,
         ) -> Self {
             self.common.formatter = Box::new(formatter);
             self
@@ -112,7 +112,7 @@ macro_rules! common_config_builder_methods {
         /// [`Text`]: crate::Text
         pub fn with_validator(
             mut self,
-            validator: impl crate::validator::SubmissionValidator<$output_type> + 'static,
+            validator: impl crate::validator::SubmissionValidator<$output_as_arg_type> + 'static,
         ) -> Self {
             self.common.validators.push(Box::new(validator));
             self

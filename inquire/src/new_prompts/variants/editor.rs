@@ -71,12 +71,13 @@ impl EditorPrompt {
     }
 }
 
-impl<B> PromptImpl<B> for EditorPrompt
+impl<'a, B> PromptImpl<'a, B> for EditorPrompt
 where
     B: EditorBackend,
 {
     type Action = EditorPromptAction;
     type Output = String;
+    type OutputAsArgument = &'a str;
 
     fn handle(&mut self, action: EditorPromptAction) -> InquireResult<ActionResult> {
         let result = match action {
@@ -102,7 +103,7 @@ where
         Ok(())
     }
 
-    fn current_submission(&self) -> &Self::Output {
+    fn current_submission(&self) -> Self::OutputAsArgument {
         &self.file_content_cache
     }
 

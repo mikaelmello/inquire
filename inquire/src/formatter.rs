@@ -51,7 +51,7 @@ use dyn_clone::DynClone;
 use crate::list_option::ListOption;
 
 pub trait SubmissionFormatter<T>: DynClone {
-    fn format(&self, output: &T) -> String;
+    fn format(&self, output: T) -> String;
 }
 
 impl<T> Clone for Box<dyn SubmissionFormatter<T>> {
@@ -62,9 +62,9 @@ impl<T> Clone for Box<dyn SubmissionFormatter<T>> {
 
 impl<T, F> SubmissionFormatter<T> for F
 where
-    F: Fn(&T) -> String + Clone,
+    F: Fn(T) -> String + Clone,
 {
-    fn format(&self, output: &T) -> String {
+    fn format(&self, output: T) -> String {
         (self)(output)
     }
 }

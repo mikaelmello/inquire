@@ -89,12 +89,13 @@ impl DateSelectPrompt {
     }
 }
 
-impl<B> PromptImpl<B> for DateSelectPrompt
+impl<'a, B> PromptImpl<'a, B> for DateSelectPrompt
 where
     B: DateSelectBackend,
 {
     type Action = DateSelectPromptAction;
     type Output = NaiveDate;
+    type OutputAsArgument = NaiveDate;
 
     fn handle(&mut self, action: DateSelectPromptAction) -> InquireResult<ActionResult> {
         let result = match action {
@@ -127,8 +128,8 @@ where
         Ok(())
     }
 
-    fn current_submission(&self) -> &Self::Output {
-        &self.current_date
+    fn current_submission(&self) -> Self::OutputAsArgument {
+        self.current_date
     }
 
     fn into_output(self) -> Self::Output {

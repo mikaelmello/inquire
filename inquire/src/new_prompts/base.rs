@@ -1,3 +1,8 @@
+use std::{
+    borrow::{Borrow, BorrowMut},
+    ops::Deref,
+};
+
 use crate::{
     error::InquireResult,
     formatter::SubmissionFormatter,
@@ -13,9 +18,10 @@ use super::{
     prompt_state::PromptState,
 };
 
-pub trait PromptImpl<B> {
+pub trait PromptImpl<'a, B> {
     type Action: Copy;
     type Output;
+    type OutputAsArgument;
 
     fn setup(&mut self) -> InquireResult<()> {
         Ok(())
@@ -31,19 +37,19 @@ pub trait PromptImpl<B> {
 
     fn handle(&mut self, action: Self::Action) -> InquireResult<ActionResult>;
     fn render(&self, message: &str, backend: &mut B) -> InquireResult<()>;
-    fn current_submission(&self) -> &Self::Output;
+    fn current_submission(&self) -> Self::OutputAsArgument;
     fn into_output(self) -> Self::Output;
 }
 
 pub struct Prompt<'a, InnerImpl, InnerActionType, Backend>
 where
-    InnerImpl: PromptImpl<Backend, Action = InnerActionType>,
+    InnerImpl: PromptImpl<'a, Backend, Action = InnerActionType>,
     Backend: CommonBackend,
 {
     message: String,
     help_message: Option<String>,
-    validators: Vec<Box<dyn SubmissionValidator<InnerImpl::Output>>>,
-    formatter: Box<dyn SubmissionFormatter<InnerImpl::Output>>,
+    validators: Vec<Box<dyn SubmissionValidator<InnerImpl::OutputAsArgument>>>,
+    formatter: Box<dyn SubmissionFormatter<InnerImpl::OutputAsArgument>>,
     backend: &'a mut Backend,
     inner_impl: InnerImpl,
     error_message: Option<ErrorMessage>,
@@ -53,15 +59,15 @@ where
 
 impl<'a, InnerImpl, InnerActionType, Backend> Prompt<'a, InnerImpl, InnerActionType, Backend>
 where
-    InnerImpl: PromptImpl<Backend, Action = InnerActionType>,
+    InnerImpl: PromptImpl<'a, Backend, Action = InnerActionType>,
     Backend: CommonBackend,
     InnerActionType: ParseKey,
 {
     pub fn new(
         message: impl Into<String>,
         help_message: Option<impl Into<String>>,
-        validators: Vec<Box<dyn SubmissionValidator<InnerImpl::Output>>>,
-        formatter: Box<dyn SubmissionFormatter<InnerImpl::Output>>,
+        validators: Vec<Box<dyn SubmissionValidator<InnerImpl::OutputAsArgument>>>,
+        formatter: Box<dyn SubmissionFormatter<InnerImpl::OutputAsArgument>>,
         backend: &'a mut Backend,
         inner_impl: InnerImpl,
     ) -> Self {

@@ -51,7 +51,7 @@ use super::common::CommonConfig;
 /// ```
 #[derive(Clone)]
 pub struct DateSelect<'a> {
-    common: CommonConfig<'a, NaiveDate>,
+    common: CommonConfig<'a, NaiveDate, NaiveDate>,
     config: DateSelectConfig,
 }
 
@@ -60,10 +60,10 @@ impl<'a> DateSelect<'a> {
     const DEFAULT_HELP_MESSAGE: Option<&'a str> =
         Some("arrows to move, with ctrl to move months and years, enter to select");
 
-    const DEFAULT_DATE_FORMATTER: &'static dyn Fn(&NaiveDate) -> String =
-        &|date: &NaiveDate| date.format("%B %-e, %Y").to_string();
+    const DEFAULT_DATE_FORMATTER: &'static dyn Fn(NaiveDate) -> String =
+        &|date: NaiveDate| date.format("%B %-e, %Y").to_string();
 
-    common_config_builder_methods!(NaiveDate);
+    common_config_builder_methods!(NaiveDate, NaiveDate);
 
     /// Creates a [DateSelect] with the provided message, along with default configuration values.
     pub fn new(message: &'a str) -> Self {
@@ -103,7 +103,9 @@ impl<'a> DateSelect<'a> {
         self.with_default(starting_date)
     }
 
-    fn inner_impl(self) -> InquireResult<(CommonConfig<'a, NaiveDate>, DateSelectPrompt)> {
+    fn inner_impl(
+        self,
+    ) -> InquireResult<(CommonConfig<'a, NaiveDate, NaiveDate>, DateSelectPrompt)> {
         let current_date = self.common.default.unwrap_or_else(get_current_date);
         let common_config = self.common;
         Ok((
