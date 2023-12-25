@@ -1,5 +1,8 @@
 use core::fmt;
-use std::io::{stderr, stdin, Result, Stderr, Stdin, Write};
+use std::{
+    fs::File,
+    io::{Result, Write},
+};
 
 use termion::{
     color::{self, Color},
@@ -11,7 +14,7 @@ use termion::{
 };
 
 use crate::{
-    error::{InquireError, InquireResult},
+    error::InquireResult,
     ui::{Attributes, Styled},
 };
 
@@ -19,10 +22,7 @@ use super::{Terminal, INITIAL_IN_MEMORY_CAPACITY};
 
 enum IO<'a> {
     #[allow(unused)]
-    Std {
-        r: Keys<Stdin>,
-        w: RawTerminal<Stderr>,
-    },
+    Tty(RawTerminal<File>, Keys<File>),
     #[allow(unused)]
     Custom {
         r: &'a mut dyn Iterator<Item = &'a Key>,
@@ -38,18 +38,12 @@ pub struct TermionTerminal<'a> {
 impl<'a> TermionTerminal<'a> {
     #[allow(unused)]
     pub fn new() -> InquireResult<Self> {
-        let raw_mode = stderr()
-            .into_raw_mode()
-            .map_err(|e| match e.raw_os_error() {
-                Some(25 | 6) => InquireError::NotTTY,
-                _ => e.into(),
-            });
+        let tty = termion::get_tty()?;
+        let raw_terminal = tty.into_raw_mode()?;
+        let keys = raw_terminal.try_clone()?.keys();
 
         Ok(Self {
-            io: IO::Std {
-                r: stdin().keys(),
-                w: raw_mode?,
-            },
+            io: IO::Tty(raw_terminal, keys),
             in_memory_content: String::with_capacity(INITIAL_IN_MEMORY_CAPACITY),
         })
     }
@@ -73,7 +67,7 @@ impl<'a> TermionTerminal<'a> {
 
     fn get_writer(&mut self) -> &mut dyn Write {
         match &mut self.io {
-            IO::Std { r: _, w } => w,
+            IO::Tty(w, _) => w,
             IO::Custom { r: _, w } => w,
         }
     }
@@ -126,7 +120,7 @@ impl<'a> Terminal for TermionTerminal<'a> {
     fn read_key(&mut self) -> Result<crate::ui::Key> {
         loop {
             match &mut self.io {
-                IO::Std { r, w: _ } => {
+                IO::Tty(_, r) => {
                     if let Some(key) = r.next() {
                         return key.map(|k| k.into());
                     }

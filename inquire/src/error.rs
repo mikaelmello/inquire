@@ -65,7 +65,10 @@ impl From<CustomUserError> for InquireError {
 
 impl From<io::Error> for InquireError {
     fn from(err: io::Error) -> Self {
-        InquireError::IO(err)
+        match err.raw_os_error() {
+            Some(25 | 6) => InquireError::NotTTY,
+            _ => InquireError::IO(err),
+        }
     }
 }
 
