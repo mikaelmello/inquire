@@ -20,8 +20,8 @@ use crate::{
 
 use super::{Terminal, INITIAL_IN_MEMORY_CAPACITY};
 
+#[allow(clippy::upper_case_acronyms)]
 enum IO<'a> {
-    #[allow(unused)]
     TTY(RawTerminal<File>, Keys<File>),
     #[allow(unused)]
     Custom {
