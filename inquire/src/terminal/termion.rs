@@ -22,7 +22,7 @@ use super::{Terminal, INITIAL_IN_MEMORY_CAPACITY};
 
 enum IO<'a> {
     #[allow(unused)]
-    Tty(RawTerminal<File>, Keys<File>),
+    TTY(RawTerminal<File>, Keys<File>),
     #[allow(unused)]
     Custom {
         r: &'a mut dyn Iterator<Item = &'a Key>,
@@ -43,7 +43,7 @@ impl<'a> TermionTerminal<'a> {
         let keys = raw_terminal.try_clone()?.keys();
 
         Ok(Self {
-            io: IO::Tty(raw_terminal, keys),
+            io: IO::TTY(raw_terminal, keys),
             in_memory_content: String::with_capacity(INITIAL_IN_MEMORY_CAPACITY),
         })
     }
@@ -67,7 +67,7 @@ impl<'a> TermionTerminal<'a> {
 
     fn get_writer(&mut self) -> &mut dyn Write {
         match &mut self.io {
-            IO::Tty(w, _) => w,
+            IO::TTY(w, _) => w,
             IO::Custom { r: _, w } => w,
         }
     }
@@ -120,7 +120,7 @@ impl<'a> Terminal for TermionTerminal<'a> {
     fn read_key(&mut self) -> Result<crate::ui::Key> {
         loop {
             match &mut self.io {
-                IO::Tty(_, r) => {
+                IO::TTY(_, r) => {
                     if let Some(key) = r.next() {
                         return key.map(|k| k.into());
                     }
