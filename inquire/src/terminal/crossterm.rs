@@ -1,8 +1,11 @@
-use std::io::{stderr, Result, Stderr, Write};
+use std::{
+    convert::{TryFrom, TryInto},
+    io::{stderr, Stderr, Write},
+};
 
 use crossterm::{
     cursor,
-    event::{self, KeyCode, KeyEvent, KeyModifiers},
+    event::{self, KeyCode, KeyEvent, KeyEventKind, KeyModifiers},
     queue,
     style::{Attribute, Color, Print, SetAttribute, SetBackgroundColor, SetForegroundColor},
     terminal::{self, ClearType},
@@ -66,11 +69,11 @@ impl<'a> CrosstermTerminal<'a> {
         }
     }
 
-    fn write_command<C: Command>(&mut self, command: C) -> Result<()> {
+    fn write_command<C: Command>(&mut self, command: C) -> std::io::Result<()> {
         queue!(&mut self.get_writer(), command)
     }
 
-    fn set_attributes(&mut self, attributes: Attributes) -> Result<()> {
+    fn set_attributes(&mut self, attributes: Attributes) -> std::io::Result<()> {
         if attributes.contains(Attributes::BOLD) {
             self.write_command(SetAttribute(Attribute::Bold))?;
         }
@@ -81,65 +84,71 @@ impl<'a> CrosstermTerminal<'a> {
         Ok(())
     }
 
-    fn reset_attributes(&mut self) -> Result<()> {
+    fn reset_attributes(&mut self) -> std::io::Result<()> {
         self.write_command(SetAttribute(Attribute::Reset))
     }
 
-    fn set_fg_color(&mut self, color: crate::ui::Color) -> Result<()> {
+    fn set_fg_color(&mut self, color: crate::ui::Color) -> std::io::Result<()> {
         self.write_command(SetForegroundColor(color.into()))
     }
 
-    fn reset_fg_color(&mut self) -> Result<()> {
+    fn reset_fg_color(&mut self) -> std::io::Result<()> {
         self.write_command(SetForegroundColor(Color::Reset))
     }
 
-    fn set_bg_color(&mut self, color: crate::ui::Color) -> Result<()> {
+    fn set_bg_color(&mut self, color: crate::ui::Color) -> std::io::Result<()> {
         self.write_command(SetBackgroundColor(color.into()))
     }
 
-    fn reset_bg_color(&mut self) -> Result<()> {
+    fn reset_bg_color(&mut self) -> std::io::Result<()> {
         self.write_command(SetBackgroundColor(Color::Reset))
     }
 }
 
 impl<'a> Terminal for CrosstermTerminal<'a> {
-    fn cursor_up(&mut self, cnt: u16) -> Result<()> {
+    fn cursor_up(&mut self, cnt: u16) -> std::io::Result<()> {
         self.write_command(cursor::MoveUp(cnt))
     }
 
-    fn cursor_down(&mut self, cnt: u16) -> Result<()> {
+    fn cursor_down(&mut self, cnt: u16) -> std::io::Result<()> {
         self.write_command(cursor::MoveDown(cnt))
     }
 
-    fn cursor_move_to_column(&mut self, idx: u16) -> Result<()> {
+    fn cursor_move_to_column(&mut self, idx: u16) -> std::io::Result<()> {
         self.write_command(cursor::MoveToColumn(idx))
     }
 
-    fn read_key(&mut self) -> Result<Key> {
+    fn read_key(&mut self) -> std::io::Result<Key> {
         loop {
             match &mut self.io {
-                IO::Std { w: _ } => {
+                IO::Std { w: _ } => loop {
                     if let event::Event::Key(key_event) = event::read()? {
-                        return Ok(key_event.into());
+                        let key = key_event.try_into();
+                        if let Ok(key) = key {
+                            return Ok(key);
+                        }
                     }
-                }
+                },
                 IO::Custom { r, w: _ } => {
                     let key = r.next().expect("Custom stream of characters has ended");
-                    return Ok((*key).into());
+                    let key = (*key).try_into();
+                    if let Ok(key) = key {
+                        return Ok(key);
+                    }
                 }
             }
         }
     }
 
-    fn flush(&mut self) -> Result<()> {
+    fn flush(&mut self) -> std::io::Result<()> {
         self.get_writer().flush()
     }
 
-    fn get_size(&self) -> Result<super::TerminalSize> {
+    fn get_size(&self) -> std::io::Result<super::TerminalSize> {
         terminal::size().map(|(width, height)| super::TerminalSize { width, height })
     }
 
-    fn write<T: std::fmt::Display>(&mut self, val: T) -> Result<()> {
+    fn write<T: std::fmt::Display>(&mut self, val: T) -> std::io::Result<()> {
         let formatted = format!("{val}");
         let converted = newline_converter::unix2dos(&formatted);
 
@@ -147,7 +156,7 @@ impl<'a> Terminal for CrosstermTerminal<'a> {
         self.write_command(Print(converted))
     }
 
-    fn write_styled<T: std::fmt::Display>(&mut self, val: &Styled<T>) -> Result<()> {
+    fn write_styled<T: std::fmt::Display>(&mut self, val: &Styled<T>) -> std::io::Result<()> {
         if let Some(color) = val.style.fg {
             self.set_fg_color(color)?;
         }
@@ -173,15 +182,15 @@ impl<'a> Terminal for CrosstermTerminal<'a> {
         Ok(())
     }
 
-    fn clear_current_line(&mut self) -> Result<()> {
+    fn clear_current_line(&mut self) -> std::io::Result<()> {
         self.write_command(terminal::Clear(ClearType::CurrentLine))
     }
 
-    fn cursor_hide(&mut self) -> Result<()> {
+    fn cursor_hide(&mut self) -> std::io::Result<()> {
         self.write_command(cursor::Hide)
     }
 
-    fn cursor_show(&mut self) -> Result<()> {
+    fn cursor_show(&mut self) -> std::io::Result<()> {
         self.write_command(cursor::Show)
     }
 
@@ -251,9 +260,15 @@ impl From<KeyModifiers> for crate::ui::KeyModifiers {
     }
 }
 
-impl From<KeyEvent> for Key {
-    fn from(event: KeyEvent) -> Self {
-        match event {
+impl TryFrom<KeyEvent> for Key {
+    type Error = ();
+
+    fn try_from(event: KeyEvent) -> Result<Self, Self::Error> {
+        if event.kind == KeyEventKind::Release {
+            return Err(());
+        }
+
+        let key = match event {
             KeyEvent {
                 code: KeyCode::Esc, ..
             } => Self::Escape,
@@ -316,7 +331,9 @@ impl From<KeyEvent> for Key {
             } => Self::Char(c, m.into()),
             #[allow(deprecated)]
             _ => Self::Any,
-        }
+        };
+
+        Ok(key)
     }
 }
 
