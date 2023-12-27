@@ -5,12 +5,12 @@ use crossterm::{
     event::{self, KeyCode, KeyEvent, KeyModifiers},
     queue,
     style::{Attribute, Color, Print, SetAttribute, SetBackgroundColor, SetForegroundColor},
-    terminal::{self, enable_raw_mode, ClearType},
+    terminal::{self, ClearType},
     Command,
 };
 
 use crate::{
-    error::{InquireError, InquireResult},
+    error::InquireResult,
     ui::{Attributes, Key, Styled},
 };
 
@@ -34,10 +34,7 @@ pub struct CrosstermTerminal<'a> {
 
 impl<'a> CrosstermTerminal<'a> {
     pub fn new() -> InquireResult<Self> {
-        enable_raw_mode().map_err(|e| match e.raw_os_error() {
-            Some(25 | 6) => InquireError::NotTTY,
-            _ => InquireError::from(e),
-        })?;
+        crossterm::terminal::enable_raw_mode()?;
 
         Ok(Self {
             io: IO::Std { w: stderr() },
