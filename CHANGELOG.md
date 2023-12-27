@@ -23,7 +23,7 @@
  - Ctrl-b/Ctrl-f for left/right
  - Ctrl-j/Ctrl-g for enter/cancel
 - Added 'with_starting_filter_input' to both Select and MultiSelect, which allows for setting an initial value to the filter section of the prompt.
-- **Breaking** Added initial_str_value for CustomType. [#194](https://github.com/mikaelmello/inquire/pull/194)
+- Added starting_input for CustomType. [#194](https://github.com/mikaelmello/inquire/pull/194)
 
 ### Fixes
 

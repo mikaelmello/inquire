@@ -30,7 +30,7 @@ where
     T: Clone,
 {
     fn from(co: CustomType<'a, T>) -> Self {
-        let input = Input::new_with(co.initial_str_value.unwrap_or_default());
+        let input = Input::new_with(co.starting_input.unwrap_or_default());
         let input = if let Some(placeholder) = co.placeholder {
             input.with_placeholder(placeholder)
         } else {

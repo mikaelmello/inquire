@@ -66,7 +66,7 @@ pub struct Confirm<'a> {
     /// If you want to set a default value for the prompt, returned when the user's submission is empty, see [`default`].
     ///
     /// [`default`]: Self::default
-    pub initial_str_value: Option<&'a str>,
+    pub starting_input: Option<&'a str>,
 
     /// Default value, returned when the user input is empty.
     pub default: Option<bool>,
@@ -122,7 +122,7 @@ impl<'a> Confirm<'a> {
     pub fn new(message: &'a str) -> Self {
         Self {
             message,
-            initial_str_value: None,
+            starting_input: None,
             default: None,
             placeholder: None,
             help_message: None,
@@ -139,8 +139,8 @@ impl<'a> Confirm<'a> {
     /// If you want to set a default value for the prompt, returned when the user's submission is empty, see [`with_default`].
     ///
     /// [`with_default`]: Self::with_default
-    pub fn with_initial_str_value(mut self, message: &'a str) -> Self {
-        self.initial_str_value = Some(message);
+    pub fn with_starting_input(mut self, message: &'a str) -> Self {
+        self.starting_input = Some(message);
         self
     }
 
@@ -242,7 +242,7 @@ impl<'a> From<Confirm<'a>> for CustomType<'a, bool> {
     fn from(co: Confirm<'a>) -> Self {
         Self {
             message: co.message,
-            initial_str_value: co.initial_str_value,
+            starting_input: co.starting_input,
             default: co.default,
             default_value_formatter: co.default_value_formatter,
             placeholder: co.placeholder,
