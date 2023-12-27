@@ -33,10 +33,14 @@ impl InnerAction for DateSelectPromptAction {
     fn from_key(key: Key, config: &DateSelectConfig) -> Option<Self> {
         if config.vim_mode {
             let action = match key {
-                Key::Char('k', KeyModifiers::NONE) => Some(Self::GoToPrevWeek),
-                Key::Char('j', KeyModifiers::NONE) => Some(Self::GoToNextWeek),
                 Key::Char('h', KeyModifiers::NONE) => Some(Self::GoToPrevDay),
                 Key::Char('l', KeyModifiers::NONE) => Some(Self::GoToNextDay),
+                Key::Char('k', KeyModifiers::NONE) => Some(Self::GoToPrevWeek),
+                Key::Char('j', KeyModifiers::NONE) => Some(Self::GoToNextWeek),
+                Key::Char('h', KeyModifiers::CONTROL) => Some(Self::GoToPrevMonth),
+                Key::Char('l', KeyModifiers::CONTROL) => Some(Self::GoToNextMonth),
+                Key::Char('k', KeyModifiers::CONTROL) => Some(Self::GoToPrevYear),
+                Key::Char('j', KeyModifiers::CONTROL) => Some(Self::GoToNextYear),
                 _ => None,
             };
 
