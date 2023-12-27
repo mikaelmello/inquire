@@ -36,7 +36,7 @@ impl InnerAction for DateSelectPromptAction {
             | Key::Char('b', KeyModifiers::CONTROL) // emacs
             | Key::Char('h', KeyModifiers::NONE) // vim
             => Self::GoToPrevDay,
-            
+
             Key::Right(KeyModifiers::NONE) // standard
             | Key::Char('f', KeyModifiers::CONTROL) // emacs
             | Key::Char('l', KeyModifiers::NONE) // vim
