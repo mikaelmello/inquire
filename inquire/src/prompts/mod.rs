@@ -10,6 +10,8 @@ mod one_liners;
 mod password;
 mod prompt;
 mod select;
+#[cfg(test)]
+pub(crate) mod test;
 mod text;
 
 pub use action::*;
