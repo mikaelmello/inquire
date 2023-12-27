@@ -5,7 +5,7 @@ use crate::DateSelect;
 /// Configuration settings used in the execution of a DateSelectPrompt.
 #[derive(Copy, Clone, Debug)]
 pub struct DateSelectConfig {
-    /// Whether to use vim-style keybindings.
+    /// Whether to support vim-style keybindings.
     pub vim_mode: bool,
 
     /// Min date allowed to be selected.

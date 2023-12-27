@@ -234,6 +234,15 @@ impl From<KeyModifiers> for crate::ui::KeyModifiers {
         if m.contains(KeyModifiers::SHIFT) {
             modifiers |= crate::ui::KeyModifiers::SHIFT;
         }
+        if m.contains(KeyModifiers::SUPER) {
+            modifiers |= crate::ui::KeyModifiers::SUPER;
+        }
+        if m.contains(KeyModifiers::HYPER) {
+            modifiers |= crate::ui::KeyModifiers::HYPER;
+        }
+        if m.contains(KeyModifiers::META) {
+            modifiers |= crate::ui::KeyModifiers::META;
+        }
 
         modifiers
     }
@@ -271,12 +280,14 @@ impl From<KeyEvent> for Key {
             } => Self::End,
             KeyEvent {
                 code: KeyCode::PageUp,
+                modifiers: m,
                 ..
-            } => Self::PageUp,
+            } => Self::PageUp(m.into()),
             KeyEvent {
                 code: KeyCode::PageDown,
+                modifiers: m,
                 ..
-            } => Self::PageDown,
+            } => Self::PageDown(m.into()),
             KeyEvent {
                 code: KeyCode::Up,
                 modifiers: m,
@@ -347,8 +358,8 @@ mod test {
                 Key::Delete(m) => KeyEvent::new(KeyCode::Delete, m.try_into()?),
                 Key::Home => KeyEvent::new(KeyCode::Home, KeyModifiers::NONE),
                 Key::End => KeyEvent::new(KeyCode::End, KeyModifiers::NONE),
-                Key::PageUp => KeyEvent::new(KeyCode::PageUp, KeyModifiers::NONE),
-                Key::PageDown => KeyEvent::new(KeyCode::PageDown, KeyModifiers::NONE),
+                Key::PageUp(m) => KeyEvent::new(KeyCode::PageUp, m.try_into()?),
+                Key::PageDown(m) => KeyEvent::new(KeyCode::PageDown, m.try_into()?),
                 Key::Up(m) => KeyEvent::new(KeyCode::Up, m.try_into()?),
                 Key::Down(m) => KeyEvent::new(KeyCode::Down, m.try_into()?),
                 Key::Left(m) => KeyEvent::new(KeyCode::Left, m.try_into()?),
