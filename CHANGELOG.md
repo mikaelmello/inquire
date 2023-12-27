@@ -24,6 +24,7 @@
 - Ctrl-j/Ctrl-g for enter/cancel
 - Added 'with_starting_filter_input' to both Select and MultiSelect, which allows for setting an initial value to the filter section of the prompt.
 - Added 'without_filtering' to both Select and MultiSelect, useful when you want to simplify the UX if the filter does not add any value, such as when the list is already short.
+- Added 'with_answered_prompt_prefix' to RenderConfig to allow customization of answered prompt prefix
 
 ### Fixes
 

@@ -217,6 +217,12 @@ impl<'a> RenderConfig<'a> {
         self
     }
 
+    /// Sets the answered prompt prefix and its style sheet.
+    pub fn with_answered_prompt_prefix(mut self, answered_prompt_prefix: Styled<&'a str>) -> Self {
+        self.answered_prompt_prefix = answered_prompt_prefix;
+        self
+    }
+
     /// Sets style for text inputs.
     pub fn with_text_input(mut self, text_input: StyleSheet) -> Self {
         self.text_input = text_input;
