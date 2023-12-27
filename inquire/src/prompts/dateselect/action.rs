@@ -30,38 +30,53 @@ pub enum DateSelectPromptAction {
 impl InnerAction for DateSelectPromptAction {
     type Config = DateSelectConfig;
 
-    fn from_key(key: Key, config: &DateSelectConfig) -> Option<Self> {
-        if config.vim_mode {
-            let action = match key {
-                Key::Char('k', KeyModifiers::NONE) => Some(Self::GoToPrevWeek),
-                Key::Char('j', KeyModifiers::NONE) => Some(Self::GoToNextWeek),
-                Key::Char('h', KeyModifiers::NONE) => Some(Self::GoToPrevDay),
-                Key::Char('l', KeyModifiers::NONE) => Some(Self::GoToNextDay),
-                _ => None,
-            };
-
-            if action.is_some() {
-                return action;
-            }
-        }
-
+    fn from_key(key: Key, _: &DateSelectConfig) -> Option<Self> {
         let action = match key {
-            Key::Left(KeyModifiers::NONE) | Key::Char('b', KeyModifiers::CONTROL) => {
-                Self::GoToPrevDay
-            }
-            Key::Right(KeyModifiers::NONE) | Key::Char('f', KeyModifiers::CONTROL) => {
-                Self::GoToNextDay
-            }
-            Key::Up(KeyModifiers::NONE) | Key::Char('p', KeyModifiers::CONTROL) => {
-                Self::GoToPrevWeek
-            }
-            Key::Down(KeyModifiers::NONE) | Key::Char('n', KeyModifiers::CONTROL) | Key::Tab => {
-                Self::GoToNextWeek
-            }
-            Key::Left(KeyModifiers::CONTROL) => Self::GoToPrevMonth,
-            Key::Right(KeyModifiers::CONTROL) => Self::GoToNextMonth,
-            Key::Up(KeyModifiers::CONTROL) => Self::GoToPrevYear,
-            Key::Down(KeyModifiers::CONTROL) => Self::GoToNextYear,
+            Key::Left(KeyModifiers::NONE) // standard
+            | Key::Char('b', KeyModifiers::CONTROL) // emacs
+            | Key::Char('h', KeyModifiers::NONE) // vim
+            => Self::GoToPrevDay,
+
+            Key::Right(KeyModifiers::NONE) // standard
+            | Key::Char('f', KeyModifiers::CONTROL) // emacs
+            | Key::Char('l', KeyModifiers::NONE) // vim
+            => Self::GoToNextDay,
+
+            Key::Up(KeyModifiers::NONE) // standard
+            | Key::Char('p', KeyModifiers::CONTROL) // emacs
+            | Key::Char('k', KeyModifiers::NONE) // vim
+             => Self::GoToPrevWeek,
+
+            Key::Down(KeyModifiers::NONE) // standard
+            | Key::Char('n', KeyModifiers::CONTROL) // emacs
+            | Key::Char('j', KeyModifiers::NONE) // vim
+            | Key::Tab // not sure? keeping it for compatibility reasons now
+            => Self::GoToNextWeek,
+
+            Key::PageUp(KeyModifiers::NONE) // standard
+            | Key::Char('[', KeyModifiers::NONE) // alternative when page up is not available
+            | Key::Left(_) // alternative 2, when the left above with no modifiers is not matched
+            | Key::Char('v' | 'V', KeyModifiers::ALT | KeyModifiers::META) // emacs
+            | Key::Char('b' | 'B', _) // vim, ideally ctrl-b should be used, but it's not available due to emacs
+             => Self::GoToPrevMonth,
+
+            Key::PageDown(KeyModifiers::NONE) // standard
+            | Key::Char(']', KeyModifiers::NONE) // alternative when page down is not available
+            | Key::Right(_) // alternative 2, when the right above with no modifiers is not matched
+            | Key::Char('v' | 'V', KeyModifiers::CONTROL) // emacs
+            | Key::Char('f' | 'F', _) // vim, ideally ctrl-f should be used, but it's not available due to emacs
+             => Self::GoToNextMonth,
+
+            Key::PageUp(_) // standard, when the above with no modifiers is not matched
+            | Key::Char('{' | '[', _) // alternative when page up is not available
+            | Key::Up(_) // alternative 2, when the up above with no modifiers is not matched
+            => Self::GoToPrevYear,
+
+            Key::PageDown(_) // standard, when the above with no modifiers is not matched
+            | Key::Char('}' | ']', _) // alternative when page down is not available
+            | Key::Down(_) // alternative 2, when the down above with no modifiers is not matched
+            => Self::GoToNextYear,
+
             _ => return None,
         };
 
