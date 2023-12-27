@@ -22,7 +22,7 @@ pub struct SelectPrompt<'a, T> {
     scored_options: Vec<usize>,
     help_message: Option<&'a str>,
     cursor_index: usize,
-    input: Input,
+    input: Option<Input>,
     scorer: Scorer<'a, T>,
     formatter: OptionFormatter<'a, T>,
 }
@@ -49,6 +49,13 @@ where
         let string_options = so.options.iter().map(T::to_string).collect();
         let scored_options = (0..so.options.len()).collect();
 
+        let input = match so.filter_input_enabled {
+            true => Some(Input::new_with(
+                so.starting_filter_input.unwrap_or_default(),
+            )),
+            false => None,
+        };
+
         Ok(Self {
             message: so.message,
             config: (&so).into(),
@@ -57,29 +64,10 @@ where
             scored_options,
             help_message: so.help_message,
             cursor_index: so.starting_cursor,
-            input: so
-                .starting_filter_input
-                .map(Input::new_with)
-                .unwrap_or_else(Input::new),
+            input,
             scorer: so.scorer,
             formatter: so.formatter,
         })
-    }
-
-    fn score_options(&self) -> Vec<(usize, i64)> {
-        self.options
-            .iter()
-            .enumerate()
-            .filter_map(|(i, opt)| {
-                (self.scorer)(
-                    self.input.content(),
-                    opt,
-                    self.string_options.get(i).unwrap(),
-                    i,
-                )
-                .map(|score| (i, score))
-            })
-            .collect::<Vec<(usize, i64)>>()
     }
 
     fn move_cursor_up(&mut self, qty: usize, wrap: bool) -> ActionResult {
@@ -135,10 +123,31 @@ where
     }
 
     fn run_scorer(&mut self) {
-        let mut options = self.score_options();
+        let content = match &self.input {
+            Some(input) => input.content(),
+            None => return,
+        };
+
+        let mut options = self
+            .options
+            .iter()
+            .enumerate()
+            .filter_map(|(i, opt)| {
+                (self.scorer)(content, opt, self.string_options.get(i).unwrap(), i)
+                    .map(|score| (i, score))
+            })
+            .collect::<Vec<(usize, i64)>>();
+
         options.sort_unstable_by_key(|(_idx, score)| Reverse(*score));
 
-        self.scored_options = options.into_iter().map(|(idx, _)| idx).collect();
+        let new_scored_options = options.iter().map(|(idx, _)| *idx).collect::<Vec<usize>>();
+
+        if self.scored_options == new_scored_options {
+            return;
+        }
+
+        self.scored_options = new_scored_options;
+
         if self.config.reset_cursor {
             let _ = self.update_cursor_position(0);
         } else if self.scored_options.len() <= self.cursor_index {
@@ -190,15 +199,19 @@ where
             SelectPromptAction::PageDown => self.move_cursor_down(self.config.page_size, false),
             SelectPromptAction::MoveToStart => self.move_cursor_up(usize::MAX, false),
             SelectPromptAction::MoveToEnd => self.move_cursor_down(usize::MAX, false),
-            SelectPromptAction::FilterInput(input_action) => {
-                let result = self.input.handle(input_action);
 
-                if let InputActionResult::ContentChanged = result {
-                    self.run_scorer();
+            SelectPromptAction::FilterInput(input_action) => match self.input.as_mut() {
+                Some(input) => {
+                    let result = input.handle(input_action);
+
+                    if let InputActionResult::ContentChanged = result {
+                        self.run_scorer();
+                    }
+
+                    result.into()
                 }
-
-                result.into()
-            }
+                None => ActionResult::Clean,
+            },
         };
 
         Ok(result)
@@ -207,7 +220,7 @@ where
     fn render(&self, backend: &mut Backend) -> InquireResult<()> {
         let prompt = &self.message;
 
-        backend.render_select_prompt(prompt, &self.input)?;
+        backend.render_select_prompt(prompt, self.input.as_ref())?;
 
         let choices = self
             .scored_options

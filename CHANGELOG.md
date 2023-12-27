@@ -14,20 +14,25 @@
 - Expand workflow clippy task to lint all-features in workspace.
 - Add docs badge to readme.
 - **Breaking** The Select and Multiselect Filter now scores input and is now expected to return an `Option<i64>`, making it possible to order/rank the list of options. [#176](https://github.com/mikaelmello/inquire/pull/176)
-    `None`: Will not be displayed in the list of options.
-    `Some(score)`: score determines the order of options, higher score, higher on the list of options.
+  `None`: Will not be displayed in the list of options.
+  `Some(score)`: score determines the order of options, higher score, higher on the list of options.
 - Implement fuzzy search as default on Select and MultiSelect prompts. [#176](https://github.com/mikaelmello/inquire/pull/176)
 - Add new option on Select/MultiSelect prompts allowing to reset selection to the first item on filter-input changes. [#176](https://github.com/mikaelmello/inquire/pull/176)
 - Emacs-like keybindings added where applicable:
- - Ctrl-p/Ctrl-n for up/down
- - Ctrl-b/Ctrl-f for left/right
- - Ctrl-j/Ctrl-g for enter/cancel
+  - Ctrl-p/Ctrl-n for up/down
+  - Ctrl-b/Ctrl-f for left/right
+  - Ctrl-j/Ctrl-g for enter/cancel
 - Added 'with_starting_filter_input' to both Select and MultiSelect, which allows for setting an initial value to the filter section of the prompt.
 - Added starting_input for CustomType. [#194](https://github.com/mikaelmello/inquire/pull/194)
+- Added 'without_filtering' to both Select and MultiSelect, useful when you want to simplify the UX if the filter does not add any value, such as when the list is already short.
+- Added 'with_answered_prompt_prefix' to RenderConfig to allow customization of answered prompt prefix.
+- Revamped keybindings for DateSelect.
+
 
 ### Fixes
 
 - Fixed typos in the code's comments.
+- Fixed issue where inquire, using termion, would crash when receiving piped inputs.
 
 ### Dependency changes (some breaking)
 

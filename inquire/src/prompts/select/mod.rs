@@ -97,6 +97,11 @@ pub struct Select<'a, T> {
     /// Defaults to true.
     pub reset_cursor: bool,
 
+    /// Whether to allow the option list to be filtered by user input or not.
+    ///
+    /// Defaults to true.
+    pub filter_input_enabled: bool,
+
     /// Function called with the current user input to score the provided
     /// options.
     pub scorer: Scorer<'a, T>,
@@ -186,6 +191,10 @@ where
     /// Defaults to true.
     pub const DEFAULT_RESET_CURSOR: bool = true;
 
+    /// Default filter input enabled behaviour.
+    /// Defaults to true.
+    pub const DEFAULT_FILTER_INPUT_ENABLED: bool = true;
+
     /// Default help message.
     pub const DEFAULT_HELP_MESSAGE: Option<&'a str> =
         Some("↑↓ to move, enter to select, type to filter");
@@ -200,6 +209,7 @@ where
             vim_mode: Self::DEFAULT_VIM_MODE,
             starting_cursor: Self::DEFAULT_STARTING_CURSOR,
             reset_cursor: Self::DEFAULT_RESET_CURSOR,
+            filter_input_enabled: Self::DEFAULT_FILTER_INPUT_ENABLED,
             scorer: Self::DEFAULT_SCORER,
             formatter: Self::DEFAULT_FORMATTER,
             render_config: get_configuration(),
@@ -244,6 +254,9 @@ where
     }
 
     /// Sets the starting cursor index.
+    ///
+    /// This index might be overriden if the `reset_cursor` option is set to true (default)
+    /// and starting_filter_input is set to something other than None.
     pub fn with_starting_cursor(mut self, starting_cursor: usize) -> Self {
         self.starting_cursor = starting_cursor;
         self
@@ -255,11 +268,22 @@ where
         self
     }
 
-    /// Sets the reset_cursor behaviour.
-    /// Will reset cursor to first option on filter input change.
-    /// Defaults to true.
+    /// Sets the reset_cursor behaviour. Defaults to true.
+    ///
+    /// When there's an input change that results in a different list of options being displayed,
+    /// whether by filtering or re-ordering, the cursor will be reset to highlight the first option.
     pub fn with_reset_cursor(mut self, reset_cursor: bool) -> Self {
         self.reset_cursor = reset_cursor;
+        self
+    }
+
+    /// Disables the filter input, which means the user will not be able to filter the options
+    /// by typing.
+    ///
+    /// This is useful when you want to simplify the UX if the filter does not add any value,
+    /// such as when the list is already short.
+    pub fn without_filtering(mut self) -> Self {
+        self.filter_input_enabled = false;
         self
     }
 

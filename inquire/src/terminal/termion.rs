@@ -1,5 +1,8 @@
 use core::fmt;
-use std::io::{stderr, stdin, Result, Stderr, Stdin, Write};
+use std::{
+    fs::File,
+    io::{Result, Write},
+};
 
 use termion::{
     color::{self, Color},
@@ -11,18 +14,15 @@ use termion::{
 };
 
 use crate::{
-    error::{InquireError, InquireResult},
+    error::InquireResult,
     ui::{Attributes, Styled},
 };
 
 use super::{Terminal, INITIAL_IN_MEMORY_CAPACITY};
 
+#[allow(clippy::upper_case_acronyms)]
 enum IO<'a> {
-    #[allow(unused)]
-    Std {
-        r: Keys<Stdin>,
-        w: RawTerminal<Stderr>,
-    },
+    TTY(RawTerminal<File>, Keys<File>),
     #[allow(unused)]
     Custom {
         r: &'a mut dyn Iterator<Item = &'a Key>,
@@ -38,18 +38,12 @@ pub struct TermionTerminal<'a> {
 impl<'a> TermionTerminal<'a> {
     #[allow(unused)]
     pub fn new() -> InquireResult<Self> {
-        let raw_mode = stderr()
-            .into_raw_mode()
-            .map_err(|e| match e.raw_os_error() {
-                Some(25 | 6) => InquireError::NotTTY,
-                _ => e.into(),
-            });
+        let tty = termion::get_tty()?;
+        let raw_terminal = tty.into_raw_mode()?;
+        let keys = raw_terminal.try_clone()?.keys();
 
         Ok(Self {
-            io: IO::Std {
-                r: stdin().keys(),
-                w: raw_mode?,
-            },
+            io: IO::TTY(raw_terminal, keys),
             in_memory_content: String::with_capacity(INITIAL_IN_MEMORY_CAPACITY),
         })
     }
@@ -73,7 +67,7 @@ impl<'a> TermionTerminal<'a> {
 
     fn get_writer(&mut self) -> &mut dyn Write {
         match &mut self.io {
-            IO::Std { r: _, w } => w,
+            IO::TTY(w, _) => w,
             IO::Custom { r: _, w } => w,
         }
     }
@@ -126,7 +120,7 @@ impl<'a> Terminal for TermionTerminal<'a> {
     fn read_key(&mut self) -> Result<crate::ui::Key> {
         loop {
             match &mut self.io {
-                IO::Std { r, w: _ } => {
+                IO::TTY(_, r) => {
                     if let Some(key) = r.next() {
                         return key.map(|k| k.into());
                     }
@@ -256,8 +250,8 @@ impl From<Key> for crate::ui::Key {
             Key::Delete => Self::Delete(KeyModifiers::empty()),
             Key::Home => Self::Home,
             Key::End => Self::End,
-            Key::PageUp => Self::PageUp,
-            Key::PageDown => Self::PageDown,
+            Key::PageUp => Self::PageUp(KeyModifiers::empty()),
+            Key::PageDown => Self::PageDown(KeyModifiers::empty()),
             Key::Up => Self::Up(KeyModifiers::empty()),
             Key::Down => Self::Down(KeyModifiers::empty()),
             Key::Left => Self::Left(KeyModifiers::empty()),

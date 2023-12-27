@@ -119,7 +119,7 @@ impl<'a> DateSelect<'a> {
 
     /// Default help message.
     pub const DEFAULT_HELP_MESSAGE: Option<&'a str> =
-        Some("arrows to move, with ctrl to move months and years, enter to select");
+        Some("arrows to move, []{} move months and years, enter to select");
 
     /// Default validators added to the [DateSelect] prompt, none.
     pub const DEFAULT_VALIDATORS: Vec<Box<dyn DateValidator>> = vec![];

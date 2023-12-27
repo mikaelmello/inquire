@@ -1,43 +1,43 @@
-use std::io::{stderr, Result, Stderr, Write};
+use std::{
+    collections::VecDeque,
+    io::{stderr, Result, Stderr, Write},
+};
 
 use crossterm::{
     cursor,
     event::{self, KeyCode, KeyEvent, KeyModifiers},
     queue,
     style::{Attribute, Color, Print, SetAttribute, SetBackgroundColor, SetForegroundColor},
-    terminal::{self, enable_raw_mode, ClearType},
+    terminal::{self, ClearType},
     Command,
 };
 
 use crate::{
-    error::{InquireError, InquireResult},
+    error::InquireResult,
     ui::{Attributes, Key, Styled},
 };
 
 use super::{Terminal, INITIAL_IN_MEMORY_CAPACITY};
 
-enum IO<'a> {
+enum IO {
     Std {
         w: Stderr,
     },
     #[allow(unused)]
-    Custom {
-        r: &'a mut dyn Iterator<Item = &'a KeyEvent>,
-        w: &'a mut (dyn Write),
+    Test {
+        w: Vec<u8>,
+        r: VecDeque<KeyEvent>,
     },
 }
 
-pub struct CrosstermTerminal<'a> {
-    io: IO<'a>,
+pub struct CrosstermTerminal {
+    io: IO,
     in_memory_content: String,
 }
 
-impl<'a> CrosstermTerminal<'a> {
+impl CrosstermTerminal {
     pub fn new() -> InquireResult<Self> {
-        enable_raw_mode().map_err(|e| match e.raw_os_error() {
-            Some(25 | 6) => InquireError::NotTTY,
-            _ => InquireError::from(e),
-        })?;
+        crossterm::terminal::enable_raw_mode()?;
 
         Ok(Self {
             io: IO::Std { w: stderr() },
@@ -45,27 +45,10 @@ impl<'a> CrosstermTerminal<'a> {
         })
     }
 
-    /// # Errors
-    ///
-    /// Will return `std::io::Error` if it fails to get terminal size
-    #[cfg(test)]
-    pub fn new_with_io<W: 'a + Write>(
-        writer: &'a mut W,
-        reader: &'a mut dyn Iterator<Item = &'a KeyEvent>,
-    ) -> Self {
-        Self {
-            io: IO::Custom {
-                r: reader,
-                w: writer,
-            },
-            in_memory_content: String::with_capacity(INITIAL_IN_MEMORY_CAPACITY),
-        }
-    }
-
     fn get_writer(&mut self) -> &mut dyn Write {
         match &mut self.io {
             IO::Std { w } => w,
-            IO::Custom { r: _, w } => w,
+            IO::Test { r: _, w } => w,
         }
     }
 
@@ -105,7 +88,7 @@ impl<'a> CrosstermTerminal<'a> {
     }
 }
 
-impl<'a> Terminal for CrosstermTerminal<'a> {
+impl Terminal for CrosstermTerminal {
     fn cursor_up(&mut self, cnt: u16) -> Result<()> {
         self.write_command(cursor::MoveUp(cnt))
     }
@@ -126,9 +109,11 @@ impl<'a> Terminal for CrosstermTerminal<'a> {
                         return Ok(key_event.into());
                     }
                 }
-                IO::Custom { r, w: _ } => {
-                    let key = r.next().expect("Custom stream of characters has ended");
-                    return Ok((*key).into());
+                IO::Test { r, w: _ } => {
+                    let key = r
+                        .pop_front()
+                        .expect("Custom stream of characters has ended");
+                    return Ok(key.into());
                 }
             }
         }
@@ -197,12 +182,12 @@ impl<'a> Terminal for CrosstermTerminal<'a> {
     }
 }
 
-impl<'a> Drop for CrosstermTerminal<'a> {
+impl Drop for CrosstermTerminal {
     fn drop(&mut self) {
         let _unused = self.flush();
         let _unused = match self.io {
             IO::Std { w: _ } => terminal::disable_raw_mode(),
-            IO::Custom { r: _, w: _ } => Ok(()),
+            IO::Test { r: _, w: _ } => Ok(()),
         };
     }
 }
@@ -249,6 +234,15 @@ impl From<KeyModifiers> for crate::ui::KeyModifiers {
         if m.contains(KeyModifiers::SHIFT) {
             modifiers |= crate::ui::KeyModifiers::SHIFT;
         }
+        if m.contains(KeyModifiers::SUPER) {
+            modifiers |= crate::ui::KeyModifiers::SUPER;
+        }
+        if m.contains(KeyModifiers::HYPER) {
+            modifiers |= crate::ui::KeyModifiers::HYPER;
+        }
+        if m.contains(KeyModifiers::META) {
+            modifiers |= crate::ui::KeyModifiers::META;
+        }
 
         modifiers
     }
@@ -286,12 +280,14 @@ impl From<KeyEvent> for Key {
             } => Self::End,
             KeyEvent {
                 code: KeyCode::PageUp,
+                modifiers: m,
                 ..
-            } => Self::PageUp,
+            } => Self::PageUp(m.into()),
             KeyEvent {
                 code: KeyCode::PageDown,
+                modifiers: m,
                 ..
-            } => Self::PageDown,
+            } => Self::PageDown(m.into()),
             KeyEvent {
                 code: KeyCode::Up,
                 modifiers: m,
@@ -325,116 +321,158 @@ impl From<KeyEvent> for Key {
 
 #[cfg(test)]
 mod test {
+    use std::collections::VecDeque;
+    use std::convert::TryFrom;
+    use std::convert::TryInto;
+
+    use crossterm::event::KeyCode;
+    use crossterm::event::KeyEvent;
+    use crossterm::event::KeyModifiers;
+
     use crate::terminal::Terminal;
+    use crate::terminal::INITIAL_IN_MEMORY_CAPACITY;
     use crate::ui::Color;
+    use crate::ui::Key;
 
     use super::Attributes;
     use super::CrosstermTerminal;
+    use super::IO;
+
+    impl TryFrom<crate::ui::KeyModifiers> for KeyModifiers {
+        type Error = ();
+
+        fn try_from(value: crate::ui::KeyModifiers) -> Result<Self, Self::Error> {
+            Self::from_bits(value.bits()).ok_or(())
+        }
+    }
+
+    impl TryFrom<Key> for KeyEvent {
+        type Error = ();
+
+        fn try_from(value: Key) -> Result<Self, Self::Error> {
+            let key_event = match value {
+                Key::Escape => KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE),
+                Key::Enter => KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE),
+                Key::Backspace => KeyEvent::new(KeyCode::Backspace, KeyModifiers::NONE),
+                Key::Tab => KeyEvent::new(KeyCode::Tab, KeyModifiers::NONE),
+                Key::Delete(m) => KeyEvent::new(KeyCode::Delete, m.try_into()?),
+                Key::Home => KeyEvent::new(KeyCode::Home, KeyModifiers::NONE),
+                Key::End => KeyEvent::new(KeyCode::End, KeyModifiers::NONE),
+                Key::PageUp(m) => KeyEvent::new(KeyCode::PageUp, m.try_into()?),
+                Key::PageDown(m) => KeyEvent::new(KeyCode::PageDown, m.try_into()?),
+                Key::Up(m) => KeyEvent::new(KeyCode::Up, m.try_into()?),
+                Key::Down(m) => KeyEvent::new(KeyCode::Down, m.try_into()?),
+                Key::Left(m) => KeyEvent::new(KeyCode::Left, m.try_into()?),
+                Key::Right(m) => KeyEvent::new(KeyCode::Right, m.try_into()?),
+                Key::Char(c, m) => KeyEvent::new(KeyCode::Char(c), m.try_into()?),
+                #[allow(deprecated)]
+                Key::Any => KeyEvent::new(KeyCode::Null, KeyModifiers::NONE),
+            };
+
+            Ok(key_event)
+        }
+    }
+
+    impl CrosstermTerminal {
+        pub fn new_with_io(events: VecDeque<KeyEvent>) -> Self {
+            Self {
+                io: IO::Test {
+                    r: events,
+                    w: Vec::new(),
+                },
+                in_memory_content: String::with_capacity(INITIAL_IN_MEMORY_CAPACITY),
+            }
+        }
+
+        pub fn get_buffer_content(&mut self) -> Vec<u8> {
+            match &mut self.io {
+                IO::Std { w: _ } => panic!("Cannot get write buffer from standard output"),
+                IO::Test { r: _, w } => {
+                    let mut buffer = Vec::new();
+                    std::mem::swap(&mut buffer, w);
+                    buffer
+                }
+            }
+        }
+    }
 
     #[test]
     fn writer() {
-        let mut write: Vec<u8> = Vec::new();
-        let read = Vec::new();
-        let mut read = read.iter();
+        let mut terminal = CrosstermTerminal::new_with_io(VecDeque::new());
 
-        {
-            let mut terminal = CrosstermTerminal::new_with_io(&mut write, &mut read);
-
-            terminal.write("testing ").unwrap();
-            terminal.write("writing ").unwrap();
-            terminal.flush().unwrap();
-            terminal.write("wow").unwrap();
-        }
+        terminal.write("testing ").unwrap();
+        terminal.write("writing ").unwrap();
+        terminal.flush().unwrap();
+        terminal.write("wow").unwrap();
 
         #[cfg(unix)]
-        assert_eq!("testing writing wow", std::str::from_utf8(&write).unwrap());
+        assert_eq!(
+            "testing writing wow",
+            std::str::from_utf8(&terminal.get_buffer_content()).unwrap()
+        );
     }
 
     #[test]
     fn style_management() {
-        let mut write: Vec<u8> = Vec::new();
-        let read = Vec::new();
-        let mut read = read.iter();
+        let mut terminal = CrosstermTerminal::new_with_io(VecDeque::new());
 
-        {
-            let mut terminal = CrosstermTerminal::new_with_io(&mut write, &mut read);
-
-            terminal.set_attributes(Attributes::BOLD).unwrap();
-            terminal.set_attributes(Attributes::ITALIC).unwrap();
-            terminal.set_attributes(Attributes::BOLD).unwrap();
-            terminal.reset_attributes().unwrap();
-        }
+        terminal.set_attributes(Attributes::BOLD).unwrap();
+        terminal.set_attributes(Attributes::ITALIC).unwrap();
+        terminal.set_attributes(Attributes::BOLD).unwrap();
+        terminal.reset_attributes().unwrap();
 
         #[cfg(unix)]
         assert_eq!(
             "\x1B[1m\x1B[3m\x1B[1m\x1B[0m",
-            std::str::from_utf8(&write).unwrap()
+            std::str::from_utf8(&terminal.get_buffer_content()).unwrap()
         );
     }
 
     #[test]
     fn style_management_with_flags() {
-        let mut write: Vec<u8> = Vec::new();
-        let read = Vec::new();
-        let mut read = read.iter();
+        let mut terminal = CrosstermTerminal::new_with_io(VecDeque::new());
 
-        {
-            let mut terminal = CrosstermTerminal::new_with_io(&mut write, &mut read);
-
-            terminal
-                .set_attributes(Attributes::BOLD | Attributes::ITALIC | Attributes::BOLD)
-                .unwrap();
-            terminal.reset_attributes().unwrap();
-        }
+        terminal
+            .set_attributes(Attributes::BOLD | Attributes::ITALIC | Attributes::BOLD)
+            .unwrap();
+        terminal.reset_attributes().unwrap();
 
         #[cfg(unix)]
         assert_eq!(
             "\x1B[1m\x1B[3m\x1B[0m",
-            std::str::from_utf8(&write).unwrap()
+            std::str::from_utf8(&terminal.get_buffer_content()).unwrap()
         );
     }
 
     #[test]
     fn fg_color_management() {
-        let mut write: Vec<u8> = Vec::new();
-        let read = Vec::new();
-        let mut read = read.iter();
+        let mut terminal = CrosstermTerminal::new_with_io(VecDeque::new());
 
-        {
-            let mut terminal = CrosstermTerminal::new_with_io(&mut write, &mut read);
-
-            terminal.set_fg_color(Color::LightRed).unwrap();
-            terminal.reset_fg_color().unwrap();
-            terminal.set_fg_color(Color::Black).unwrap();
-            terminal.set_fg_color(Color::LightGreen).unwrap();
-        }
+        terminal.set_fg_color(Color::LightRed).unwrap();
+        terminal.reset_fg_color().unwrap();
+        terminal.set_fg_color(Color::Black).unwrap();
+        terminal.set_fg_color(Color::LightGreen).unwrap();
 
         #[cfg(unix)]
         assert_eq!(
             "\x1B[38;5;9m\x1B[39m\x1B[38;5;0m\x1B[38;5;10m",
-            std::str::from_utf8(&write).unwrap()
+            std::str::from_utf8(&terminal.get_buffer_content()).unwrap()
         );
     }
 
     #[test]
     fn bg_color_management() {
-        let mut write: Vec<u8> = Vec::new();
-        let read = Vec::new();
-        let mut read = read.iter();
+        let mut terminal = CrosstermTerminal::new_with_io(VecDeque::new());
 
-        {
-            let mut terminal = CrosstermTerminal::new_with_io(&mut write, &mut read);
-
-            terminal.set_bg_color(Color::LightRed).unwrap();
-            terminal.reset_bg_color().unwrap();
-            terminal.set_bg_color(Color::Black).unwrap();
-            terminal.set_bg_color(Color::LightGreen).unwrap();
-        }
+        terminal.set_bg_color(Color::LightRed).unwrap();
+        terminal.reset_bg_color().unwrap();
+        terminal.set_bg_color(Color::Black).unwrap();
+        terminal.set_bg_color(Color::LightGreen).unwrap();
 
         #[cfg(unix)]
         assert_eq!(
             "\x1B[48;5;9m\x1B[49m\x1B[48;5;0m\x1B[48;5;10m",
-            std::str::from_utf8(&write).unwrap()
+            std::str::from_utf8(&terminal.get_buffer_content()).unwrap()
         );
     }
 }

@@ -1,9 +1,9 @@
 use std::{
-    cmp::{max, min},
+    cmp::{max, min, Ordering},
     ops::Add,
 };
 
-use chrono::{Datelike, Duration, NaiveDate};
+use chrono::{Datelike, Duration, Months, NaiveDate};
 
 use crate::{
     date_utils::{get_current_date, get_month},
@@ -60,27 +60,22 @@ impl<'a> DateSelectPrompt<'a> {
     }
 
     fn shift_months(&mut self, qty: i32) -> ActionResult {
-        let date = self.current_date;
+        let new_date = match qty.cmp(&0) {
+            Ordering::Greater | Ordering::Equal => {
+                let qty_as_months = Months::new(qty as u32);
+                self.current_date
+                    .checked_add_months(qty_as_months)
+                    .unwrap_or(NaiveDate::MAX)
+            }
+            Ordering::Less => {
+                let qty_as_months = Months::new((-qty) as u32);
+                self.current_date
+                    .checked_sub_months(qty_as_months)
+                    .unwrap_or(NaiveDate::MIN)
+            }
+        };
 
-        let years = qty / 12;
-        let months = qty % 12;
-
-        let new_year = date.year() + years;
-        let cur_month = date.month0() as i32;
-        let mut new_month = (cur_month + months) % 12;
-        if new_month < 0 {
-            new_month += 12;
-        }
-
-        let new_date = date
-            .with_month0(new_month as u32)
-            .and_then(|d| d.with_year(new_year));
-
-        if let Some(new_date) = new_date {
-            self.update_date(new_date)
-        } else {
-            ActionResult::Clean
-        }
+        self.update_date(new_date)
     }
 
     fn update_date(&mut self, new_date: NaiveDate) -> ActionResult {

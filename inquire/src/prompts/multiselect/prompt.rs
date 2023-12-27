@@ -23,7 +23,7 @@ pub struct MultiSelectPrompt<'a, T> {
     help_message: Option<&'a str>,
     cursor_index: usize,
     checked: BTreeSet<usize>,
-    input: Input,
+    input: Option<Input>,
     scored_options: Vec<usize>,
     scorer: Scorer<'a, T>,
     formatter: MultiOptionFormatter<'a, T>,
@@ -66,6 +66,13 @@ where
             })
             .unwrap_or_default();
 
+        let input = match mso.filter_input_enabled {
+            true => Some(Input::new_with(
+                mso.starting_filter_input.unwrap_or_default(),
+            )),
+            false => None,
+        };
+
         Ok(Self {
             message: mso.message,
             config: (&mso).into(),
@@ -74,32 +81,13 @@ where
             scored_options,
             help_message: mso.help_message,
             cursor_index: mso.starting_cursor,
-            input: mso
-                .starting_filter_input
-                .map(Input::new_with)
-                .unwrap_or_else(Input::new),
+            input,
             scorer: mso.scorer,
             formatter: mso.formatter,
             validator: mso.validator,
             error: None,
             checked: checked_options,
         })
-    }
-
-    fn score_options(&self) -> Vec<(usize, i64)> {
-        self.options
-            .iter()
-            .enumerate()
-            .filter_map(|(i, opt)| {
-                (self.scorer)(
-                    self.input.content(),
-                    opt,
-                    self.string_options.get(i).unwrap(),
-                    i,
-                )
-                .map(|score| (i, score))
-            })
-            .collect::<Vec<(usize, i64)>>()
     }
 
     fn move_cursor_up(&mut self, qty: usize, wrap: bool) -> ActionResult {
@@ -152,11 +140,23 @@ where
             self.checked.insert(*idx);
         }
 
+        ActionResult::NeedsRedraw
+    }
+
+    fn clear_input_if_needed(&mut self, action: MultiSelectPromptAction) -> ActionResult {
         if !self.config.keep_filter {
-            self.input.clear();
+            return ActionResult::Clean;
         }
 
-        ActionResult::NeedsRedraw
+        match action {
+            MultiSelectPromptAction::ToggleCurrentOption
+            | MultiSelectPromptAction::SelectAll
+            | MultiSelectPromptAction::ClearSelections => {
+                self.input.as_mut().map(Input::clear);
+                ActionResult::NeedsRedraw
+            }
+            _ => ActionResult::Clean,
+        }
     }
 
     fn validate_current_answer(&self) -> InquireResult<Validation> {
@@ -196,10 +196,31 @@ where
     }
 
     fn run_scorer(&mut self) {
-        let mut options = self.score_options();
+        let content = match &self.input {
+            Some(input) => input.content(),
+            None => return,
+        };
+
+        let mut options = self
+            .options
+            .iter()
+            .enumerate()
+            .filter_map(|(i, opt)| {
+                (self.scorer)(content, opt, self.string_options.get(i).unwrap(), i)
+                    .map(|score| (i, score))
+            })
+            .collect::<Vec<(usize, i64)>>();
+
         options.sort_unstable_by_key(|(_idx, score)| Reverse(*score));
 
-        self.scored_options = options.into_iter().map(|(idx, _)| idx).collect();
+        let new_scored_options = options.iter().map(|(idx, _)| *idx).collect::<Vec<usize>>();
+
+        if self.scored_options == new_scored_options {
+            return;
+        }
+
+        self.scored_options = new_scored_options;
+
         if self.config.reset_cursor {
             let _ = self.update_cursor_position(0);
         } else if self.scored_options.len() <= self.cursor_index {
@@ -263,32 +284,27 @@ where
                 for idx in &self.scored_options {
                     self.checked.insert(*idx);
                 }
-
-                if !self.config.keep_filter {
-                    self.input.clear();
-                }
-
                 ActionResult::NeedsRedraw
             }
             MultiSelectPromptAction::ClearSelections => {
                 self.checked.clear();
-
-                if !self.config.keep_filter {
-                    self.input.clear();
-                }
-
                 ActionResult::NeedsRedraw
             }
-            MultiSelectPromptAction::FilterInput(input_action) => {
-                let result = self.input.handle(input_action);
+            MultiSelectPromptAction::FilterInput(input_action) => match self.input.as_mut() {
+                Some(input) => {
+                    let result = input.handle(input_action);
 
-                if let InputActionResult::ContentChanged = result {
-                    self.run_scorer();
+                    if let InputActionResult::ContentChanged = result {
+                        self.run_scorer();
+                    }
+
+                    result.into()
                 }
-
-                result.into()
-            }
+                None => ActionResult::Clean,
+            },
         };
+
+        let result = self.clear_input_if_needed(action).merge(result);
 
         Ok(result)
     }
@@ -300,7 +316,7 @@ where
             backend.render_error_message(err)?;
         }
 
-        backend.render_multiselect_prompt(prompt, &self.input)?;
+        backend.render_multiselect_prompt(prompt, self.input.as_ref())?;
 
         let choices = self
             .scored_options

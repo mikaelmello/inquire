@@ -45,12 +45,12 @@ pub trait EditorBackend: CommonBackend {
 }
 
 pub trait SelectBackend: CommonBackend {
-    fn render_select_prompt(&mut self, prompt: &str, cur_input: &Input) -> Result<()>;
+    fn render_select_prompt(&mut self, prompt: &str, cur_input: Option<&Input>) -> Result<()>;
     fn render_options<D: Display>(&mut self, page: Page<'_, ListOption<D>>) -> Result<()>;
 }
 
 pub trait MultiSelectBackend: CommonBackend {
-    fn render_multiselect_prompt(&mut self, prompt: &str, cur_input: &Input) -> Result<()>;
+    fn render_multiselect_prompt(&mut self, prompt: &str, cur_input: Option<&Input>) -> Result<()>;
     fn render_options<D: Display>(
         &mut self,
         page: Page<'_, ListOption<D>>,
@@ -502,8 +502,12 @@ impl<'a, T> SelectBackend for Backend<'a, T>
 where
     T: Terminal,
 {
-    fn render_select_prompt(&mut self, prompt: &str, cur_input: &Input) -> Result<()> {
-        self.print_prompt_with_input(prompt, None, cur_input)
+    fn render_select_prompt(&mut self, prompt: &str, cur_input: Option<&Input>) -> Result<()> {
+        if let Some(input) = cur_input {
+            self.print_prompt_with_input(prompt, None, input)
+        } else {
+            self.print_prompt(prompt)
+        }
     }
 
     fn render_options<D: Display>(&mut self, page: Page<'_, ListOption<D>>) -> Result<()> {
@@ -530,8 +534,12 @@ impl<'a, T> MultiSelectBackend for Backend<'a, T>
 where
     T: Terminal,
 {
-    fn render_multiselect_prompt(&mut self, prompt: &str, cur_input: &Input) -> Result<()> {
-        self.print_prompt_with_input(prompt, None, cur_input)
+    fn render_multiselect_prompt(&mut self, prompt: &str, cur_input: Option<&Input>) -> Result<()> {
+        if let Some(input) = cur_input {
+            self.print_prompt_with_input(prompt, None, input)
+        } else {
+            self.print_prompt(prompt)
+        }
     }
 
     fn render_options<D: Display>(
