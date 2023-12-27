@@ -1,14 +1,13 @@
 use super::Password;
-use crate::{
-    terminal::crossterm::CrosstermTerminal,
-    ui::{Backend, RenderConfig},
-    validator::{ErrorMessage, Validation},
-};
-use crossterm::event::{KeyCode, KeyEvent};
+use crate::ui::{Key, KeyModifiers};
+use crate::validator::{ErrorMessage, Validation};
 
 macro_rules! text_to_events {
     ($text:expr) => {{
-        $text.chars().map(KeyCode::Char)
+        $text
+            .chars()
+            .map(|c| Key::Char(c, KeyModifiers::NONE))
+            .collect()
     }};
 }
 
@@ -17,12 +16,7 @@ macro_rules! password_test {
         #[test]
         $(#[$meta])?
         fn $name() {
-            let read: Vec<KeyEvent> = $input.into_iter().map(KeyEvent::from).collect();
-            let mut read = read.iter();
-
-            let mut write: Vec<u8> = Vec::new();
-            let terminal = CrosstermTerminal::new_with_io(&mut write, &mut read);
-            let mut backend = Backend::new(terminal, RenderConfig::default()).unwrap();
+            let mut backend = crate::prompts::test::fake_backend($input);
 
             let ans = $prompt.prompt_with_backend(&mut backend).unwrap();
 
@@ -33,14 +27,14 @@ macro_rules! password_test {
 
 password_test!(
     empty,
-    vec![KeyCode::Enter],
+    vec![Key::Enter],
     "",
     Password::new("").without_confirmation()
 );
 
 password_test!(
     single_letter,
-    vec![KeyCode::Char('b'), KeyCode::Enter],
+    vec![Key::Char('b', KeyModifiers::NONE), Key::Enter],
     "b",
     Password::new("").without_confirmation()
 );
@@ -63,13 +57,13 @@ password_test!(
     input_and_correction,
     {
         let mut events = vec![];
-        events.append(&mut text_to_events!("anor").collect());
-        events.push(KeyCode::Backspace);
-        events.push(KeyCode::Backspace);
-        events.push(KeyCode::Backspace);
-        events.push(KeyCode::Backspace);
-        events.append(&mut text_to_events!("normal input").collect());
-        events.push(KeyCode::Enter);
+        events.append(&mut text_to_events!("anor"));
+        events.push(Key::Backspace);
+        events.push(Key::Backspace);
+        events.push(Key::Backspace);
+        events.push(Key::Backspace);
+        events.append(&mut text_to_events!("normal input"));
+        events.push(Key::Enter);
         events
     },
     "normal input",
@@ -80,19 +74,19 @@ password_test!(
     input_and_excessive_correction,
     {
         let mut events = vec![];
-        events.append(&mut text_to_events!("anor").collect());
-        events.push(KeyCode::Backspace);
-        events.push(KeyCode::Backspace);
-        events.push(KeyCode::Backspace);
-        events.push(KeyCode::Backspace);
-        events.push(KeyCode::Backspace);
-        events.push(KeyCode::Backspace);
-        events.push(KeyCode::Backspace);
-        events.push(KeyCode::Backspace);
-        events.push(KeyCode::Backspace);
-        events.push(KeyCode::Backspace);
-        events.append(&mut text_to_events!("normal input").collect());
-        events.push(KeyCode::Enter);
+        events.append(&mut text_to_events!("anor"));
+        events.push(Key::Backspace);
+        events.push(Key::Backspace);
+        events.push(Key::Backspace);
+        events.push(Key::Backspace);
+        events.push(Key::Backspace);
+        events.push(Key::Backspace);
+        events.push(Key::Backspace);
+        events.push(Key::Backspace);
+        events.push(Key::Backspace);
+        events.push(Key::Backspace);
+        events.append(&mut text_to_events!("normal input"));
+        events.push(Key::Enter);
         events
     },
     "normal input",
@@ -103,15 +97,15 @@ password_test!(
     input_correction_after_validation_when_masked,
     {
         let mut events = vec![];
-        events.append(&mut text_to_events!("1234567890").collect());
-        events.push(KeyCode::Enter);
-        events.push(KeyCode::Backspace);
-        events.push(KeyCode::Backspace);
-        events.push(KeyCode::Backspace);
-        events.push(KeyCode::Backspace);
-        events.push(KeyCode::Backspace);
-        events.append(&mut text_to_events!("yes").collect());
-        events.push(KeyCode::Enter);
+        events.append(&mut text_to_events!("1234567890"));
+        events.push(Key::Enter);
+        events.push(Key::Backspace);
+        events.push(Key::Backspace);
+        events.push(Key::Backspace);
+        events.push(Key::Backspace);
+        events.push(Key::Backspace);
+        events.append(&mut text_to_events!("yes"));
+        events.push(Key::Enter);
         events
     },
     "12345yes",
@@ -128,15 +122,15 @@ password_test!(
     input_correction_after_validation_when_full,
     {
         let mut events = vec![];
-        events.append(&mut text_to_events!("1234567890").collect());
-        events.push(KeyCode::Enter);
-        events.push(KeyCode::Backspace);
-        events.push(KeyCode::Backspace);
-        events.push(KeyCode::Backspace);
-        events.push(KeyCode::Backspace);
-        events.push(KeyCode::Backspace);
-        events.append(&mut text_to_events!("yes").collect());
-        events.push(KeyCode::Enter);
+        events.append(&mut text_to_events!("1234567890"));
+        events.push(Key::Enter);
+        events.push(Key::Backspace);
+        events.push(Key::Backspace);
+        events.push(Key::Backspace);
+        events.push(Key::Backspace);
+        events.push(Key::Backspace);
+        events.append(&mut text_to_events!("yes"));
+        events.push(Key::Enter);
         events
     },
     "12345yes",
@@ -153,10 +147,10 @@ password_test!(
     input_correction_after_validation_when_hidden,
     {
         let mut events = vec![];
-        events.append(&mut text_to_events!("1234567890").collect());
-        events.push(KeyCode::Enter);
-        events.append(&mut text_to_events!("yesyes").collect());
-        events.push(KeyCode::Enter);
+        events.append(&mut text_to_events!("1234567890"));
+        events.push(Key::Enter);
+        events.append(&mut text_to_events!("yesyes"));
+        events.push(Key::Enter);
         events
     },
     "yesyes",
@@ -173,10 +167,10 @@ password_test!(
     input_confirmation_same,
     {
         let mut events = vec![];
-        events.append(&mut text_to_events!("1234567890").collect());
-        events.push(KeyCode::Enter);
-        events.append(&mut text_to_events!("1234567890").collect());
-        events.push(KeyCode::Enter);
+        events.append(&mut text_to_events!("1234567890"));
+        events.push(Key::Enter);
+        events.append(&mut text_to_events!("1234567890"));
+        events.push(Key::Enter);
         events
     },
     "1234567890",
@@ -188,10 +182,10 @@ password_test!(
     input_confirmation_different,
     {
         let mut events = vec![];
-        events.append(&mut text_to_events!("1234567890").collect());
-        events.push(KeyCode::Enter);
-        events.append(&mut text_to_events!("abcdefghij").collect());
-        events.push(KeyCode::Enter);
+        events.append(&mut text_to_events!("1234567890"));
+        events.push(Key::Enter);
+        events.append(&mut text_to_events!("abcdefghij"));
+        events.push(Key::Enter);
         events
     },
     "",
@@ -203,16 +197,16 @@ password_test!(
     prompt_with_hidden_should_clear_on_mismatch,
     {
         let mut events = vec![];
-        events.append(&mut text_to_events!("anor").collect());
-        events.push(KeyCode::Enter);
-        events.append(&mut text_to_events!("anor2").collect());
-        events.push(KeyCode::Enter);
+        events.append(&mut text_to_events!("anor"));
+        events.push(Key::Enter);
+        events.append(&mut text_to_events!("anor2"));
+        events.push(Key::Enter);
         // The problem is that the 1st input values were not cleared
         // and the lack of a change in the 1st prompt can be confusing.
-        events.append(&mut text_to_events!("anor").collect());
-        events.push(KeyCode::Enter);
-        events.append(&mut text_to_events!("anor").collect());
-        events.push(KeyCode::Enter);
+        events.append(&mut text_to_events!("anor"));
+        events.push(Key::Enter);
+        events.append(&mut text_to_events!("anor"));
+        events.push(Key::Enter);
         events
     },
     "anor",
@@ -224,16 +218,16 @@ password_test!(
     prompt_with_full_should_clear_1st_on_mismatch,
     {
         let mut events = vec![];
-        events.append(&mut text_to_events!("anor").collect());
-        events.push(KeyCode::Enter);
-        events.append(&mut text_to_events!("anor2").collect());
-        events.push(KeyCode::Enter);
+        events.append(&mut text_to_events!("anor"));
+        events.push(Key::Enter);
+        events.append(&mut text_to_events!("anor2"));
+        events.push(Key::Enter);
         // The problem is that the 1st input values were not cleared
         // and the lack of a change in the 1st prompt can be confusing.
-        events.append(&mut text_to_events!("anor").collect());
-        events.push(KeyCode::Enter);
-        events.append(&mut text_to_events!("anor").collect());
-        events.push(KeyCode::Enter);
+        events.append(&mut text_to_events!("anor"));
+        events.push(Key::Enter);
+        events.append(&mut text_to_events!("anor"));
+        events.push(Key::Enter);
         events
     },
     "anor",
@@ -245,16 +239,16 @@ password_test!(
     prompt_with_masked_should_clear_1st_on_mismatch,
     {
         let mut events = vec![];
-        events.append(&mut text_to_events!("anor").collect());
-        events.push(KeyCode::Enter);
-        events.append(&mut text_to_events!("anor2").collect());
-        events.push(KeyCode::Enter);
+        events.append(&mut text_to_events!("anor"));
+        events.push(Key::Enter);
+        events.append(&mut text_to_events!("anor2"));
+        events.push(Key::Enter);
         // The problem is that the 1st input values were not cleared
         // and the lack of a change in the 1st prompt can be confusing.
-        events.append(&mut text_to_events!("anor").collect());
-        events.push(KeyCode::Enter);
-        events.append(&mut text_to_events!("anor").collect());
-        events.push(KeyCode::Enter);
+        events.append(&mut text_to_events!("anor"));
+        events.push(Key::Enter);
+        events.append(&mut text_to_events!("anor"));
+        events.push(Key::Enter);
         events
     },
     "anor",

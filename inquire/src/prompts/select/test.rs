@@ -1,30 +1,19 @@
 use crate::{
     formatter::OptionFormatter,
     list_option::ListOption,
-    terminal::crossterm::CrosstermTerminal,
-    ui::{Backend, RenderConfig},
+    test::fake_backend,
+    ui::{Key, KeyModifiers},
     Select,
 };
-use crossterm::event::{KeyCode, KeyEvent};
 
 #[test]
 /// Tests that a closure that actually closes on a variable can be used
 /// as a Select formatter.
 fn closure_formatter() {
-    let read: Vec<KeyEvent> = vec![KeyCode::Down, KeyCode::Enter]
-        .into_iter()
-        .map(KeyEvent::from)
-        .collect();
-    let mut read = read.iter();
+    let mut backend = fake_backend(vec![Key::Down(KeyModifiers::NONE), Key::Enter]);
 
-    let formatted = String::from("Thanks!");
-    let formatter: OptionFormatter<'_, i32> = &|_| formatted.clone();
-
+    let formatter: OptionFormatter<'_, i32> = &|_| String::from("Thanks!");
     let options = vec![1, 2, 3];
-
-    let mut write: Vec<u8> = Vec::new();
-    let terminal = CrosstermTerminal::new_with_io(&mut write, &mut read);
-    let mut backend = Backend::new(terminal, RenderConfig::default()).unwrap();
 
     let ans = Select::new("Question", options)
         .with_formatter(formatter)
@@ -37,24 +26,15 @@ fn closure_formatter() {
 #[test]
 // Anti-regression test: https://github.com/mikaelmello/inquire/issues/29
 fn enter_arrow_on_empty_list_does_not_panic() {
-    let read: Vec<KeyEvent> = [
-        KeyCode::Char('9'),
-        KeyCode::Enter,
-        KeyCode::Backspace,
-        KeyCode::Char('3'),
-        KeyCode::Enter,
-    ]
-    .iter()
-    .map(|c| KeyEvent::from(*c))
-    .collect();
-
-    let mut read = read.iter();
+    let mut backend = fake_backend(vec![
+        Key::Char('9', KeyModifiers::NONE),
+        Key::Enter,
+        Key::Backspace,
+        Key::Char('3', KeyModifiers::NONE),
+        Key::Enter,
+    ]);
 
     let options = vec![1, 2, 3];
-
-    let mut write: Vec<u8> = Vec::new();
-    let terminal = CrosstermTerminal::new_with_io(&mut write, &mut read);
-    let mut backend = Backend::new(terminal, RenderConfig::default()).unwrap();
 
     let ans = Select::new("Question", options)
         .prompt_with_backend(&mut backend)
@@ -66,26 +46,17 @@ fn enter_arrow_on_empty_list_does_not_panic() {
 #[test]
 // Anti-regression test: https://github.com/mikaelmello/inquire/issues/30
 fn down_arrow_on_empty_list_does_not_panic() {
-    let read: Vec<KeyEvent> = [
-        KeyCode::Char('9'),
-        KeyCode::Down,
-        KeyCode::Backspace,
-        KeyCode::Char('3'),
-        KeyCode::Down,
-        KeyCode::Backspace,
-        KeyCode::Enter,
-    ]
-    .iter()
-    .map(|c| KeyEvent::from(*c))
-    .collect();
-
-    let mut read = read.iter();
+    let mut backend = fake_backend(vec![
+        Key::Char('9', KeyModifiers::NONE),
+        Key::Down(KeyModifiers::NONE),
+        Key::Backspace,
+        Key::Char('3', KeyModifiers::NONE),
+        Key::Down(KeyModifiers::NONE),
+        Key::Backspace,
+        Key::Enter,
+    ]);
 
     let options = vec![1, 2, 3];
-
-    let mut write: Vec<u8> = Vec::new();
-    let terminal = CrosstermTerminal::new_with_io(&mut write, &mut read);
-    let mut backend = Backend::new(terminal, RenderConfig::default()).unwrap();
 
     let ans = Select::new("Question", options)
         .prompt_with_backend(&mut backend)
@@ -97,18 +68,9 @@ fn down_arrow_on_empty_list_does_not_panic() {
 #[test]
 // Anti-regression test: https://github.com/mikaelmello/inquire/issues/195
 fn starting_cursor_is_respected() {
-    let read: Vec<KeyEvent> = [KeyCode::Enter]
-        .iter()
-        .map(|c| KeyEvent::from(*c))
-        .collect();
-
-    let mut read = read.iter();
+    let mut backend = fake_backend(vec![Key::Enter]);
 
     let options = vec![1, 2, 3];
-
-    let mut write: Vec<u8> = Vec::new();
-    let terminal = CrosstermTerminal::new_with_io(&mut write, &mut read);
-    let mut backend = Backend::new(terminal, RenderConfig::default()).unwrap();
 
     let ans = Select::new("Question", options)
         .with_starting_cursor(2)
@@ -120,18 +82,13 @@ fn starting_cursor_is_respected() {
 
 #[test]
 fn naive_assert_fuzzy_match_as_default_scorer() {
-    let read: Vec<KeyEvent> = [
-        KeyCode::Char('w'),
-        KeyCode::Char('r'),
-        KeyCode::Char('r'),
-        KeyCode::Char('y'),
-        KeyCode::Enter,
-    ]
-    .iter()
-    .map(|c| KeyEvent::from(*c))
-    .collect();
-
-    let mut read = read.iter();
+    let mut backend = fake_backend(vec![
+        Key::Char('w', KeyModifiers::NONE),
+        Key::Char('r', KeyModifiers::NONE),
+        Key::Char('r', KeyModifiers::NONE),
+        Key::Char('y', KeyModifiers::NONE),
+        Key::Enter,
+    ]);
 
     let options = vec![
         "Banana",
@@ -146,10 +103,6 @@ fn naive_assert_fuzzy_match_as_default_scorer() {
         "Avocado",
         "Pineapple",
     ];
-
-    let mut write: Vec<u8> = Vec::new();
-    let terminal = CrosstermTerminal::new_with_io(&mut write, &mut read);
-    let mut backend = Backend::new(terminal, RenderConfig::default()).unwrap();
 
     let ans = Select::new("Question", options)
         .prompt_with_backend(&mut backend)
@@ -160,18 +113,13 @@ fn naive_assert_fuzzy_match_as_default_scorer() {
 
 #[test]
 fn chars_do_not_affect_prompt_without_filtering() {
-    let read: Vec<KeyEvent> = [
-        KeyCode::Char('w'),
-        KeyCode::Char('r'),
-        KeyCode::Char('r'),
-        KeyCode::Char('y'),
-        KeyCode::Enter,
-    ]
-    .iter()
-    .map(|c| KeyEvent::from(*c))
-    .collect();
-
-    let mut read = read.iter();
+    let mut backend = fake_backend(vec![
+        Key::Char('w', KeyModifiers::NONE),
+        Key::Char('r', KeyModifiers::NONE),
+        Key::Char('r', KeyModifiers::NONE),
+        Key::Char('y', KeyModifiers::NONE),
+        Key::Enter,
+    ]);
 
     let options = vec![
         "Banana",
@@ -186,10 +134,6 @@ fn chars_do_not_affect_prompt_without_filtering() {
         "Avocado",
         "Pineapple",
     ];
-
-    let mut write: Vec<u8> = Vec::new();
-    let terminal = CrosstermTerminal::new_with_io(&mut write, &mut read);
-    let mut backend = Backend::new(terminal, RenderConfig::default()).unwrap();
 
     let ans = Select::new("Question", options)
         .without_filtering()
