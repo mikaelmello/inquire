@@ -91,6 +91,11 @@ pub struct MultiSelect<'a, T> {
     /// Defaults to true.
     pub reset_cursor: bool,
 
+    /// Whether to allow the option list to be filtered by user input or not.
+    ///
+    /// Defaults to true.
+    pub filter_input_enabled: bool,
+
     /// Function called with the current user input to score the provided
     /// options.
     /// The list of options is sorted in descending order (highest score first)
@@ -201,6 +206,10 @@ where
     /// Defaults to true.
     pub const DEFAULT_RESET_CURSOR: bool = true;
 
+    /// Default filter input enabled behaviour.
+    /// Defaults to true.
+    pub const DEFAULT_FILTER_INPUT_ENABLED: bool = true;
+
     /// Default behavior of keeping or cleaning the current filter value.
     pub const DEFAULT_KEEP_FILTER: bool = true;
 
@@ -220,6 +229,7 @@ where
             starting_cursor: Self::DEFAULT_STARTING_CURSOR,
             starting_filter_input: None,
             reset_cursor: Self::DEFAULT_RESET_CURSOR,
+            filter_input_enabled: Self::DEFAULT_FILTER_INPUT_ENABLED,
             keep_filter: Self::DEFAULT_KEEP_FILTER,
             scorer: Self::DEFAULT_SCORER,
             formatter: Self::DEFAULT_FORMATTER,
@@ -322,6 +332,16 @@ where
     /// whether by filtering or re-ordering, the cursor will be reset to highlight the first option.
     pub fn with_reset_cursor(mut self, reset_cursor: bool) -> Self {
         self.reset_cursor = reset_cursor;
+        self
+    }
+
+    /// Disables the filter input, which means the user will not be able to filter the options
+    /// by typing.
+    ///
+    /// This is useful when you want to simplify the UX if the filter does not add any value,
+    /// such as when the list is already short.
+    pub fn without_filtering(mut self) -> Self {
+        self.filter_input_enabled = false;
         self
     }
 

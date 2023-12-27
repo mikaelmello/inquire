@@ -16,6 +16,20 @@ pub enum ActionResult {
     Clean,
 }
 
+impl ActionResult {
+    pub fn merge(self, other: Self) -> Self {
+        match (self, other) {
+            (Self::NeedsRedraw, _) | (_, Self::NeedsRedraw) => Self::NeedsRedraw,
+            (Self::Clean, Self::Clean) => Self::Clean,
+        }
+    }
+
+    /// Returns whether the action requires a redraw.
+    pub fn needs_redraw(&self) -> bool {
+        matches!(self, Self::NeedsRedraw)
+    }
+}
+
 impl From<InputActionResult> for ActionResult {
     fn from(value: InputActionResult) -> Self {
         if value.needs_redraw() {
@@ -106,7 +120,7 @@ where
 
         let mut last_handle = ActionResult::NeedsRedraw;
         let final_answer = loop {
-            if let ActionResult::NeedsRedraw = last_handle {
+            if last_handle.needs_redraw() {
                 backend.frame_setup()?;
                 self.render(backend)?;
                 backend.frame_finish()?;
