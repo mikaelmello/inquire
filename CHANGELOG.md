@@ -23,6 +23,7 @@
 - Ctrl-b/Ctrl-f for left/right
 - Ctrl-j/Ctrl-g for enter/cancel
 - Added 'with_starting_filter_input' to both Select and MultiSelect, which allows for setting an initial value to the filter section of the prompt.
+- Added 'with_answered_prompt_prefix' to RenderConfig to allow customization of answered prompt prefix
 
 ### Fixes
 
