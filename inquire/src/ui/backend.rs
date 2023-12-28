@@ -805,7 +805,7 @@ pub(crate) mod test {
 
     use crate::{ui::Key, validator::ErrorMessage};
 
-    use super::{date::DateSelectBackend, CommonBackend};
+    use super::CommonBackend;
 
     #[derive(Debug, Clone, PartialEq)]
     pub enum Token {
@@ -913,7 +913,8 @@ pub(crate) mod test {
         }
     }
 
-    impl DateSelectBackend for FakeBackend {
+    #[cfg(feature = "date")]
+    impl crate::ui::date::DateSelectBackend for FakeBackend {
         fn render_calendar_prompt(&mut self, prompt: &str) -> std::io::Result<()> {
             self.push_token(Token::Prompt(prompt.to_string()));
             Ok(())
