@@ -37,21 +37,6 @@ impl<T> ListOption<T> {
     pub fn as_ref(&self) -> ListOption<&T> {
         ListOption::new(self.index, &self.value)
     }
-
-    #[allow(unused)]
-    pub(crate) fn from_list(vals: Vec<T>) -> Vec<ListOption<T>> {
-        vals.into_iter()
-            .enumerate()
-            .map(|(index, value)| Self { index, value })
-            .collect()
-    }
-
-    #[allow(unused)]
-    pub(crate) fn from_enumerated_list(vals: Vec<(usize, T)>) -> Vec<ListOption<T>> {
-        vals.into_iter()
-            .map(|(index, value)| Self { index, value })
-            .collect()
-    }
 }
 
 impl<T> fmt::Display for ListOption<T>

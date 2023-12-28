@@ -116,12 +116,10 @@ impl Input {
 
     pub fn pre_cursor(&self) -> &str {
         if self.cursor == self.length {
+            // hot path, skip counting graphemes every time.
             &self.content[..]
         } else {
-            let last = self.content[..]
-                .grapheme_indices(true)
-                .take(self.cursor.saturating_add(1))
-                .last();
+            let last = self.content[..].grapheme_indices(true).nth(self.cursor);
 
             match last {
                 Some((beg, _)) => &self.content[..beg],
@@ -157,6 +155,9 @@ impl Input {
                 InputActionResult::PositionChanged
             }
             std::cmp::Ordering::Greater => {
+                // this should never happen
+                // but if there's a bug somewhere, we don't want to panic
+                // so we just set the cursor to the end of the input
                 self.cursor = self.length;
                 InputActionResult::PositionChanged
             }
