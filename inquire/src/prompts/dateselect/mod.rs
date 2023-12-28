@@ -15,8 +15,8 @@ use crate::{
     error::{InquireError, InquireResult},
     formatter::{self, DateFormatter},
     prompts::prompt::Prompt,
-    terminal::{get_default_terminal, Terminal},
-    ui::{Backend, RenderConfig},
+    terminal::get_default_terminal,
+    ui::{date::DateSelectBackend, Backend, RenderConfig},
     validator::DateValidator,
 };
 
@@ -270,9 +270,9 @@ impl<'a> DateSelect<'a> {
         self.prompt_with_backend(&mut backend)
     }
 
-    pub(crate) fn prompt_with_backend<T: Terminal>(
+    pub(crate) fn prompt_with_backend<B: DateSelectBackend>(
         self,
-        backend: &mut Backend<'a, T>,
+        backend: &mut B,
     ) -> InquireResult<NaiveDate> {
         DateSelectPrompt::new(self)?.prompt(backend)
     }

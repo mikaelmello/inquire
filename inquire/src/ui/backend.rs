@@ -796,3 +796,149 @@ where
         Ok(action)
     }
 }
+
+#[cfg(test)]
+pub(crate) mod test {
+    use std::collections::VecDeque;
+
+    use chrono::{Month, NaiveDate, Weekday};
+
+    use crate::{ui::Key, validator::ErrorMessage};
+
+    use super::{date::DateSelectBackend, CommonBackend};
+
+    #[derive(Debug, Clone, PartialEq)]
+    pub enum Token {
+        Prompt(String),
+        CanceledPrompt(String),
+        AnsweredPrompt(String, String),
+        ErrorMessage(ErrorMessage),
+        HelpMessage(String),
+        Calendar {
+            month: Month,
+            year: i32,
+            week_start: Weekday,
+            today: NaiveDate,
+            selected_date: NaiveDate,
+            min_date: Option<NaiveDate>,
+            max_date: Option<NaiveDate>,
+        },
+    }
+
+    #[derive(Default, Debug, Clone)]
+    pub struct Frame {
+        content: Vec<Token>,
+    }
+
+    impl Frame {
+        pub fn has_token(&self, token: &Token) -> bool {
+            self.content.iter().any(|t| t == token)
+        }
+
+        pub fn tokens(&self) -> &[Token] {
+            &self.content
+        }
+    }
+
+    #[derive(Default, Debug, Clone)]
+    pub struct FakeBackend {
+        pub input: VecDeque<Key>,
+        pub frames: Vec<Frame>,
+        pub cur_frame: Option<Frame>,
+    }
+
+    impl FakeBackend {
+        pub fn new(input: Vec<Key>) -> Self {
+            Self {
+                input: input.into(),
+                frames: vec![],
+                cur_frame: None,
+            }
+        }
+
+        fn push_token(&mut self, token: Token) {
+            if let Some(frame) = self.cur_frame.as_mut() {
+                frame.content.push(token);
+            } else {
+                panic!("No frame to push token");
+            }
+        }
+        pub fn frames(&self) -> &[Frame] {
+            &self.frames
+        }
+    }
+
+    impl CommonBackend for FakeBackend {
+        fn read_key(&mut self) -> std::io::Result<Key> {
+            self.input
+                .pop_front()
+                .ok_or(std::io::Error::from(std::io::ErrorKind::UnexpectedEof))
+        }
+
+        fn frame_setup(&mut self) -> std::io::Result<()> {
+            self.cur_frame = Some(Frame::default());
+            Ok(())
+        }
+
+        fn frame_finish(&mut self) -> std::io::Result<()> {
+            if let Some(frame) = self.cur_frame.take() {
+                self.frames.push(frame);
+            } else {
+                panic!("No frame to finish");
+            }
+            Ok(())
+        }
+
+        fn render_canceled_prompt(&mut self, prompt: &str) -> std::io::Result<()> {
+            self.push_token(Token::CanceledPrompt(prompt.to_string()));
+            Ok(())
+        }
+
+        fn render_prompt_with_answer(&mut self, prompt: &str, answer: &str) -> std::io::Result<()> {
+            self.push_token(Token::AnsweredPrompt(
+                prompt.to_string(),
+                answer.to_string(),
+            ));
+            Ok(())
+        }
+
+        fn render_error_message(&mut self, error: &ErrorMessage) -> std::io::Result<()> {
+            self.push_token(Token::ErrorMessage(error.clone()));
+            Ok(())
+        }
+
+        fn render_help_message(&mut self, help: &str) -> std::io::Result<()> {
+            self.push_token(Token::HelpMessage(help.to_string()));
+            Ok(())
+        }
+    }
+
+    impl DateSelectBackend for FakeBackend {
+        fn render_calendar_prompt(&mut self, prompt: &str) -> std::io::Result<()> {
+            self.push_token(Token::Prompt(prompt.to_string()));
+            Ok(())
+        }
+
+        fn render_calendar(
+            &mut self,
+            month: Month,
+            year: i32,
+            week_start: Weekday,
+            today: NaiveDate,
+            selected_date: NaiveDate,
+            min_date: Option<NaiveDate>,
+            max_date: Option<NaiveDate>,
+        ) -> std::io::Result<()> {
+            self.push_token(Token::Calendar {
+                month,
+                year,
+                week_start,
+                today,
+                selected_date,
+                min_date,
+                max_date,
+            });
+            Ok(())
+        }
+    }
+}
