@@ -42,6 +42,7 @@ use self::prompt::CustomTypePrompt;
 ///
 /// let amount_prompt: CustomType<f64> = CustomType {
 ///     message: "How much is your travel going to cost?",
+///     starting_input: None,
 ///     formatter: &|i| format!("${:.2}", i),
 ///     default_value_formatter: &|i| format!("${:.2}", i),
 ///     default: None,
@@ -79,6 +80,13 @@ use self::prompt::CustomTypePrompt;
 pub struct CustomType<'a, T> {
     /// Message to be presented to the user.
     pub message: &'a str,
+
+    /// Initial value of the prompt's text input.
+    ///
+    /// If you want to set a default value for the prompt, returned when the user's submission is empty, see [`default`].
+    ///
+    /// [`default`]: Self::default
+    pub starting_input: Option<&'a str>,
 
     /// Default value, returned when the user input is empty.
     pub default: Option<T>,
@@ -134,6 +142,7 @@ where
     {
         Self {
             message,
+            starting_input: None,
             default: None,
             placeholder: None,
             help_message: None,
@@ -144,6 +153,16 @@ where
             error_message: "Invalid input".into(),
             render_config: get_configuration(),
         }
+    }
+
+    /// Sets the initial value of the prompt's text input.
+    ///
+    /// If you want to set a default value for the prompt, returned when the user's submission is empty, see [`with_default`].
+    ///
+    /// [`with_default`]: Self::with_default
+    pub fn with_starting_input(mut self, message: &'a str) -> Self {
+        self.starting_input = Some(message);
+        self
     }
 
     /// Sets the default input.

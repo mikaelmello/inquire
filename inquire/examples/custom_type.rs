@@ -2,6 +2,7 @@ use inquire::{validator::Validation, CustomType};
 
 fn main() {
     let amount = CustomType::<f64>::new("How much do you want to donate?")
+        .with_starting_input("10.00")
         .with_formatter(&|i| format!("${i:.2}"))
         .with_error_message("Please type a valid number")
         .with_help_message("Type the amount in US dollars using a decimal point as a separator")

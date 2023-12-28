@@ -30,6 +30,13 @@ where
     T: Clone,
 {
     fn from(co: CustomType<'a, T>) -> Self {
+        let input = Input::new_with(co.starting_input.unwrap_or_default());
+        let input = if let Some(placeholder) = co.placeholder {
+            input.with_placeholder(placeholder)
+        } else {
+            input
+        };
+
         Self {
             message: co.message,
             config: (&co).into(),
@@ -40,10 +47,7 @@ where
             default_value_formatter: co.default_value_formatter,
             validators: co.validators,
             parser: co.parser,
-            input: co
-                .placeholder
-                .map(|p| Input::new().with_placeholder(p))
-                .unwrap_or_else(Input::new),
+            input,
             error_message: co.error_message,
         }
     }
