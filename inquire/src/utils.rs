@@ -93,6 +93,15 @@ mod test {
         utils::{int_log10, paginate},
     };
 
+    impl<T> ListOption<T> {
+        pub(crate) fn from_list(vals: Vec<T>) -> Vec<ListOption<T>> {
+            vals.into_iter()
+                .enumerate()
+                .map(|(index, value)| Self { index, value })
+                .collect()
+        }
+    }
+
     #[test]
     fn int_log10_works() {
         for i in 1..10 {
