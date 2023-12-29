@@ -255,7 +255,7 @@ where
 
     /// Sets the starting cursor index.
     ///
-    /// This index might be overriden if the `reset_cursor` option is set to true (default)
+    /// This index might be overridden if the `reset_cursor` option is set to true (default)
     /// and starting_filter_input is set to something other than None.
     pub fn with_starting_cursor(mut self, starting_cursor: usize) -> Self {
         self.starting_cursor = starting_cursor;
