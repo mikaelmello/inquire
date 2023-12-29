@@ -18,15 +18,6 @@ pub enum InputAction {
     Write(char),
 }
 
-impl InputAction {
-    /// Generates a list of `Write(char)` actions with the contents
-    /// of a source string.
-    #[allow(unused)]
-    fn gen_write_from_str(value: &str) -> Vec<InputAction> {
-        value.chars().map(InputAction::Write).collect()
-    }
-}
-
 impl InnerAction for InputAction {
     type Config = ();
 
@@ -65,5 +56,159 @@ impl InnerAction for InputAction {
         };
 
         Some(action)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn backspace_results_in_delete_char_left() {
+        assert_eq!(
+            InputAction::from_key(Key::Backspace, &()),
+            Some(InputAction::Delete(Magnitude::Char, LineDirection::Left))
+        );
+    }
+
+    #[test]
+    fn delete_results_in_delete_char_right() {
+        assert_eq!(
+            InputAction::from_key(Key::Delete(KeyModifiers::NONE), &()),
+            Some(InputAction::Delete(Magnitude::Char, LineDirection::Right))
+        );
+    }
+
+    #[test]
+    fn ctrl_delete_results_in_delete_word_right() {
+        assert_eq!(
+            InputAction::from_key(Key::Delete(KeyModifiers::CONTROL), &()),
+            Some(InputAction::Delete(Magnitude::Word, LineDirection::Right))
+        );
+    }
+
+    #[test]
+    fn ctrl_backspace_does_nothing() {
+        // Ctrl+Backspace is tricky, we don't want to handle a Ctrl+H
+        // but also don't want ctrl+h to simply write h.
+        // Let's catch this combination and ignore it.
+        assert_eq!(
+            InputAction::from_key(Key::Char('h', KeyModifiers::CONTROL), &()),
+            None
+        );
+    }
+
+    #[test]
+    fn horizontal_arrows_results_in_move_cursor_char() {
+        assert_eq!(
+            InputAction::from_key(Key::Left(KeyModifiers::NONE), &()),
+            Some(InputAction::MoveCursor(
+                Magnitude::Char,
+                LineDirection::Left
+            ))
+        );
+        assert_eq!(
+            InputAction::from_key(Key::Right(KeyModifiers::NONE), &()),
+            Some(InputAction::MoveCursor(
+                Magnitude::Char,
+                LineDirection::Right
+            ))
+        );
+    }
+
+    #[test]
+    fn vertical_arrows_do_nothing() {
+        assert_eq!(
+            InputAction::from_key(Key::Up(KeyModifiers::NONE), &()),
+            None
+        );
+        assert_eq!(
+            InputAction::from_key(Key::Down(KeyModifiers::NONE), &()),
+            None
+        );
+    }
+
+    #[test]
+    fn home_moves_to_beginning_of_line() {
+        assert_eq!(
+            InputAction::from_key(Key::Home, &()),
+            Some(InputAction::MoveCursor(
+                Magnitude::Line,
+                LineDirection::Left
+            ))
+        );
+    }
+
+    #[test]
+    fn end_moves_to_end_of_line() {
+        assert_eq!(
+            InputAction::from_key(Key::End, &()),
+            Some(InputAction::MoveCursor(
+                Magnitude::Line,
+                LineDirection::Right
+            ))
+        );
+    }
+
+    #[test]
+    fn arrows_with_ctrl_move_by_word() {
+        assert_eq!(
+            InputAction::from_key(Key::Left(KeyModifiers::CONTROL), &()),
+            Some(InputAction::MoveCursor(
+                Magnitude::Word,
+                LineDirection::Left
+            ))
+        );
+        assert_eq!(
+            InputAction::from_key(Key::Right(KeyModifiers::CONTROL), &()),
+            Some(InputAction::MoveCursor(
+                Magnitude::Word,
+                LineDirection::Right
+            ))
+        );
+    }
+
+    #[test]
+    fn chars_generate_write_actions() {
+        assert_eq!(
+            InputAction::from_key(Key::Char('a', KeyModifiers::NONE), &()),
+            Some(InputAction::Write('a'))
+        );
+        assert_eq!(
+            InputAction::from_key(Key::Char('a', KeyModifiers::SHIFT), &()),
+            Some(InputAction::Write('a'))
+        );
+        assert_eq!(
+            InputAction::from_key(Key::Char('∑', KeyModifiers::NONE), &()),
+            Some(InputAction::Write('∑'))
+        );
+        assert_eq!(
+            InputAction::from_key(Key::Char('ã', KeyModifiers::SHIFT), &()),
+            Some(InputAction::Write('ã'))
+        );
+        assert_eq!(
+            InputAction::from_key(Key::Char('❤', KeyModifiers::SHIFT), &()),
+            Some(InputAction::Write('❤'))
+        );
+        assert_eq!(
+            InputAction::from_key(Key::Char('ç', KeyModifiers::SHIFT), &()),
+            Some(InputAction::Write('ç'))
+        );
+        assert_eq!(
+            InputAction::from_key(Key::Char('ñ', KeyModifiers::SHIFT), &()),
+            Some(InputAction::Write('ñ'))
+        );
+    }
+
+    #[test]
+    fn page_up_and_down_do_nothing() {
+        assert_eq!(
+            InputAction::from_key(Key::PageUp(KeyModifiers::NONE), &()),
+            None
+        );
+        assert_eq!(
+            InputAction::from_key(Key::PageDown(KeyModifiers::NONE), &()),
+            None
+        );
     }
 }
