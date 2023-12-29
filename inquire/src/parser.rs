@@ -94,3 +94,51 @@ macro_rules! parse_type {
         &|a| a.parse::<$type>().map_err(|_| ())
     }};
 }
+
+#[cfg(test)]
+mod test {
+    mod default_bool_parser {
+        use crate::parser::DEFAULT_BOOL_PARSER;
+
+        #[test]
+        fn valid_yes_inputs() {
+            assert_eq!(Ok(true), DEFAULT_BOOL_PARSER("yes"));
+            assert_eq!(Ok(true), DEFAULT_BOOL_PARSER("y"));
+            assert_eq!(Ok(true), DEFAULT_BOOL_PARSER("YES"));
+            assert_eq!(Ok(true), DEFAULT_BOOL_PARSER("Y"));
+            assert_eq!(Ok(true), DEFAULT_BOOL_PARSER("yEs"));
+            assert_eq!(Ok(true), DEFAULT_BOOL_PARSER("YeS"));
+        }
+
+        #[test]
+        fn invalid_yes_inputs() {
+            assert_eq!(Err(()), DEFAULT_BOOL_PARSER("yess"));
+            assert_eq!(Err(()), DEFAULT_BOOL_PARSER("ye"));
+            assert_eq!(Err(()), DEFAULT_BOOL_PARSER("yea"));
+            assert_eq!(Err(()), DEFAULT_BOOL_PARSER("1"));
+            assert_eq!(Err(()), DEFAULT_BOOL_PARSER("si"));
+            assert_eq!(Err(()), DEFAULT_BOOL_PARSER("s"));
+            assert_eq!(Err(()), DEFAULT_BOOL_PARSER("sim"));
+            assert_eq!(Err(()), DEFAULT_BOOL_PARSER("simm"));
+        }
+
+        #[test]
+        fn valid_no_inputs() {
+            assert_eq!(Ok(false), DEFAULT_BOOL_PARSER("no"));
+            assert_eq!(Ok(false), DEFAULT_BOOL_PARSER("n"));
+            assert_eq!(Ok(false), DEFAULT_BOOL_PARSER("NO"));
+            assert_eq!(Ok(false), DEFAULT_BOOL_PARSER("N"));
+            assert_eq!(Ok(false), DEFAULT_BOOL_PARSER("nO"));
+            assert_eq!(Ok(false), DEFAULT_BOOL_PARSER("No"));
+        }
+
+        #[test]
+        fn invalid_no_inputs() {
+            assert_eq!(Err(()), DEFAULT_BOOL_PARSER("noo"));
+            assert_eq!(Err(()), DEFAULT_BOOL_PARSER("nao"));
+            assert_eq!(Err(()), DEFAULT_BOOL_PARSER("0"));
+            assert_eq!(Err(()), DEFAULT_BOOL_PARSER("nao"));
+            assert_eq!(Err(()), DEFAULT_BOOL_PARSER("naoo"));
+        }
+    }
+}
