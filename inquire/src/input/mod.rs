@@ -23,7 +23,7 @@ fn is_alphanumeric(grapheme: &str) -> bool {
     grapheme.unicode_words().count() > 0
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Input {
     content: String,
     placeholder: Option<String>,

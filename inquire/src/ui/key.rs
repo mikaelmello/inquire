@@ -34,3 +34,16 @@ pub enum Key {
     #[deprecated(note = "If the key you want isn't mapped, please open a PR.")]
     Any,
 }
+
+#[cfg(test)]
+pub(crate) mod key_test {
+    use super::{Key, KeyModifiers};
+
+    impl Key {
+        pub fn char_keys_from_str(s: &str) -> Vec<Self> {
+            s.chars()
+                .map(|c| Key::Char(c, KeyModifiers::NONE))
+                .collect()
+        }
+    }
+}

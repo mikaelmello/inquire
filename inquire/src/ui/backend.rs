@@ -803,13 +803,15 @@ pub(crate) mod test {
 
     use chrono::{Month, NaiveDate, Weekday};
 
-    use crate::{ui::Key, validator::ErrorMessage};
+    use crate::{input::Input, ui::Key, validator::ErrorMessage};
 
-    use super::CommonBackend;
+    use super::{CommonBackend, CustomTypeBackend};
 
     #[derive(Debug, Clone, PartialEq)]
     pub enum Token {
         Prompt(String),
+        DefaultValue(String),
+        Input(Input),
         CanceledPrompt(String),
         AnsweredPrompt(String, String),
         ErrorMessage(ErrorMessage),
@@ -939,6 +941,22 @@ pub(crate) mod test {
                 min_date,
                 max_date,
             });
+            Ok(())
+        }
+    }
+
+    impl CustomTypeBackend for FakeBackend {
+        fn render_prompt(
+            &mut self,
+            prompt: &str,
+            default: Option<&str>,
+            cur_input: &Input,
+        ) -> std::io::Result<()> {
+            self.push_token(Token::Prompt(prompt.to_string()));
+            if let Some(default) = default {
+                self.push_token(Token::DefaultValue(default.to_string()));
+            }
+            self.push_token(Token::Input(cur_input.clone()));
             Ok(())
         }
     }
