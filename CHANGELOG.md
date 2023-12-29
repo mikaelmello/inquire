@@ -28,7 +28,6 @@
 - Added 'with_answered_prompt_prefix' to RenderConfig to allow customization of answered prompt prefix.
 - Revamped keybindings for DateSelect.
 
-
 ### Fixes
 
 - Fixed typos in the code's comments.
@@ -39,7 +38,7 @@
 - Upgraded underlying `termion` crate from v1.5 to v2.0.
 - Upgraded underlying `bitflags` from v1 to v2, which affects the `Attributes` and `KeyModifiers` crates. If you use any of bitflag's methods directly, you might be affected, refer to the [bitflags changelog](https://github.com/bitflags/bitflags/releases/tag/2.0.0) for more information.
 - Removed `thiserror` dependency in favor of implementing `InquireError` by hand. [#146](https://github.com/mikaelmello/inquire/issues/146)
-- Raised MSRV to 1.63 due to requirements in downstream dependencies.
+- Raised MSRV to 1.65 due to requirements in downstream dependencies.
 - MSRV is now explicitly set in the package definition.
 - Replaced `lazy_static` with `once_cell` as `once_cell::sync::Lazy` is being standardized and `lazy_static` is not actively maintained anymore.
 - Added `fuzzy-matcher` as an optional dependency for fuzzy filtering in Select and MultiSelect prompts [#176](https://github.com/mikaelmello/inquire/pull/176)
