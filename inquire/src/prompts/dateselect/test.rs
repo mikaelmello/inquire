@@ -796,3 +796,30 @@ fn escape_raises_error() -> InquireResult<()> {
 
     Ok(())
 }
+
+#[test]
+fn ctrl_c_interrupts_prompt() -> InquireResult<()> {
+    let mut backend = FakeBackend::new(vec![Key::Char('c', KeyModifiers::CONTROL)]);
+
+    let result = DateSelect::new("Question").prompt_with_backend(&mut backend);
+
+    assert!(result.is_err(), "Result was not an error");
+    assert!(
+        matches!(result.unwrap_err(), InquireError::OperationInterrupted),
+        "Error message was not the expected one"
+    );
+
+    assert_eq!(
+        1,
+        backend.frames.len(),
+        "Only an initial frame should have been rendered",
+    );
+
+    let final_frame = backend.frames().last().unwrap();
+    assert!(
+        final_frame.has_token(&Token::Prompt("Question".into())),
+        "Final frame did not contain the expected prompt token"
+    );
+
+    Ok(())
+}
