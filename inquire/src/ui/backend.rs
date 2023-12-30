@@ -1,4 +1,4 @@
-use crate::ansi::AnsiStrippable;
+use crate::{ansi::AnsiStrippable, terminal::get_default_terminal};
 use std::{collections::BTreeSet, fmt::Display, io::Result};
 
 use unicode_width::UnicodeWidthChar;
@@ -14,7 +14,7 @@ use crate::{
     {Action, InnerAction},
 };
 
-use super::InputReader;
+use super::{untitled_render_box_abstraction::UntitledRenderBoxAbstraction, InputReader};
 
 pub trait CommonBackend {
     fn read_key(&mut self) -> Result<Key>;

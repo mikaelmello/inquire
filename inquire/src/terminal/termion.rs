@@ -179,6 +179,10 @@ impl<'a> Terminal for TermionTerminal<'a> {
         write!(self.get_writer(), "{}", termion::clear::CurrentLine)
     }
 
+    fn clear_until_new_line(&mut self) -> Result<()> {
+        write!(self.get_writer(), "{}", termion::clear::UntilNewline)
+    }
+
     fn cursor_hide(&mut self) -> Result<()> {
         write!(self.get_writer(), "{}", termion::cursor::Hide)
     }

@@ -103,7 +103,7 @@ pub struct AnsiAwareChars<'a> {
 }
 
 #[must_use]
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub enum AnsiAwareChar<'a> {
     AnsiEscapeSequence(&'a str),
     Char(char),
@@ -178,9 +178,14 @@ pub trait AnsiAware {
     fn ansi_aware_chars(&self) -> AnsiAwareChars<'_>;
 }
 
-impl AnsiAware for &str {
+impl<T> AnsiAware for T
+where
+    T: AsRef<str>,
+{
     fn ansi_aware_chars(&self) -> AnsiAwareChars<'_> {
-        AnsiAwareChars { input: self }
+        AnsiAwareChars {
+            input: self.as_ref(),
+        }
     }
 }
 
