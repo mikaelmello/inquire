@@ -23,10 +23,16 @@ impl ConsoleTerminal {
 
 impl Terminal for ConsoleTerminal {
     fn cursor_up(&mut self, cnt: u16) -> Result<()> {
+        if cnt == 0 {
+            return Ok(());
+        }
         self.term.move_cursor_up(cnt as usize)
     }
 
     fn cursor_down(&mut self, cnt: u16) -> Result<()> {
+        if cnt == 0 {
+            return Ok(());
+        }
         self.term.move_cursor_down(cnt as usize)
     }
 

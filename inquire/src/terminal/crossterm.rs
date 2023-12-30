@@ -90,10 +90,16 @@ impl CrosstermTerminal {
 
 impl Terminal for CrosstermTerminal {
     fn cursor_up(&mut self, cnt: u16) -> Result<()> {
+        if cnt == 0 {
+            return Ok(());
+        }
         self.write_command(cursor::MoveUp(cnt))
     }
 
     fn cursor_down(&mut self, cnt: u16) -> Result<()> {
+        if cnt == 0 {
+            return Ok(());
+        }
         self.write_command(cursor::MoveDown(cnt))
     }
 

@@ -106,10 +106,16 @@ impl<'a> TermionTerminal<'a> {
 
 impl<'a> Terminal for TermionTerminal<'a> {
     fn cursor_up(&mut self, cnt: u16) -> Result<()> {
+        if cnt == 0 {
+            return Ok(());
+        }
         write!(self.get_writer(), "{}", cursor::Up(cnt))
     }
 
     fn cursor_down(&mut self, cnt: u16) -> Result<()> {
+        if cnt == 0 {
+            return Ok(());
+        }
         write!(self.get_writer(), "{}", cursor::Down(cnt))
     }
 
