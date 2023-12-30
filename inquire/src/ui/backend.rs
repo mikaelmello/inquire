@@ -99,10 +99,7 @@ where
 {
     #[allow(clippy::large_types_passed_by_value)]
     pub fn new(terminal: T, render_config: RenderConfig<'a>) -> Result<Self> {
-        let terminal_size = terminal.get_size().unwrap_or(TerminalSize {
-            width: 1000,
-            height: 1000,
-        });
+        let terminal_size = terminal.get_size().unwrap_or(TerminalSize::new(1000, 1000));
 
         let mut backend = Self {
             prompt_current_position: Position::default(),
@@ -122,7 +119,7 @@ where
 
     fn update_position_info(&mut self) {
         let input = self.terminal.get_in_memory_content();
-        let term_width = self.terminal_size.width;
+        let term_width = self.terminal_size.width();
 
         let mut cur_pos = Position::default();
 

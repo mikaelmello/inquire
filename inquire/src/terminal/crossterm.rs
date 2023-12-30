@@ -124,7 +124,7 @@ impl Terminal for CrosstermTerminal {
     }
 
     fn get_size(&self) -> Result<super::TerminalSize> {
-        terminal::size().map(|(width, height)| super::TerminalSize { width, height })
+        terminal::size().map(|(width, height)| super::TerminalSize::new(width, height))
     }
 
     fn write<T: std::fmt::Display>(&mut self, val: T) -> Result<()> {

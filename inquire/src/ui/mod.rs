@@ -2,6 +2,7 @@
 
 mod backend;
 mod color;
+pub(crate) mod dimension;
 mod input_reader;
 mod key;
 mod render_config;
