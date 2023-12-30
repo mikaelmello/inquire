@@ -1,13 +1,13 @@
 use std::str::Chars;
 
 #[must_use]
-enum MatchResult<'a> {
+enum AnsiMatchResult<'a> {
     Matched { remaining_chars: Chars<'a> },
     NotMatched,
 }
 
-fn matched(chars: Chars<'_>) -> MatchResult<'_> {
-    MatchResult::Matched {
+fn matched(chars: Chars<'_>) -> AnsiMatchResult<'_> {
+    AnsiMatchResult::Matched {
         remaining_chars: chars,
     }
 }
@@ -19,20 +19,20 @@ fn matched(chars: Chars<'_>) -> MatchResult<'_> {
 ///
 /// The only way to get out of the ground is to read the escape character ('\x1b'). Transitions
 /// like "anywhere -- \x9b -> csi_entry" are not supported, as few terminals implement them.
-struct Matcher<'a> {
+struct AnsiMatcher<'a> {
     chars: Chars<'a>,
 }
 
-impl<'a> Matcher<'a> {
+impl<'a> AnsiMatcher<'a> {
     fn new(chars: Chars<'a>) -> Self {
         Self { chars }
     }
 
     #[inline]
-    fn run(mut self) -> MatchResult<'a> {
+    fn run(mut self) -> AnsiMatchResult<'a> {
         match self.chars.next() {
             Some('\x1b') => self.escape(),
-            _ => MatchResult::NotMatched,
+            _ => AnsiMatchResult::NotMatched,
         }
     }
 
@@ -41,7 +41,7 @@ impl<'a> Matcher<'a> {
         self.chars.next().map(|c| c as u32)
     }
 
-    fn escape(mut self) -> MatchResult<'a> {
+    fn escape(mut self) -> AnsiMatchResult<'a> {
         match self.next() {
             None => matched(self.chars),
             Some(0x5B) => self.csi_entry(),
@@ -57,7 +57,7 @@ impl<'a> Matcher<'a> {
         }
     }
 
-    fn csi_entry(mut self) -> MatchResult<'a> {
+    fn csi_entry(mut self) -> AnsiMatchResult<'a> {
         match self.next() {
             Some(0x1B) => self.escape(),
             None | Some(0x40..=0x7E) => matched(self.chars),
@@ -65,7 +65,7 @@ impl<'a> Matcher<'a> {
         }
     }
 
-    fn escape_intermediate(mut self) -> MatchResult<'a> {
+    fn escape_intermediate(mut self) -> AnsiMatchResult<'a> {
         match self.next() {
             Some(0x1B) => self.escape(),
             None | Some(0x30..=0x7E) => matched(self.chars),
@@ -74,7 +74,7 @@ impl<'a> Matcher<'a> {
     }
 
     /// Matches until the end of sos/pm/apc strings, dcs entries and osc strings.
-    fn string(mut self) -> MatchResult<'a> {
+    fn string(mut self) -> AnsiMatchResult<'a> {
         match self.next() {
             Some(0x1B) => self.escape(),
             None | Some(0x07 | 0x9C) => matched(self.chars),
@@ -95,12 +95,12 @@ impl<'a> Iterator for AnsiStrippedChars<'a> {
 
     fn next(&mut self) -> Option<char> {
         let chars = self.chars.clone();
-        match Matcher::new(chars).run() {
-            MatchResult::Matched { remaining_chars } => {
+        match AnsiMatcher::new(chars).run() {
+            AnsiMatchResult::Matched { remaining_chars } => {
                 self.chars = remaining_chars;
                 self.next()
             }
-            MatchResult::NotMatched => self.chars.next(),
+            AnsiMatchResult::NotMatched => self.chars.next(),
         }
     }
 }
