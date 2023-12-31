@@ -11,6 +11,8 @@ fn main() {
 
 fn date_select_default() {
     println!("-------> Simple DateSelect");
+    println!();
+
     DateSelect::new("Check-in date:").prompt().unwrap();
     println!("We will be expecting you!");
     println!();
