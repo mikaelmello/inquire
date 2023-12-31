@@ -1,7 +1,6 @@
 use std::{
     collections::VecDeque,
     io::{stderr, Result, Stderr, Write},
-    thread::sleep,
 };
 
 use crossterm::{
