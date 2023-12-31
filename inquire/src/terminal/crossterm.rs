@@ -1,6 +1,7 @@
 use std::{
     collections::VecDeque,
     io::{stderr, Result, Stderr, Write},
+    thread::sleep,
 };
 
 use crossterm::{
@@ -105,6 +106,20 @@ impl Terminal for CrosstermTerminal {
 
     fn cursor_move_to_column(&mut self, idx: u16) -> Result<()> {
         self.write_command(cursor::MoveToColumn(idx))
+    }
+
+    fn cursor_right(&mut self, cnt: u16) -> Result<()> {
+        if cnt == 0 {
+            return Ok(());
+        }
+        self.write_command(cursor::MoveRight(cnt))
+    }
+
+    fn cursor_left(&mut self, cnt: u16) -> Result<()> {
+        if cnt == 0 {
+            return Ok(());
+        }
+        self.write_command(cursor::MoveLeft(cnt))
     }
 
     fn read_key(&mut self) -> Result<Key> {

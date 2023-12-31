@@ -247,11 +247,16 @@ where
 {
     fn frame_setup(&mut self) -> Result<()> {
         self.untitled_render_box_abstraction.hide_cursor()?;
+        self.untitled_render_box_abstraction.start_frame()?;
         Ok(())
     }
 
     fn frame_finish(&mut self) -> Result<()> {
-        self.untitled_render_box_abstraction.finish_current_frame()
+        self.untitled_render_box_abstraction
+            .finish_current_frame()?;
+        self.untitled_render_box_abstraction.show_cursor()?;
+
+        Ok(())
     }
 
     fn render_canceled_prompt(&mut self, prompt: &str) -> Result<()> {

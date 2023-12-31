@@ -24,6 +24,8 @@ pub type TerminalSize = Dimension;
 pub trait Terminal: Sized {
     fn cursor_up(&mut self, cnt: u16) -> Result<()>;
     fn cursor_down(&mut self, cnt: u16) -> Result<()>;
+    fn cursor_left(&mut self, cnt: u16) -> Result<()>;
+    fn cursor_right(&mut self, cnt: u16) -> Result<()>;
     fn cursor_move_to_column(&mut self, idx: u16) -> Result<()>;
     fn read_key(&mut self) -> Result<Key>;
     fn flush(&mut self) -> Result<()>;

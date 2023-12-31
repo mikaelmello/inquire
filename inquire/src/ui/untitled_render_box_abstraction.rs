@@ -2,6 +2,7 @@ use std::cmp::Ordering;
 use std::fmt::Display;
 use std::hash::{Hash, Hasher};
 use std::io;
+use std::thread::{current, sleep};
 
 use fxhash::FxHasher;
 use unicode_width::UnicodeWidthChar;
@@ -37,8 +38,6 @@ struct FrameState {
     pub terminal_size: TerminalSize,
     /// resulting frame size
     pub frame_size: Dimension,
-    /// cursor position after writing all present content
-    pub cursor_position: Position,
     /// position to put cursor after writing all present content
     pub expected_cursor_position: Option<Position>,
     /// content and pre-calculated hashes for each rendered line
@@ -46,6 +45,7 @@ struct FrameState {
     pub finished_rows: Vec<FrameRow>,
     pub current_styled: Styled<String>,
     pub current_line: Vec<Styled<String>>,
+    pub current_line_width: u16,
     pub current_line_hasher: FxHasher,
 }
 
@@ -54,16 +54,16 @@ impl FrameState {
         Self {
             terminal_size,
             frame_size: Dimension::new(0, 0),
-            cursor_position: Position::default(),
             finished_rows: Vec::new(),
             current_styled: Styled::default(),
             current_line: Vec::new(),
             current_line_hasher: FxHasher::default(),
+            current_line_width: 0,
             expected_cursor_position: None,
         }
     }
 
-    pub fn fit_to_terminal(&mut self, new_size: TerminalSize) {
+    pub fn shrink_if_needed(&mut self, new_size: TerminalSize) {
         if new_size.width() >= self.frame_size.width()
             && new_size.height() >= self.frame_size.height()
         {
@@ -71,17 +71,7 @@ impl FrameState {
             return;
         }
 
-        let mut new_state = Self::new(new_size);
-        for row in &self.finished_rows {
-            for styled in row.get_content() {
-                new_state.write(styled);
-            }
-        }
-        for styled in &self.current_line {
-            new_state.write(styled);
-        }
-
-        *self = new_state;
+        self.recreate_with_new_size(new_size);
     }
 
     pub fn write(&mut self, value: &Styled<impl AsRef<str> + Display>) {
@@ -105,7 +95,7 @@ impl FrameState {
                 continue;
             }
 
-            let remaining_width_space = self.terminal_size.width() - self.cursor_position.col;
+            let remaining_width_space = self.terminal_size.width() - self.current_line_width;
             let character_length = UnicodeWidthChar::width(current_char).unwrap_or(0) as u16;
 
             if character_length > remaining_width_space {
@@ -113,8 +103,8 @@ impl FrameState {
                 self.finish_line();
             }
 
+            self.current_line_width = self.current_line_width.saturating_add(character_length);
             self.current_styled.content.push(current_char);
-            self.cursor_position.col = self.cursor_position.col.saturating_add(character_length);
         }
 
         if !self.current_styled.content.is_empty() {
@@ -124,19 +114,46 @@ impl FrameState {
     }
 
     pub fn mark_cursor_position(&mut self, offset: isize) {
-        let mut expected_position = self.cursor_position;
-        expected_position.col = expected_position.col.saturating_add(offset as u16);
+        let mut row = self.finished_rows.len() as u16;
+        let mut col = self.current_line_width;
 
-        if expected_position.col >= self.terminal_size.width() {
-            expected_position.col -= self.terminal_size.width();
-            expected_position.row += 1;
+        col = col.saturating_add(offset as u16);
+
+        if col >= self.terminal_size.width() {
+            col -= self.terminal_size.width();
+            row += 1;
         }
 
-        self.expected_cursor_position = Some(expected_position);
+        self.expected_cursor_position = Some(Position { row, col });
+
+        println!(
+            "expected cursor position: {:?}, current line width: {}",
+            self.expected_cursor_position, self.current_line_width
+        );
     }
 
     pub fn finish(&mut self) {
         self.finish_line();
+    }
+
+    pub fn recreate_with_new_size(&mut self, new_size: TerminalSize) {
+        if new_size == self.terminal_size {
+            return;
+        }
+
+        let mut new_state = Self::new(new_size);
+        for row in &self.finished_rows {
+            for styled in row.get_content() {
+                new_state.write(styled);
+            }
+            new_state.finish_line();
+        }
+        for styled in &self.current_line {
+            new_state.write(styled);
+        }
+        new_state.finish_line();
+
+        *self = new_state;
     }
 
     fn finish_line(&mut self) {
@@ -157,17 +174,30 @@ impl FrameState {
         self.finished_rows
             .push(FrameRow::new(content, hasher.finish()));
 
-        self.cursor_position = Position {
-            col: 0,
-            row: self.cursor_position.row.saturating_add(1),
-        };
+        self.frame_size = Dimension::new(
+            self.frame_size.width().max(self.current_line_width),
+            self.finished_rows.len() as u16,
+        );
 
         if !self.current_styled.style.is_empty() {
             self.current_styled
                 .style
                 .hash(&mut self.current_line_hasher);
         }
+
+        self.current_line_width = 0;
     }
+}
+
+#[derive(Debug, Default)]
+enum RenderState {
+    #[default]
+    Initial,
+    ActiveRender {
+        last_rendered_frame: FrameState,
+        current_frame: FrameState,
+    },
+    Rendered(FrameState),
 }
 
 pub struct UntitledRenderBoxAbstraction<T>
@@ -175,8 +205,8 @@ where
     T: Terminal,
 {
     terminal: T,
-    last_rendered_frame: FrameState,
-    current_frame: FrameState,
+    cursor_position: Position,
+    state: RenderState,
 }
 
 impl<T> UntitledRenderBoxAbstraction<T>
@@ -184,11 +214,10 @@ where
     T: Terminal,
 {
     pub fn new(terminal: T) -> io::Result<Self> {
-        let terminal_size = terminal.get_size()?;
         Ok(Self {
             terminal,
-            last_rendered_frame: FrameState::new(terminal_size),
-            current_frame: FrameState::new(terminal_size),
+            cursor_position: Position::default(),
+            state: RenderState::Initial,
         })
     }
 
@@ -197,16 +226,26 @@ where
     }
 
     pub fn write_styled(&mut self, value: Styled<impl Display>) -> io::Result<()> {
-        let formatted = format!("{}", value.content);
-        let value = value.with_content(formatted);
+        match &mut self.state {
+            RenderState::Rendered(_) | RenderState::Initial => {}
+            RenderState::ActiveRender { current_frame, .. } => {
+                let formatted = format!("{}", value.content);
+                let value = value.with_content(formatted);
 
-        self.current_frame.write(&value);
+                current_frame.write(&value);
+            }
+        }
 
         Ok(())
     }
 
     pub fn mark_cursor_position(&mut self, offset: isize) {
-        self.current_frame.mark_cursor_position(offset);
+        match &mut self.state {
+            RenderState::Rendered(_) | RenderState::Initial => {}
+            RenderState::ActiveRender { current_frame, .. } => {
+                current_frame.mark_cursor_position(offset);
+            }
+        }
     }
 
     pub fn show_cursor(&mut self) -> io::Result<()> {
@@ -215,7 +254,7 @@ where
     }
 
     pub fn hide_cursor(&mut self) -> io::Result<()> {
-        // self.terminal.cursor_hide()?;
+        self.terminal.cursor_hide()?;
         Ok(())
     }
 
@@ -223,23 +262,86 @@ where
         self.terminal.flush()
     }
 
-    pub fn finish_current_frame(&mut self) -> io::Result<()> {
+    pub fn start_frame(&mut self) -> io::Result<()> {
         let terminal_size = self.terminal.get_size()?;
-        self.last_rendered_frame.fit_to_terminal(terminal_size);
-        self.current_frame.finish();
 
-        let rows_to_iterate = std::cmp::max(
-            self.last_rendered_frame.finished_rows.len(),
-            self.current_frame.finished_rows.len(),
+        self.state = match std::mem::replace(&mut self.state, RenderState::Initial) {
+            RenderState::Initial => RenderState::ActiveRender {
+                last_rendered_frame: FrameState::new(terminal_size),
+                current_frame: FrameState::new(terminal_size),
+            },
+            RenderState::Rendered(last_rendered_frame) => RenderState::ActiveRender {
+                last_rendered_frame,
+                current_frame: FrameState::new(terminal_size),
+            },
+            RenderState::ActiveRender {
+                last_rendered_frame,
+                mut current_frame,
+            } => {
+                current_frame.recreate_with_new_size(terminal_size);
+                RenderState::ActiveRender {
+                    last_rendered_frame,
+                    current_frame,
+                }
+            }
+        };
+
+        Ok(())
+    }
+
+    pub fn finish_current_frame(&mut self) -> io::Result<()> {
+        let (mut last_rendered_frame, mut current_frame) = match std::mem::take(&mut self.state) {
+            RenderState::Rendered(_) | RenderState::Initial => {
+                return Ok(());
+            }
+            RenderState::ActiveRender {
+                last_rendered_frame,
+                current_frame,
+            } => (last_rendered_frame, current_frame),
+        };
+
+        println!(
+            "lines from last frame: {:?}",
+            last_rendered_frame.finished_rows.len()
+        );
+        println!(
+            "lines from current frame: {:?}",
+            current_frame.finished_rows.len()
         );
 
-        let cursor_position = self.last_rendered_frame.cursor_position;
-        self.terminal.cursor_up(cursor_position.row)?;
+        let terminal_size = self.terminal.get_size()?;
+        current_frame.finish();
+        last_rendered_frame.shrink_if_needed(terminal_size);
+
+        println!("after fit and finish");
+        println!(
+            "lines from last frame: {:?}",
+            last_rendered_frame.finished_rows.len()
+        );
+        println!(
+            "lines from current frame: {:?}",
+            current_frame.finished_rows.len()
+        );
+
+        if terminal_size.width() < self.cursor_position.col {
+            let new_line_offset = self.cursor_position.col / terminal_size.width();
+            let new_col = self.cursor_position.col % terminal_size.width();
+            self.cursor_position = Position {
+                row: self.cursor_position.row + new_line_offset,
+                col: new_col,
+            };
+        }
+
+        let rows_to_iterate = std::cmp::max(
+            last_rendered_frame.frame_size.height(),
+            current_frame.frame_size.height(),
+        );
+
+        self.move_cursor_to(Position { row: 0, col: 0 })?;
 
         for i in 0..rows_to_iterate {
-            let last_row = self.last_rendered_frame.finished_rows.get(i);
-            let current_row = self.current_frame.finished_rows.get(i);
-            self.terminal.cursor_move_to_column(0)?;
+            let last_row = last_rendered_frame.finished_rows.get(i as usize);
+            let current_row = current_frame.finished_rows.get(i as usize);
 
             match (last_row, current_row) {
                 (Some(last_row), Some(current_row)) => {
@@ -259,46 +361,92 @@ where
                     }
                 }
                 (None, None) => {
-                    // unreachable, but we don't want to panic :)
+                    // unreachable, but we don't want to panic live :)
+                    #[cfg(test)]
+                    unreachable!(
+                        "frame_size should never be larger then finished_rows for both frames"
+                    )
                 }
             }
 
-            self.terminal.write("\n")?;
+            self.terminal.write("\r")?;
+            self.cursor_position.col = 0;
+            if i + 1 < rows_to_iterate {
+                self.terminal.write("\n")?;
+                self.cursor_position.row += 1;
+            }
+        }
+
+        if let Some(expected_cursor_position) = current_frame.expected_cursor_position {
+            self.move_cursor_to(expected_cursor_position)?;
         }
 
         self.terminal.flush()?;
 
-        self.last_rendered_frame =
-            std::mem::replace(&mut self.current_frame, FrameState::new(terminal_size));
+        self.state = RenderState::Rendered(current_frame);
 
         Ok(())
     }
 
     fn move_cursor_to_end_position(&mut self) -> io::Result<()> {
+        let last_rendered = match &mut self.state {
+            RenderState::Initial => return Ok(()),
+            RenderState::ActiveRender {
+                last_rendered_frame,
+                ..
+            }
+            | RenderState::Rendered(last_rendered_frame) => last_rendered_frame,
+        };
+
         let terminal_size = self.terminal.get_size()?;
-        self.current_frame.fit_to_terminal(terminal_size);
+        last_rendered.shrink_if_needed(terminal_size);
 
-        // TODO: fit to terminal is not adapted to fix the cursor position, fix it.
-        // TODO: fit to terminal is not handling final line correctly, fix it.
-
-        let cursor_position = self.current_frame.cursor_position;
         let end_position = Position {
             col: 0,
-            row: self.current_frame.frame_size.height(),
+            row: last_rendered.frame_size.height(),
         };
-        self.terminal.cursor_move_to_column(0)?;
 
-        match end_position.row.cmp(&cursor_position.row) {
+        self.move_cursor_to(end_position)?;
+
+        Ok(())
+    }
+
+    fn move_cursor_to(&mut self, position: Position) -> io::Result<()> {
+        let current_cursor_position = self.cursor_position;
+        println!(
+            "moving from {:?} to {:?}",
+            current_cursor_position, position
+        );
+
+        match current_cursor_position.row.cmp(&position.row) {
             Ordering::Greater => {
                 self.terminal
-                    .cursor_down(end_position.row - cursor_position.row)?;
+                    .cursor_up(current_cursor_position.row - position.row)?;
             }
             Ordering::Less => {
+                println!(
+                    "executing cursor down {} times",
+                    position.row - current_cursor_position.row
+                );
                 self.terminal
-                    .cursor_up(cursor_position.row - end_position.row)?;
+                    .cursor_down(position.row - current_cursor_position.row)?;
             }
             Ordering::Equal => {}
         }
+
+        match current_cursor_position.col.cmp(&position.col) {
+            Ordering::Greater => {
+                self.terminal
+                    .cursor_left(current_cursor_position.col - position.col)?;
+            }
+            Ordering::Less => {
+                self.terminal
+                    .cursor_right(position.col - current_cursor_position.col)?;
+            }
+            Ordering::Equal => {}
+        }
+
+        self.cursor_position = position;
 
         Ok(())
     }

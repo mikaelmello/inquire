@@ -119,6 +119,20 @@ impl<'a> Terminal for TermionTerminal<'a> {
         write!(self.get_writer(), "{}", cursor::Down(cnt))
     }
 
+    fn cursor_left(&mut self, cnt: u16) -> Result<()> {
+        if cnt == 0 {
+            return Ok(());
+        }
+        write!(self.get_writer(), "{}", cursor::Left(cnt))
+    }
+
+    fn cursor_right(&mut self, cnt: u16) -> Result<()> {
+        if cnt == 0 {
+            return Ok(());
+        }
+        write!(self.get_writer(), "{}", cursor::Right(cnt))
+    }
+
     fn cursor_move_to_column(&mut self, idx: u16) -> Result<()> {
         write!(self.get_writer(), "\x1b[{}G", idx.saturating_add(1))
     }

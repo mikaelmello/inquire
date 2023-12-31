@@ -36,6 +36,20 @@ impl Terminal for ConsoleTerminal {
         self.term.move_cursor_down(cnt as usize)
     }
 
+    fn cursor_left(&mut self, cnt: u16) -> Result<()> {
+        if cnt == 0 {
+            return Ok(());
+        }
+        self.term.move_cursor_left(cnt as usize)
+    }
+
+    fn cursor_right(&mut self, cnt: u16) -> Result<()> {
+        if cnt == 0 {
+            return Ok(());
+        }
+        self.term.move_cursor_right(cnt as usize)
+    }
+
     fn cursor_move_to_column(&mut self, idx: u16) -> Result<()> {
         // console has no built-in method to set cursor column ¯\_(ツ)_/¯
         self.term.move_cursor_left(1000)?;
