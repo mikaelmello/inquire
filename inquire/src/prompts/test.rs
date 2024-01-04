@@ -8,11 +8,13 @@ where
     T: Iterator<Item = Key>,
 {
     fn read_key(&mut self) -> crate::error::InquireResult<Key> {
-        self.next()
-            .ok_or(crate::error::InquireError::IO(std::io::Error::new(
-                std::io::ErrorKind::UnexpectedEof,
-                "No more keys in input",
-            )))
+        let key = self.next();
+        println!("key: {:?}", key);
+
+        match key {
+            Some(key) => Ok(key),
+            None => panic!("EOF"),
+        }
     }
 }
 
