@@ -62,17 +62,6 @@ impl FrameState {
         }
     }
 
-    pub fn shrink_if_needed(&mut self, new_size: TerminalSize) {
-        if new_size.width() >= self.frame_size.width()
-            && new_size.height() >= self.frame_size.height()
-        {
-            self.terminal_size = new_size;
-            return;
-        }
-
-        self.recreate_with_new_size(new_size);
-    }
-
     pub fn write(&mut self, value: &Styled<impl AsRef<str> + Display>) {
         self.current_styled.style = value.style;
 
@@ -130,7 +119,7 @@ impl FrameState {
         self.finish_line();
     }
 
-    pub fn recreate_with_new_size(&mut self, new_size: TerminalSize) {
+    pub fn resize_if_needed(&mut self, new_size: TerminalSize) {
         if new_size == self.terminal_size {
             return;
         }
@@ -194,7 +183,7 @@ enum RenderState {
     Rendered(FrameState),
 }
 
-pub struct UntitledRenderBoxAbstraction<T>
+pub struct FrameRenderer<T>
 where
     T: Terminal,
 {
@@ -203,7 +192,7 @@ where
     state: RenderState,
 }
 
-impl<T> UntitledRenderBoxAbstraction<T>
+impl<T> FrameRenderer<T>
 where
     T: Terminal,
 {
@@ -223,6 +212,11 @@ where
         match &mut self.state {
             RenderState::Rendered(_) | RenderState::Initial => {}
             RenderState::ActiveRender { current_frame, .. } => {
+                // here we are converting from a generic impl Display to String
+                // because we are storing the string content in the frame (we can't store a ref to an object, for example).
+                //
+                // we pay a little bit in memory/cpu usage for this so we can
+                // calculate incremental rendering and cursor position on-the-fly.
                 let formatted = format!("{}", value.content);
                 let value = value.with_content(formatted);
 
@@ -245,20 +239,37 @@ where
     pub fn start_frame(&mut self) -> io::Result<()> {
         let terminal_size = self.terminal.get_size()?;
 
+        if terminal_size.width() < self.cursor_position.col {
+            let new_line_offset = self.cursor_position.col / terminal_size.width();
+            let new_col = self.cursor_position.col % terminal_size.width();
+            self.cursor_position = Position {
+                row: self.cursor_position.row + new_line_offset,
+                col: new_col,
+            };
+        }
+
         self.state = match std::mem::replace(&mut self.state, RenderState::Initial) {
             RenderState::Initial => RenderState::ActiveRender {
                 last_rendered_frame: FrameState::new(terminal_size),
                 current_frame: FrameState::new(terminal_size),
             },
-            RenderState::Rendered(last_rendered_frame) => RenderState::ActiveRender {
-                last_rendered_frame,
-                current_frame: FrameState::new(terminal_size),
-            },
+
+            RenderState::Rendered(mut last_rendered_frame) => {
+                last_rendered_frame.resize_if_needed(terminal_size);
+
+                RenderState::ActiveRender {
+                    last_rendered_frame,
+                    current_frame: FrameState::new(terminal_size),
+                }
+            }
+
             RenderState::ActiveRender {
-                last_rendered_frame,
+                mut last_rendered_frame,
                 mut current_frame,
             } => {
-                current_frame.recreate_with_new_size(terminal_size);
+                last_rendered_frame.resize_if_needed(terminal_size);
+                current_frame.resize_if_needed(terminal_size);
+
                 RenderState::ActiveRender {
                     last_rendered_frame,
                     current_frame,
@@ -270,7 +281,7 @@ where
     }
 
     pub fn finish_current_frame(&mut self) -> io::Result<()> {
-        let (mut last_rendered_frame, mut current_frame) = match std::mem::take(&mut self.state) {
+        let (last_rendered_frame, mut current_frame) = match std::mem::take(&mut self.state) {
             RenderState::Rendered(_) | RenderState::Initial => {
                 return Ok(());
             }
@@ -280,18 +291,7 @@ where
             } => (last_rendered_frame, current_frame),
         };
 
-        let terminal_size = self.terminal.get_size()?;
         current_frame.finish();
-        last_rendered_frame.shrink_if_needed(terminal_size);
-
-        if terminal_size.width() < self.cursor_position.col {
-            let new_line_offset = self.cursor_position.col / terminal_size.width();
-            let new_col = self.cursor_position.col % terminal_size.width();
-            self.cursor_position = Position {
-                row: self.cursor_position.row + new_line_offset,
-                col: new_col,
-            };
-        }
 
         let rows_to_iterate = std::cmp::max(
             last_rendered_frame.frame_size.height(),
@@ -362,7 +362,7 @@ where
         };
 
         let terminal_size = self.terminal.get_size()?;
-        last_rendered.shrink_if_needed(terminal_size);
+        last_rendered.resize_if_needed(terminal_size);
 
         let end_position = Position {
             col: 0,
@@ -407,7 +407,7 @@ where
     }
 }
 
-impl<T> Drop for UntitledRenderBoxAbstraction<T>
+impl<T> Drop for FrameRenderer<T>
 where
     T: Terminal,
 {

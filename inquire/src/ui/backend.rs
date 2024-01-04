@@ -10,7 +10,7 @@ use crate::{
     validator::ErrorMessage,
 };
 
-use super::{untitled_render_box_abstraction::UntitledRenderBoxAbstraction, InputReader};
+use super::{frame_renderer::FrameRenderer, InputReader};
 
 pub trait CommonBackend: InputReader {
     fn frame_setup(&mut self) -> Result<()>;
@@ -78,7 +78,7 @@ where
     I: InputReader,
     T: Terminal,
 {
-    untitled_render_box_abstraction: UntitledRenderBoxAbstraction<T>,
+    frame_renderer: FrameRenderer<T>,
     input_reader: I,
     render_config: RenderConfig<'a>,
 }
@@ -91,7 +91,7 @@ where
     #[allow(clippy::large_types_passed_by_value)]
     pub fn new(input_reader: I, terminal: T, render_config: RenderConfig<'a>) -> Result<Self> {
         let backend = Self {
-            untitled_render_box_abstraction: UntitledRenderBoxAbstraction::new(terminal)?,
+            frame_renderer: FrameRenderer::new(terminal)?,
             input_reader,
             render_config,
         };
@@ -116,7 +116,7 @@ where
             empty_prefix
         };
 
-        self.untitled_render_box_abstraction.write_styled(x)
+        self.frame_renderer.write_styled(x)
     }
 
     fn print_option_value<D: Display>(
@@ -134,7 +134,7 @@ where
             self.render_config.option
         };
 
-        self.untitled_render_box_abstraction
+        self.frame_renderer
             .write_styled(Styled::new(&option.value).with_style_sheet(stylesheet))
     }
 
@@ -155,7 +155,7 @@ where
         };
 
         content.map(|prefix| {
-            self.untitled_render_box_abstraction
+            self.frame_renderer
                 .write_styled(Styled::new(prefix).with_style_sheet(self.render_config.option))
         })
     }
@@ -164,15 +164,15 @@ where
         let content = format!("({value})");
         let token = Styled::new(content).with_style_sheet(self.render_config.default_value);
 
-        self.untitled_render_box_abstraction.write_styled(token)
+        self.frame_renderer.write_styled(token)
     }
 
     fn print_prompt_with_prefix(&mut self, prefix: Styled<&str>, prompt: &str) -> Result<()> {
-        self.untitled_render_box_abstraction.write_styled(prefix)?;
+        self.frame_renderer.write_styled(prefix)?;
 
-        self.untitled_render_box_abstraction.write(" ")?;
+        self.frame_renderer.write(" ")?;
 
-        self.untitled_render_box_abstraction
+        self.frame_renderer
             .write_styled(Styled::new(prompt).with_style_sheet(self.render_config.prompt))?;
 
         Ok(())
@@ -183,22 +183,22 @@ where
     }
 
     fn print_input(&mut self, input: &Input) -> Result<()> {
-        self.untitled_render_box_abstraction.write(" ")?;
+        self.frame_renderer.write(" ")?;
 
         let cursor_offset = input.pre_cursor().chars().count();
-        self.untitled_render_box_abstraction
+        self.frame_renderer
             .mark_cursor_position(cursor_offset as isize);
 
         if input.is_empty() {
             match input.placeholder() {
                 None => {}
                 Some(p) if p.is_empty() => {}
-                Some(p) => self.untitled_render_box_abstraction.write_styled(
+                Some(p) => self.frame_renderer.write_styled(
                     Styled::new(p).with_style_sheet(self.render_config.placeholder),
                 )?,
             }
         } else {
-            self.untitled_render_box_abstraction.write_styled(
+            self.frame_renderer.write_styled(
                 Styled::new(input.content()).with_style_sheet(self.render_config.text_input),
             )?;
         }
@@ -207,7 +207,7 @@ where
         // a space, otherwise the cursor will render on the
         // \n character, on the next line.
         if input.cursor() == input.length() {
-            self.untitled_render_box_abstraction.write(' ')?;
+            self.frame_renderer.write(' ')?;
         }
 
         Ok(())
@@ -222,7 +222,7 @@ where
         self.print_prompt(prompt)?;
 
         if let Some(default) = default {
-            self.untitled_render_box_abstraction.write(" ")?;
+            self.frame_renderer.write(" ")?;
             self.print_default_value(default)?;
         }
 
@@ -234,7 +234,7 @@ where
     }
 
     fn new_line(&mut self) -> Result<()> {
-        self.untitled_render_box_abstraction.write("\n")?;
+        self.frame_renderer.write("\n")?;
         Ok(())
     }
 }
@@ -245,19 +245,19 @@ where
     T: Terminal,
 {
     fn frame_setup(&mut self) -> Result<()> {
-        self.untitled_render_box_abstraction.start_frame()
+        self.frame_renderer.start_frame()
     }
 
     fn frame_finish(&mut self) -> Result<()> {
-        self.untitled_render_box_abstraction.finish_current_frame()
+        self.frame_renderer.finish_current_frame()
     }
 
     fn render_canceled_prompt(&mut self, prompt: &str) -> Result<()> {
         self.print_prompt(prompt)?;
 
-        self.untitled_render_box_abstraction.write(" ")?;
+        self.frame_renderer.write(" ")?;
 
-        self.untitled_render_box_abstraction
+        self.frame_renderer
             .write_styled(self.render_config.canceled_prompt_indicator)?;
 
         self.new_line()?;
@@ -268,10 +268,10 @@ where
     fn render_prompt_with_answer(&mut self, prompt: &str, answer: &str) -> Result<()> {
         self.print_prompt_with_prefix(self.render_config.answered_prompt_prefix, prompt)?;
 
-        self.untitled_render_box_abstraction.write(" ")?;
+        self.frame_renderer.write(" ")?;
 
         let token = Styled::new(answer).with_style_sheet(self.render_config.answer);
-        self.untitled_render_box_abstraction.write_styled(token)?;
+        self.frame_renderer.write_styled(token)?;
 
         self.new_line()?;
 
@@ -279,10 +279,10 @@ where
     }
 
     fn render_error_message(&mut self, error: &ErrorMessage) -> Result<()> {
-        self.untitled_render_box_abstraction
+        self.frame_renderer
             .write_styled(self.render_config.error_message.prefix)?;
 
-        self.untitled_render_box_abstraction.write_styled(
+        self.frame_renderer.write_styled(
             Styled::new(" ").with_style_sheet(self.render_config.error_message.separator),
         )?;
 
@@ -291,7 +291,7 @@ where
             ErrorMessage::Custom(msg) => msg,
         };
 
-        self.untitled_render_box_abstraction.write_styled(
+        self.frame_renderer.write_styled(
             Styled::new(message).with_style_sheet(self.render_config.error_message.message),
         )?;
 
@@ -301,13 +301,13 @@ where
     }
 
     fn render_help_message(&mut self, help: &str) -> Result<()> {
-        self.untitled_render_box_abstraction
+        self.frame_renderer
             .write_styled(Styled::new("[").with_style_sheet(self.render_config.help_message))?;
 
-        self.untitled_render_box_abstraction
+        self.frame_renderer
             .write_styled(Styled::new(help).with_style_sheet(self.render_config.help_message))?;
 
-        self.untitled_render_box_abstraction
+        self.frame_renderer
             .write_styled(Styled::new("]").with_style_sheet(self.render_config.help_message))?;
 
         self.new_line()?;
@@ -334,7 +334,7 @@ where
         for (idx, option) in page.content.iter().enumerate() {
             self.print_option_prefix(idx, &page)?;
 
-            self.untitled_render_box_abstraction.write(" ")?;
+            self.frame_renderer.write(" ")?;
             self.print_option_value(idx, option, &page)?;
 
             self.new_line()?;
@@ -353,11 +353,11 @@ where
     fn render_prompt(&mut self, prompt: &str, editor_command: &str) -> Result<()> {
         self.print_prompt(prompt)?;
 
-        self.untitled_render_box_abstraction.write(" ")?;
+        self.frame_renderer.write(" ")?;
 
         let message = format!("[(e) to open {}, (enter) to submit]", editor_command);
         let token = Styled::new(message).with_style_sheet(self.render_config.editor_prompt);
-        self.untitled_render_box_abstraction.write_styled(token)?;
+        self.frame_renderer.write_styled(token)?;
 
         self.new_line()?;
 
@@ -382,11 +382,11 @@ where
         for (idx, option) in page.content.iter().enumerate() {
             self.print_option_prefix(idx, &page)?;
 
-            self.untitled_render_box_abstraction.write(" ")?;
+            self.frame_renderer.write(" ")?;
 
             if let Some(res) = self.print_option_index_prefix(option.index, page.total) {
                 res?;
-                self.untitled_render_box_abstraction.write(" ")?;
+                self.frame_renderer.write(" ")?;
             }
 
             self.print_option_value(idx, option, &page)?;
@@ -419,11 +419,11 @@ where
         for (idx, option) in page.content.iter().enumerate() {
             self.print_option_prefix(idx, &page)?;
 
-            self.untitled_render_box_abstraction.write(" ")?;
+            self.frame_renderer.write(" ")?;
 
             if let Some(res) = self.print_option_index_prefix(option.index, page.total) {
                 res?;
-                self.untitled_render_box_abstraction.write(" ")?;
+                self.frame_renderer.write(" ")?;
             }
 
             let mut checkbox = match checked.contains(&option.index) {
@@ -436,10 +436,9 @@ where
                 _ => {}
             }
 
-            self.untitled_render_box_abstraction
-                .write_styled(checkbox)?;
+            self.frame_renderer.write_styled(checkbox)?;
 
-            self.untitled_render_box_abstraction.write(" ")?;
+            self.frame_renderer.write(" ")?;
 
             self.print_option_value(idx, option, &page)?;
 
@@ -503,9 +502,9 @@ pub mod date {
         ) -> Result<()> {
             macro_rules! write_prefix {
                 () => {{
-                    self.untitled_render_box_abstraction
+                    self.frame_renderer
                         .write_styled(self.render_config.calendar.prefix)?;
-                    self.untitled_render_box_abstraction.write(" ")
+                    self.frame_renderer.write(" ")
                 }};
             }
 
@@ -516,7 +515,7 @@ pub mod date {
 
             write_prefix!()?;
 
-            self.untitled_render_box_abstraction.write_styled(header)?;
+            self.frame_renderer.write_styled(header)?;
 
             self.new_line()?;
 
@@ -537,8 +536,7 @@ pub mod date {
 
             write_prefix!()?;
 
-            self.untitled_render_box_abstraction
-                .write_styled(week_days)?;
+            self.frame_renderer.write_styled(week_days)?;
             self.new_line()?;
 
             // print dates
@@ -560,7 +558,7 @@ pub mod date {
 
                 for i in 0..7 {
                     if i > 0 {
-                        self.untitled_render_box_abstraction.write(" ")?;
+                        self.frame_renderer.write(" ")?;
                     }
 
                     let date = format!("{:2}", date_it.day());
@@ -570,8 +568,7 @@ pub mod date {
                     let mut style_sheet = crate::ui::StyleSheet::empty();
 
                     if date_it == selected_date {
-                        self.untitled_render_box_abstraction
-                            .mark_cursor_position(cursor_offset);
+                        self.frame_renderer.mark_cursor_position(cursor_offset);
                         if let Some(custom_style_sheet) = self.render_config.calendar.selected_date
                         {
                             style_sheet = custom_style_sheet;
@@ -595,7 +592,7 @@ pub mod date {
                     }
 
                     let token = Styled::new(date).with_style_sheet(style_sheet);
-                    self.untitled_render_box_abstraction.write_styled(token)?;
+                    self.frame_renderer.write_styled(token)?;
 
                     date_it = date_it.succ_opt().unwrap_or(date_it);
                 }

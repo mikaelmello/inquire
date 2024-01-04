@@ -3,11 +3,11 @@
 mod backend;
 mod color;
 pub(crate) mod dimension;
+mod frame_renderer;
 mod input_reader;
 mod key;
 mod render_config;
 mod style;
-mod untitled_render_box_abstraction;
 
 pub(crate) use backend::*;
 pub(crate) use input_reader::*;
