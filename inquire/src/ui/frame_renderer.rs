@@ -237,16 +237,7 @@ where
     }
 
     pub fn start_frame(&mut self) -> io::Result<()> {
-        let terminal_size = self.terminal.get_size()?;
-
-        if terminal_size.width() < self.cursor_position.col {
-            let new_line_offset = self.cursor_position.col / terminal_size.width();
-            let new_col = self.cursor_position.col % terminal_size.width();
-            self.cursor_position = Position {
-                row: self.cursor_position.row + new_line_offset,
-                col: new_col,
-            };
-        }
+        let terminal_size = self.refresh_terminal_size();
 
         self.state = match std::mem::replace(&mut self.state, RenderState::Initial) {
             RenderState::Initial => RenderState::ActiveRender {
@@ -254,27 +245,18 @@ where
                 current_frame: FrameState::new(terminal_size),
             },
 
-            RenderState::Rendered(mut last_rendered_frame) => {
-                last_rendered_frame.resize_if_needed(terminal_size);
-
-                RenderState::ActiveRender {
-                    last_rendered_frame,
-                    current_frame: FrameState::new(terminal_size),
-                }
-            }
+            RenderState::Rendered(last_rendered_frame) => RenderState::ActiveRender {
+                last_rendered_frame,
+                current_frame: FrameState::new(terminal_size),
+            },
 
             RenderState::ActiveRender {
-                mut last_rendered_frame,
-                mut current_frame,
-            } => {
-                last_rendered_frame.resize_if_needed(terminal_size);
-                current_frame.resize_if_needed(terminal_size);
-
-                RenderState::ActiveRender {
-                    last_rendered_frame,
-                    current_frame,
-                }
-            }
+                last_rendered_frame,
+                current_frame,
+            } => RenderState::ActiveRender {
+                last_rendered_frame,
+                current_frame,
+            },
         };
 
         Ok(())
@@ -352,6 +334,8 @@ where
     }
 
     fn move_cursor_to_end_position(&mut self) -> io::Result<()> {
+        self.refresh_terminal_size();
+
         let last_rendered = match &mut self.state {
             RenderState::Initial => return Ok(()),
             RenderState::ActiveRender {
@@ -360,9 +344,6 @@ where
             }
             | RenderState::Rendered(last_rendered_frame) => last_rendered_frame,
         };
-
-        let terminal_size = self.terminal.get_size()?;
-        last_rendered.resize_if_needed(terminal_size);
 
         let end_position = Position {
             col: 0,
@@ -404,6 +385,41 @@ where
         self.cursor_position = position;
 
         Ok(())
+    }
+
+    fn refresh_terminal_size(&mut self) -> TerminalSize {
+        // not properly handling resizes is better than panicking, so when
+        // getting the terminal size fails, we assume we're on a terminal
+        // that will always have enough space
+        let terminal_size = self
+            .terminal
+            .get_size()
+            .unwrap_or(TerminalSize::new(1000, 1000));
+
+        if terminal_size.width() < self.cursor_position.col {
+            let new_line_offset = self.cursor_position.col / terminal_size.width();
+            let new_col = self.cursor_position.col % terminal_size.width();
+            self.cursor_position = Position {
+                row: self.cursor_position.row + new_line_offset,
+                col: new_col,
+            };
+        }
+
+        match &mut self.state {
+            RenderState::Initial => {}
+            RenderState::ActiveRender {
+                current_frame,
+                last_rendered_frame,
+            } => {
+                last_rendered_frame.resize_if_needed(terminal_size);
+                current_frame.resize_if_needed(terminal_size);
+            }
+            RenderState::Rendered(last_rendered_frame) => {
+                last_rendered_frame.resize_if_needed(terminal_size);
+            }
+        };
+
+        terminal_size
     }
 }
 
