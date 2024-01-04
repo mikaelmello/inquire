@@ -458,7 +458,7 @@ pub mod calendar {
         /// When `None`, no custom style sheet will be applied and the native
         /// terminal cursor will be used in the first char of the date number.
         ///
-        /// Whem `Some(_)`, the style sheet will be applied to the two columns
+        /// When `Some(_)`, the style sheet will be applied to the two columns
         /// where the number is positioned, padded to spaces in the left if the
         /// number only has one digit. e.g. " 5" or "23".
         pub selected_date: Option<StyleSheet>,

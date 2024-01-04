@@ -125,11 +125,6 @@ impl FrameState {
         }
 
         self.expected_cursor_position = Some(Position { row, col });
-
-        println!(
-            "expected cursor position: {:?}, current line width: {}",
-            self.expected_cursor_position, self.current_line_width
-        );
     }
 
     pub fn finish(&mut self) {
@@ -300,28 +295,9 @@ where
             } => (last_rendered_frame, current_frame),
         };
 
-        println!(
-            "lines from last frame: {:?}",
-            last_rendered_frame.finished_rows.len()
-        );
-        println!(
-            "lines from current frame: {:?}",
-            current_frame.finished_rows.len()
-        );
-
         let terminal_size = self.terminal.get_size()?;
         current_frame.finish();
         last_rendered_frame.shrink_if_needed(terminal_size);
-
-        println!("after fit and finish");
-        println!(
-            "lines from last frame: {:?}",
-            last_rendered_frame.finished_rows.len()
-        );
-        println!(
-            "lines from current frame: {:?}",
-            current_frame.finished_rows.len()
-        );
 
         if terminal_size.width() < self.cursor_position.col {
             let new_line_offset = self.cursor_position.col / terminal_size.width();
@@ -413,10 +389,6 @@ where
 
     fn move_cursor_to(&mut self, position: Position) -> io::Result<()> {
         let current_cursor_position = self.cursor_position;
-        println!(
-            "moving from {:?} to {:?}",
-            current_cursor_position, position
-        );
 
         match current_cursor_position.row.cmp(&position.row) {
             Ordering::Greater => {
@@ -424,10 +396,6 @@ where
                     .cursor_up(current_cursor_position.row - position.row)?;
             }
             Ordering::Less => {
-                println!(
-                    "executing cursor down {} times",
-                    position.row - current_cursor_position.row
-                );
                 self.terminal
                     .cursor_down(position.row - current_cursor_position.row)?;
             }
