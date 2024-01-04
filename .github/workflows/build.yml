@@ -105,21 +105,21 @@ jobs:
             ${{ runner.os }}-cargo-files-${{ matrix.build}}
 
       - name: Test (default)
-        run: cargo test --verbose
+        run: cargo test
 
       - name: Test (termion)
         if: matrix.os != 'windows-latest'
-        run: cargo test --verbose --no-default-features --features=termion
+        run: cargo test --no-default-features --features=termion
 
       - name: Test (crossterm)
-        run: cargo test --verbose --no-default-features --features=crossterm
+        run: cargo test --no-default-features --features=crossterm
 
       - name: Test (console)
-        run: cargo test --verbose --no-default-features --features=console
+        run: cargo test --no-default-features --features=console
 
       - name: Test (all features)
         if: matrix.os != 'windows-latest'
-        run: cargo test --verbose --all-features
+        run: cargo test --all-features
 
       - name: Check format
         if: ${{ false }}
