@@ -168,9 +168,14 @@ pub trait AnsiStrippable {
     fn ansi_stripped_chars(&self) -> AnsiStrippedChars<'_>;
 }
 
-impl AnsiStrippable for &str {
+impl<T> AnsiStrippable for T
+where
+    T: AsRef<str>,
+{
     fn ansi_stripped_chars(&self) -> AnsiStrippedChars<'_> {
-        AnsiStrippedChars { input: self }
+        AnsiStrippedChars {
+            input: self.as_ref(),
+        }
     }
 }
 
@@ -178,9 +183,14 @@ pub trait AnsiAware {
     fn ansi_aware_chars(&self) -> AnsiAwareChars<'_>;
 }
 
-impl AnsiAware for &str {
+impl<T> AnsiAware for T
+where
+    T: AsRef<str>,
+{
     fn ansi_aware_chars(&self) -> AnsiAwareChars<'_> {
-        AnsiAwareChars { input: self }
+        AnsiAwareChars {
+            input: self.as_ref(),
+        }
     }
 }
 
