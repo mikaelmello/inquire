@@ -1,7 +1,4 @@
-use std::{
-    collections::VecDeque,
-    io::{stderr, Result, Stderr, Write},
-};
+use std::io::{stderr, Result, Stderr, Write};
 
 use crossterm::{
     cursor,
@@ -14,20 +11,15 @@ use crossterm::{
 
 use crate::{
     error::InquireResult,
-    ui::{Attributes, Key, Styled},
+    ui::{Attributes, InputReader, Key, Styled},
 };
 
-use super::{Terminal, INITIAL_IN_MEMORY_CAPACITY};
+use super::Terminal;
 
 enum IO {
-    Std {
-        w: Stderr,
-    },
+    Std(Stderr),
     #[allow(unused)]
-    Test {
-        w: Vec<u8>,
-        r: VecDeque<KeyEvent>,
-    },
+    Test(Vec<u8>),
 }
 
 pub struct CrosstermTerminal {
@@ -35,20 +27,38 @@ pub struct CrosstermTerminal {
     in_memory_content: String,
 }
 
+pub struct CrosstermKeyReader;
+
+impl CrosstermKeyReader {
+    pub fn new() -> Self {
+        Self
+    }
+}
+
+impl InputReader for CrosstermKeyReader {
+    fn read_key(&mut self) -> InquireResult<Key> {
+        loop {
+            if let event::Event::Key(key_event) = event::read()? {
+                return Ok(key_event.into());
+            }
+        }
+    }
+}
+
 impl CrosstermTerminal {
     pub fn new() -> InquireResult<Self> {
         crossterm::terminal::enable_raw_mode()?;
 
         Ok(Self {
-            io: IO::Std { w: stderr() },
-            in_memory_content: String::with_capacity(INITIAL_IN_MEMORY_CAPACITY),
+            io: IO::Std(stderr()),
+            in_memory_content: String::new(),
         })
     }
 
     fn get_writer(&mut self) -> &mut dyn Write {
         match &mut self.io {
-            IO::Std { w } => w,
-            IO::Test { r: _, w } => w,
+            IO::Std(w) => w,
+            IO::Test(w) => w,
         }
     }
 
@@ -90,53 +100,35 @@ impl CrosstermTerminal {
 
 impl Terminal for CrosstermTerminal {
     fn cursor_up(&mut self, cnt: u16) -> Result<()> {
-        if cnt == 0 {
-            return Ok(());
+        match cnt {
+            0 => Ok(()),
+            cnt => self.write_command(cursor::MoveUp(cnt)),
         }
-        self.write_command(cursor::MoveUp(cnt))
     }
 
     fn cursor_down(&mut self, cnt: u16) -> Result<()> {
-        if cnt == 0 {
-            return Ok(());
+        match cnt {
+            0 => Ok(()),
+            cnt => self.write_command(cursor::MoveDown(cnt)),
         }
-        self.write_command(cursor::MoveDown(cnt))
+    }
+
+    fn cursor_left(&mut self, cnt: u16) -> Result<()> {
+        match cnt {
+            0 => Ok(()),
+            cnt => self.write_command(cursor::MoveLeft(cnt)),
+        }
+    }
+
+    fn cursor_right(&mut self, cnt: u16) -> Result<()> {
+        match cnt {
+            0 => Ok(()),
+            cnt => self.write_command(cursor::MoveRight(cnt)),
+        }
     }
 
     fn cursor_move_to_column(&mut self, idx: u16) -> Result<()> {
         self.write_command(cursor::MoveToColumn(idx))
-    }
-
-    fn cursor_right(&mut self, cnt: u16) -> Result<()> {
-        if cnt == 0 {
-            return Ok(());
-        }
-        self.write_command(cursor::MoveRight(cnt))
-    }
-
-    fn cursor_left(&mut self, cnt: u16) -> Result<()> {
-        if cnt == 0 {
-            return Ok(());
-        }
-        self.write_command(cursor::MoveLeft(cnt))
-    }
-
-    fn read_key(&mut self) -> Result<Key> {
-        loop {
-            match &mut self.io {
-                IO::Std { w: _ } => {
-                    if let event::Event::Key(key_event) = event::read()? {
-                        return Ok(key_event.into());
-                    }
-                }
-                IO::Test { r, w: _ } => {
-                    let key = r
-                        .pop_front()
-                        .expect("Custom stream of characters has ended");
-                    return Ok(key.into());
-                }
-            }
-        }
     }
 
     fn flush(&mut self) -> Result<()> {
@@ -148,11 +140,8 @@ impl Terminal for CrosstermTerminal {
     }
 
     fn write<T: std::fmt::Display>(&mut self, val: T) -> Result<()> {
-        let formatted = format!("{val}");
-        let converted = newline_converter::unix2dos(&formatted);
-
-        self.in_memory_content.push_str(converted.as_ref());
-        self.write_command(Print(converted))
+        self.in_memory_content.push_str(&val.to_string());
+        self.write_command(Print(val))
     }
 
     fn write_styled<T: std::fmt::Display>(&mut self, val: &Styled<T>) -> Result<()> {
@@ -181,7 +170,7 @@ impl Terminal for CrosstermTerminal {
         Ok(())
     }
 
-    fn clear_current_line(&mut self) -> Result<()> {
+    fn clear_line(&mut self) -> Result<()> {
         self.write_command(terminal::Clear(ClearType::CurrentLine))
     }
 
@@ -198,7 +187,7 @@ impl Terminal for CrosstermTerminal {
     }
 
     fn get_in_memory_content(&self) -> &str {
-        self.in_memory_content.as_ref()
+        &self.in_memory_content
     }
 
     fn clear_in_memory_content(&mut self) {
@@ -210,8 +199,8 @@ impl Drop for CrosstermTerminal {
     fn drop(&mut self) {
         let _unused = self.flush();
         let _unused = match self.io {
-            IO::Std { w: _ } => terminal::disable_raw_mode(),
-            IO::Test { r: _, w: _ } => Ok(()),
+            IO::Std(_) => terminal::disable_raw_mode(),
+            IO::Test(_) => Ok(()),
         };
     }
 }
@@ -345,73 +334,25 @@ impl From<KeyEvent> for Key {
 
 #[cfg(test)]
 mod test {
-    use std::collections::VecDeque;
-    use std::convert::TryFrom;
-    use std::convert::TryInto;
-
-    use crossterm::event::KeyCode;
-    use crossterm::event::KeyEvent;
-    use crossterm::event::KeyModifiers;
-
     use crate::terminal::Terminal;
-    use crate::terminal::INITIAL_IN_MEMORY_CAPACITY;
     use crate::ui::Color;
-    use crate::ui::Key;
 
     use super::Attributes;
     use super::CrosstermTerminal;
     use super::IO;
 
-    impl TryFrom<crate::ui::KeyModifiers> for KeyModifiers {
-        type Error = ();
-
-        fn try_from(value: crate::ui::KeyModifiers) -> Result<Self, Self::Error> {
-            Self::from_bits(value.bits()).ok_or(())
-        }
-    }
-
-    impl TryFrom<Key> for KeyEvent {
-        type Error = ();
-
-        fn try_from(value: Key) -> Result<Self, Self::Error> {
-            let key_event = match value {
-                Key::Escape => KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE),
-                Key::Enter => KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE),
-                Key::Backspace => KeyEvent::new(KeyCode::Backspace, KeyModifiers::NONE),
-                Key::Tab => KeyEvent::new(KeyCode::Tab, KeyModifiers::NONE),
-                Key::Delete(m) => KeyEvent::new(KeyCode::Delete, m.try_into()?),
-                Key::Home => KeyEvent::new(KeyCode::Home, KeyModifiers::NONE),
-                Key::End => KeyEvent::new(KeyCode::End, KeyModifiers::NONE),
-                Key::PageUp(m) => KeyEvent::new(KeyCode::PageUp, m.try_into()?),
-                Key::PageDown(m) => KeyEvent::new(KeyCode::PageDown, m.try_into()?),
-                Key::Up(m) => KeyEvent::new(KeyCode::Up, m.try_into()?),
-                Key::Down(m) => KeyEvent::new(KeyCode::Down, m.try_into()?),
-                Key::Left(m) => KeyEvent::new(KeyCode::Left, m.try_into()?),
-                Key::Right(m) => KeyEvent::new(KeyCode::Right, m.try_into()?),
-                Key::Char(c, m) => KeyEvent::new(KeyCode::Char(c), m.try_into()?),
-                #[allow(deprecated)]
-                Key::Any => KeyEvent::new(KeyCode::Null, KeyModifiers::NONE),
-            };
-
-            Ok(key_event)
-        }
-    }
-
     impl CrosstermTerminal {
-        pub fn new_with_io(events: VecDeque<KeyEvent>) -> Self {
+        pub fn new_in_memory_output() -> Self {
             Self {
-                io: IO::Test {
-                    r: events,
-                    w: Vec::new(),
-                },
-                in_memory_content: String::with_capacity(INITIAL_IN_MEMORY_CAPACITY),
+                io: IO::Test(Vec::new()),
+                in_memory_content: String::new(),
             }
         }
 
         pub fn get_buffer_content(&mut self) -> Vec<u8> {
             match &mut self.io {
-                IO::Std { w: _ } => panic!("Cannot get write buffer from standard output"),
-                IO::Test { r: _, w } => {
+                IO::Std(_) => panic!("Cannot get write buffer from standard output"),
+                IO::Test(w) => {
                     let mut buffer = Vec::new();
                     std::mem::swap(&mut buffer, w);
                     buffer
@@ -422,7 +363,7 @@ mod test {
 
     #[test]
     fn writer() {
-        let mut terminal = CrosstermTerminal::new_with_io(VecDeque::new());
+        let mut terminal = CrosstermTerminal::new_in_memory_output();
 
         terminal.write("testing ").unwrap();
         terminal.write("writing ").unwrap();
@@ -438,7 +379,7 @@ mod test {
 
     #[test]
     fn style_management() {
-        let mut terminal = CrosstermTerminal::new_with_io(VecDeque::new());
+        let mut terminal = CrosstermTerminal::new_in_memory_output();
 
         terminal.set_attributes(Attributes::BOLD).unwrap();
         terminal.set_attributes(Attributes::ITALIC).unwrap();
@@ -454,7 +395,7 @@ mod test {
 
     #[test]
     fn style_management_with_flags() {
-        let mut terminal = CrosstermTerminal::new_with_io(VecDeque::new());
+        let mut terminal = CrosstermTerminal::new_in_memory_output();
 
         terminal
             .set_attributes(Attributes::BOLD | Attributes::ITALIC | Attributes::BOLD)
@@ -470,7 +411,7 @@ mod test {
 
     #[test]
     fn fg_color_management() {
-        let mut terminal = CrosstermTerminal::new_with_io(VecDeque::new());
+        let mut terminal = CrosstermTerminal::new_in_memory_output();
 
         terminal.set_fg_color(Color::LightRed).unwrap();
         terminal.reset_fg_color().unwrap();
@@ -486,7 +427,7 @@ mod test {
 
     #[test]
     fn bg_color_management() {
-        let mut terminal = CrosstermTerminal::new_with_io(VecDeque::new());
+        let mut terminal = CrosstermTerminal::new_in_memory_output();
 
         terminal.set_bg_color(Color::LightRed).unwrap();
         terminal.reset_bg_color().unwrap();

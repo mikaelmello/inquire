@@ -178,7 +178,7 @@ password_test!(
 );
 
 password_test!(
-    #[should_panic(expected = "Custom stream of characters has ended")]
+    #[should_panic(expected = "EOF")]
     input_confirmation_different,
     {
         let mut events = vec![];

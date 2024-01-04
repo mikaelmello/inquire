@@ -269,8 +269,8 @@ impl<'a> Password<'a> {
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to the defined rules.
     pub fn prompt(self) -> InquireResult<String> {
-        let terminal = get_default_terminal()?;
-        let mut backend = Backend::new(terminal, self.render_config)?;
+        let (input_reader, terminal) = get_default_terminal()?;
+        let mut backend = Backend::new(input_reader, terminal, self.render_config)?;
         self.prompt_with_backend(&mut backend)
     }
 

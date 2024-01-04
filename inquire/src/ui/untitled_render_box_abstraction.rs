@@ -315,7 +315,7 @@ where
                     }
                 }
                 (Some(_), None) => {
-                    self.terminal.clear_current_line()?;
+                    self.terminal.clear_line()?;
                 }
                 (None, Some(current_row)) => {
                     for styled in current_row.get_content() {
