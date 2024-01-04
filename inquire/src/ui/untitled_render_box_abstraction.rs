@@ -2,7 +2,6 @@ use std::cmp::Ordering;
 use std::fmt::Display;
 use std::hash::{Hash, Hasher};
 use std::io;
-use std::thread::{current, sleep};
 
 use fxhash::FxHasher;
 use unicode_width::UnicodeWidthChar;
@@ -243,20 +242,6 @@ where
         }
     }
 
-    pub fn show_cursor(&mut self) -> io::Result<()> {
-        self.terminal.cursor_show()?;
-        Ok(())
-    }
-
-    pub fn hide_cursor(&mut self) -> io::Result<()> {
-        self.terminal.cursor_hide()?;
-        Ok(())
-    }
-
-    pub fn flush(&mut self) -> io::Result<()> {
-        self.terminal.flush()
-    }
-
     pub fn start_frame(&mut self) -> io::Result<()> {
         let terminal_size = self.terminal.get_size()?;
 
@@ -313,6 +298,7 @@ where
             current_frame.frame_size.height(),
         );
 
+        self.terminal.cursor_hide()?;
         self.move_cursor_to(Position { row: 0, col: 0 })?;
 
         for i in 0..rows_to_iterate {
@@ -357,6 +343,7 @@ where
             self.move_cursor_to(expected_cursor_position)?;
         }
 
+        self.terminal.cursor_show()?;
         self.terminal.flush()?;
 
         self.state = RenderState::Rendered(current_frame);
@@ -426,7 +413,7 @@ where
 {
     fn drop(&mut self) {
         let _unused = self.move_cursor_to_end_position();
-        let _unused = self.show_cursor();
-        let _unused = self.flush();
+        let _unused = self.terminal.cursor_show();
+        let _unused = self.terminal.flush();
     }
 }

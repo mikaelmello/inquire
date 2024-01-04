@@ -91,12 +91,10 @@ where
 {
     #[allow(clippy::large_types_passed_by_value)]
     pub fn new(terminal: T, render_config: RenderConfig<'a>) -> Result<Self> {
-        let mut backend = Self {
+        let backend = Self {
             untitled_render_box_abstraction: UntitledRenderBoxAbstraction::new(terminal)?,
             render_config,
         };
-
-        backend.untitled_render_box_abstraction.hide_cursor()?;
 
         Ok(backend)
     }
@@ -246,17 +244,11 @@ where
     T: Terminal,
 {
     fn frame_setup(&mut self) -> Result<()> {
-        self.untitled_render_box_abstraction.hide_cursor()?;
-        self.untitled_render_box_abstraction.start_frame()?;
-        Ok(())
+        self.untitled_render_box_abstraction.start_frame()
     }
 
     fn frame_finish(&mut self) -> Result<()> {
-        self.untitled_render_box_abstraction
-            .finish_current_frame()?;
-        self.untitled_render_box_abstraction.show_cursor()?;
-
-        Ok(())
+        self.untitled_render_box_abstraction.finish_current_frame()
     }
 
     fn render_canceled_prompt(&mut self, prompt: &str) -> Result<()> {
