@@ -168,9 +168,14 @@ pub trait AnsiStrippable {
     fn ansi_stripped_chars(&self) -> AnsiStrippedChars<'_>;
 }
 
-impl AnsiStrippable for &str {
+impl<T> AnsiStrippable for T
+where
+    T: AsRef<str>,
+{
     fn ansi_stripped_chars(&self) -> AnsiStrippedChars<'_> {
-        AnsiStrippedChars { input: self }
+        AnsiStrippedChars {
+            input: self.as_ref(),
+        }
     }
 }
 
