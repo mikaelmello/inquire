@@ -10,7 +10,7 @@ use crate::{
     validator::{ErrorMessage, Validation},
     DateSelect, InquireError,
 };
-use chrono::NaiveDate;
+use chrono::{Datelike, NaiveDate};
 
 fn default<'a>() -> DateSelect<'a> {
     DateSelect::new("Question?")
@@ -819,6 +819,200 @@ fn ctrl_c_interrupts_prompt() -> InquireResult<()> {
     assert!(
         final_frame.has_token(&Token::Prompt("Question".into())),
         "Final frame did not contain the expected prompt token"
+    );
+
+    Ok(())
+}
+
+#[test]
+fn validator_is_respected() -> InquireResult<()> {
+    let mut backend =
+        FakeBackend::new(vec![Key::Enter, Key::Right(KeyModifiers::NONE), Key::Enter]);
+
+    let result = DateSelect::new("Question")
+        .with_validator(|d: NaiveDate| {
+            if d.day() % 2 == 0 {
+                Ok(Validation::Valid)
+            } else {
+                Ok(Validation::Invalid("Day must be even".into()))
+            }
+        })
+        .with_starting_date(NaiveDate::from_ymd_opt(2023, 1, 1).unwrap())
+        .with_formatter(&|d| d.format("%Y-%m-%d").to_string())
+        .prompt_with_backend(&mut backend)?;
+
+    assert_eq!(
+        NaiveDate::from_ymd_opt(2023, 1, 2).unwrap(),
+        result,
+        "Answer selected should be initial (2023-01-01) + right (2023-01-02)"
+    );
+
+    let rendered_frames = backend.frames();
+
+    assert_eq!(
+        4,
+        rendered_frames.len(),
+        "Only 4 frames should have been rendered (initial, first submit, move right, final submit)",
+    );
+    assert!(
+        rendered_frames[0]
+            .tokens()
+            .iter()
+            .all(|t| !matches!(t, Token::ErrorMessage(ErrorMessage::Custom(_)))),
+        "First frame should not have contained an error message rendered",
+    );
+    assert!(
+        rendered_frames[1].has_token(&Token::ErrorMessage(ErrorMessage::Custom(
+            "Day must be even".into()
+        ))),
+        "2nd frame did not contain the expected error message token",
+    );
+    assert!(
+        rendered_frames[2].has_token(&Token::ErrorMessage(ErrorMessage::Custom(
+            "Day must be even".into()
+        ))),
+        "3rd frame should still have the error message",
+    );
+    assert!(
+        rendered_frames[3]
+            .tokens()
+            .iter()
+            .all(|t| !matches!(t, Token::ErrorMessage(ErrorMessage::Custom(_)))),
+        "Last frame should not have contained an error message rendered",
+    );
+    assert!(
+        rendered_frames[3].has_token(&Token::AnsweredPrompt(
+            "Question".into(),
+            "2023-01-02".into()
+        )),
+        "Last frame did not contain the correct answer token",
+    );
+
+    Ok(())
+}
+
+#[test]
+fn multiple_validators_are_respected() -> InquireResult<()> {
+    let mut backend = FakeBackend::new(vec![
+        Key::Enter, // 01-01
+        Key::Right(KeyModifiers::NONE),
+        Key::Enter, // 01-02
+        Key::Right(KeyModifiers::NONE),
+        Key::Enter, // 01-03
+        Key::Right(KeyModifiers::NONE),
+        Key::Enter, // 01-04
+        Key::Right(KeyModifiers::NONE),
+        Key::Enter, // 01-05
+    ]);
+
+    let result = DateSelect::new("Question")
+        .with_validator(|d: NaiveDate| {
+            if d == NaiveDate::from_ymd_opt(2023, 1, 2).unwrap() {
+                Ok(Validation::Invalid("Must not be 2023-01-02".into()))
+            } else {
+                Ok(Validation::Valid)
+            }
+        })
+        .with_validator(|d: NaiveDate| {
+            if d == NaiveDate::from_ymd_opt(2023, 1, 1).unwrap() {
+                Ok(Validation::Invalid("Must not be 2023-01-01".into()))
+            } else {
+                Ok(Validation::Valid)
+            }
+        })
+        .with_validators(&[
+            Box::new(|d: NaiveDate| {
+                if d == NaiveDate::from_ymd_opt(2023, 1, 3).unwrap() {
+                    Ok(Validation::Invalid("Must not be 2023-01-03".into()))
+                } else {
+                    Ok(Validation::Valid)
+                }
+            }),
+            Box::new(|d: NaiveDate| {
+                if d == NaiveDate::from_ymd_opt(2023, 1, 4).unwrap() {
+                    Ok(Validation::Invalid("Must not be 2023-01-04".into()))
+                } else {
+                    Ok(Validation::Valid)
+                }
+            }),
+        ])
+        .with_starting_date(NaiveDate::from_ymd_opt(2023, 1, 1).unwrap())
+        .with_formatter(&|d| d.format("%Y-%m-%d").to_string())
+        .prompt_with_backend(&mut backend)?;
+
+    assert_eq!(
+        NaiveDate::from_ymd_opt(2023, 1, 5).unwrap(),
+        result,
+        "Answer selected should be initial (2023-01-01) + right (2023-01-02)"
+    );
+
+    let rendered_frames = backend.frames();
+
+    assert_eq!(
+        10,
+        rendered_frames.len(),
+        "Only 4 frames should have been rendered (initial, first submit, move right, final submit)",
+    );
+    assert!(
+        rendered_frames[0]
+            .tokens()
+            .iter()
+            .all(|t| !matches!(t, Token::ErrorMessage(ErrorMessage::Custom(_)))),
+        "First frame should not have contained an error message rendered",
+    );
+    #[allow(clippy::needless_range_loop)]
+    for frame in 1..3 {
+        assert!(
+            rendered_frames[frame].has_token(&Token::ErrorMessage(ErrorMessage::Custom(
+                "Must not be 2023-01-01".into()
+            ))),
+            "Expected to find error message of first validator in frame {}",
+            frame
+        );
+    }
+    #[allow(clippy::needless_range_loop)]
+    for frame in 3..5 {
+        assert!(
+            rendered_frames[frame].has_token(&Token::ErrorMessage(ErrorMessage::Custom(
+                "Must not be 2023-01-02".into()
+            ))),
+            "Expected to find error message of second validator in frame {}",
+            frame
+        );
+    }
+    #[allow(clippy::needless_range_loop)]
+    for frame in 5..7 {
+        assert!(
+            rendered_frames[frame].has_token(&Token::ErrorMessage(ErrorMessage::Custom(
+                "Must not be 2023-01-03".into()
+            ))),
+            "Expected to find error message of second validator in frame {}",
+            frame
+        );
+    }
+    #[allow(clippy::needless_range_loop)]
+    for frame in 7..9 {
+        assert!(
+            rendered_frames[frame].has_token(&Token::ErrorMessage(ErrorMessage::Custom(
+                "Must not be 2023-01-04".into()
+            ))),
+            "Expected to find error message of second validator in frame {}",
+            frame
+        );
+    }
+    assert!(
+        rendered_frames[9]
+            .tokens()
+            .iter()
+            .all(|t| !matches!(t, Token::ErrorMessage(ErrorMessage::Custom(_)))),
+        "Last frame should not have contained an error message rendered",
+    );
+    assert!(
+        rendered_frames[9].has_token(&Token::AnsweredPrompt(
+            "Question".into(),
+            "2023-01-05".into()
+        )),
+        "Last frame did not contain the correct answer token",
     );
 
     Ok(())
