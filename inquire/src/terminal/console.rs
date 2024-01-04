@@ -49,7 +49,7 @@ impl Terminal for ConsoleTerminal {
     fn get_size(&self) -> Result<super::TerminalSize> {
         let (height, width) = self.term.size();
 
-        Ok(super::TerminalSize { width, height })
+        Ok(super::TerminalSize::new(width, height))
     }
 
     fn write<T: std::fmt::Display>(&mut self, val: T) -> Result<()> {

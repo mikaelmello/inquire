@@ -1,15 +1,13 @@
-use std::str::Chars;
+use std::{iter::Peekable, str::CharIndices};
 
 #[must_use]
-enum MatchResult<'a> {
-    Matched { remaining_chars: Chars<'a> },
+enum AnsiMatchResult {
+    Matched { start: usize, end: usize },
     NotMatched,
 }
 
-fn matched(chars: Chars<'_>) -> MatchResult<'_> {
-    MatchResult::Matched {
-        remaining_chars: chars,
-    }
+fn matched(start: usize, end: usize) -> AnsiMatchResult {
+    AnsiMatchResult::Matched { start, end }
 }
 
 /// Matches an ANSI escape code according to a simplified version of
@@ -19,66 +17,118 @@ fn matched(chars: Chars<'_>) -> MatchResult<'_> {
 ///
 /// The only way to get out of the ground is to read the escape character ('\x1b'). Transitions
 /// like "anywhere -- \x9b -> csi_entry" are not supported, as few terminals implement them.
-struct Matcher<'a> {
-    chars: Chars<'a>,
+struct AnsiMatcher<'a> {
+    input: &'a str,
+    chars: Peekable<CharIndices<'a>>,
 }
 
-impl<'a> Matcher<'a> {
-    fn new(chars: Chars<'a>) -> Self {
-        Self { chars }
+impl<'a> AnsiMatcher<'a> {
+    fn new(input: &'a str) -> Self {
+        Self {
+            input,
+            chars: input.char_indices().peekable(),
+        }
     }
 
     #[inline]
-    fn run(mut self) -> MatchResult<'a> {
+    fn run(mut self) -> AnsiMatchResult {
         match self.chars.next() {
-            Some('\x1b') => self.escape(),
-            _ => MatchResult::NotMatched,
+            Some((start_index, '\x1b')) => self.escape(start_index),
+            _ => AnsiMatchResult::NotMatched,
         }
     }
 
     #[inline]
     fn next(&mut self) -> Option<u32> {
-        self.chars.next().map(|c| c as u32)
+        self.chars.next().map(|(_, c)| c as u32)
     }
 
-    fn escape(mut self) -> MatchResult<'a> {
+    #[inline]
+    fn peek(&mut self) -> Option<(usize, u32)> {
+        self.chars.peek().map(|(idx, c)| (*idx, *c as u32))
+    }
+
+    fn next_char_boundary(&mut self) -> usize {
+        self.peek().map(|(idx, _)| idx).unwrap_or(self.input.len())
+    }
+
+    fn escape(mut self, start_index: usize) -> AnsiMatchResult {
         match self.next() {
-            None => matched(self.chars),
-            Some(0x5B) => self.csi_entry(),
+            None => matched(start_index, self.input.len()),
+            Some(0x5B) => self.csi_entry(start_index),
             Some(
                 0x5D // osc_string
                 | 0x50 // dcs_entry
-                | 0x58 | 0x5E | 0x5F) => self.string(), // sos/pm/apc_string
-            Some(0x20..=0x2F) => self.escape_intermediate(),
+                | 0x58 | 0x5E | 0x5F) => self.string(start_index), // sos/pm/apc_string
+            Some(0x20..=0x2F) => self.escape_intermediate(start_index),
             Some(0x30..=0x4F | 0x51..=0x57 | 0x59 | 0x5A | 0x5C | 0x60..=0x7E) => {
-                matched(self.chars)
+                matched(start_index, self.next_char_boundary())
             }
-            Some(0x1B | 0x7F | _) => self.escape(),
+            Some(0x1B | 0x7F | _) => self.escape(start_index),
         }
     }
 
-    fn csi_entry(mut self) -> MatchResult<'a> {
+    fn csi_entry(mut self, start_index: usize) -> AnsiMatchResult {
         match self.next() {
-            Some(0x1B) => self.escape(),
-            None | Some(0x40..=0x7E) => matched(self.chars),
-            _ => self.csi_entry(), // loop until match
+            Some(0x1B) => self.escape(start_index),
+            Some(0x40..=0x7E) => matched(start_index, self.next_char_boundary()),
+            None => matched(start_index, self.input.len()),
+            _ => self.csi_entry(start_index), // loop until match
         }
     }
 
-    fn escape_intermediate(mut self) -> MatchResult<'a> {
+    fn escape_intermediate(mut self, start_index: usize) -> AnsiMatchResult {
         match self.next() {
-            Some(0x1B) => self.escape(),
-            None | Some(0x30..=0x7E) => matched(self.chars),
-            _ => self.escape_intermediate(), // loop until match
+            Some(0x1B) => self.escape(start_index),
+            Some(0x30..=0x7E) => matched(start_index, self.next_char_boundary()),
+            None => matched(start_index, self.input.len()),
+            _ => self.escape_intermediate(start_index), // loop until match
         }
     }
 
     /// Matches until the end of sos/pm/apc strings, dcs entries and osc strings.
-    fn string(mut self) -> MatchResult<'a> {
+    fn string(mut self, start_index: usize) -> AnsiMatchResult {
         match self.next() {
-            Some(0x1B) => self.escape(),
-            None | Some(0x07 | 0x9C) => matched(self.chars),
-            _ => self.string(), // loop until match
+            Some(0x1B) => self.escape(start_index),
+            Some(0x07 | 0x9C) => matched(start_index, self.next_char_boundary()),
+            None => matched(start_index, self.input.len()),
+            _ => self.string(start_index), // loop until match
+        }
+    }
+}
+
+/// An iterator that is aware of ANSI escape codes.
+pub struct AnsiAwareChars<'a> {
+    pub input: &'a str,
+}
+
+#[must_use]
+#[derive(Debug, PartialEq, Eq)]
+pub enum AnsiAwareChar<'a> {
+    AnsiEscapeSequence(&'a str),
+    Char(char),
+}
+
+impl<'a> Iterator for AnsiAwareChars<'a> {
+    type Item = AnsiAwareChar<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match AnsiMatcher::new(self.input).run() {
+            AnsiMatchResult::Matched { start, end } => {
+                let matched_slice = &self.input[start..end];
+                self.input = &self.input[end..];
+                Some(AnsiAwareChar::AnsiEscapeSequence(matched_slice))
+            }
+            AnsiMatchResult::NotMatched => {
+                let mut chars = self.input.char_indices();
+                match chars.next() {
+                    Some((idx, c)) => {
+                        self.input = &self.input[idx + c.len_utf8()..];
+                        Some(AnsiAwareChar::Char(c))
+                    }
+                    None => None,
+                }
+            }
         }
     }
 }
@@ -87,20 +137,28 @@ impl<'a> Matcher<'a> {
 ///
 /// Often constructed by calling [`ansi_stripped_chars`].
 pub struct AnsiStrippedChars<'a> {
-    pub chars: Chars<'a>,
+    pub input: &'a str,
 }
 
 impl<'a> Iterator for AnsiStrippedChars<'a> {
     type Item = char;
 
-    fn next(&mut self) -> Option<char> {
-        let chars = self.chars.clone();
-        match Matcher::new(chars).run() {
-            MatchResult::Matched { remaining_chars } => {
-                self.chars = remaining_chars;
+    fn next(&mut self) -> Option<Self::Item> {
+        match AnsiMatcher::new(self.input).run() {
+            AnsiMatchResult::Matched { end, .. } => {
+                self.input = &self.input[end..];
                 self.next()
             }
-            MatchResult::NotMatched => self.chars.next(),
+            AnsiMatchResult::NotMatched => {
+                let mut chars = self.input.char_indices();
+                match chars.next() {
+                    Some((idx, c)) => {
+                        self.input = &self.input[idx + c.len_utf8()..];
+                        Some(c)
+                    }
+                    None => None,
+                }
+            }
         }
     }
 }
@@ -112,9 +170,17 @@ pub trait AnsiStrippable {
 
 impl AnsiStrippable for &str {
     fn ansi_stripped_chars(&self) -> AnsiStrippedChars<'_> {
-        AnsiStrippedChars {
-            chars: self.chars(),
-        }
+        AnsiStrippedChars { input: self }
+    }
+}
+
+pub trait AnsiAware {
+    fn ansi_aware_chars(&self) -> AnsiAwareChars<'_>;
+}
+
+impl AnsiAware for &str {
+    fn ansi_aware_chars(&self) -> AnsiAwareChars<'_> {
+        AnsiAwareChars { input: self }
     }
 }
 
@@ -152,5 +218,53 @@ mod tests {
 
         // Kitty will print "[96mCat\n", but most will print "Cat\n"
         assert_stripped_eq!("\x1b\x19[96mCat\x1b[0m\n", "Cat\n");
+    }
+
+    #[test]
+    fn ansi_aware_test_normal_ansi_escapes() {
+        let chars: Vec<AnsiAwareChar<'_>> = "\x1b[92mHello, \x1b[91mWorld!\x1b[0m"
+            .ansi_aware_chars()
+            .collect();
+        assert_eq!(
+            chars,
+            vec![
+                AnsiAwareChar::AnsiEscapeSequence("\x1b[92m"),
+                AnsiAwareChar::Char('H'),
+                AnsiAwareChar::Char('e'),
+                AnsiAwareChar::Char('l'),
+                AnsiAwareChar::Char('l'),
+                AnsiAwareChar::Char('o'),
+                AnsiAwareChar::Char(','),
+                AnsiAwareChar::Char(' '),
+                AnsiAwareChar::AnsiEscapeSequence("\x1b[91m"),
+                AnsiAwareChar::Char('W'),
+                AnsiAwareChar::Char('o'),
+                AnsiAwareChar::Char('r'),
+                AnsiAwareChar::Char('l'),
+                AnsiAwareChar::Char('d'),
+                AnsiAwareChar::Char('!'),
+                AnsiAwareChar::AnsiEscapeSequence("\x1b[0m"),
+            ]
+        );
+
+        let chars: Vec<AnsiAwareChar<'_>> = "\x1b]0;Set The Terminal Title To This\u{9c}Print This"
+            .ansi_aware_chars()
+            .collect();
+        assert_eq!(
+            chars,
+            vec![
+                AnsiAwareChar::AnsiEscapeSequence("\x1b]0;Set The Terminal Title To This\u{9c}"),
+                AnsiAwareChar::Char('P'),
+                AnsiAwareChar::Char('r'),
+                AnsiAwareChar::Char('i'),
+                AnsiAwareChar::Char('n'),
+                AnsiAwareChar::Char('t'),
+                AnsiAwareChar::Char(' '),
+                AnsiAwareChar::Char('T'),
+                AnsiAwareChar::Char('h'),
+                AnsiAwareChar::Char('i'),
+                AnsiAwareChar::Char('s'),
+            ]
+        );
     }
 }

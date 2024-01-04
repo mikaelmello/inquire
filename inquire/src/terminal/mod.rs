@@ -2,7 +2,7 @@ use std::{fmt::Display, io::Result};
 
 use crate::{
     error::InquireResult,
-    ui::{Key, Styled},
+    ui::{dimension::Dimension, Key, Styled},
 };
 
 const INITIAL_IN_MEMORY_CAPACITY: usize = 2048;
@@ -19,10 +19,7 @@ pub mod termion;
 #[cfg_attr(docsrs, doc(cfg(feature = "console")))]
 pub mod console;
 
-pub struct TerminalSize {
-    pub width: u16,
-    pub height: u16,
-}
+pub type TerminalSize = Dimension;
 
 pub trait Terminal: Sized {
     fn cursor_up(&mut self, cnt: u16) -> Result<()>;

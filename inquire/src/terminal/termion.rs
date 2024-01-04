@@ -138,7 +138,7 @@ impl<'a> Terminal for TermionTerminal<'a> {
     }
 
     fn get_size(&self) -> Result<super::TerminalSize> {
-        terminal_size().map(|(width, height)| super::TerminalSize { width, height })
+        terminal_size().map(|(width, height)| super::TerminalSize::new(width, height))
     }
 
     fn write<T: std::fmt::Display>(&mut self, val: T) -> Result<()> {
