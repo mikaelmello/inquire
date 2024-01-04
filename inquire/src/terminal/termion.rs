@@ -53,7 +53,6 @@ impl InputReader for TermionKeyReader {
 
 pub struct TermionTerminal<'a> {
     io: IO<'a>,
-    in_memory_content: String,
 }
 
 impl<'a> TermionTerminal<'a> {
@@ -65,7 +64,6 @@ impl<'a> TermionTerminal<'a> {
 
         Ok(Self {
             io: IO::TTY(raw_terminal),
-            in_memory_content: String::new(),
         })
     }
 
@@ -76,7 +74,6 @@ impl<'a> TermionTerminal<'a> {
     pub fn new_with_writer<W: 'a + Write>(writer: &'a mut W) -> Self {
         Self {
             io: IO::Custom(writer),
-            in_memory_content: String::new(),
         }
     }
 
@@ -161,7 +158,6 @@ impl<'a> Terminal for TermionTerminal<'a> {
     }
 
     fn write<T: std::fmt::Display>(&mut self, val: T) -> Result<()> {
-        self.in_memory_content.push_str(&val.to_string());
         write!(self.get_writer(), "{}", val)
     }
 
@@ -205,14 +201,6 @@ impl<'a> Terminal for TermionTerminal<'a> {
 
     fn cursor_show(&mut self) -> Result<()> {
         write!(self.get_writer(), "{}", termion::cursor::Show)
-    }
-
-    fn get_in_memory_content(&self) -> &str {
-        self.in_memory_content.as_ref()
-    }
-
-    fn clear_in_memory_content(&mut self) {
-        self.in_memory_content.clear();
     }
 }
 
