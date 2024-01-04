@@ -94,16 +94,16 @@ impl Terminal for ConsoleTerminal {
         self.term.clear_line()
     }
 
+    fn clear_until_new_line(&mut self) -> Result<()> {
+        self.term.clear_to_end_of_screen()
+    }
+
     fn cursor_hide(&mut self) -> Result<()> {
         self.term.hide_cursor()
     }
 
     fn cursor_show(&mut self) -> Result<()> {
         self.term.show_cursor()
-    }
-
-    fn clear_until_new_line(&mut self) -> Result<()> {
-        self.term.clear_to_end_of_screen()
     }
 
     fn get_in_memory_content(&self) -> &str {
