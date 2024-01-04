@@ -6,7 +6,7 @@
 
 ### Features
 
-- Add one-li ner helpers for quick scripts. [#144](https://github.com/mikaelmello/inquire/pull/144).
+- Add one-liner helpers for quick scripts. [#144](https://github.com/mikaelmello/inquire/pull/144).
 - **Breaking**. Allow lifetime customization of RenderConfig. [#101](https://github.com/mikaelmello/inquire/pull/101). Thanks to @arturfast for the suggestion [#95](https://github.com/mikaelmello/inquire/issues/95).
 - Add new option on MultiSelect prompts to set all options to be selected by default. Thanks to @conikeec for the suggestion (#151)!
 - **Breaking**. Improved user experience on Password prompts. When there is a validation error, the input is cleared if the password is rendered using the `Hidden` display mode, matching the user expectation of having to write the password from scratch again. Thanks to @CM-IV for the questions on #149!
