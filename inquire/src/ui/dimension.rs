@@ -12,8 +12,4 @@ impl Dimension {
     pub fn width(&self) -> u16 {
         self.width
     }
-
-    pub fn height(&self) -> u16 {
-        self.height
-    }
 }

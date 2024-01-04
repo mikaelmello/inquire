@@ -1,18 +1,22 @@
-use std::convert::TryFrom;
-
-use crossterm::event::KeyEvent;
-
 use crate::{
     terminal::crossterm::CrosstermTerminal,
-    ui::{Backend, Key, RenderConfig},
+    ui::{Backend, InputReader, Key, RenderConfig},
 };
 
-pub fn fake_backend(input: Vec<Key>) -> Backend<'static, CrosstermTerminal> {
-    let events: Vec<KeyEvent> = input
-        .into_iter()
-        .map(|k| KeyEvent::try_from(k).expect("Could not convert Key to KeyEvent"))
-        .collect();
-    let terminal = CrosstermTerminal::new_with_io(events.into());
+impl<T> InputReader for T
+where
+    T: Iterator<Item = Key>,
+{
+    fn read_key(&mut self) -> crate::error::InquireResult<Key> {
+        self.next()
+            .ok_or(crate::error::InquireError::IO(std::io::Error::new(
+                std::io::ErrorKind::UnexpectedEof,
+                "No more keys in input",
+            )))
+    }
+}
 
-    Backend::new(terminal, RenderConfig::default()).unwrap()
+pub fn fake_backend(input: Vec<Key>) -> Backend<'static, impl InputReader, CrosstermTerminal> {
+    let output = CrosstermTerminal::new_in_memory_output();
+    Backend::new(input.into_iter(), output, RenderConfig::default()).unwrap()
 }

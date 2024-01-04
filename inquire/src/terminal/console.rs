@@ -2,10 +2,14 @@ use std::io::{Result, Write};
 
 use console::{Attribute, Color, Key, Style, Term};
 
-use crate::ui::{Attributes, StyleSheet, Styled};
+use crate::{
+    error::InquireResult,
+    ui::{Attributes, InputReader, StyleSheet, Styled},
+};
 
-use super::{Terminal, INITIAL_IN_MEMORY_CAPACITY};
+use super::Terminal;
 
+#[derive(Clone)]
 pub struct ConsoleTerminal {
     term: Term,
     in_memory_content: String,
@@ -16,18 +20,45 @@ impl ConsoleTerminal {
     pub fn new() -> Self {
         Self {
             term: Term::stderr(),
-            in_memory_content: String::with_capacity(INITIAL_IN_MEMORY_CAPACITY),
+            in_memory_content: String::new(),
         }
+    }
+}
+
+impl InputReader for ConsoleTerminal {
+    fn read_key(&mut self) -> InquireResult<crate::ui::Key> {
+        let key = self.term.read_key()?;
+        Ok(key.into())
     }
 }
 
 impl Terminal for ConsoleTerminal {
     fn cursor_up(&mut self, cnt: u16) -> Result<()> {
-        self.term.move_cursor_up(cnt as usize)
+        match cnt {
+            0 => Ok(()),
+            cnt => self.term.move_cursor_up(cnt as usize),
+        }
     }
 
     fn cursor_down(&mut self, cnt: u16) -> Result<()> {
-        self.term.move_cursor_down(cnt as usize)
+        match cnt {
+            0 => Ok(()),
+            cnt => self.term.move_cursor_down(cnt as usize),
+        }
+    }
+
+    fn cursor_left(&mut self, cnt: u16) -> Result<()> {
+        match cnt {
+            0 => Ok(()),
+            cnt => self.term.move_cursor_left(cnt as usize),
+        }
+    }
+
+    fn cursor_right(&mut self, cnt: u16) -> Result<()> {
+        match cnt {
+            0 => Ok(()),
+            cnt => self.term.move_cursor_right(cnt as usize),
+        }
     }
 
     fn cursor_move_to_column(&mut self, idx: u16) -> Result<()> {
@@ -36,10 +67,6 @@ impl Terminal for ConsoleTerminal {
         self.term.move_cursor_right(idx as usize)?;
 
         Ok(())
-    }
-
-    fn read_key(&mut self) -> Result<crate::ui::Key> {
-        self.term.read_key().map(|k| k.into())
     }
 
     fn flush(&mut self) -> Result<()> {
@@ -53,25 +80,17 @@ impl Terminal for ConsoleTerminal {
     }
 
     fn write<T: std::fmt::Display>(&mut self, val: T) -> Result<()> {
-        let formatted = format!("{}", val);
-        let converted = newline_converter::unix2dos(&formatted);
-
-        self.in_memory_content.push_str(converted.as_ref());
-        write!(self.term, "{}", converted)
+        self.in_memory_content.push_str(&val.to_string());
+        write!(self.term, "{}", val)
     }
 
     fn write_styled<T: std::fmt::Display>(&mut self, val: &Styled<T>) -> Result<()> {
-        let formatted = format!("{}", val.content);
-        let converted = newline_converter::unix2dos(&formatted);
-
-        self.in_memory_content.push_str(converted.as_ref());
-
-        let styled_object = Style::from(val.style).apply_to(converted);
-
+        self.in_memory_content.push_str(&val.content.to_string());
+        let styled_object = Style::from(val.style).apply_to(&val.content);
         write!(self.term, "{}", styled_object)
     }
 
-    fn clear_current_line(&mut self) -> Result<()> {
+    fn clear_line(&mut self) -> Result<()> {
         self.term.clear_line()
     }
 
@@ -83,8 +102,12 @@ impl Terminal for ConsoleTerminal {
         self.term.show_cursor()
     }
 
+    fn clear_until_new_line(&mut self) -> Result<()> {
+        self.term.clear_to_end_of_screen()
+    }
+
     fn get_in_memory_content(&self) -> &str {
-        self.in_memory_content.as_ref()
+        &self.in_memory_content
     }
 
     fn clear_in_memory_content(&mut self) {

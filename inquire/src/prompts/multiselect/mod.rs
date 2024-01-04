@@ -412,8 +412,8 @@ where
     /// Returns a [`ListOption`](crate::list_option::ListOption) containing
     /// the index of the selection and the owned object selected by the user.
     pub fn raw_prompt(self) -> InquireResult<Vec<ListOption<T>>> {
-        let terminal = get_default_terminal()?;
-        let mut backend = Backend::new(terminal, self.render_config)?;
+        let (input_reader, terminal) = get_default_terminal()?;
+        let mut backend = Backend::new(input_reader, terminal, self.render_config)?;
         self.prompt_with_backend(&mut backend)
     }
 
