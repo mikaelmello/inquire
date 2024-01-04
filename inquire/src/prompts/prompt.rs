@@ -121,12 +121,16 @@ where
         let mut last_handle = ActionResult::NeedsRedraw;
         let final_answer = loop {
             if last_handle.needs_redraw() {
+                println!("frame setup");
                 backend.frame_setup()?;
+                println!("rendering");
                 self.render(backend)?;
+                println!("frame finish");
                 backend.frame_finish()?;
                 last_handle = ActionResult::Clean;
             }
 
+            println!("reading key");
             let key = backend.read_key()?;
             let action = Action::from_key(key, self.config());
 
@@ -158,10 +162,14 @@ where
 
         let formatted = self.format_answer(&final_answer);
 
+        println!("frame setup2");
         backend.frame_setup()?;
+        println!("rendering2");
         backend.render_prompt_with_answer(self.message(), &formatted)?;
+        println!("frame finish2");
         backend.frame_finish()?;
 
+        println!("final answer");
         Ok(final_answer)
     }
 }
