@@ -11,14 +11,11 @@ use crate::{
     ui::{IndexPrefix, Key, RenderConfig, Styled},
     utils::{int_log10, Page},
     validator::ErrorMessage,
-    {Action, InnerAction},
 };
 
 use super::InputReader;
 
-pub trait CommonBackend {
-    fn read_key(&mut self) -> Result<Key>;
-
+pub trait CommonBackend: InputReader {
     fn frame_setup(&mut self) -> Result<()>;
     fn frame_finish(&mut self) -> Result<()>;
 
@@ -79,8 +76,9 @@ pub struct Position {
     pub col: u16,
 }
 
-pub struct Backend<'a, T>
+pub struct Backend<'a, I, T>
 where
+    I: InputReader,
     T: Terminal,
 {
     prompt_current_position: Position,
@@ -88,17 +86,19 @@ where
     prompt_cursor_offset: Option<usize>,
     prompt_cursor_position: Option<Position>,
     show_cursor: bool,
+    input_reader: I,
     terminal: T,
     terminal_size: TerminalSize,
     render_config: RenderConfig<'a>,
 }
 
-impl<'a, T> Backend<'a, T>
+impl<'a, I, T> Backend<'a, I, T>
 where
+    I: InputReader,
     T: Terminal,
 {
     #[allow(clippy::large_types_passed_by_value)]
-    pub fn new(terminal: T, render_config: RenderConfig<'a>) -> Result<Self> {
+    pub fn new(input_reader: I, terminal: T, render_config: RenderConfig<'a>) -> Result<Self> {
         let terminal_size = terminal.get_size().unwrap_or(TerminalSize::new(1000, 1000));
 
         let mut backend = Self {
@@ -108,6 +108,7 @@ where
             prompt_cursor_position: None,
             show_cursor: false,
             terminal,
+            input_reader,
             render_config,
             terminal_size,
         };
@@ -187,7 +188,7 @@ where
 
         for _ in 0..self.prompt_end_position.row {
             self.terminal.cursor_up(1)?;
-            self.terminal.clear_current_line()?;
+            self.terminal.clear_line()?;
         }
 
         self.terminal.clear_in_memory_content();
@@ -351,8 +352,9 @@ where
     }
 }
 
-impl<'a, T> CommonBackend for Backend<'a, T>
+impl<'a, I, T> CommonBackend for Backend<'a, I, T>
 where
+    I: InputReader,
     T: Terminal,
 {
     fn frame_setup(&mut self) -> Result<()> {
@@ -406,10 +408,6 @@ where
         Ok(())
     }
 
-    fn read_key(&mut self) -> Result<Key> {
-        self.terminal.read_key()
-    }
-
     fn render_error_message(&mut self, error: &ErrorMessage) -> Result<()> {
         self.terminal
             .write_styled(&self.render_config.error_message.prefix)?;
@@ -448,8 +446,9 @@ where
     }
 }
 
-impl<'a, T> TextBackend for Backend<'a, T>
+impl<'a, I, T> TextBackend for Backend<'a, I, T>
 where
+    I: InputReader,
     T: Terminal,
 {
     fn render_prompt(
@@ -476,8 +475,9 @@ where
 }
 
 #[cfg(feature = "editor")]
-impl<'a, T> EditorBackend for Backend<'a, T>
+impl<'a, I, T> EditorBackend for Backend<'a, I, T>
 where
+    I: InputReader,
     T: Terminal,
 {
     fn render_prompt(&mut self, prompt: &str, editor_command: &str) -> Result<()> {
@@ -495,8 +495,9 @@ where
     }
 }
 
-impl<'a, T> SelectBackend for Backend<'a, T>
+impl<'a, I, T> SelectBackend for Backend<'a, I, T>
 where
+    I: InputReader,
     T: Terminal,
 {
     fn render_select_prompt(&mut self, prompt: &str, cur_input: Option<&Input>) -> Result<()> {
@@ -527,8 +528,9 @@ where
     }
 }
 
-impl<'a, T> MultiSelectBackend for Backend<'a, T>
+impl<'a, I, T> MultiSelectBackend for Backend<'a, I, T>
 where
+    I: InputReader,
     T: Terminal,
 {
     fn render_multiselect_prompt(&mut self, prompt: &str, cur_input: Option<&Input>) -> Result<()> {
@@ -583,7 +585,11 @@ pub mod date {
 
     use chrono::{Datelike, Duration};
 
-    use crate::{date_utils::get_start_date, terminal::Terminal, ui::Styled};
+    use crate::{
+        date_utils::get_start_date,
+        terminal::Terminal,
+        ui::{InputReader, Styled},
+    };
 
     use super::{Backend, CommonBackend};
 
@@ -603,8 +609,9 @@ pub mod date {
         ) -> Result<()>;
     }
 
-    impl<'a, T> DateSelectBackend for Backend<'a, T>
+    impl<'a, I, T> DateSelectBackend for Backend<'a, I, T>
     where
+        I: InputReader,
         T: Terminal,
     {
         fn render_calendar_prompt(&mut self, prompt: &str) -> Result<()> {
@@ -730,8 +737,9 @@ pub mod date {
     }
 }
 
-impl<'a, T> CustomTypeBackend for Backend<'a, T>
+impl<'a, I, T> CustomTypeBackend for Backend<'a, I, T>
 where
+    I: InputReader,
     T: Terminal,
 {
     fn render_prompt(
@@ -744,8 +752,9 @@ where
     }
 }
 
-impl<'a, T> PasswordBackend for Backend<'a, T>
+impl<'a, I, T> PasswordBackend for Backend<'a, I, T>
 where
+    I: InputReader,
     T: Terminal,
 {
     fn render_prompt(&mut self, prompt: &str) -> Result<()> {
@@ -769,28 +778,13 @@ where
     }
 }
 
-impl<'a, T> Drop for Backend<'a, T>
+impl<'a, I, T> InputReader for Backend<'a, I, T>
 where
+    I: InputReader,
     T: Terminal,
 {
-    fn drop(&mut self) {
-        let _unused = self.move_cursor_to_end_position();
-        let _unused = self.terminal.cursor_show();
-    }
-}
-
-impl<'a, I, T> InputReader<I> for Backend<'a, T>
-where
-    T: Terminal,
-    I: Copy + Clone + PartialEq + Eq,
-{
-    fn next_action<C>(&mut self, config: &C) -> InquireResult<Option<Action<I>>>
-    where
-        I: InnerAction<Config = C>,
-    {
-        let key = self.read_key()?;
-        let action = Action::from_key(key, config);
-        Ok(action)
+    fn read_key(&mut self) -> InquireResult<Key> {
+        self.input_reader.read_key()
     }
 }
 
@@ -800,7 +794,11 @@ pub(crate) mod test {
 
     use chrono::{Month, NaiveDate, Weekday};
 
-    use crate::{input::Input, ui::Key, validator::ErrorMessage};
+    use crate::{
+        input::Input,
+        ui::{InputReader, Key},
+        validator::ErrorMessage,
+    };
 
     use super::{CommonBackend, CustomTypeBackend};
 
@@ -867,13 +865,18 @@ pub(crate) mod test {
         }
     }
 
-    impl CommonBackend for FakeBackend {
-        fn read_key(&mut self) -> std::io::Result<Key> {
+    impl InputReader for FakeBackend {
+        fn read_key(&mut self) -> crate::error::InquireResult<Key> {
             self.input
                 .pop_front()
-                .ok_or(std::io::Error::from(std::io::ErrorKind::UnexpectedEof))
+                .ok_or(crate::error::InquireError::IO(std::io::Error::new(
+                    std::io::ErrorKind::UnexpectedEof,
+                    "No more keys in input",
+                )))
         }
+    }
 
+    impl CommonBackend for FakeBackend {
         fn frame_setup(&mut self) -> std::io::Result<()> {
             self.cur_frame = Some(Frame::default());
             Ok(())
