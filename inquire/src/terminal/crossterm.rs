@@ -24,7 +24,6 @@ enum IO {
 
 pub struct CrosstermTerminal {
     io: IO,
-    in_memory_content: String,
 }
 
 pub struct CrosstermKeyReader;
@@ -51,7 +50,6 @@ impl CrosstermTerminal {
 
         Ok(Self {
             io: IO::Std(stderr()),
-            in_memory_content: String::new(),
         })
     }
 
@@ -140,7 +138,6 @@ impl Terminal for CrosstermTerminal {
     }
 
     fn write<T: std::fmt::Display>(&mut self, val: T) -> Result<()> {
-        self.in_memory_content.push_str(&val.to_string());
         self.write_command(Print(val))
     }
 
@@ -184,14 +181,6 @@ impl Terminal for CrosstermTerminal {
 
     fn cursor_show(&mut self) -> Result<()> {
         self.write_command(cursor::Show)
-    }
-
-    fn get_in_memory_content(&self) -> &str {
-        &self.in_memory_content
-    }
-
-    fn clear_in_memory_content(&mut self) {
-        self.in_memory_content.clear();
     }
 }
 
@@ -345,7 +334,6 @@ mod test {
         pub fn new_in_memory_output() -> Self {
             Self {
                 io: IO::Test(Vec::new()),
-                in_memory_content: String::new(),
             }
         }
 

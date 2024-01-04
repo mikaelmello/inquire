@@ -28,9 +28,6 @@ pub trait Terminal: Sized {
     fn clear_line(&mut self) -> Result<()>;
     fn clear_until_new_line(&mut self) -> Result<()>;
 
-    fn get_in_memory_content(&self) -> &str;
-    fn clear_in_memory_content(&mut self);
-
     fn cursor_hide(&mut self) -> Result<()>;
     fn cursor_show(&mut self) -> Result<()>;
     fn cursor_up(&mut self, cnt: u16) -> Result<()>;

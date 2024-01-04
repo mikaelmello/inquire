@@ -48,7 +48,7 @@ bitflags! {
 ///
 /// assert!(!style_sheet.is_empty());
 /// ```
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct StyleSheet {
     /// Foreground color of text.
     pub fg: Option<Color>,
@@ -181,6 +181,38 @@ where
         self.style.att = attributes;
         self
     }
+
+    /// Updates the content while keeping the style sheet constant.
+    pub fn with_content<U>(self, content: U) -> Styled<U>
+    where
+        U: Display,
+    {
+        Styled {
+            content,
+            style: self.style,
+        }
+    }
 }
 
 impl<T> Copy for Styled<T> where T: Copy + Display {}
+
+impl<T> Default for Styled<T>
+where
+    T: Default + Display,
+{
+    fn default() -> Self {
+        Self {
+            content: Default::default(),
+            style: Default::default(),
+        }
+    }
+}
+
+impl<T> From<T> for Styled<T>
+where
+    T: Display,
+{
+    fn from(from: T) -> Self {
+        Self::new(from)
+    }
+}

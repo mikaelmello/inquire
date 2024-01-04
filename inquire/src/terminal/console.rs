@@ -12,7 +12,6 @@ use super::Terminal;
 #[derive(Clone)]
 pub struct ConsoleTerminal {
     term: Term,
-    in_memory_content: String,
 }
 
 impl ConsoleTerminal {
@@ -20,7 +19,6 @@ impl ConsoleTerminal {
     pub fn new() -> Self {
         Self {
             term: Term::stderr(),
-            in_memory_content: String::new(),
         }
     }
 }
@@ -80,12 +78,10 @@ impl Terminal for ConsoleTerminal {
     }
 
     fn write<T: std::fmt::Display>(&mut self, val: T) -> Result<()> {
-        self.in_memory_content.push_str(&val.to_string());
         write!(self.term, "{}", val)
     }
 
     fn write_styled<T: std::fmt::Display>(&mut self, val: &Styled<T>) -> Result<()> {
-        self.in_memory_content.push_str(&val.content.to_string());
         let styled_object = Style::from(val.style).apply_to(&val.content);
         write!(self.term, "{}", styled_object)
     }
@@ -104,14 +100,6 @@ impl Terminal for ConsoleTerminal {
 
     fn cursor_show(&mut self) -> Result<()> {
         self.term.show_cursor()
-    }
-
-    fn get_in_memory_content(&self) -> &str {
-        &self.in_memory_content
-    }
-
-    fn clear_in_memory_content(&mut self) {
-        self.in_memory_content.clear();
     }
 }
 
