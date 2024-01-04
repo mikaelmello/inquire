@@ -25,13 +25,13 @@ jobs:
       - name: Get changed files
         if: fromJSON(env.CHANGELOG_REQUIRED)
         id: changed-files
-        uses: tj-actions/changed-files@v35
+        uses: tj-actions/changed-files@v41
 
       # Example 2
       - name: Get changed files in the docs folder
         if: fromJSON(env.CHANGELOG_REQUIRED)
         id: changelog-changed
-        uses: tj-actions/changed-files@v35
+        uses: tj-actions/changed-files@v41
         with:
           files: CHANGELOG.md
 
