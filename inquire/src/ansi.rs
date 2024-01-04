@@ -103,7 +103,7 @@ pub struct AnsiAwareChars<'a> {
 }
 
 #[must_use]
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub enum AnsiAwareChar<'a> {
     AnsiEscapeSequence(&'a str),
     Char(char),
