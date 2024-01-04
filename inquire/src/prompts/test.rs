@@ -9,7 +9,6 @@ where
 {
     fn read_key(&mut self) -> crate::error::InquireResult<Key> {
         let key = self.next();
-        println!("key: {:?}", key);
 
         match key {
             Some(key) => Ok(key),
