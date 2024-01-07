@@ -22,6 +22,7 @@
   - Ctrl-p/Ctrl-n for up/down
   - Ctrl-b/Ctrl-f for left/right
   - Ctrl-j/Ctrl-g for enter/cancel
+- Vim keybindings are always supported in DateSelect prompts.
 - Added 'with_starting_filter_input' to both Select and MultiSelect, which allows for setting an initial value to the filter section of the prompt.
 - Added starting_input for CustomType. [#194](https://github.com/mikaelmello/inquire/pull/194)
 - Added 'without_filtering' to both Select and MultiSelect, useful when you want to simplify the UX if the filter does not add any value, such as when the list is already short.

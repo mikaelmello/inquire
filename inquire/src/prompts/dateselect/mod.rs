@@ -84,10 +84,6 @@ pub struct DateSelect<'a> {
     /// Help message to be presented to the user.
     pub help_message: Option<&'a str>,
 
-    /// Whether vim mode is enabled. When enabled, the user can
-    /// navigate through the options using hjkl.
-    pub vim_mode: bool,
-
     /// Function that formats the user input and presents it to the user as the final rendering of the prompt.
     pub formatter: DateFormatter<'a>,
 
@@ -141,7 +137,6 @@ impl<'a> DateSelect<'a> {
             min_date: Self::DEFAULT_MIN_DATE,
             max_date: Self::DEFAULT_MAX_DATE,
             help_message: Self::DEFAULT_HELP_MESSAGE,
-            vim_mode: Self::DEFAULT_VIM_MODE,
             formatter: Self::DEFAULT_FORMATTER,
             validators: Self::DEFAULT_VALIDATORS,
             week_start: Self::DEFAULT_WEEK_START,
@@ -217,12 +212,6 @@ impl<'a> DateSelect<'a> {
         for validator in validators {
             self.validators.push(validator.clone());
         }
-        self
-    }
-
-    /// Enables or disables vim_mode.
-    pub fn with_vim_mode(mut self, vim_mode: bool) -> Self {
-        self.vim_mode = vim_mode;
         self
     }
 
