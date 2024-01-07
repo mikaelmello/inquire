@@ -71,6 +71,10 @@ impl<'a> EditorPrompt<'a> {
     }
 
     fn validate_current_answer(&self) -> InquireResult<Validation> {
+        if self.validators.is_empty() {
+            return Ok(Validation::Valid);
+        }
+
         let cur_answer = self.cur_answer()?;
         for validator in &self.validators {
             match validator.validate(&cur_answer) {
