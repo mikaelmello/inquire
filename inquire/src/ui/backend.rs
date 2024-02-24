@@ -191,8 +191,7 @@ where
 
         if input.is_empty() {
             match input.placeholder() {
-                None => {}
-                Some(p) if p.is_empty() => {}
+                Some("") | None => {}
                 Some(p) => self.frame_renderer.write_styled(
                     Styled::new(p).with_style_sheet(self.render_config.placeholder),
                 )?,
