@@ -4,19 +4,20 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
+### Breaking Changes
+
+- The Select and Multiselect Filter now scores input and is now expected to return an `Option<i64>`, making it possible to order/rank the list of options. [#176](https://github.com/mikaelmello/inquire/pull/176)
+  `None`: Will not be displayed in the list of options.
+  `Some(score)`: score determines the order of options, higher score, higher on the list of options.
+- Improved user experience on Password prompts. When there is a validation error, the input is cleared if the password is rendered using the `Hidden` display mode, matching the user expectation of having to write the password from scratch again. Thanks to @CM-IV for the questions on #149!
+- Allow lifetime customization of RenderConfig. [#101](https://github.com/mikaelmello/inquire/pull/101). Thanks to @arturfast for the suggestion [#95](https://github.com/mikaelmello/inquire/issues/95).
+- Implement fuzzy search as default on Select and MultiSelect prompts. [#176](https://github.com/mikaelmello/inquire/pull/176)
+- Revamped keybindings for DateSelect.
+
 ### Features
 
 - Add one-liner helpers for quick scripts. [#144](https://github.com/mikaelmello/inquire/pull/144).
-- **Breaking**. Allow lifetime customization of RenderConfig. [#101](https://github.com/mikaelmello/inquire/pull/101). Thanks to @arturfast for the suggestion [#95](https://github.com/mikaelmello/inquire/issues/95).
 - Add new option on MultiSelect prompts to set all options to be selected by default. Thanks to @conikeec for the suggestion (#151)!
-- **Breaking**. Improved user experience on Password prompts. When there is a validation error, the input is cleared if the password is rendered using the `Hidden` display mode, matching the user expectation of having to write the password from scratch again. Thanks to @CM-IV for the questions on #149!
-- Add strict clippy lints to improve code consistency and readability.
-- Expand workflow clippy task to lint all-features in workspace.
-- Add docs badge to readme.
-- **Breaking** The Select and Multiselect Filter now scores input and is now expected to return an `Option<i64>`, making it possible to order/rank the list of options. [#176](https://github.com/mikaelmello/inquire/pull/176)
-  `None`: Will not be displayed in the list of options.
-  `Some(score)`: score determines the order of options, higher score, higher on the list of options.
-- Implement fuzzy search as default on Select and MultiSelect prompts. [#176](https://github.com/mikaelmello/inquire/pull/176)
 - Add new option on Select/MultiSelect prompts allowing to reset selection to the first item on filter-input changes. [#176](https://github.com/mikaelmello/inquire/pull/176)
 - Emacs-like keybindings added where applicable:
   - Ctrl-p/Ctrl-n for up/down
@@ -27,7 +28,6 @@
 - Added starting_input for CustomType. [#194](https://github.com/mikaelmello/inquire/pull/194)
 - Added 'without_filtering' to both Select and MultiSelect, useful when you want to simplify the UX if the filter does not add any value, such as when the list is already short.
 - Added 'with_answered_prompt_prefix' to RenderConfig to allow customization of answered prompt prefix.
-- Revamped keybindings for DateSelect.
 - Improved rendering, with optimizations on incremental rendering and terminal resizing.
 
 ### Fixes
@@ -44,10 +44,6 @@
 - MSRV is now explicitly set in the package definition.
 - Replaced `lazy_static` with `once_cell` as `once_cell::sync::Lazy` is being standardized and `lazy_static` is not actively maintained anymore.
 - Added `fuzzy-matcher` as an optional dependency for fuzzy filtering in Select and MultiSelect prompts [#176](https://github.com/mikaelmello/inquire/pull/176)
-
-### Internals
-
-- Removed some useless `Vec::reserve()` calls
 
 ## [0.6.2] - 2023-05-07
 
