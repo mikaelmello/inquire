@@ -68,13 +68,13 @@ cargo run --example expense_tracker --features date
 Put this line in your `Cargo.toml`, under `[dependencies]`.
 
 ```
-inquire = "0.6.2"
+inquire = "0.7.0"
 ```
 
 \* This prompt type is gated under a feature flag, e.g.:
 
 ```
-inquire = { version = "0.6.2", features = ["date"] }
+inquire = { version = "0.7.0", features = ["date"] }
 ```
 
 # Cross-cutting concerns
@@ -125,13 +125,13 @@ Binary Rust applications that intend to manipulate terminals will probably pick 
 However, if your application already uses a dependency other than crossterm, such as console or termion, you can enable another terminal via feature flags. It is also important to disable inquire's default features as it comes with `crossterm` enabled by default. Such as this:
 
 ```toml
-inquire = { version = "0.6.2", default-features = false, features = ["termion", "date"] }
+inquire = { version = "0.7.0", default-features = false, features = ["termion", "date"] }
 ```
 
 or this:
 
 ```toml
-inquire = { version = "0.6.2", default-features = false, features = ["console", "date"] }
+inquire = { version = "0.7.0", default-features = false, features = ["console", "date"] }
 ```
 
 ## Formatting

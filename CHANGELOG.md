@@ -4,6 +4,10 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
+- No changes since the latest release below.
+
+## [0.7.0] - 2024-02-24
+
 ### Breaking Changes
 
 - The Select and Multiselect Filter now scores input and is now expected to return an `Option<i64>`, making it possible to order/rank the list of options. [#176](https://github.com/mikaelmello/inquire/pull/176)
@@ -298,7 +302,8 @@ The library is already featureful enough to warrant a higher version number, bum
 
 <!-- next-url -->
 
-[unreleased]: https://github.com/mikaelmello/inquire/compare/v0.6.2...HEAD
+[unreleased]: https://github.com/mikaelmello/inquire/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/mikaelmello/inquire/compare/v0.6.2...v0.7.0
 [0.6.2]: https://github.com/mikaelmello/inquire/compare/v0.6.1...v0.6.2
 [0.6.1]: https://github.com/mikaelmello/inquire/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/mikaelmello/inquire/compare/v0.5.3...v0.6.0
