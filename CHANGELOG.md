@@ -4,7 +4,7 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
-- No changes since the latest release below.
+- Accept 'h' and 'l' keys in `MultiSelect` vim_mode to current clear selection and select all.
 
 ## [0.7.0] - 2024-02-24
 

@@ -36,8 +36,10 @@ impl InnerAction for MultiSelectPromptAction {
     fn from_key(key: Key, config: &MultiSelectConfig) -> Option<Self> {
         if config.vim_mode {
             let action = match key {
+                Key::Char('h', KeyModifiers::NONE) => Some(Self::ClearSelections),
                 Key::Char('k', KeyModifiers::NONE) => Some(Self::MoveUp),
                 Key::Char('j', KeyModifiers::NONE) => Some(Self::MoveDown),
+                Key::Char('l', KeyModifiers::NONE) => Some(Self::SelectAll),
                 _ => None,
             };
 
