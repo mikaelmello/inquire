@@ -4,7 +4,7 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
-- No changes since the latest release below.
+- Added `history.rs` and modified `Text` to allow the addition of prompt-history navigation
 
 ## [0.7.0] - 2024-02-24
 
