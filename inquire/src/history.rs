@@ -50,9 +50,7 @@ impl History for NoHistory {
         Ok(Replacement::None)
     }
 
-    fn prepend_element(&mut self, _: String) {
-        ()
-    }
+    fn prepend_element(&mut self, _: String) {}
 }
 
 /// Simple `History` implementation. Stores a vector of strings representing prompt entries, and navigates through the
@@ -101,7 +99,7 @@ impl History for SimpleHistory {
     }
 
     fn prepend_element(&mut self, e: String) {
-        if e.len() > 0 {
+        if !e.is_empty() {
             self.history.insert(0, e);
             self.index = -1;
         }

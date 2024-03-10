@@ -96,16 +96,13 @@ impl<'a> TextPrompt<'a> {
     /// Navigate later (or 'downwards') through the history and redraw with the next element, if available.
     /// If the user has navigated beyond the most recently-available history item, clear the prompt
     fn history_iterate_later(&mut self) -> InquireResult<ActionResult> {
-        match self.history.later_element()? {
-            HistoryReplacement::Some(value) => {
-                self.input = Input::new_with(value);
-                Ok(ActionResult::NeedsRedraw)
-            }
-            _ => {
-                // if empty, clear the prompt on down-key
-                self.input = Input::new_with("");
-                Ok(ActionResult::NeedsRedraw)
-            }
+        if let HistoryReplacement::Some(value) = self.history.later_element()? {
+            self.input = Input::new_with(value);
+            Ok(ActionResult::NeedsRedraw)
+        } else {
+            // if empty, clear the prompt on down-key
+            self.input = Input::new_with("");
+            Ok(ActionResult::NeedsRedraw)
         }
     }
 
