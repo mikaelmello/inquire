@@ -542,7 +542,9 @@ pub mod date {
             let mut date_it = get_start_date(month, year);
             // first date of week-line is possibly in the previous month
             if date_it.weekday() == week_start {
-                date_it = date_it.sub(Duration::weeks(1));
+                date_it = date_it.sub(
+                    Duration::try_weeks(1).expect("overflow when calculating duration of 1 week"),
+                );
             } else {
                 while date_it.weekday() != week_start {
                     date_it = match date_it.pred_opt() {
