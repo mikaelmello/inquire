@@ -15,7 +15,7 @@ use crate::{
     prompts::prompt::Prompt,
     terminal::get_default_terminal,
     ui::{Backend, RenderConfig, TextBackend},
-    validator::StringValidator,
+    validator::StringValidator, History,
 };
 
 use self::prompt::TextPrompt;
@@ -100,6 +100,9 @@ pub struct Text<'a> {
     /// Autocompleter responsible for handling suggestions and input completions.
     pub autocompleter: Option<Box<dyn Autocomplete>>,
 
+    /// History, responsible for producing previously-entered text entries
+    pub history: Option<Box<dyn History>>,
+
     /// Collection of validators to apply to the user input.
     ///
     /// Validators are executed in the order they are stored, stopping at and displaying to the user
@@ -119,7 +122,7 @@ pub struct Text<'a> {
     /// When overriding the config in a prompt, NO_COLOR is no longer considered and your
     /// config is treated as the only source of truth. If you want to customize colors
     /// and still support NO_COLOR, you will have to do this on your end.
-    pub render_config: RenderConfig<'a>,
+    pub render_config: RenderConfig<'a>
 }
 
 impl<'a> Text<'a> {
@@ -147,8 +150,15 @@ impl<'a> Text<'a> {
             formatter: Self::DEFAULT_FORMATTER,
             page_size: Self::DEFAULT_PAGE_SIZE,
             autocompleter: None,
+            history: None,
             render_config: get_configuration(),
         }
+    }
+
+    /// Sets the help message of the prompt.
+    pub fn with_prompt_message(mut self, message: &'a str) -> Self {
+        self.message = message;
+        self
     }
 
     /// Sets the help message of the prompt.
@@ -186,7 +196,16 @@ impl<'a> Text<'a> {
     {
         self.autocompleter = Some(Box::new(ac));
         self
-    }
+    }  
+
+    /// Sets a new history
+    pub fn with_history<H>(mut self, h: H) -> Self
+    where
+        H: History + 'static,
+    {
+        self.history = Some(Box::new(h));
+        self
+    }       
 
     /// Sets the formatter.
     pub fn with_formatter(mut self, formatter: StringFormatter<'a>) -> Self {

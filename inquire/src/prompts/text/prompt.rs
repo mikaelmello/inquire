@@ -4,13 +4,14 @@ use crate::{
     autocompletion::{NoAutoCompletion, Replacement},
     error::InquireResult,
     formatter::StringFormatter,
+    history::{NoHistory, Replacement as HistoryReplacement},
     input::{Input, InputActionResult},
     list_option::ListOption,
     prompts::prompt::{ActionResult, Prompt},
     ui::TextBackend,
     utils::paginate,
     validator::{ErrorMessage, StringValidator, Validation},
-    Autocomplete, InquireError, Text,
+    Autocomplete, History, InquireError, Text,
 };
 
 use super::{action::TextPromptAction, config::TextConfig, DEFAULT_HELP_MESSAGE_WITH_AC};
@@ -25,8 +26,9 @@ pub struct TextPrompt<'a> {
     validators: Vec<Box<dyn StringValidator>>,
     error: Option<ErrorMessage>,
     autocompleter: Box<dyn Autocomplete>,
+    history: Box<dyn History>,
     suggested_options: Vec<String>,
-    suggestion_cursor_index: Option<usize>,
+    suggestion_cursor_index: Option<usize>
 }
 
 impl<'a> From<Text<'a>> for TextPrompt<'a> {
@@ -47,6 +49,9 @@ impl<'a> From<Text<'a>> for TextPrompt<'a> {
             autocompleter: so
                 .autocompleter
                 .unwrap_or_else(|| Box::<NoAutoCompletion>::default()),
+            history: so
+                .history
+                .unwrap_or_else(|| Box::<NoHistory>::default()),
             input,
             error: None,
             suggestion_cursor_index: None,
@@ -77,6 +82,33 @@ impl<'a> TextPrompt<'a> {
         } else {
             None
         }
+    }
+
+    /// Navigate earlier (or 'upwards') through the history and redraw with the next element, if available
+    fn history_iterate_earlier(&mut self) -> InquireResult<ActionResult> {
+      match self.history.earlier_element()? {
+        HistoryReplacement::Some(value) => {
+          self.input = Input::new_with(value);
+          Ok(ActionResult::NeedsRedraw)
+        },
+        _ => Ok(ActionResult::Clean)
+      }
+    }
+
+    /// Navigate later (or 'downwards') through the history and redraw with the next element, if available.
+    /// If the user has navigated beyond the most recently-available history item, clear the prompt
+    fn history_iterate_later(&mut self) -> InquireResult<ActionResult> {
+      match self.history.later_element()? {
+        HistoryReplacement::Some(value) => {
+          self.input = Input::new_with(value);
+          Ok(ActionResult::NeedsRedraw)
+        },
+        _ => {
+          // if empty, clear the prompt on down-key
+          self.input = Input::new_with("");
+          Ok(ActionResult::NeedsRedraw)
+        }
+      }
     }
 
     fn move_cursor_up(&mut self, qty: usize) -> ActionResult {
@@ -187,7 +219,11 @@ where
 
     fn submit(&mut self) -> InquireResult<Option<String>> {
         let result = match self.validate_current_answer()? {
-            Validation::Valid => Some(self.get_current_answer().to_owned()),
+            Validation::Valid => {
+              // On enter, add the new entry into the history object
+              self.history.prepend_element(self.get_current_answer().to_owned());
+              Some(self.get_current_answer().to_owned())
+            },
             Validation::Invalid(msg) => {
                 self.error = Some(msg);
                 None
@@ -208,13 +244,37 @@ where
 
                 result.into()
             }
-            TextPromptAction::MoveToSuggestionAbove => self.move_cursor_up(1),
-            TextPromptAction::MoveToSuggestionBelow => self.move_cursor_down(1),
+            TextPromptAction::MoveToSuggestionAbove => {
+              // If the user is navigated suggested options, move the cursor through
+              // those suggestions. Otherwise, assume the user is looking through
+              // prompt history.
+              if self.suggested_options.is_empty() {
+                self.history_iterate_earlier()?
+              } else {
+                self.move_cursor_up(1)
+              }
+            },
+            TextPromptAction::MoveToSuggestionBelow => {
+              // If the user is navigated suggested options, move the cursor through
+              // those suggestions. Otherwise, assume the user is looking through
+              // prompt history.
+              if self.suggested_options.is_empty() {
+                self.history_iterate_later()?
+              } else {
+                self.move_cursor_down(1)
+              }
+            },
             TextPromptAction::MoveToSuggestionPageUp => self.move_cursor_up(self.config.page_size),
             TextPromptAction::MoveToSuggestionPageDown => {
                 self.move_cursor_down(self.config.page_size)
             }
-            TextPromptAction::UseCurrentSuggestion => self.use_current_suggestion()?,
+            TextPromptAction::UseCurrentSuggestion => {
+              if self.suggested_options.is_empty() {
+                Ok(ActionResult::Clean)
+              } else {
+                self.use_current_suggestion()
+              }?
+            },
         };
 
         Ok(result)
