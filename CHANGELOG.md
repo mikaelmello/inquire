@@ -4,7 +4,7 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
-- No changes since the latest release below.
+- Fix render issue [#228](https://github.com/mikaelmello/inquire/pull/228) when using `console` crate as the terminal backend. Thanks @maospr for reporting.
 
 ## [0.7.0] - 2024-02-24
 
