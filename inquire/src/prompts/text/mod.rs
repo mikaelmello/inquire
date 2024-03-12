@@ -16,6 +16,7 @@ use crate::{
     terminal::get_default_terminal,
     ui::{Backend, RenderConfig, TextBackend},
     validator::StringValidator,
+    History,
 };
 
 use self::prompt::TextPrompt;
@@ -100,6 +101,9 @@ pub struct Text<'a> {
     /// Autocompleter responsible for handling suggestions and input completions.
     pub autocompleter: Option<Box<dyn Autocomplete>>,
 
+    /// History, responsible for producing previously-entered text entries
+    pub history: Option<Box<dyn History>>,
+
     /// Collection of validators to apply to the user input.
     ///
     /// Validators are executed in the order they are stored, stopping at and displaying to the user
@@ -147,8 +151,15 @@ impl<'a> Text<'a> {
             formatter: Self::DEFAULT_FORMATTER,
             page_size: Self::DEFAULT_PAGE_SIZE,
             autocompleter: None,
+            history: None,
             render_config: get_configuration(),
         }
+    }
+
+    /// Sets the help message of the prompt.
+    pub fn with_prompt_message(mut self, message: &'a str) -> Self {
+        self.message = message;
+        self
     }
 
     /// Sets the help message of the prompt.
@@ -185,6 +196,15 @@ impl<'a> Text<'a> {
         AC: Autocomplete + 'static,
     {
         self.autocompleter = Some(Box::new(ac));
+        self
+    }
+
+    /// Sets a new history
+    pub fn with_history<H>(mut self, h: H) -> Self
+    where
+        H: History + 'static,
+    {
+        self.history = Some(Box::new(h));
         self
     }
 
