@@ -84,6 +84,18 @@ where
     len
 }
 
+impl<'a, T> Debug for Page<'a, T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Page")
+            .field("first", &self.first)
+            .field("last", &self.last)
+            .field("content", &format!("({} elements)", &self.content.len()))
+            .field("cursor", &self.cursor)
+            .field("total", &self.total)
+            .finish()
+    }
+}
+
 #[cfg(test)]
 mod test {
     #![allow(clippy::bool_assert_comparison)]
@@ -247,17 +259,5 @@ mod test {
         assert_eq!(true, page.first);
         assert_eq!(false, page.last);
         assert_eq!(6, page.total);
-    }
-}
-
-impl<'a, T> Debug for Page<'a, T> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Page")
-            .field("first", &self.first)
-            .field("last", &self.last)
-            .field("content", &format!("({} elements)", &self.content.len()))
-            .field("cursor", &self.cursor)
-            .field("total", &self.total)
-            .finish()
     }
 }

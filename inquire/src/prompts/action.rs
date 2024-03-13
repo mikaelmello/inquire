@@ -39,7 +39,9 @@ where
             Key::Enter
             | Key::Char('\n', KeyModifiers::NONE)
             | Key::Char('j', KeyModifiers::CONTROL) => Some(Action::Submit),
-            Key::Escape | Key::Char('g', KeyModifiers::CONTROL) => Some(Action::Cancel),
+            Key::Escape
+            | Key::Char('g', KeyModifiers::CONTROL)
+            | Key::Char('d', KeyModifiers::CONTROL) => Some(Action::Cancel),
             Key::Char('c', KeyModifiers::CONTROL) => Some(Action::Interrupt),
             key => I::from_key(key, config).map(Action::Inner),
         }

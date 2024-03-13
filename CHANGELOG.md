@@ -4,7 +4,12 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
-- Accept 'h' and 'l' keys in `MultiSelect` vim_mode to current clear selection and select all.
+- Pressing Ctrl+D now cancels the prompt.
+- Add support for `h` and `l` bindings when vim_mode is enabled on MultiSelect prompts, clearing or selecting all options respectively.
+
+## [0.7.1] - 2024-03-10
+
+- Fix render issue [#228](https://github.com/mikaelmello/inquire/pull/228) when using `console` crate as the terminal backend. Thanks @maospr for reporting.
 
 ## [0.7.0] - 2024-02-24
 
@@ -302,7 +307,8 @@ The library is already featureful enough to warrant a higher version number, bum
 
 <!-- next-url -->
 
-[unreleased]: https://github.com/mikaelmello/inquire/compare/v0.7.0...HEAD
+[unreleased]: https://github.com/mikaelmello/inquire/compare/v0.7.1...HEAD
+[0.7.1]: https://github.com/mikaelmello/inquire/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/mikaelmello/inquire/compare/v0.6.2...v0.7.0
 [0.6.2]: https://github.com/mikaelmello/inquire/compare/v0.6.1...v0.6.2
 [0.6.1]: https://github.com/mikaelmello/inquire/compare/v0.6.0...v0.6.1
