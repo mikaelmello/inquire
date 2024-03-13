@@ -5,6 +5,7 @@
 ## [Unreleased] <!-- ReleaseDate -->
 
 - Pressing Ctrl+D now cancels the prompt.
+- Add support for `h` and `l` bindings when vim_mode is enabled on MultiSelect prompts, clearing or selecting all options respectively.
 
 ## [0.7.1] - 2024-03-10
 
