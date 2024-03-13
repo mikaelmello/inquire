@@ -4,7 +4,7 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
-- No changes since the latest release below.
+- Pressing Ctrl+D now cancels the prompt.
 
 ## [0.7.1] - 2024-03-10
 
