@@ -91,7 +91,7 @@ impl Terminal for ConsoleTerminal {
     }
 
     fn clear_until_new_line(&mut self) -> Result<()> {
-        self.term.clear_to_end_of_screen()
+        write!(self.term, "\x1b[K")
     }
 
     fn cursor_hide(&mut self) -> Result<()> {

@@ -145,10 +145,22 @@ where
 
     fn handle(&mut self, action: DateSelectPromptAction) -> InquireResult<ActionResult> {
         let result = match action {
-            DateSelectPromptAction::GoToPrevWeek => self.shift_date(Duration::weeks(-1)),
-            DateSelectPromptAction::GoToNextWeek => self.shift_date(Duration::weeks(1)),
-            DateSelectPromptAction::GoToPrevDay => self.shift_date(Duration::days(-1)),
-            DateSelectPromptAction::GoToNextDay => self.shift_date(Duration::days(1)),
+            DateSelectPromptAction::GoToPrevWeek => self.shift_date(
+                Duration::try_weeks(-1)
+                    .expect("unexpected overflow when calculating duration of 1 week"),
+            ),
+            DateSelectPromptAction::GoToNextWeek => self.shift_date(
+                Duration::try_weeks(1)
+                    .expect("unexpected overflow when calculating duration of 1 week"),
+            ),
+            DateSelectPromptAction::GoToPrevDay => self.shift_date(
+                Duration::try_days(-1)
+                    .expect("unexpected overflow when calculating duration of 1 day"),
+            ),
+            DateSelectPromptAction::GoToNextDay => self.shift_date(
+                Duration::try_days(1)
+                    .expect("unexpected overflow when calculating duration of 1 day"),
+            ),
             DateSelectPromptAction::GoToPrevYear => self.shift_months(-12),
             DateSelectPromptAction::GoToNextYear => self.shift_months(12),
             DateSelectPromptAction::GoToPrevMonth => self.shift_months(-1),
