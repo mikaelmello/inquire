@@ -4,6 +4,10 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
+- No changes since the latest release below.
+
+## [0.7.2] - 2024-03-17
+
 - Pressing Ctrl+D now cancels the prompt. Thanks @mikecvet for the PR!
 - Add support for `h` and `l` bindings when vim_mode is enabled on MultiSelect prompts, clearing or selecting all options respectively. Thanks @afh for the PR!
 - Fix render issue [#233](https://github.com/mikaelmello/inquire/issues/233) where cursor positioning at the end of a prompt was incorrect. Thanks @msrd0 and @Sydonian for reporting!
@@ -308,7 +312,8 @@ The library is already featureful enough to warrant a higher version number, bum
 
 <!-- next-url -->
 
-[unreleased]: https://github.com/mikaelmello/inquire/compare/v0.7.1...HEAD
+[unreleased]: https://github.com/mikaelmello/inquire/compare/v0.7.2...HEAD
+[0.7.2]: https://github.com/mikaelmello/inquire/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/mikaelmello/inquire/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/mikaelmello/inquire/compare/v0.6.2...v0.7.0
 [0.6.2]: https://github.com/mikaelmello/inquire/compare/v0.6.1...v0.6.2
