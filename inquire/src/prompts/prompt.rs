@@ -123,7 +123,7 @@ where
             if last_handle.needs_redraw() {
                 backend.frame_setup()?;
                 self.render(backend)?;
-                backend.frame_finish()?;
+                backend.frame_finish(false)?;
                 last_handle = ActionResult::Clean;
             }
 
@@ -144,7 +144,7 @@ where
                         if pre_cancel_result {
                             backend.frame_setup()?;
                             backend.render_canceled_prompt(self.message())?;
-                            backend.frame_finish()?;
+                            backend.frame_finish(true)?;
                             return Err(InquireError::OperationCanceled);
                         }
 
@@ -160,7 +160,7 @@ where
 
         backend.frame_setup()?;
         backend.render_prompt_with_answer(self.message(), &formatted)?;
-        backend.frame_finish()?;
+        backend.frame_finish(true)?;
 
         Ok(final_answer)
     }

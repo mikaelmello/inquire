@@ -14,7 +14,7 @@ use super::{frame_renderer::FrameRenderer, InputReader};
 
 pub trait CommonBackend: InputReader {
     fn frame_setup(&mut self) -> Result<()>;
-    fn frame_finish(&mut self) -> Result<()>;
+    fn frame_finish(&mut self, is_last_frame: bool) -> Result<()>;
 
     fn render_canceled_prompt(&mut self, prompt: &str) -> Result<()>;
     fn render_prompt_with_answer(&mut self, prompt: &str, answer: &str) -> Result<()>;
@@ -247,8 +247,8 @@ where
         self.frame_renderer.start_frame()
     }
 
-    fn frame_finish(&mut self) -> Result<()> {
-        self.frame_renderer.finish_current_frame()
+    fn frame_finish(&mut self, is_last_frame: bool) -> Result<()> {
+        self.frame_renderer.finish_current_frame(is_last_frame)
     }
 
     fn render_canceled_prompt(&mut self, prompt: &str) -> Result<()> {
@@ -689,6 +689,7 @@ pub(crate) mod test {
             min_date: Option<NaiveDate>,
             max_date: Option<NaiveDate>,
         },
+        PromptEnd,
     }
 
     #[derive(Default, Debug, Clone)]
@@ -751,7 +752,11 @@ pub(crate) mod test {
             Ok(())
         }
 
-        fn frame_finish(&mut self) -> std::io::Result<()> {
+        fn frame_finish(&mut self, is_last_frame: bool) -> std::io::Result<()> {
+            if is_last_frame {
+                self.push_token(Token::PromptEnd);
+            }
+
             if let Some(frame) = self.cur_frame.take() {
                 self.frames.push(frame);
             } else {
