@@ -262,7 +262,7 @@ where
         Ok(())
     }
 
-    pub fn finish_current_frame(&mut self) -> io::Result<()> {
+    pub fn finish_current_frame(&mut self, add_empty_line: bool) -> io::Result<()> {
         let (last_rendered_frame, mut current_frame) = match std::mem::take(&mut self.state) {
             RenderState::Rendered(_) | RenderState::Initial => {
                 return Ok(());
@@ -280,7 +280,7 @@ where
             current_frame.frame_size.height(),
         );
 
-        self.terminal.cursor_hide()?;
+        //self.terminal.cursor_hide()?;
         self.move_cursor_to(Position { row: 0, col: 0 })?;
 
         for i in 0..rows_to_iterate {
@@ -319,6 +319,11 @@ where
                 self.terminal.write("\n")?;
                 self.cursor_position.row += 1;
             }
+        }
+
+        if add_empty_line {
+            self.terminal.write("\n")?;
+            self.cursor_position.row += 1;
         }
 
         if let Some(expected_cursor_position) = current_frame.expected_cursor_position {
