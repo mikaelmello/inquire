@@ -29,6 +29,7 @@ use fuzzy_matcher::{skim::SkimMatcherV2, FuzzyMatcher};
 use once_cell::sync::Lazy;
 #[cfg(feature = "fuzzy")]
 static DEFAULT_MATCHER: Lazy<SkimMatcherV2> = Lazy::new(|| SkimMatcherV2::default().ignore_case());
+type CountedListOption<T> =  (u32, ListOption<T>);
 /// Prompt suitable for when you need the user to select counts of multiple options (including none if applicable) among a list of them.
 ///
 /// The user can begin choosing a count for the current highlighted option by pressing spac.
@@ -398,7 +399,7 @@ where
     ///
     /// Meanwhile, if the user does submit an answer, the method wraps the return
     /// type with `Some`.
-    pub fn raw_prompt_skippable(self) -> InquireResult<Option<Vec<(u32, ListOption<T>)>>> {
+    pub fn raw_prompt_skippable(self) -> InquireResult<Option<Vec<CountedListOption<T>>>> {
         match self.raw_prompt() {
             Ok(answer) => Ok(Some(answer)),
             Err(InquireError::OperationCanceled) => Ok(None),
