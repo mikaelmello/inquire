@@ -51,13 +51,14 @@ pub trait MultiSelectBackend: CommonBackend {
         checked: &BTreeSet<usize>,
     ) -> Result<()>;
 }
- pub trait MultiCountBackend: CommonBackend {
-     fn render_multiselect_prompt(&mut self, prompt: &str, cur_input: Option<&Input>) -> Result<()>;
-     fn render_options<D: Display>(
-         &mut self,
-         page: Page<'_, ListOption<D>>,
-         counts: &BTreeSet<(usize, u32)>) -> Result<()>;
- }
+pub trait MultiCountBackend: CommonBackend {
+    fn render_multiselect_prompt(&mut self, prompt: &str, cur_input: Option<&Input>) -> Result<()>;
+    fn render_options<D: Display>(
+        &mut self,
+        page: Page<'_, ListOption<D>>,
+        counts: &BTreeSet<(usize, u32)>,
+    ) -> Result<()>;
+}
 
 pub trait CustomTypeBackend: CommonBackend {
     fn render_prompt(
@@ -455,10 +456,10 @@ where
     }
 }
 
-impl <'a, I, T> MultiCountBackend for Backend<'a, I, T>
+impl<'a, I, T> MultiCountBackend for Backend<'a, I, T>
 where
     I: InputReader,
-    T:Terminal,
+    T: Terminal,
 {
     fn render_multiselect_prompt(&mut self, prompt: &str, cur_input: Option<&Input>) -> Result<()> {
         if let Some(input) = cur_input {
@@ -490,7 +491,6 @@ where
                 .unwrap_or(&0);
             let mut countbox = Styled::new(format!("[{}]", count));
 
-
             match (self.render_config.selected_option, page.cursor) {
                 (Some(stylesheet), Some(cursor)) if cursor == idx => countbox.style = stylesheet,
                 _ => {}
@@ -507,7 +507,6 @@ where
 
         Ok(())
     }
-
 }
 
 #[cfg(feature = "date")]

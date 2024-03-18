@@ -64,7 +64,10 @@ fn list_option_indexes_are_relative_to_input_vec() {
         .prompt_with_backend(&mut backend)
         .unwrap();
 
-    assert_eq!(vec![(1, ListOption::new(1, 2)), (10, ListOption::new(2, 3))], ans);
+    assert_eq!(
+        vec![(1, ListOption::new(1, 2)), (10, ListOption::new(2, 3))],
+        ans
+    );
 }
 
 #[test]

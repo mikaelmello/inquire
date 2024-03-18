@@ -10,16 +10,16 @@ pub use action::*;
 use std::fmt::Display;
 
 use crate::{
-        config::get_configuration,
-        error::{InquireError, InquireResult},
-        formatter::MultiCountFormatter,
-        list_option::ListOption,
-        prompts::prompt::Prompt,
-        terminal::get_default_terminal,
-        type_aliases::Scorer,
-        ui::{Backend, MultiCountBackend, RenderConfig},
-        validator::MultiOptionValidator,
-    };
+    config::get_configuration,
+    error::{InquireError, InquireResult},
+    formatter::MultiCountFormatter,
+    list_option::ListOption,
+    prompts::prompt::Prompt,
+    terminal::get_default_terminal,
+    type_aliases::Scorer,
+    ui::{Backend, MultiCountBackend, RenderConfig},
+    validator::MultiOptionValidator,
+};
 
 use self::prompt::MultiCountPrompt;
 

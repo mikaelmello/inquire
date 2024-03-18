@@ -1,10 +1,13 @@
-use crate::{ui::{Key, KeyModifiers}, InnerAction, InputAction};
+use crate::{
+    ui::{Key, KeyModifiers},
+    InnerAction, InputAction,
+};
 
 use super::config::MultiCountConfig;
 
 /// Set of actions for a MultiCountPrompt.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum MultiCountPromptAction{
+pub enum MultiCountPromptAction {
     /// Action on the value text input handler.
     FilterInput(InputAction),
     /// Moves the cursor to the option above.
@@ -20,7 +23,7 @@ pub enum MultiCountPromptAction{
     /// Moves the cursor to the end of the list.
     MoveToEnd,
     /// Toggles the selection of the current option.
-    SetCountCurrentOption(u32), 
+    SetCountCurrentOption(u32),
     /// Increments the current selection by one
     Increment,
     /// Decrements the current selection by one
@@ -49,7 +52,6 @@ impl InnerAction for MultiCountPromptAction {
                 return action;
             }
         }
-    
 
         let action = match key {
             Key::Up(KeyModifiers::NONE) | Key::Char('p', KeyModifiers::CONTROL) => Self::MoveUp,
@@ -69,7 +71,7 @@ impl InnerAction for MultiCountPromptAction {
                 Some(action) => Self::FilterInput(action),
                 None => return None,
             },
-         };
-         Some(action)
+        };
+        Some(action)
     }
 }
