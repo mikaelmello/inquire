@@ -129,6 +129,8 @@ pub type OptionFormatter<'a, T> = &'a dyn Fn(ListOption<&T>) -> String;
 /// ```
 pub type MultiOptionFormatter<'a, T> = &'a dyn Fn(&[ListOption<&T>]) -> String;
 
+pub type MultiCountFormatter<'a, T> = &'a dyn Fn(&[(u32, ListOption<&T>)]) -> String;
+
 /// Type alias for formatters used in [`CustomType`](crate::CustomType) prompts.
 ///
 /// Formatters receive the user input and return a [String] to be displayed
