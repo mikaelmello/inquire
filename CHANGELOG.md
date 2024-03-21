@@ -4,7 +4,7 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
-- No changes since the latest release below.
+- Fix cursor occasionally blinking in unexpected places.
 
 ## [0.7.2] - 2024-03-17
 
