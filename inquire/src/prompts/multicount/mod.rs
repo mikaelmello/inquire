@@ -29,7 +29,28 @@ use fuzzy_matcher::{skim::SkimMatcherV2, FuzzyMatcher};
 use once_cell::sync::Lazy;
 #[cfg(feature = "fuzzy")]
 static DEFAULT_MATCHER: Lazy<SkimMatcherV2> = Lazy::new(|| SkimMatcherV2::default().ignore_case());
-type CountedListOption<T> = (u32, ListOption<T>);
+
+/// Represents a selection made by a user alongside a count of said options, when prompted
+/// to select a count of each of several presented options.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CountedListOption<T> {
+    count: u32,
+    list_option: ListOption<T>,
+}
+
+impl<T> CountedListOption<T> {
+    pub fn new(count: u32, list_option: ListOption<T>) -> Self {
+        Self { count, list_option }
+    }
+
+    pub fn as_ref(&self) -> CountedListOption<&T> {
+        CountedListOption {
+            count: self.count,
+            list_option: self.list_option.as_ref(),
+        }
+    }
+}
+
 /// Prompt suitable for when you need the user to select counts of multiple options (including none if applicable) among a list of them.
 ///
 /// The user can begin choosing a count for the current highlighted option by pressing spac.
@@ -150,7 +171,7 @@ where
     /// ```
     pub const DEFAULT_FORMATTER: MultiCountFormatter<'a, T> = &|ans| {
         ans.iter()
-            .map(|(c, opt)| format!("{}: {}", opt, c))
+            .map(|c| format!("{}: {}", c.list_option, c.count))
             .collect::<Vec<String>>()
             .join(", ")
     };
@@ -383,15 +404,18 @@ where
     ///
     /// Returns the owned objects selected by the user.
     pub fn prompt(self) -> InquireResult<Vec<(u32, T)>> {
-        self.raw_prompt()
-            .map(|op| op.into_iter().map(|(c, o)| (c, o.value)).collect())
+        self.raw_prompt().map(|op| {
+            op.into_iter()
+                .map(|c| (c.count, c.list_option.value))
+                .collect()
+        })
     }
 
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to the defined rules.
     ///
-    /// Returns a vector of [`ListOption`](crate::list_option::ListOption)s containing
-    /// the index of the selections and the owned objects selected by the user.
+    /// Returns a vector of [`CountedListOption`](crate::list_option::ListOption)s containing
+    /// the counts of the selections and the ListOptions with the owned objects selected by the user.
     ///
     /// This method is intended for flows where the user skipping/cancelling
     /// the prompt - by pressing ESC - is considered normal behavior. In this case,
@@ -412,7 +436,7 @@ where
     ///
     /// Returns a [`ListOption`](crate::list_option::ListOption) containing
     /// the index of the selection and the owned object selected by the user.
-    pub fn raw_prompt(self) -> InquireResult<Vec<(u32, ListOption<T>)>> {
+    pub fn raw_prompt(self) -> InquireResult<Vec<CountedListOption<T>>> {
         let (input_reader, terminal) = get_default_terminal()?;
         let mut backend = Backend::new(input_reader, terminal, self.render_config)?;
         self.prompt_with_backend(&mut backend)
@@ -421,7 +445,7 @@ where
     pub(crate) fn prompt_with_backend<B: MultiCountBackend>(
         self,
         backend: &mut B,
-    ) -> InquireResult<Vec<(u32, ListOption<T>)>> {
+    ) -> InquireResult<Vec<CountedListOption<T>>> {
         MultiCountPrompt::new(self)?.prompt(backend)
     }
 }

@@ -10,7 +10,7 @@ use crate::{
     ui::MultiCountBackend,
     utils::paginate,
     validator::{ErrorMessage, MultiOptionValidator, Validation},
-    InquireError, MultiCount,
+    CountedListOption, InquireError, MultiCount,
 };
 
 use super::{action::MultiCountPromptAction, config::MultiCountConfig};
@@ -213,7 +213,7 @@ where
 
     /// used to produce the actual vector of type values
     /// THIS IS WRONG AT THE MOMENT: NEED TO SEE WHAT IS GIONG ON WITH self.OPTIONS
-    fn get_final_answer(&mut self) -> Vec<(u32, ListOption<T>)> {
+    fn get_final_answer(&mut self) -> Vec<CountedListOption<T>> {
         let mut answer = vec![];
 
         // by iterating in descending order, we can safely
@@ -223,7 +223,11 @@ where
             let index = pair.0;
             let count = pair.1;
             let value = self.options.swap_remove(index);
-            let lo = (count, ListOption::new(index, value));
+            //let lo = (count, ListOption::new(index, value));
+            let lo = CountedListOption {
+                count,
+                list_option: ListOption::new(index, value),
+            };
             answer.push(lo);
         }
         answer.reverse();
@@ -276,18 +280,16 @@ where
 {
     type Config = MultiCountConfig;
     type InnerAction = MultiCountPromptAction;
-    type Output = Vec<(u32, ListOption<T>)>;
+    type Output = Vec<CountedListOption<T>>;
     fn message(&self) -> &str {
         self.message
     }
     fn config(&self) -> &MultiCountConfig {
         &self.config
     }
-    fn format_answer(&self, answer: &Vec<(u32, ListOption<T>)>) -> String {
-        let refs: Vec<(u32, ListOption<&T>)> = answer
-            .iter()
-            .map(|(c, l)| (*c, ListOption::as_ref(l)))
-            .collect();
+    fn format_answer(&self, answer: &Vec<CountedListOption<T>>) -> String {
+        let refs: Vec<CountedListOption<&T>> =
+            answer.iter().map(CountedListOption::as_ref).collect();
         (self.formatter)(&refs)
     }
 
@@ -296,7 +298,7 @@ where
         Ok(())
     }
 
-    fn submit(&mut self) -> InquireResult<Option<Vec<(u32, ListOption<T>)>>> {
+    fn submit(&mut self) -> InquireResult<Option<Vec<CountedListOption<T>>>> {
         let answer = match self.validate_current_answer()? {
             Validation::Valid => Some(self.get_final_answer()),
             Validation::Invalid(msg) => {

@@ -129,6 +129,7 @@ pub type OptionFormatter<'a, T> = &'a dyn Fn(ListOption<&T>) -> String;
 /// ```
 pub type MultiOptionFormatter<'a, T> = &'a dyn Fn(&[ListOption<&T>]) -> String;
 
+use crate::CountedListOption;
 /// Type alias for formatters used in [`MultiCount`](crate::MultiCount) prompts.
 ///
 /// Formatters receive the user input and return a [(u32, String)] to be displayed
@@ -163,7 +164,7 @@ pub type MultiOptionFormatter<'a, T> = &'a dyn Fn(&[ListOption<&T>]) -> String;
 /// ans.push((3, ListOption::new(3, "d")));
 /// assert_eq!(String::from("You selected 2 options with values: [\"a\", \"d\"] and counts: [1, 3]"), formatter(&ans));
 /// ```
-pub type MultiCountFormatter<'a, T> = &'a dyn Fn(&[(u32, ListOption<&T>)]) -> String;
+pub type MultiCountFormatter<'a, T> = &'a dyn Fn(&[CountedListOption<&T>]) -> String;
 
 /// Type alias for formatters used in [`CustomType`](crate::CustomType) prompts.
 ///
