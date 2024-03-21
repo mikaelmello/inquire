@@ -4,6 +4,10 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
+- No changes since the latest release below.
+
+## [0.7.3] - 2024-03-21
+
 - Fix cursor occasionally blinking in unexpected places.
 
 ## [0.7.2] - 2024-03-17
@@ -312,7 +316,8 @@ The library is already featureful enough to warrant a higher version number, bum
 
 <!-- next-url -->
 
-[unreleased]: https://github.com/mikaelmello/inquire/compare/v0.7.2...HEAD
+[unreleased]: https://github.com/mikaelmello/inquire/compare/v0.7.3...HEAD
+[0.7.3]: https://github.com/mikaelmello/inquire/compare/v0.7.2...v0.7.3
 [0.7.2]: https://github.com/mikaelmello/inquire/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/mikaelmello/inquire/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/mikaelmello/inquire/compare/v0.6.2...v0.7.0
