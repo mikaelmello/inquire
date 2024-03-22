@@ -13,7 +13,7 @@ use crate::{
     config::get_configuration,
     error::{InquireError, InquireResult},
     formatter::MultiCountFormatter,
-    list_option::ListOption,
+    list_option::CountedListOption,
     prompts::prompt::Prompt,
     terminal::get_default_terminal,
     type_aliases::Scorer,
@@ -29,27 +29,6 @@ use fuzzy_matcher::{skim::SkimMatcherV2, FuzzyMatcher};
 use once_cell::sync::Lazy;
 #[cfg(feature = "fuzzy")]
 static DEFAULT_MATCHER: Lazy<SkimMatcherV2> = Lazy::new(|| SkimMatcherV2::default().ignore_case());
-
-/// Represents a selection made by a user alongside a count of said options, when prompted
-/// to select a count of each of several presented options.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct CountedListOption<T> {
-    count: u32,
-    list_option: ListOption<T>,
-}
-
-impl<T> CountedListOption<T> {
-    pub fn new(count: u32, list_option: ListOption<T>) -> Self {
-        Self { count, list_option }
-    }
-
-    pub fn as_ref(&self) -> CountedListOption<&T> {
-        CountedListOption {
-            count: self.count,
-            list_option: self.list_option.as_ref(),
-        }
-    }
-}
 
 /// Prompt suitable for when you need the user to select counts of multiple options (including none if applicable) among a list of them.
 ///

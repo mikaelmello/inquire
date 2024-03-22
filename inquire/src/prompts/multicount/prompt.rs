@@ -4,13 +4,13 @@ use crate::{
     error::InquireResult,
     formatter::MultiCountFormatter,
     input::{Input, InputActionResult},
-    list_option::ListOption,
+    list_option::{CountedListOption, ListOption},
     prompts::prompt::{ActionResult, Prompt},
     type_aliases::Scorer,
     ui::MultiCountBackend,
     utils::paginate,
     validator::{ErrorMessage, MultiOptionValidator, Validation},
-    CountedListOption, InquireError, MultiCount,
+    InquireError, MultiCount,
 };
 
 use super::{action::MultiCountPromptAction, config::MultiCountConfig};
