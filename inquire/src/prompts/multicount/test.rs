@@ -1,6 +1,6 @@
 use crate::{
     formatter::MultiCountFormatter,
-    list_option::ListOption,
+    list_option::{CountedListOption, ListOption},
     test::fake_backend,
     ui::{Key, KeyModifiers},
     MultiCount,
@@ -22,7 +22,14 @@ fn closure_formatter() {
         .prompt_with_backend(&mut backend)
         .unwrap();
 
-    assert_eq!(vec![(1, ListOption::new(0, "one"))], ans);
+    //assert_eq!(vec![(1, ListOption::new(0, "one"))], ans);
+    assert_eq!(
+        vec![CountedListOption {
+            count: 1,
+            list_option: ListOption::new(0, "one")
+        }],
+        ans
+    );
 }
 
 #[test]
@@ -44,7 +51,8 @@ fn down_arrow_on_empty_list_does_not_panic() {
         .prompt_with_backend(&mut backend)
         .unwrap();
 
-    assert_eq!(Vec::<(u32, ListOption<i32>)>::new(), ans);
+    //assert_eq!(Vec::<(u32, ListOption<i32>)>::new(), ans);
+    assert_eq!(Vec::<CountedListOption<i32>>::new(), ans);
 }
 
 #[test]
@@ -63,9 +71,17 @@ fn list_option_indexes_are_relative_to_input_vec() {
     let ans = MultiCount::new("Question", options)
         .prompt_with_backend(&mut backend)
         .unwrap();
-
     assert_eq!(
-        vec![(1, ListOption::new(1, 2)), (10, ListOption::new(2, 3))],
+        vec![
+            CountedListOption {
+                count: 1,
+                list_option: ListOption::new(1, 2)
+            },
+            CountedListOption {
+                count: 10,
+                list_option: ListOption::new(2, 3)
+            }
+        ],
         ans
     );
 }
@@ -81,7 +97,13 @@ fn starting_cursor_is_respected() {
         .prompt_with_backend(&mut backend)
         .unwrap();
 
-    assert_eq!(vec![(1, ListOption::new(2, 3))], ans);
+    assert_eq!(
+        vec![CountedListOption {
+            count: 1,
+            list_option: ListOption::new(2, 3)
+        }],
+        ans
+    );
 }
 
 #[test]
@@ -113,7 +135,13 @@ fn naive_assert_fuzzy_match_as_default_scorer() {
         .prompt_with_backend(&mut backend)
         .unwrap();
 
-    assert_eq!(vec![(1, ListOption::new(2, "Strawberry"))], ans);
+    assert_eq!(
+        vec![CountedListOption {
+            count: 1,
+            list_option: ListOption::new(2, "Strawberry")
+        }],
+        ans
+    );
 }
 
 #[test]
@@ -146,5 +174,11 @@ fn chars_do_not_affect_prompt_without_filtering() {
         .prompt_with_backend(&mut backend)
         .unwrap();
 
-    assert_eq!(vec![(1, ListOption::new(0, "Banana"))], ans);
+    assert_eq!(
+        vec![CountedListOption {
+            count: 1,
+            list_option: ListOption::new(0, "Banana")
+        }],
+        ans
+    );
 }
