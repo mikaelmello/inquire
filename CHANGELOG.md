@@ -10,7 +10,7 @@
 
 - Fix unexpected behaviors of `keep_filter` option in MultiSelect prompts:
   - Filter input is now correcly getting reset **only when** `keep_filter == false`.
-  - When the filter input is reset, the list of options is reset as well. Thanks @Swivelgames for reporting [#238](https://github.com/mikaelmello/inquire/issues/238).
+  - When the filter input is reset, the list of options is now correctly reset as well. Thanks @Swivelgames for reporting [#238](https://github.com/mikaelmello/inquire/issues/238).
 
 ## [0.7.3] - 2024-03-21
 
