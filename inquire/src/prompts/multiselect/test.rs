@@ -234,3 +234,24 @@ fn keep_filter_should_be_true_by_default() {
     let expected_answer = vec![ListOption::new(0, 1)];
     assert_eq!(expected_answer, ans);
 }
+
+#[test]
+// Anti-regression test: https://github.com/mikaelmello/inquire/issues/238
+fn keep_filter_false_should_reset_option_list() {
+    let mut backend = fake_backend(vec![
+        Key::Char('3', KeyModifiers::NONE), // filter to option 3
+        Key::Char(' ', KeyModifiers::NONE), // toggle option 3, filter input is reset
+        Key::Char(' ', KeyModifiers::NONE), // toggle option 1 after option list is reset
+        Key::Enter,
+    ]);
+
+    let options = vec![1, 2, 3, 4, 5];
+
+    let ans = MultiSelect::new("Question", options)
+        .with_keep_filter(false)
+        .prompt_with_backend(&mut backend)
+        .unwrap();
+
+    let expected_answer = vec![ListOption::new(0, 1), ListOption::new(2, 3)];
+    assert_eq!(expected_answer, ans);
+}
