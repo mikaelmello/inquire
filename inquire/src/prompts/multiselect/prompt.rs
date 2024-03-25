@@ -144,7 +144,7 @@ where
     }
 
     fn clear_input_if_needed(&mut self, action: MultiSelectPromptAction) -> ActionResult {
-        if !self.config.keep_filter {
+        if self.config.keep_filter {
             return ActionResult::Clean;
         }
 

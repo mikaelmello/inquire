@@ -4,7 +4,7 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
-- No changes since the latest release below.
+- Fix unexpected behaviour of `keep_filter` option in MultiSelect prompts, where the resulting behaviour was the opposite of what was expected.
 
 ## [0.7.3] - 2024-03-21
 

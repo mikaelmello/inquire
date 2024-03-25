@@ -172,3 +172,65 @@ fn chars_do_not_affect_prompt_without_filtering() {
 
     assert_eq!(vec![ListOption::new(0, "Banana")], ans);
 }
+
+#[test]
+fn keep_filter_false_behavior() {
+    let mut backend = fake_backend(vec![
+        Key::Char('1', KeyModifiers::NONE), // filter to option 1
+        Key::Char(' ', KeyModifiers::NONE), // toggle, filter input is reset to empty
+        Key::Char('2', KeyModifiers::NONE), // filter is now '2' and shows option 2
+        Key::Char(' ', KeyModifiers::NONE), // toggle
+        Key::Enter,
+    ]);
+
+    let options = vec![1, 2, 3, 4, 5];
+
+    let ans = MultiSelect::new("Question", options)
+        .with_keep_filter(false)
+        .prompt_with_backend(&mut backend)
+        .unwrap();
+
+    let expected_answer = vec![ListOption::new(0, 1), ListOption::new(1, 2)];
+    assert_eq!(expected_answer, ans);
+}
+
+#[test]
+fn keep_filter_true_behavior() {
+    let mut backend = fake_backend(vec![
+        Key::Char('1', KeyModifiers::NONE), // filter to option 1
+        Key::Char(' ', KeyModifiers::NONE), // toggle, filter input is NOT reset
+        Key::Char('2', KeyModifiers::NONE), // filter is now '12' and shows no option
+        Key::Char(' ', KeyModifiers::NONE), // should be no-op
+        Key::Enter,
+    ]);
+
+    let options = vec![1, 2, 3, 4, 5];
+
+    let ans = MultiSelect::new("Question", options)
+        .with_keep_filter(true)
+        .prompt_with_backend(&mut backend)
+        .unwrap();
+
+    let expected_answer = vec![ListOption::new(0, 1)];
+    assert_eq!(expected_answer, ans);
+}
+
+#[test]
+fn keep_filter_should_be_true_by_default() {
+    let mut backend = fake_backend(vec![
+        Key::Char('1', KeyModifiers::NONE), // filter to option 1
+        Key::Char(' ', KeyModifiers::NONE), // toggle, filter input is NOT reset
+        Key::Char('2', KeyModifiers::NONE), // filter is now '12' and shows no option
+        Key::Char(' ', KeyModifiers::NONE), // should be no-op
+        Key::Enter,
+    ]);
+
+    let options = vec![1, 2, 3, 4, 5];
+
+    let prompt = MultiSelect::new("Question", options);
+    assert!(prompt.keep_filter);
+    let ans = prompt.prompt_with_backend(&mut backend).unwrap();
+
+    let expected_answer = vec![ListOption::new(0, 1)];
+    assert_eq!(expected_answer, ans);
+}
