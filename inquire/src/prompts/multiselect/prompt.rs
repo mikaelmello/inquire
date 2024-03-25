@@ -148,11 +148,21 @@ where
             return ActionResult::Clean;
         }
 
+        let input_ref = match &mut self.input {
+            Some(input) => input,
+            None => return ActionResult::Clean,
+        };
+
+        if input_ref.is_empty() {
+            return ActionResult::Clean;
+        }
+
         match action {
             MultiSelectPromptAction::ToggleCurrentOption
             | MultiSelectPromptAction::SelectAll
             | MultiSelectPromptAction::ClearSelections => {
-                self.input.as_mut().map(Input::clear);
+                input_ref.clear();
+                self.run_scorer();
                 ActionResult::NeedsRedraw
             }
             _ => ActionResult::Clean,
