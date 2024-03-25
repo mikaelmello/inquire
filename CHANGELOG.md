@@ -4,6 +4,10 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
+- No changes since the latest release below.
+
+## [0.7.4] - 2024-03-25
+
 - Fix unexpected behaviors of `keep_filter` option in MultiSelect prompts:
   - Filter input is now correcly getting reset **only when** `keep_filter == false`.
   - When the filter input is reset, the list of options is reset as well. Thanks @Swivelgames for reporting [#238](https://github.com/mikaelmello/inquire/issues/238).
@@ -318,7 +322,8 @@ The library is already featureful enough to warrant a higher version number, bum
 
 <!-- next-url -->
 
-[unreleased]: https://github.com/mikaelmello/inquire/compare/v0.7.3...HEAD
+[unreleased]: https://github.com/mikaelmello/inquire/compare/v0.7.4...HEAD
+[0.7.4]: https://github.com/mikaelmello/inquire/compare/v0.7.3...v0.7.4
 [0.7.3]: https://github.com/mikaelmello/inquire/compare/v0.7.2...v0.7.3
 [0.7.2]: https://github.com/mikaelmello/inquire/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/mikaelmello/inquire/compare/v0.7.0...v0.7.1
