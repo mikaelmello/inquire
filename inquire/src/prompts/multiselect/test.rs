@@ -214,3 +214,23 @@ fn keep_filter_true_behavior() {
     let expected_answer = vec![ListOption::new(0, 1)];
     assert_eq!(expected_answer, ans);
 }
+
+#[test]
+fn keep_filter_should_be_true_by_default() {
+    let mut backend = fake_backend(vec![
+        Key::Char('1', KeyModifiers::NONE), // filter to option 1
+        Key::Char(' ', KeyModifiers::NONE), // toggle, filter input is NOT reset
+        Key::Char('2', KeyModifiers::NONE), // filter is now '12' and shows no option
+        Key::Char(' ', KeyModifiers::NONE), // should be no-op
+        Key::Enter,
+    ]);
+
+    let options = vec![1, 2, 3, 4, 5];
+
+    let prompt = MultiSelect::new("Question", options);
+    assert!(prompt.keep_filter);
+    let ans = prompt.prompt_with_backend(&mut backend).unwrap();
+
+    let expected_answer = vec![ListOption::new(0, 1)];
+    assert_eq!(expected_answer, ans);
+}
