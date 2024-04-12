@@ -214,7 +214,11 @@ where
             TextPromptAction::MoveToSuggestionPageDown => {
                 self.move_cursor_down(self.config.page_size)
             }
-            TextPromptAction::UseCurrentSuggestion => self.use_current_suggestion()?,
+            TextPromptAction::UseCurrentSuggestion => {
+                let result = self.use_current_suggestion()?;
+                self.update_suggestions()?;
+                result
+            }
         };
 
         Ok(result)
