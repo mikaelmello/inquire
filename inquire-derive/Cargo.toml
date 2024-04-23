@@ -1,6 +1,6 @@
 [package]
 name = "inquire-derive"
-version = "0.7.4"
+version = "0.7.5"
 description = "" # TODO
 publish = false # TODO
 repository = "https://github.com/mikaelmello/inquire"

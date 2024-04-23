@@ -4,6 +4,10 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
+- No changes since the latest release below.
+
+## [0.7.5] - 2024-04-23
+
 - Fix user-provided ANSI escape codes from being removed when rendering.
   - Introduced on 0.7.0, this regression was making it impossible to have colorised text inside the prompt.
   - Now ANSI escape codes are properly emitted when rendering the prompt in the terminal.
@@ -324,7 +328,8 @@ The library is already featureful enough to warrant a higher version number, bum
 
 <!-- next-url -->
 
-[unreleased]: https://github.com/mikaelmello/inquire/compare/v0.7.4...HEAD
+[unreleased]: https://github.com/mikaelmello/inquire/compare/v0.7.5...HEAD
+[0.7.5]: https://github.com/mikaelmello/inquire/compare/v0.7.4...v0.7.5
 [0.7.4]: https://github.com/mikaelmello/inquire/compare/v0.7.3...v0.7.4
 [0.7.3]: https://github.com/mikaelmello/inquire/compare/v0.7.2...v0.7.3
 [0.7.2]: https://github.com/mikaelmello/inquire/compare/v0.7.1...v0.7.2

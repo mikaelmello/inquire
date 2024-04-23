@@ -13,11 +13,11 @@
 Put these lines in your `Cargo.toml`, under `[dependencies]`.
 
 ```
-inquire = "0.7.4"
-inquire-derive = "0.7.4"
+inquire = "0.7.5"
+inquire-derive = "0.7.5"
 ```
 
 ```
-inquire = { version = "0.7.4", features = ["date", "editor"] }
-inquire-derive = { version = "0.7.4" }
+inquire = { version = "0.7.5", features = ["date", "editor"] }
+inquire-derive = { version = "0.7.5" }
 ```

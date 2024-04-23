@@ -1,6 +1,6 @@
 [package]
 name = "inquire"
-version = "0.7.4"
+version = "0.7.5"
 description = "inquire is a library for building interactive prompts on terminals"
 repository = "https://github.com/mikaelmello/inquire"
 license = "MIT"
