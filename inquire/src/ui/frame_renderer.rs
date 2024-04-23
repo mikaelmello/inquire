@@ -71,9 +71,10 @@ impl FrameState {
 
             let current_char = match piece {
                 AnsiAwareChar::Char(c) => c,
-                AnsiAwareChar::AnsiEscapeSequence(_) => {
+                AnsiAwareChar::AnsiEscapeSequence(seq) => {
                     // we don't care for escape sequences when calculating cursor position
                     // and box size
+                    self.current_styled.content.push_str(seq);
                     continue;
                 }
             };
@@ -436,5 +437,37 @@ where
         let _unused = self.move_cursor_to_end_position();
         let _unused = self.terminal.cursor_show();
         let _unused = self.terminal.flush();
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::{
+        error::InquireResult,
+        terminal::{test::MockTerminal, TerminalSize},
+    };
+
+    use super::FrameRenderer;
+
+    #[test]
+    fn ensure_inline_ansi_codes_are_maintained() -> InquireResult<()> {
+        let terminal = MockTerminal::new().with_size(TerminalSize::new(200, 200));
+        let mut renderer = FrameRenderer::new(terminal)?;
+
+        renderer.start_frame()?;
+        renderer.write("Hello")?;
+        renderer.write("World")?;
+        renderer.write("\n")?;
+        renderer.write("\x1b[1;31mWhat\x1b[0m is your name?")?;
+        renderer.finish_current_frame(false)?;
+
+        let terminal = &mut renderer.terminal;
+
+        terminal.find_and_expect_token("Hello".into());
+        terminal.find_and_expect_token("World".into());
+        terminal.find_and_expect_token("\n".into());
+        terminal.find_and_expect_token("\x1b[1;31mWhat\x1b[0m is your name?".into());
+
+        Ok(())
     }
 }

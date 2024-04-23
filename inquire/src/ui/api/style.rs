@@ -216,3 +216,14 @@ where
         Self::new(from)
     }
 }
+
+impl<T> PartialEq for Styled<T>
+where
+    T: PartialEq + Display,
+{
+    fn eq(&self, other: &Self) -> bool {
+        self.style == other.style && self.content == other.content
+    }
+}
+
+impl<T> Eq for Styled<T> where T: Eq + Display {}

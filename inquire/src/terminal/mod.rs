@@ -17,6 +17,9 @@ pub mod termion;
 #[cfg_attr(docsrs, doc(cfg(feature = "console")))]
 pub mod console;
 
+#[cfg(test)]
+pub(crate) mod test;
+
 pub type TerminalSize = Dimension;
 
 pub trait Terminal: Sized {
