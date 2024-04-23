@@ -4,7 +4,9 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
-- No changes since the latest release below.
+- Fix user-provided ANSI escape codes from being removed when rendering.
+  - Introduced on 0.7.0, this regression was making it impossible to have colorised text inside the prompt.
+  - Now ANSI escape codes are properly emitted when rendering the prompt in the terminal.
 
 ## [0.7.4] - 2024-03-25
 
