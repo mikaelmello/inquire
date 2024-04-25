@@ -34,7 +34,7 @@ pub struct FilePathCompleter {
 
 impl FilePathCompleter {
     fn update_input(&mut self, input: &str) -> Result<(), CustomUserError> {
-        if input == self.input {
+        if !input.is_empty() && input == self.input {
             return Ok(());
         }
 

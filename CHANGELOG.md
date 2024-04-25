@@ -4,7 +4,7 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
-- No changes since the latest release below.
+- Fix suggestions not updated after selecting current suggestion.
 
 ## [0.7.5] - 2024-04-23
 
