@@ -4,7 +4,7 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
-- No changes since the latest release below.
+- Update suggestions on `Text` prompts when autocomplete was used.
 
 ## [0.7.5] - 2024-04-23
 

@@ -125,6 +125,7 @@ impl<'a> TextPrompt<'a> {
         {
             Replacement::Some(value) => {
                 self.input = Input::new_with(value);
+                self.update_suggestions()?;
                 Ok(ActionResult::NeedsRedraw)
             }
             Replacement::None => Ok(ActionResult::Clean),
