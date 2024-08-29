@@ -46,7 +46,7 @@ impl InputReader for CrosstermKeyReader {
 
 impl CrosstermTerminal {
     pub fn new() -> InquireResult<Self> {
-        crossterm::terminal::enable_raw_mode()?;
+        terminal::enable_raw_mode()?;
 
         Ok(Self {
             io: IO::Std(stderr()),
@@ -123,10 +123,6 @@ impl Terminal for CrosstermTerminal {
             0 => Ok(()),
             cnt => self.write_command(cursor::MoveRight(cnt)),
         }
-    }
-
-    fn cursor_move_to_column(&mut self, idx: u16) -> Result<()> {
-        self.write_command(cursor::MoveToColumn(idx))
     }
 
     fn flush(&mut self) -> Result<()> {

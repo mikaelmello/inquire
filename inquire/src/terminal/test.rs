@@ -1,12 +1,11 @@
 use std::{collections::VecDeque, fmt::Display};
 
-use crate::ui::{Key, Styled};
+use crate::ui::Styled;
 
 use super::{Terminal, TerminalSize};
 
 pub struct MockTerminal {
     pub size: TerminalSize,
-    pub input: VecDeque<Key>,
     pub output: VecDeque<MockTerminalToken>,
 }
 
@@ -21,7 +20,6 @@ pub enum MockTerminalToken {
     CursorDown(u16),
     CursorLeft(u16),
     CursorRight(u16),
-    CursorMoveToColumn(u16),
 }
 
 impl<T> From<T> for MockTerminalToken
@@ -37,7 +35,6 @@ impl MockTerminal {
     pub fn new() -> Self {
         Self {
             size: TerminalSize::new(80, 40),
-            input: VecDeque::new(),
             output: VecDeque::new(),
         }
     }
@@ -121,12 +118,6 @@ impl Terminal for MockTerminal {
 
     fn cursor_right(&mut self, cnt: u16) -> std::io::Result<()> {
         let token = MockTerminalToken::CursorRight(cnt);
-        self.output.push_back(token);
-        Ok(())
-    }
-
-    fn cursor_move_to_column(&mut self, idx: u16) -> std::io::Result<()> {
-        let token = MockTerminalToken::CursorMoveToColumn(idx);
         self.output.push_back(token);
         Ok(())
     }

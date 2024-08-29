@@ -37,7 +37,6 @@ pub trait Terminal: Sized {
     fn cursor_down(&mut self, cnt: u16) -> Result<()>;
     fn cursor_left(&mut self, cnt: u16) -> Result<()>;
     fn cursor_right(&mut self, cnt: u16) -> Result<()>;
-    fn cursor_move_to_column(&mut self, idx: u16) -> Result<()>;
 
     fn flush(&mut self) -> Result<()>;
 }

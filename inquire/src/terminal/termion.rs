@@ -145,10 +145,6 @@ impl<'a> Terminal for TermionTerminal<'a> {
         }
     }
 
-    fn cursor_move_to_column(&mut self, idx: u16) -> Result<()> {
-        write!(self.get_writer(), "\x1b[{}G", idx.saturating_add(1))
-    }
-
     fn flush(&mut self) -> Result<()> {
         self.get_writer().flush()
     }
@@ -196,11 +192,11 @@ impl<'a> Terminal for TermionTerminal<'a> {
     }
 
     fn cursor_hide(&mut self) -> Result<()> {
-        write!(self.get_writer(), "{}", termion::cursor::Hide)
+        write!(self.get_writer(), "{}", cursor::Hide)
     }
 
     fn cursor_show(&mut self) -> Result<()> {
-        write!(self.get_writer(), "{}", termion::cursor::Show)
+        write!(self.get_writer(), "{}", cursor::Show)
     }
 }
 

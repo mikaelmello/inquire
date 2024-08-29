@@ -59,14 +59,6 @@ impl Terminal for ConsoleTerminal {
         }
     }
 
-    fn cursor_move_to_column(&mut self, idx: u16) -> Result<()> {
-        // console has no built-in method to set cursor column ¯\_(ツ)_/¯
-        self.term.move_cursor_left(1000)?;
-        self.term.move_cursor_right(idx as usize)?;
-
-        Ok(())
-    }
-
     fn flush(&mut self) -> Result<()> {
         self.term.flush()
     }

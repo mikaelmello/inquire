@@ -163,22 +163,6 @@ impl<'a> Iterator for AnsiStrippedChars<'a> {
     }
 }
 
-/// Constructs an iterator over the chars of the input string, stripping away ANSI escape codes.
-pub trait AnsiStrippable {
-    fn ansi_stripped_chars(&self) -> AnsiStrippedChars<'_>;
-}
-
-impl<T> AnsiStrippable for T
-where
-    T: AsRef<str>,
-{
-    fn ansi_stripped_chars(&self) -> AnsiStrippedChars<'_> {
-        AnsiStrippedChars {
-            input: self.as_ref(),
-        }
-    }
-}
-
 pub trait AnsiAware {
     fn ansi_aware_chars(&self) -> AnsiAwareChars<'_>;
 }
@@ -197,38 +181,6 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    macro_rules! assert_stripped_eq {
-        ($input:expr, $expected:expr) => {
-            let stripped: String = $input.ansi_stripped_chars().collect();
-            assert_eq!(&stripped, $expected);
-        };
-    }
-
-    #[test]
-    fn test_normal_ansi_escapes() {
-        assert_stripped_eq!("1\x1b[0m2", "12");
-        assert_stripped_eq!("\x1b[92mHello, \x1b[91mWorld!\x1b[0m", "Hello, World!");
-        assert_stripped_eq!("\x1b[7@Hi", "Hi");
-        assert_stripped_eq!(
-            "\x1b]0;Set The Terminal Title To This\u{9c}Print This",
-            "Print This"
-        );
-        assert_stripped_eq!("\x1b[96", "");
-    }
-
-    #[test]
-    // Please don't use ansi escapes like these!
-    fn test_inconsistencies() {
-        // Some terminals will print "String\u{9c}Hello World", others will print nothing.
-        assert_stripped_eq!("\x1b[\x1b]String\u{9c}Hello World", "Hello World");
-
-        // Kitty will print "[38;5;43mABCD", but most will print "ABCD"
-        assert_stripped_eq!("\x1b[\x1b[38;5;43mAB\x1b[48;5;10mCD\x1b[0m", "ABCD");
-
-        // Kitty will print "[96mCat\n", but most will print "Cat\n"
-        assert_stripped_eq!("\x1b\x19[96mCat\x1b[0m\n", "Cat\n");
-    }
 
     #[test]
     fn ansi_aware_test_normal_ansi_escapes() {
