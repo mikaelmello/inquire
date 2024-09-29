@@ -1,5 +1,7 @@
 use std::{collections::BTreeSet, fmt::Display, io::Result};
 
+use unicode_width::UnicodeWidthStr;
+
 use crate::{
     error::InquireResult,
     input::Input,
@@ -185,9 +187,12 @@ where
     fn print_input(&mut self, input: &Input) -> Result<()> {
         self.frame_renderer.write(" ")?;
 
-        let cursor_offset = input.pre_cursor().chars().count();
+        // The cursor is at the beginning of the input line.
+        // From here it's easier to mark the wanted cursor position
+        // (based on the underlying input struct), as it's a simple
+        // cur_pos + offset calculation.
         self.frame_renderer
-            .mark_cursor_position(cursor_offset as isize);
+            .mark_cursor_position(input.pre_cursor().width() as isize);
 
         if input.is_empty() {
             match input.placeholder() {

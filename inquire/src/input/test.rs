@@ -114,6 +114,17 @@ fn new_with_content_is_correctly_initialized() {
     let input = Input::new_with(content);
     assert_eq!(11, input.length());
     assert_eq!(11, input.cursor());
+    assert_eq!("great idea!", input.pre_cursor());
+    assert_eq!(content, input.content());
+}
+
+#[test]
+fn new_with_chinese_content_is_correctly_initialized() {
+    let content = "请输";
+    let input = Input::new_with(content);
+    assert_eq!(2, input.length());
+    assert_eq!(2, input.cursor());
+    assert_eq!("请输", input.pre_cursor());
     assert_eq!(content, input.content());
 }
 
@@ -136,6 +147,15 @@ fn with_cursor_is_correctly_initialized() {
     assert_eq!(7, input.cursor());
     assert_eq!("great idea!", input.content());
     assert_eq!("great i", input.pre_cursor());
+}
+
+#[test]
+fn chinese_with_cursor_is_correctly_initialized() {
+    let input = Input::new_with("请输入").with_cursor(1);
+    assert_eq!(3, input.length());
+    assert_eq!(1, input.cursor());
+    assert_eq!("请输入", input.content());
+    assert_eq!("请", input.pre_cursor());
 }
 
 #[test]
