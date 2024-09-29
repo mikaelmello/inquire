@@ -721,7 +721,10 @@ mod validators_test {
         let validator: &dyn StringValidator = &validator;
 
         assert!(matches!(validator.validate("five!")?, Validation::Valid));
-        assert!(matches!(validator.validate("♥️♥️♥️♥️♥️")?, Validation::Valid));
+        assert!(matches!(
+            validator.validate("♥️♥️♥️♥️♥️")?,
+            Validation::Valid
+        ));
         assert!(matches!(
             validator.validate("🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️")?,
             Validation::Valid
@@ -771,7 +774,10 @@ mod validators_test {
 
         assert!(matches!(validator.validate("")?, Validation::Valid));
         assert!(matches!(validator.validate("five!")?, Validation::Valid));
-        assert!(matches!(validator.validate("♥️♥️♥️♥️♥️")?, Validation::Valid));
+        assert!(matches!(
+            validator.validate("♥️♥️♥️♥️♥️")?,
+            Validation::Valid
+        ));
         assert!(matches!(
             validator.validate("🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️")?,
             Validation::Valid
@@ -855,8 +861,14 @@ mod validators_test {
 
         assert!(matches!(validator.validate("five!")?, Validation::Valid));
         assert!(matches!(validator.validate("five!!!")?, Validation::Valid));
-        assert!(matches!(validator.validate("♥️♥️♥️♥️♥️")?, Validation::Valid));
-        assert!(matches!(validator.validate("♥️♥️♥️♥️♥️♥️")?, Validation::Valid));
+        assert!(matches!(
+            validator.validate("♥️♥️♥️♥️♥️")?,
+            Validation::Valid
+        ));
+        assert!(matches!(
+            validator.validate("♥️♥️♥️♥️♥️♥️")?,
+            Validation::Valid
+        ));
         assert!(matches!(
             validator.validate("🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️")?,
             Validation::Valid
