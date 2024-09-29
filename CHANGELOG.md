@@ -4,7 +4,7 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
-- Removed unused dependency (newline-converter).
+- Removed unused dependency (newline-converter). Thanks @jonassmedegaard (#267) for catching it!
 
 ## [0.7.5] - 2024-04-23
 
