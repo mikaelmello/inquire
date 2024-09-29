@@ -1,5 +1,7 @@
 use std::io::ErrorKind;
 
+use fuzzy_matcher::skim::SkimMatcherV2;
+use fuzzy_matcher::FuzzyMatcher;
 use inquire::{
     autocompletion::{Autocomplete, Replacement},
     CustomUserError, Text,
@@ -29,12 +31,11 @@ fn main() {
 pub struct FilePathCompleter {
     input: String,
     paths: Vec<String>,
-    lcp: String,
 }
 
 impl FilePathCompleter {
     fn update_input(&mut self, input: &str) -> Result<(), CustomUserError> {
-        if input == self.input {
+        if input == self.input && !self.paths.is_empty() {
             return Ok(());
         }
 
@@ -67,12 +68,7 @@ impl FilePathCompleter {
         }?
         .collect::<Result<Vec<_>, _>>()?;
 
-        let mut idx = 0;
-        let limit = 15;
-
-        while idx < entries.len() && self.paths.len() < limit {
-            let entry = entries.get(idx).unwrap();
-
+        for entry in entries {
             let path = entry.path();
             let path_str = if path.is_dir() {
                 format!("{}/", path.to_string_lossy())
@@ -80,38 +76,26 @@ impl FilePathCompleter {
                 path.to_string_lossy().to_string()
             };
 
-            if path_str.starts_with(&self.input) && path_str.len() != self.input.len() {
-                self.paths.push(path_str);
-            }
-
-            idx = idx.saturating_add(1);
+            self.paths.push(path_str);
         }
-
-        self.lcp = self.longest_common_prefix();
 
         Ok(())
     }
 
-    fn longest_common_prefix(&self) -> String {
-        let mut ret: String = String::new();
+    fn fuzzy_sort(&self, input: &str) -> Vec<(String, i64)> {
+        let mut matches: Vec<(String, i64)> = self
+            .paths
+            .iter()
+            .filter_map(|path| {
+                SkimMatcherV2::default()
+                    .smart_case()
+                    .fuzzy_match(path, input)
+                    .map(|score| (path.clone(), score))
+            })
+            .collect();
 
-        let mut sorted = self.paths.clone();
-        sorted.sort();
-        if sorted.is_empty() {
-            return ret;
-        }
-
-        let mut first_word = sorted.first().unwrap().chars();
-        let mut last_word = sorted.last().unwrap().chars();
-
-        loop {
-            match (first_word.next(), last_word.next()) {
-                (Some(c1), Some(c2)) if c1 == c2 => {
-                    ret.push(c1);
-                }
-                _ => return ret,
-            }
-        }
+        matches.sort_by(|a, b| b.1.cmp(&a.1));
+        matches
     }
 }
 
@@ -119,7 +103,8 @@ impl Autocomplete for FilePathCompleter {
     fn get_suggestions(&mut self, input: &str) -> Result<Vec<String>, CustomUserError> {
         self.update_input(input)?;
 
-        Ok(self.paths.clone())
+        let matches = self.fuzzy_sort(input);
+        Ok(matches.into_iter().take(15).map(|(path, _)| path).collect())
     }
 
     fn get_completion(
@@ -129,12 +114,14 @@ impl Autocomplete for FilePathCompleter {
     ) -> Result<Replacement, CustomUserError> {
         self.update_input(input)?;
 
-        Ok(match highlighted_suggestion {
-            Some(suggestion) => Replacement::Some(suggestion),
-            None => match self.lcp.is_empty() {
-                true => Replacement::None,
-                false => Replacement::Some(self.lcp.clone()),
-            },
+        Ok(if let Some(suggestion) = highlighted_suggestion {
+            Replacement::Some(suggestion)
+        } else {
+            let matches = self.fuzzy_sort(input);
+            matches
+                .first()
+                .map(|(path, _)| Replacement::Some(path.clone()))
+                .unwrap_or(Replacement::None)
         })
     }
 }

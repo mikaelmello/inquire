@@ -7,7 +7,7 @@ pub fn get_current_date() -> NaiveDate {
 }
 
 pub fn get_start_date(month: chrono::Month, year: i32) -> NaiveDate {
-    chrono::NaiveDate::from_ymd_opt(year, month.number_from_month(), 1).unwrap()
+    NaiveDate::from_ymd_opt(year, month.number_from_month(), 1).unwrap()
 }
 
 pub fn get_month(month: u32) -> chrono::Month {
@@ -43,23 +43,23 @@ mod tests {
     fn test_get_start_date() {
         assert_eq!(
             get_start_date(chrono::Month::January, 2021),
-            chrono::NaiveDate::from_ymd_opt(2021, 1, 1).unwrap()
+            NaiveDate::from_ymd_opt(2021, 1, 1).unwrap()
         );
         assert_eq!(
             get_start_date(chrono::Month::February, 2021),
-            chrono::NaiveDate::from_ymd_opt(2021, 2, 1).unwrap()
+            NaiveDate::from_ymd_opt(2021, 2, 1).unwrap()
         );
         assert_eq!(
             get_start_date(chrono::Month::March, 2021),
-            chrono::NaiveDate::from_ymd_opt(2021, 3, 1).unwrap()
+            NaiveDate::from_ymd_opt(2021, 3, 1).unwrap()
         );
         assert_eq!(
             get_start_date(chrono::Month::December, 1883),
-            chrono::NaiveDate::from_ymd_opt(1883, 12, 1).unwrap()
+            NaiveDate::from_ymd_opt(1883, 12, 1).unwrap()
         );
         assert_eq!(
             get_start_date(chrono::Month::June, 3042),
-            chrono::NaiveDate::from_ymd_opt(3042, 6, 1).unwrap()
+            NaiveDate::from_ymd_opt(3042, 6, 1).unwrap()
         );
     }
 

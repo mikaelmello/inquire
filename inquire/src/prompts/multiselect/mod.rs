@@ -57,7 +57,7 @@ static DEFAULT_MATCHER: Lazy<SkimMatcherV2> = Lazy::new(|| SkimMatcherV2::defaul
 ///
 /// # Example
 ///
-/// For a full-featured example, check the [GitHub repository](https://github.com/mikaelmello/inquire/blob/main/examples/multiselect.rs).
+/// For a full-featured example, check the [GitHub repository](https://github.com/mikaelmello/inquire/blob/main/inquire/examples/multiselect.rs).
 ///
 /// [`InquireError::InvalidConfiguration`]: crate::error::InquireError::InvalidConfiguration
 #[derive(Clone)]

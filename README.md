@@ -118,7 +118,7 @@ If you'd like to see more examples, the [`date.rs`](./inquire/examples/date.rs) 
 
 ## Terminal Back-end
 
-Currently, there are like 3 major libraries to manipulate terminals: [crossterm](https://lib.rs/crates/crossterm), [console](https://lib.rs/crates/console) and [termion](https://lib.rs/crates/crossterm).
+Currently, there are like 3 major libraries to manipulate terminals: [crossterm](https://lib.rs/crates/crossterm), [console](https://lib.rs/crates/console) and [termion](https://lib.rs/crates/termion).
 
 Binary Rust applications that intend to manipulate terminals will probably pick any one of these 3 to power underlying abstractions. `inquire` chose to support crossterm by default in order to support many features on Windows out-of-the-box.
 
