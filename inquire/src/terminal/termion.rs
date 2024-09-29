@@ -196,11 +196,11 @@ impl<'a> Terminal for TermionTerminal<'a> {
     }
 
     fn cursor_hide(&mut self) -> Result<()> {
-        write!(self.get_writer(), "{}", termion::cursor::Hide)
+        write!(self.get_writer(), "{}", cursor::Hide)
     }
 
     fn cursor_show(&mut self) -> Result<()> {
-        write!(self.get_writer(), "{}", termion::cursor::Show)
+        write!(self.get_writer(), "{}", cursor::Show)
     }
 }
 

@@ -165,6 +165,7 @@ impl<'a> Iterator for AnsiStrippedChars<'a> {
 
 /// Constructs an iterator over the chars of the input string, stripping away ANSI escape codes.
 pub trait AnsiStrippable {
+    #[allow(unused)]
     fn ansi_stripped_chars(&self) -> AnsiStrippedChars<'_>;
 }
 

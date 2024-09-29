@@ -46,7 +46,7 @@ impl InputReader for CrosstermKeyReader {
 
 impl CrosstermTerminal {
     pub fn new() -> InquireResult<Self> {
-        crossterm::terminal::enable_raw_mode()?;
+        terminal::enable_raw_mode()?;
 
         Ok(Self {
             io: IO::Std(stderr()),
