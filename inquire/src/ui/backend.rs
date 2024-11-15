@@ -69,6 +69,25 @@ pub trait PasswordBackend: CommonBackend {
     fn render_prompt_with_full_input(&mut self, prompt: &str, cur_input: &Input) -> Result<()>;
 }
 
+#[cfg(feature = "reorder")]
+pub trait ReorderBackend: CommonBackend {
+    fn read_key(&mut self) -> InquireResult<Key>;
+    
+    fn render_reorderable_prompt(&mut self, prompt: &str, input: Option<&Input>) -> InquireResult<()>;
+
+    fn render_reorder_options<D: Display>(
+        &mut self,
+        page: Page<'_, ListOption<D>>,
+    ) -> InquireResult<()>;
+
+    fn print_reorder_option_value<D: Display>(
+        &mut self, 
+        option_relative_index: usize,
+        option: &ListOption<D>,
+        page: &Page<'_, ListOption<D>>,
+    ) -> InquireResult<()>;
+}
+
 #[derive(Clone, Copy, Debug, Default)]
 pub struct Position {
     pub row: u16,
@@ -649,6 +668,65 @@ where
 
     fn render_prompt_with_full_input(&mut self, prompt: &str, cur_input: &Input) -> Result<()> {
         self.print_prompt_with_input(prompt, None, cur_input)
+    }
+}
+
+#[cfg(feature = "reorder")]
+impl<'a, I, T> ReorderBackend for Backend<'a, I, T>
+where
+    I: InputReader,
+    T: Terminal,
+{
+    fn read_key(&mut self) -> InquireResult<Key> {
+        self.input_reader.read_key()
+    }
+    
+    fn render_reorderable_prompt(&mut self, prompt: &str, input: Option<&Input>) -> InquireResult<()> {
+        self.frame_setup()?;
+        self.print_prompt_with_input(prompt, None, input.unwrap_or(&Input::new()))?;
+        Ok(())
+    }
+
+    fn render_reorder_options<D: Display>(
+        &mut self,
+        page: Page<'_, ListOption<D>>,
+    ) -> InquireResult<()> {
+        for (idx, opt) in page.content.iter().enumerate() {
+            self.print_option_prefix(idx, &page)?;
+            self.frame_renderer.write(" ")?;
+
+            if let Some(max_index) = page.total.checked_sub(1) {
+                if let Some(res) = self.print_option_index_prefix(opt.index, max_index) {
+                    res?;
+                    self.frame_renderer.write(" ")?;
+                }
+            }
+
+            self.print_reorder_option_value(idx, opt, &page)?;
+            self.new_line()?;
+        }
+
+        Ok(())
+    }
+
+    fn print_reorder_option_value<D: Display>(
+        &mut self, 
+        option_relative_index: usize,
+        option: &ListOption<D>,
+        page: &Page<'_, ListOption<D>>,
+    ) -> InquireResult<()> {
+        let is_selected = page.cursor == Some(option_relative_index);
+        let style = if is_selected {
+            self.render_config.selected_option.unwrap_or(self.render_config.option)
+        } else {
+            self.render_config.option
+        };
+
+        let prefix = if is_selected { "↕ " } else { "  " };
+        self.frame_renderer.write_styled(Styled::new(prefix).with_style_sheet(style))?;
+        self.frame_renderer.write_styled(Styled::new(&option.value).with_style_sheet(style))?;
+        
+        Ok(())
     }
 }
 
