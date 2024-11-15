@@ -23,7 +23,7 @@ fn no_moves() {
 /// Tests that a closure that actually closes on a variable can be used
 /// as a Select formatter.
 fn move_2_to_1() {
-    let mut backend = fake_backend(vec![Key::Down(KeyModifiers::NONE), Key::Up(KeyModifiers::SHIFT), Key::Enter]);
+    let mut backend = fake_backend(vec![Key::Down(KeyModifiers::NONE), Key::Up(KeyModifiers::CONTROL), Key::Enter]);
 
     let options = vec!["Hello! 111".into(), "Hello! 222".into()];
 

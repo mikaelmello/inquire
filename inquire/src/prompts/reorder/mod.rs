@@ -54,8 +54,8 @@ impl InnerAction for ReorderableListAction {
             Key::PageDown(_) => Self::PageDown,
             Key::Home => Self::MoveToStart,
             Key::End => Self::MoveToEnd,
-            Key::Up(KeyModifiers::SHIFT) => Self::MoveItemUp,
-            Key::Down(KeyModifiers::SHIFT) => Self::MoveItemDown,
+            Key::Up(KeyModifiers::CONTROL) => Self::MoveItemUp,
+            Key::Down(KeyModifiers::CONTROL) => Self::MoveItemDown,
             key => match InputAction::from_key(key, &()) {
                 Some(action) => Self::FilterInput(action),
                 None => return None,
