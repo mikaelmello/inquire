@@ -95,7 +95,7 @@ impl<'a> ReorderableList<'a>
         Self {
             message,
             options,
-            help_message: Some("↑↓ to move cursor, Shift+↑↓ to move item, type to filter"),
+            help_message: Some("↑↓ to move cursor, Ctrl+↑↓ to move item, type to filter"),
             page_size: 7,
             vim_mode: false,
             starting_cursor: 0,
