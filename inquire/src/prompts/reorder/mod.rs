@@ -232,33 +232,36 @@ impl<'a> ReorderableListPrompt<'a>
     }
 
     fn move_item_up(&mut self) -> ActionResult {
-        if self.cursor_index == 0 || self.scored_options.is_empty() {
-            return ActionResult::Clean;
+        if self.cursor_index > 0 && !self.scored_options.is_empty() {
+            self.scored_options.swap(self.cursor_index, self.cursor_index - 1);
+            self.cursor_index -= 1;
+            
+            // Force a redraw of the frame
+            return ActionResult::NeedsRedraw;
         }
-
-        let current_idx = self.scored_options[self.cursor_index];
-        let target_idx = self.scored_options[self.cursor_index - 1];
-
-        self.options.swap(current_idx, target_idx);
-        self.scored_options.swap(self.cursor_index, self.cursor_index - 1);
-        self.cursor_index -= 1;
-
-        ActionResult::NeedsRedraw
+        ActionResult::Clean
     }
 
     fn move_item_down(&mut self) -> ActionResult {
-        if self.cursor_index >= self.scored_options.len() - 1 {
-            return ActionResult::Clean;
+        if self.cursor_index < self.scored_options.len() - 1 {
+            self.scored_options.swap(self.cursor_index, self.cursor_index + 1);
+            self.cursor_index += 1;
+            
+            // Force a redraw of the frame
+            return ActionResult::NeedsRedraw;
         }
-
-        let current_idx = self.scored_options[self.cursor_index];
-        let target_idx = self.scored_options[self.cursor_index + 1];
-
-        self.options.swap(current_idx, target_idx);
-        self.scored_options.swap(self.cursor_index, self.cursor_index + 1);
-        self.cursor_index += 1;
-
-        ActionResult::NeedsRedraw
+        ActionResult::Clean
+    }
+    
+    fn get_final_order(&mut self) -> Vec<String> {
+        let mut reordered = Vec::with_capacity(self.options.len());
+        
+        // Create the final order based on scored_options
+        for &idx in &self.scored_options {
+            reordered.push(self.options[idx].clone());
+        }
+        
+        reordered
     }
 }
 
@@ -305,27 +308,36 @@ where
     }
 
     fn submit(&mut self) -> InquireResult<Option<Vec<String>>> {
-        Ok(Some(self.options.clone()))
+        Ok(Some(self.get_final_order()))
     }
 
     fn render(&self, backend: &mut Backend) -> InquireResult<()> {
+        // Clear the previous frame first
+        backend.frame_setup()?;
+        
+        // Render the prompt
         backend.render_reorderable_prompt(&self.message, self.input.as_ref())?;
 
-        let choices = self
-            .scored_options
+        // Create the list of visible options
+        let choices = self.scored_options
             .iter()
-            .cloned()
-            .map(|i| ListOption::new(i, self.options.get(i).unwrap()))
-            .collect::<Vec<ListOption<&String>>>();
+            .enumerate()
+            .map(|(i, &idx)| ListOption::new(i, &self.options[idx]))
+            .collect::<Vec<_>>();
 
+        // Calculate pagination
         let page = paginate(self.config.page_size, &choices, Some(self.cursor_index));
-
-        // We pass an empty BTreeSet since we don't need checkboxes
+        
+        // Render the options
         backend.render_reorder_options(page)?;
 
+        // Render help message if present
         if let Some(help_message) = self.help_message {
             backend.render_help_message(help_message)?;
         }
+
+        // Finish the frame
+        backend.frame_finish(false)?;
 
         Ok(())
     }
