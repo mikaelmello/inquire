@@ -691,7 +691,17 @@ where
         &mut self,
         page: Page<'_, ListOption<D>>,
     ) -> InquireResult<()> {
+        // Calculate the maximum width needed for the option display
+        let max_width = page.content.iter()
+            .map(|opt| opt.value.to_string().len())
+            .max()
+            .unwrap_or(0);
+
         for (idx, opt) in page.content.iter().enumerate() {
+            // Clear the entire line first
+            self.frame_renderer.clear_line()?;
+            
+            // Print the option content
             self.print_option_prefix(idx, &page)?;
             self.frame_renderer.write(" ")?;
 
@@ -703,6 +713,14 @@ where
             }
 
             self.print_reorder_option_value(idx, opt, &page)?;
+            
+            // Pad the rest of the line with spaces to overwrite any previous content
+            let content_width = opt.value.to_string().len();
+            if content_width < max_width {
+                let padding = " ".repeat(max_width - content_width);
+                self.frame_renderer.write(&padding)?;
+            }
+            
             self.new_line()?;
         }
 
