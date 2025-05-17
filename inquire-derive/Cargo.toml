@@ -14,11 +14,17 @@ keywords = ["cli", "ask", "prompt", "question", "interactive"]
 categories = ["command-line-interface", "value-formatting"]
 include = ["./src", "../LICENSE"]
 
+[lib]
+proc-macro = true
+
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
+proc-macro2 = "1.0.95"
+quote = "1.0.40"
+syn = { version = "2.0.101", features = ["full", "extra-traits"] }
 
 [dev-dependencies]
 inquire = { path = "../inquire" }
