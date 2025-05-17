@@ -7,6 +7,7 @@
 - Fix autocomplete suggestions not being updated after a suggestion is accepted. Thanks @moritz-hoelting and @istudyatuni for reporting and fixing it!
 - Fix incorrect cursor placement when inputting CJK characters. Thanks @phostann (#270) for reporting it!
 - Removed unused dependency (newline-converter). Thanks @jonassmedegaard (#267) for catching it!
+- Add `InquireChoose` Derive macro to streamline the creation of a menu to select from the variants of an enum
 
 ## [0.7.5] - 2024-04-23
 
@@ -155,7 +156,7 @@ _The auto-completion API will be revamped for v0.4.0, watch [#69](https://github
 
 ---
 
-#### 2. Support for custom prompt prefix in finished prompts.
+#### 2. Support for custom prompt prefix in finished prompts
 
 Added `answered_prompt_prefix` configuration on `RenderConfig`, allowing users to set custom prefixes (e.g. a check mark) to prompts that have already been answered.
 
@@ -165,7 +166,7 @@ Cheers to @href for the suggestion! [#44](https://github.com/mikaelmello/inquire
 
 ---
 
-#### 3. User-provided operations can be fallible.
+#### 3. User-provided operations can be fallible
 
 Input validation, suggestions and completions are now fallible operations.
 
@@ -178,7 +179,7 @@ The return type of suggesters has also been changed to allow fallible executions
 
 ---
 
-#### 4. Validators are traits instead of closures.
+#### 4. Validators are traits instead of closures
 
 All builtin validators have been turned into traits, with structs instead of macros as implementations.
 
