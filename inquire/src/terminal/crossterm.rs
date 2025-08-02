@@ -257,7 +257,7 @@ impl From<KeyEvent> for Key {
                 code: KeyCode::Esc, ..
             } => Self::Escape,
             KeyEvent {
-                code: KeyCode::Enter | KeyCode::Char('\n' | '\r'),
+                code: KeyCode::Esc,
                 ..
             } => Self::Enter,
             KeyEvent {
