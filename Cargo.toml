@@ -3,3 +3,4 @@ members = [
     "oma-inquire",
     "oma-inquire-derive",
 ]
+resolver = "2"
