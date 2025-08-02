@@ -1,15 +1,15 @@
 [package]
-name = "inquire-derive"
-version = "0.7.5"
+name = "oma-inquire-derive"
+version = "0.3.0"
 description = "" # TODO
 publish = false # TODO
-repository = "https://github.com/mikaelmello/inquire"
+repository = "https://github.com/AOSC-Dev/oma-inquire"
 license = "MIT"
 edition = "2021"
 readme = "./CRATE_README.md"
-documentation = "https://docs.rs/inquire"
-homepage = "https://github.com/mikaelmello/inquire"
-authors = ["Walter Bonetti <bonettiw@amotus.ca>", "Mikael Mello <git@mikaelmello.com>"]
+documentation = "https://docs.rs/oma-inquire"
+homepage = "https://github.com/AOSC-Dev/oma-inquire"
+authors = ["Walter Bonetti <bonettiw@amotus.ca>", "Mikael Mello <git@mikaelmello.com>", "Mag Mell <sakiiily@aosc.io>", "Mingcong Bai <jeffbai@aosc.io>"]
 keywords = ["cli", "ask", "prompt", "question", "interactive"]
 categories = ["command-line-interface", "value-formatting"]
 include = ["./src", "../LICENSE"]
@@ -21,4 +21,4 @@ rustdoc-args = ["--cfg", "docsrs"]
 [dependencies]
 
 [dev-dependencies]
-inquire = { path = "../inquire" }
+oma-inquire = { path = "../oma-inquire" }

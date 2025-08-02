@@ -1,5 +1,5 @@
 [workspace]
 members = [
-    "inquire",
-    "inquire-derive",
+    "oma-inquire",
+    "oma-inquire-derive",
 ]
