@@ -255,9 +255,6 @@ impl From<KeyEvent> for Key {
         match event {
             KeyEvent {
                 code: KeyCode::Esc, ..
-            } => Self::Escape,
-            KeyEvent {
-                code: KeyCode::Esc, ..
             } => Self::Enter,
             KeyEvent {
                 code: KeyCode::Enter,
