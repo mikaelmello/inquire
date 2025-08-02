@@ -227,7 +227,7 @@ where
 
         Ok(())
     }
-    
+
     pub fn clear_line(&mut self) -> io::Result<()> {
         // ANSI escape sequence to clear from cursor to end of line
         self.write("\x1b[2K")?;

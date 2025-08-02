@@ -5,12 +5,12 @@ mod custom_type;
 mod dateselect;
 #[cfg(feature = "editor")]
 mod editor;
-#[cfg(feature = "reorder")]
-mod reorder;
 mod multiselect;
 mod one_liners;
 mod password;
 mod prompt;
+#[cfg(feature = "reorder")]
+mod reorder;
 mod select;
 #[cfg(test)]
 pub(crate) mod test;
@@ -23,11 +23,11 @@ pub use custom_type::*;
 pub use dateselect::*;
 #[cfg(feature = "editor")]
 pub use editor::*;
-#[cfg(feature = "reorder")]
-pub use reorder::*;
 pub use multiselect::*;
 #[cfg(feature = "one-liners")]
 pub use one_liners::*;
 pub use password::*;
+#[cfg(feature = "reorder")]
+pub use reorder::*;
 pub use select::*;
 pub use text::*;
