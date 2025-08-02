@@ -366,7 +366,7 @@ checksum = "6aa2c4e539b869820a2b82e1aef6ff40aa85e65decdd5185e83fb4b1249cd00f"
 
 [[package]]
 name = "oma-inquire"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "bitflags",
  "chrono",

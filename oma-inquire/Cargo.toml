@@ -1,6 +1,6 @@
 [package]
 name = "oma-inquire"
-version = "0.3.0"
+version = "0.3.1"
 description = "inquire is a library for building interactive prompts on terminals"
 repository = "https://github.com/AOSC-Dev/oma-inquire"
 license = "MIT"
