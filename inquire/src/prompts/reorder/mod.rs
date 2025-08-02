@@ -143,7 +143,7 @@ impl<'a> ReorderableList<'a>
         let mut backend = Backend::new(input_reader, terminal, self.render_config)?;
         self.prompt_with_backend(&mut backend)
     }
-    
+
     pub fn prompt_with_backend<B: ReorderBackend>(self, backend: &mut B) -> InquireResult<Vec<String>> {
         ReorderableListPrompt::new(self)?.prompt(backend)
     }
@@ -221,7 +221,7 @@ impl<'a> ReorderableListPrompt<'a>
 
         self.update_cursor_position(new_position)
     }
-    
+
     fn update_cursor_position(&mut self, new_position: usize) -> ActionResult {
         if new_position != self.cursor_index {
             self.cursor_index = new_position;
@@ -235,7 +235,7 @@ impl<'a> ReorderableListPrompt<'a>
         if self.cursor_index > 0 && !self.scored_options.is_empty() {
             self.scored_options.swap(self.cursor_index, self.cursor_index - 1);
             self.cursor_index -= 1;
-            
+
             // Force a redraw of the frame
             return ActionResult::NeedsRedraw;
         }
@@ -246,21 +246,21 @@ impl<'a> ReorderableListPrompt<'a>
         if self.cursor_index < self.scored_options.len() - 1 {
             self.scored_options.swap(self.cursor_index, self.cursor_index + 1);
             self.cursor_index += 1;
-            
+
             // Force a redraw of the frame
             return ActionResult::NeedsRedraw;
         }
         ActionResult::Clean
     }
-    
+
     fn get_final_order(&mut self) -> Vec<String> {
         let mut reordered = Vec::with_capacity(self.options.len());
-        
+
         // Create the final order based on scored_options
         for &idx in &self.scored_options {
             reordered.push(self.options[idx].clone());
         }
-        
+
         reordered
     }
 }
@@ -312,9 +312,6 @@ where
     }
 
     fn render(&self, backend: &mut Backend) -> InquireResult<()> {
-        // Clear the previous frame first
-        backend.frame_setup()?;
-        
         // Render the prompt
         backend.render_reorderable_prompt(&self.message, self.input.as_ref())?;
 
@@ -327,7 +324,7 @@ where
 
         // Calculate pagination
         let page = paginate(self.config.page_size, &choices, Some(self.cursor_index));
-        
+
         // Render the options
         backend.render_reorder_options(page)?;
 
@@ -335,9 +332,6 @@ where
         if let Some(help_message) = self.help_message {
             backend.render_help_message(help_message)?;
         }
-
-        // Finish the frame
-        backend.frame_finish(false)?;
 
         Ok(())
     }
