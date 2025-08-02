@@ -261,6 +261,10 @@ impl From<KeyEvent> for Key {
                 ..
             } => Self::Enter,
             KeyEvent {
+                code: KeyCode::Enter,
+                ..
+            } => Self::Toggle,
+            KeyEvent {
                 code: KeyCode::Tab | KeyCode::Char('\t'),
                 ..
             } => Self::Tab,

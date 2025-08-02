@@ -19,6 +19,7 @@ bitflags! {
 pub enum Key {
     Escape,
     Enter,
+    Toggle,
     Backspace,
     Tab,
     Delete(KeyModifiers),
