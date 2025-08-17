@@ -150,7 +150,10 @@ where
 
                         ActionResult::NeedsRedraw
                     }
-                    Action::Interrupt => return Err(InquireError::OperationInterrupted),
+                    Action::Interrupt => {
+                        backend.new_line().ok();
+                        return Err(InquireError::OperationInterrupted);
+                    }
                     Action::Inner(inner_action) => self.handle(inner_action)?,
                 };
             }

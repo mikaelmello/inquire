@@ -23,6 +23,7 @@ pub trait CommonBackend: InputReader {
 
     fn render_error_message(&mut self, error: &ErrorMessage) -> Result<()>;
     fn render_help_message(&mut self, help: &str) -> Result<()>;
+    fn new_line(&mut self) -> Result<()>;
 }
 
 pub trait TextBackend: CommonBackend {
@@ -310,6 +311,12 @@ where
         self.frame_renderer
             .write_styled(Styled::new(help).with_style_sheet(self.render_config.help_message))?;
 
+        self.new_line()?;
+
+        Ok(())
+    }
+    
+    fn new_line(&mut self) -> Result<()> {
         self.new_line()?;
 
         Ok(())
@@ -786,6 +793,10 @@ pub(crate) mod test {
 
         fn render_help_message(&mut self, help: &str) -> std::io::Result<()> {
             self.push_token(Token::HelpMessage(help.to_string()));
+            Ok(())
+        }
+        
+        fn new_line(&mut self) -> std::io::Result<()> {
             Ok(())
         }
     }
