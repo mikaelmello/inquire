@@ -441,6 +441,8 @@ where
 
 #[cfg(test)]
 mod test {
+    use std::collections::VecDeque;
+
     use crate::{
         error::InquireResult,
         terminal::{test::MockTerminal, TerminalSize},
@@ -450,7 +452,8 @@ mod test {
 
     #[test]
     fn ensure_inline_ansi_codes_are_maintained() -> InquireResult<()> {
-        let terminal = MockTerminal::new().with_size(TerminalSize::new(200, 200));
+        let mut output = VecDeque::new();
+        let terminal = MockTerminal::new(&mut output).with_size(TerminalSize::new(200, 200));
         let mut renderer = FrameRenderer::new(terminal)?;
 
         renderer.start_frame()?;
