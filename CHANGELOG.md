@@ -4,6 +4,7 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
+- Upgraded `crossterm` to 0.28.1.
 - Raised minimum supported Rust version to 1.80.0.
 - Migrate functionality from `once_cell` to `stdlib`. Thanks @jarjk for cutting down on a dependency!
 - Migrate functionality from `fxhash` to `stdlib`, as the dependency is no longer maintained. Thanks @ereOn for reporting, and @jarjk for fixing it!
