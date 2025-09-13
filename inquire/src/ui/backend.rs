@@ -373,7 +373,8 @@ where
         if let Some(input) = cur_input {
             self.print_prompt_with_input(prompt, None, input)
         } else {
-            self.print_prompt(prompt)
+            self.print_prompt(prompt)?;
+            self.new_line()
         }
     }
 
@@ -406,7 +407,8 @@ where
         if let Some(input) = cur_input {
             self.print_prompt_with_input(prompt, None, input)
         } else {
-            self.print_prompt(prompt)
+            self.print_prompt(prompt)?;
+            self.new_line()
         }
     }
 

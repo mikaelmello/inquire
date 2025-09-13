@@ -15,7 +15,10 @@ fn main() {
         "Pineapple",
     ];
 
-    let ans = Select::new("What's your favorite fruit?", options).prompt();
+    let ans = Select::new("What's your favorite fruit?", options.clone()).prompt();
+    let ans = Select::new("What's your favorite fruit?", options.clone())
+        .without_filtering()
+        .prompt();
 
     match ans {
         Ok(choice) => println!("{choice}! That's mine too!"),
