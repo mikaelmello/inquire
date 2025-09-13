@@ -4,6 +4,7 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
+- Support prompting for input without a message (#307), thanks @CraftSpider for the feature request!
 - Don't require static lifetime for autocompleter and validator, thanks @stormshield-guillaumed (#272)!
 - Upgraded `crossterm` to 0.28.1.
 - Raised minimum supported Rust version to 1.80.0.
