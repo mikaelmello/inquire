@@ -26,9 +26,10 @@ use self::prompt::MultiSelectPrompt;
 #[cfg(feature = "fuzzy")]
 use fuzzy_matcher::{skim::SkimMatcherV2, FuzzyMatcher};
 #[cfg(feature = "fuzzy")]
-use once_cell::sync::Lazy;
+use std::sync::LazyLock;
 #[cfg(feature = "fuzzy")]
-static DEFAULT_MATCHER: Lazy<SkimMatcherV2> = Lazy::new(|| SkimMatcherV2::default().ignore_case());
+static DEFAULT_MATCHER: LazyLock<SkimMatcherV2> =
+    LazyLock::new(|| SkimMatcherV2::default().ignore_case());
 /// Prompt suitable for when you need the user to select many options (including none if applicable) among a list of them.
 ///
 /// The user can select (or deselect) the current highlighted option by pressing space, clean all selections by pressing the left arrow and select all options by pressing the right arrow.
