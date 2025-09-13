@@ -4,12 +4,13 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
+- Raised minimum supported Rust version to 1.80.0.
 - Migrate functionality from `once_cell` to `stdlib`. Thanks @jarjk for cutting down on a dependency!
 - Migrate functionality from `fxhash` to `stdlib`, as the dependency is no longer maintained. Thanks @ereOn for reporting, and @jarjk for fixing it!
+- Fix GitHub Action outdated dependencies. Thanks @jarjk and @basbossink-ds (#303, #304, #305)!
 - Fix autocomplete suggestions not being updated after a suggestion is accepted. Thanks @moritz-hoelting and @istudyatuni for reporting and fixing it!
 - Fix incorrect cursor placement when inputting CJK characters. Thanks @phostann (#270) for reporting it!
 - Removed unused dependency (newline-converter). Thanks @jonassmedegaard (#267) for catching it!
-- Fix github workflow cache usage, and some clippies (#305).
 
 ## [0.7.5] - 2024-04-23
 
