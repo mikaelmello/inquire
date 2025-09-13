@@ -172,12 +172,13 @@ where
     fn print_prompt_with_prefix(&mut self, prefix: Styled<&str>, prompt: &str) -> Result<()> {
         self.frame_renderer.write_styled(prefix)?;
 
+        self.frame_renderer.write(" ")?;
+
         if !prompt.is_empty() {
+            self.frame_renderer
+                .write_styled(Styled::new(prompt).with_style_sheet(self.render_config.prompt))?;
             self.frame_renderer.write(" ")?;
         }
-
-        self.frame_renderer
-            .write_styled(Styled::new(prompt).with_style_sheet(self.render_config.prompt))?;
 
         Ok(())
     }
@@ -187,14 +188,6 @@ where
     }
 
     fn print_input(&mut self, input: &Input) -> Result<()> {
-        self.print_input_with_spacing(input, true)
-    }
-
-    fn print_input_with_spacing(&mut self, input: &Input, add_space: bool) -> Result<()> {
-        if add_space {
-            self.frame_renderer.write(" ")?;
-        }
-
         // The cursor is at the beginning of the input line.
         // From here it's easier to mark the wanted cursor position
         // (based on the underlying input struct), as it's a simple
@@ -234,13 +227,11 @@ where
         self.print_prompt(prompt)?;
 
         if let Some(default) = default {
-            self.frame_renderer.write(" ")?;
             self.print_default_value(default)?;
+            self.frame_renderer.write(" ")?;
         }
 
-        // Only add space before input if there's content (prompt or default)
-        let has_content = !prompt.is_empty() || default.is_some();
-        self.print_input_with_spacing(input, has_content)?;
+        self.print_input(input)?;
 
         self.new_line()?;
 
@@ -269,8 +260,6 @@ where
     fn render_canceled_prompt(&mut self, prompt: &str) -> Result<()> {
         self.print_prompt(prompt)?;
 
-        self.frame_renderer.write(" ")?;
-
         self.frame_renderer
             .write_styled(self.render_config.canceled_prompt_indicator)?;
 
@@ -281,8 +270,6 @@ where
 
     fn render_prompt_with_answer(&mut self, prompt: &str, answer: &str) -> Result<()> {
         self.print_prompt_with_prefix(self.render_config.answered_prompt_prefix, prompt)?;
-
-        self.frame_renderer.write(" ")?;
 
         let token = Styled::new(answer).with_style_sheet(self.render_config.answer);
         self.frame_renderer.write_styled(token)?;
@@ -367,9 +354,7 @@ where
     fn render_prompt(&mut self, prompt: &str, editor_command: &str) -> Result<()> {
         self.print_prompt(prompt)?;
 
-        self.frame_renderer.write(" ")?;
-
-        let message = format!("[(e) to open {}, (enter) to submit]", editor_command);
+        let message = format!("[(e) to open {editor_command}, (enter) to submit]");
         let token = Styled::new(message).with_style_sheet(self.render_config.editor_prompt);
         self.frame_renderer.write_styled(token)?;
 
@@ -680,6 +665,7 @@ pub(crate) mod test {
 
     use crate::{
         input::Input,
+        terminal::test::{MockTerminal, MockTerminalToken},
         ui::{InputReader, Key},
         validator::ErrorMessage,
     };
@@ -852,11 +838,11 @@ pub(crate) mod test {
 
     #[test]
     fn test_empty_prompt_spacing() {
-        use crate::terminal::crossterm::CrosstermTerminal;
-        use crate::ui::{Key, RenderConfig, InputReader};
-        use crate::input::Input;
         use super::Backend;
-        
+        use crate::input::Input;
+        use crate::terminal::test::find_and_expect_token;
+        use crate::ui::{InputReader, Key, RenderConfig};
+
         // Create a simple mock input reader
         struct MockInputReader;
         impl InputReader for MockInputReader {
@@ -864,25 +850,42 @@ pub(crate) mod test {
                 Ok(Key::Enter) // Just return Enter for testing
             }
         }
-        
-        let terminal = CrosstermTerminal::new_in_memory_output();
+
+        let mut output = VecDeque::new();
+        let terminal = MockTerminal::new(&mut output);
         let input_reader = MockInputReader;
         let render_config = RenderConfig::default();
-        let mut backend = Backend::new(input_reader, terminal, render_config).unwrap();
-        
-        let input = Input::new();
-        
-        // Test empty prompt with input - should only have one space between prefix and input
-        backend.frame_setup().unwrap();
-        backend.print_prompt_with_input("", None, &input).unwrap();
-        backend.frame_finish(false).unwrap();
-        
-        // Test non-empty prompt with input - should have space after prefix, message, and before input
-        backend.frame_setup().unwrap();
-        backend.print_prompt_with_input("Hello:", None, &input).unwrap();
-        backend.frame_finish(false).unwrap();
-        
-        // If we reach here without panicking, the spacing logic works correctly
-        assert!(true, "Empty prompt spacing test completed successfully");
+
+        {
+            let mut backend = Backend::new(input_reader, terminal, render_config).unwrap();
+
+            let input = Input::new();
+
+            // Test empty prompt with input - should only have one space between prefix and input
+            backend.frame_setup().unwrap();
+            backend.print_prompt_with_input("", None, &input).unwrap();
+            backend.frame_finish(false).unwrap();
+
+            // Test non-empty prompt with input - should have space after prefix, message, and before input
+            backend.frame_setup().unwrap();
+            backend
+                .print_prompt_with_input("Hello:", None, &input)
+                .unwrap();
+            backend.frame_finish(false).unwrap();
+        }
+
+        find_and_expect_token(&mut output, render_config.prompt_prefix.into());
+        find_and_expect_token(&mut output, " ".into());
+        find_and_expect_token(&mut output, " ".into());
+        find_and_expect_token(&mut output, "\r".into());
+        find_and_expect_token(&mut output, MockTerminalToken::CursorRight(2));
+
+        find_and_expect_token(&mut output, render_config.prompt_prefix.into());
+        find_and_expect_token(&mut output, " ".into());
+        find_and_expect_token(&mut output, "Hello:".into());
+        find_and_expect_token(&mut output, " ".into());
+        find_and_expect_token(&mut output, " ".into());
+        find_and_expect_token(&mut output, "\r".into());
+        find_and_expect_token(&mut output, MockTerminalToken::CursorRight(9));
     }
 }
