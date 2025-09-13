@@ -148,8 +148,6 @@ pub type MultiOptionFormatter<'a, T> = &'a dyn Fn(&[ListOption<&T>]) -> String;
 /// ```
 pub type CustomTypeFormatter<'a, T> = &'a dyn Fn(T) -> String;
 
-#[cfg(feature = "date")]
-
 /// Type alias for formatters used in [`DateSelect`](crate::DateSelect) prompts.
 ///
 /// Formatters receive the user input and return a [String] to be displayed
@@ -168,6 +166,7 @@ pub type CustomTypeFormatter<'a, T> = &'a dyn Fn(T) -> String;
 ///     formatter(NaiveDate::from_ymd(2021, 7, 25)),
 /// );
 /// ```
+#[cfg(feature = "date")]
 pub type DateFormatter<'a> = &'a dyn Fn(chrono::NaiveDate) -> String;
 
 /// String formatter used by default in inputs that return a `String` as input.

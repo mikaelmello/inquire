@@ -24,9 +24,10 @@ use self::prompt::SelectPrompt;
 #[cfg(feature = "fuzzy")]
 use fuzzy_matcher::{skim::SkimMatcherV2, FuzzyMatcher};
 #[cfg(feature = "fuzzy")]
-use once_cell::sync::Lazy;
+use std::sync::LazyLock;
 #[cfg(feature = "fuzzy")]
-static DEFAULT_MATCHER: Lazy<SkimMatcherV2> = Lazy::new(|| SkimMatcherV2::default().ignore_case());
+static DEFAULT_MATCHER: LazyLock<SkimMatcherV2> =
+    LazyLock::new(|| SkimMatcherV2::default().ignore_case());
 /// Prompt suitable for when you need the user to select one option among many.
 ///
 /// The user can select and submit the current highlighted option by pressing enter.
