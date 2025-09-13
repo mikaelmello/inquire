@@ -4,6 +4,7 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
+- Don't require static lifetime for autocompleter and validator, thanks @stormshield-guillaumed (#272)!
 - Upgraded `crossterm` to 0.28.1.
 - Raised minimum supported Rust version to 1.80.0.
 - Migrate functionality from `once_cell` to `stdlib`. Thanks @jarjk for cutting down on a dependency!
