@@ -1,6 +1,7 @@
 use crate::{
     formatter::OptionFormatter,
     list_option::ListOption,
+    terminal::test::match_text,
     test::fake_backend,
     ui::{Key, KeyModifiers},
     Select,
@@ -141,4 +142,49 @@ fn chars_do_not_affect_prompt_without_filtering() {
         .unwrap();
 
     assert_eq!(ListOption::new(0, "Banana"), ans);
+}
+
+#[test]
+// Anti-regression test: https://github.com/mikaelmello/inquire/issues/294
+fn first_option_renders_on_new_line_without_filtering() {
+    use crate::{
+        terminal::test::MockTerminal,
+        ui::{Backend, InputReader, Key, RenderConfig},
+    };
+    use std::collections::VecDeque;
+
+    // Create input reader
+    struct MockInputReader;
+    impl InputReader for MockInputReader {
+        fn read_key(&mut self) -> crate::error::InquireResult<Key> {
+            Ok(Key::Enter)
+        }
+    }
+
+    let mut output = VecDeque::new();
+    let terminal = MockTerminal::new(&mut output);
+    let input_reader = MockInputReader;
+    let render_config = RenderConfig::default();
+
+    let options = vec!["Option 1", "Option 2", "Option 3"];
+
+    {
+        let mut backend = Backend::new(input_reader, terminal, render_config).unwrap();
+        let _ans = Select::new("Select rating", options)
+            .without_filtering()
+            .prompt_with_backend(&mut backend)
+            .unwrap();
+    }
+
+    // The key assertion is that there should be a newline after the prompt
+    // Before the bug fix, the first option would appear on the same line as the prompt
+    // After the bug fix, there should be a newline separating them
+
+    // We're testing that with without_filtering(), the newline appears after the prompt
+    match_text(&mut output, "?");
+    match_text(&mut output, " ");
+    match_text(&mut output, "Select rating");
+    match_text(&mut output, " ");
+    match_text(&mut output, "\r");
+    match_text(&mut output, "\n");
 }

@@ -465,10 +465,11 @@ mod test {
 
         let terminal = &mut renderer.terminal;
 
-        terminal.find_and_expect_token("Hello".into());
-        terminal.find_and_expect_token("World".into());
-        terminal.find_and_expect_token("\n".into());
-        terminal.find_and_expect_token("\x1b[1;31mWhat\x1b[0m is your name?".into());
+        terminal.match_text("Hello");
+        terminal.match_text("World");
+        terminal.match_text("\r");
+        terminal.match_text("\n");
+        terminal.match_text("\x1b[1;31mWhat\x1b[0m is your name?");
 
         Ok(())
     }

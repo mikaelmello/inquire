@@ -40,14 +40,29 @@ where
     }
 }
 
-pub fn find_and_expect_token(output: &mut VecDeque<MockTerminalToken>, token: MockTerminalToken) {
+pub fn match_text(output: &mut VecDeque<MockTerminalToken>, text: &str) {
     while let Some(actual) = output.pop_front() {
-        if actual == token {
-            return;
+        if let MockTerminalToken::Text(actual) = actual {
+            if actual.content == text {
+                return;
+            } else {
+                panic!("Expected text {:?} but found {:?}", text, actual.content);
+            }
         }
     }
+    panic!("Expected text not found: {:?}", text);
+}
 
-    panic!("Expected token not found: {:?}", token);
+pub fn match_token(output: &mut VecDeque<MockTerminalToken>, token: MockTerminalToken) {
+    match output.pop_front() {
+        Some(actual) => {
+            if actual == token {
+                return;
+            }
+            panic!("Expected token {:?} but found {:?}", token, actual);
+        }
+        None => panic!("Expected token not found: {:?}", token),
+    }
 }
 
 impl<'a> MockTerminal<'a> {
@@ -63,8 +78,8 @@ impl<'a> MockTerminal<'a> {
         self
     }
 
-    pub fn find_and_expect_token(&mut self, token: MockTerminalToken) {
-        find_and_expect_token(self.output, token);
+    pub fn match_text(&mut self, text: &str) {
+        match_text(self.output, text);
     }
 }
 

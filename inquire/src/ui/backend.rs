@@ -842,7 +842,7 @@ pub(crate) mod test {
     fn test_empty_prompt_spacing() {
         use super::Backend;
         use crate::input::Input;
-        use crate::terminal::test::find_and_expect_token;
+        use crate::terminal::test::match_token;
         use crate::ui::{InputReader, Key, RenderConfig};
 
         // Create a simple mock input reader
@@ -876,18 +876,23 @@ pub(crate) mod test {
             backend.frame_finish(false).unwrap();
         }
 
-        find_and_expect_token(&mut output, render_config.prompt_prefix.into());
-        find_and_expect_token(&mut output, " ".into());
-        find_and_expect_token(&mut output, " ".into());
-        find_and_expect_token(&mut output, "\r".into());
-        find_and_expect_token(&mut output, MockTerminalToken::CursorRight(2));
+        match_token(&mut output, MockTerminalToken::CursorHide);
+        match_token(&mut output, render_config.prompt_prefix.into());
+        match_token(&mut output, " ".into());
+        match_token(&mut output, " ".into());
+        match_token(&mut output, "\r".into());
+        match_token(&mut output, MockTerminalToken::CursorRight(2));
+        match_token(&mut output, MockTerminalToken::CursorShow);
 
-        find_and_expect_token(&mut output, render_config.prompt_prefix.into());
-        find_and_expect_token(&mut output, " ".into());
-        find_and_expect_token(&mut output, "Hello:".into());
-        find_and_expect_token(&mut output, " ".into());
-        find_and_expect_token(&mut output, " ".into());
-        find_and_expect_token(&mut output, "\r".into());
-        find_and_expect_token(&mut output, MockTerminalToken::CursorRight(9));
+        match_token(&mut output, MockTerminalToken::CursorHide);
+        match_token(&mut output, MockTerminalToken::CursorLeft(2));
+        match_token(&mut output, render_config.prompt_prefix.into());
+        match_token(&mut output, " ".into());
+        match_token(&mut output, "Hello:".into());
+        match_token(&mut output, " ".into());
+        match_token(&mut output, " ".into());
+        match_token(&mut output, MockTerminalToken::ClearUntilNewLine);
+        match_token(&mut output, "\r".into());
+        match_token(&mut output, MockTerminalToken::CursorRight(9));
     }
 }
