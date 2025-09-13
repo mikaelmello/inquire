@@ -22,14 +22,14 @@ jobs:
       contents: write
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v5
 
       - name: Install cargo-release
-        uses: taiki-e/install-action@v1
+        uses: taiki-e/install-action@v2
         with:
           tool: cargo-release
 
-      - uses: cargo-bins/release-pr@v2
+      - uses: cargo-bins/release-pr@v3
         with:
           check-semver: true
           pr-release-notes: true

@@ -12,7 +12,7 @@ authors = ["Mikael Mello <git@mikaelmello.com>"]
 keywords = ["cli", "ask", "prompt", "question", "interactive"]
 categories = ["command-line-interface", "value-formatting"]
 include = ["/examples", "/src", "/../LICENSE"]
-rust-version = "1.66.0"
+rust-version = "1.80.0"
 
 [lib]
 name = "inquire"
@@ -46,10 +46,8 @@ fuzzy-matcher = { version = "0.3", default-features = false, optional = true }
 
 bitflags = "2"
 dyn-clone = "1"
-once_cell = "1"
 unicode-segmentation = "1"
-unicode-width = "0.2"
-fxhash = "0.2"
+unicode-width = "0.1"
 
 [dev-dependencies]
 rstest = "0.24"

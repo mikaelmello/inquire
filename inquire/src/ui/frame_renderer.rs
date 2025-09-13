@@ -1,9 +1,8 @@
 use std::cmp::Ordering;
 use std::fmt::Display;
-use std::hash::{Hash, Hasher};
+use std::hash::{DefaultHasher, Hash, Hasher};
 use std::io;
 
-use fxhash::FxHasher;
 use unicode_width::UnicodeWidthChar;
 
 use super::dimension::Dimension;
@@ -45,7 +44,7 @@ struct FrameState {
     pub current_styled: Styled<String>,
     pub current_line: Vec<Styled<String>>,
     pub current_line_width: u16,
-    pub current_line_hasher: FxHasher,
+    pub current_line_hasher: DefaultHasher,
 }
 
 impl FrameState {
@@ -56,7 +55,7 @@ impl FrameState {
             finished_rows: Vec::new(),
             current_styled: Styled::default(),
             current_line: Vec::new(),
-            current_line_hasher: FxHasher::default(),
+            current_line_hasher: DefaultHasher::default(),
             current_line_width: 0,
             expected_cursor_position: None,
         }
