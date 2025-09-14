@@ -35,9 +35,9 @@
 
 ### Acknowledgments
 
-Thanks to all the users and contributors who helped improve this library with their feedback and contributions!
+Thanks to all the who helped improve this library with their feedback and contributions!
 
-@basbossink-ds, @CraftSpider, @ereOn, @isudyatuni, @jarjk, @jonassmedegaard, @Maffey, @moritz-hoelting, @phostann, @stormshield-guillaumed, @theRookieCoder, @tusharmath
+@basbossink-ds, @CraftSpider, @ereOn, @istudyatuni, @jarjk, @jonassmedegaard, @Maffey, @moritz-hoelting, @phostann, @stormshield-guillaumed, @theRookieCoder, @tusharmath
 
 ## [0.7.5] - 2024-04-23
 
