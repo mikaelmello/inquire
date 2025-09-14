@@ -8,38 +8,23 @@ on:
       - main
 
 env:
-  MSRV: 1.66.0
+  MSRV: 1.80.0
 
 jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
 
       - name: Install toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
-          override: true
-          profile: minimal
           components: rustfmt, clippy
 
       - name: Cache cargo files
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cargo/bin
-            ~/.cargo/.crates.toml
-            ~/.cargo/.crates2.json
-            ~/.cargo/registry/index
-            ~/.cargo/registry/cache
-            ~/.cargo/git/db
-            ./target
-            ./test-target
-          key: ${{ runner.os }}-cargo-files-stable-${{ hashFiles('**/Cargo.lock', '**/Cargo.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-files-stable
+        uses: Swatinem/rust-cache@v2
 
       - name: Build
         run: cargo build --all-features
@@ -59,7 +44,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
 
       - name: Define Rust version
         if: matrix.os != 'windows-latest'
@@ -81,28 +66,13 @@ jobs:
           }
 
       - name: Install toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: ${{ env.RUST_VERSION }}
-          override: true
-          profile: minimal
           components: rustfmt, clippy
 
       - name: Cache cargo files
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cargo/bin
-            ~/.cargo/.crates.toml
-            ~/.cargo/.crates2.json
-            ~/.cargo/registry/index
-            ~/.cargo/registry/cache
-            ~/.cargo/git/db
-            ./target
-            ./test-target
-          key: ${{ runner.os }}-cargo-files-${{ matrix.build}}-${{ hashFiles('**/Cargo.lock', '**/Cargo.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-files-${{ matrix.build}}
+        uses: Swatinem/rust-cache@v2
 
       - name: Test (default)
         run: cargo test

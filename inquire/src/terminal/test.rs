@@ -1,13 +1,12 @@
 use std::{collections::VecDeque, fmt::Display};
 
-use crate::ui::{Key, Styled};
+use crate::ui::Styled;
 
 use super::{Terminal, TerminalSize};
 
-pub struct MockTerminal {
+pub struct MockTerminal<'a> {
     pub size: TerminalSize,
-    pub input: VecDeque<Key>,
-    pub output: VecDeque<MockTerminalToken>,
+    pub output: &'a mut VecDeque<MockTerminalToken>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -32,13 +31,45 @@ where
         MockTerminalToken::Text(Styled::new(val.to_string()))
     }
 }
+impl<T> From<Styled<T>> for MockTerminalToken
+where
+    T: Display,
+{
+    fn from(val: Styled<T>) -> Self {
+        MockTerminalToken::Text(Styled::new(val.content.to_string()).with_style_sheet(val.style))
+    }
+}
 
-impl MockTerminal {
-    pub fn new() -> Self {
+pub fn match_text(output: &mut VecDeque<MockTerminalToken>, text: &str) {
+    while let Some(actual) = output.pop_front() {
+        if let MockTerminalToken::Text(actual) = actual {
+            if actual.content == text {
+                return;
+            } else {
+                panic!("Expected text {:?} but found {:?}", text, actual.content);
+            }
+        }
+    }
+    panic!("Expected text not found: {:?}", text);
+}
+
+pub fn match_token(output: &mut VecDeque<MockTerminalToken>, token: MockTerminalToken) {
+    match output.pop_front() {
+        Some(actual) => {
+            if actual == token {
+                return;
+            }
+            panic!("Expected token {:?} but found {:?}", token, actual);
+        }
+        None => panic!("Expected token not found: {:?}", token),
+    }
+}
+
+impl<'a> MockTerminal<'a> {
+    pub fn new(output: &'a mut VecDeque<MockTerminalToken>) -> Self {
         Self {
             size: TerminalSize::new(80, 40),
-            input: VecDeque::new(),
-            output: VecDeque::new(),
+            output,
         }
     }
 
@@ -47,24 +78,18 @@ impl MockTerminal {
         self
     }
 
-    pub fn find_and_expect_token(&mut self, token: MockTerminalToken) {
-        while let Some(actual) = self.output.pop_front() {
-            if actual == token {
-                return;
-            }
-        }
-
-        panic!("Expected token not found: {:?}", token);
+    pub fn match_text(&mut self, text: &str) {
+        match_text(self.output, text);
     }
 }
 
-impl Terminal for MockTerminal {
+impl<'a> Terminal for MockTerminal<'a> {
     fn get_size(&self) -> std::io::Result<TerminalSize> {
         Ok(self.size)
     }
 
     fn write<T: Display>(&mut self, val: T) -> std::io::Result<()> {
-        let styled = Styled::new(format!("{}", val));
+        let styled = Styled::new(format!("{val}"));
         let token = MockTerminalToken::Text(styled);
         self.output.push_back(token);
         Ok(())

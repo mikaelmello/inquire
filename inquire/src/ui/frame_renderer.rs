@@ -1,9 +1,8 @@
 use std::cmp::Ordering;
 use std::fmt::Display;
-use std::hash::{Hash, Hasher};
+use std::hash::{DefaultHasher, Hash, Hasher};
 use std::io;
 
-use fxhash::FxHasher;
 use unicode_width::UnicodeWidthChar;
 
 use super::dimension::Dimension;
@@ -45,7 +44,7 @@ struct FrameState {
     pub current_styled: Styled<String>,
     pub current_line: Vec<Styled<String>>,
     pub current_line_width: u16,
-    pub current_line_hasher: FxHasher,
+    pub current_line_hasher: DefaultHasher,
 }
 
 impl FrameState {
@@ -56,7 +55,7 @@ impl FrameState {
             finished_rows: Vec::new(),
             current_styled: Styled::default(),
             current_line: Vec::new(),
-            current_line_hasher: FxHasher::default(),
+            current_line_hasher: DefaultHasher::default(),
             current_line_width: 0,
             expected_cursor_position: None,
         }
@@ -103,15 +102,12 @@ impl FrameState {
     }
 
     pub fn mark_cursor_position(&mut self, offset: isize) {
-        let mut row = self.finished_rows.len() as u16;
-        let mut col = self.current_line_width;
+        let row = self.finished_rows.len() as u16;
+        let col = self.current_line_width.saturating_add(offset as u16);
 
-        col = col.saturating_add(offset as u16);
-
-        if col >= self.terminal_size.width() {
-            col -= self.terminal_size.width();
-            row += 1;
-        }
+        let row_offset = col / self.terminal_size.width();
+        let row = row + row_offset;
+        let col = col % self.terminal_size.width();
 
         self.expected_cursor_position = Some(Position { row, col });
     }
@@ -442,6 +438,8 @@ where
 
 #[cfg(test)]
 mod test {
+    use std::collections::VecDeque;
+
     use crate::{
         error::InquireResult,
         terminal::{test::MockTerminal, TerminalSize},
@@ -451,7 +449,8 @@ mod test {
 
     #[test]
     fn ensure_inline_ansi_codes_are_maintained() -> InquireResult<()> {
-        let terminal = MockTerminal::new().with_size(TerminalSize::new(200, 200));
+        let mut output = VecDeque::new();
+        let terminal = MockTerminal::new(&mut output).with_size(TerminalSize::new(200, 200));
         let mut renderer = FrameRenderer::new(terminal)?;
 
         renderer.start_frame()?;
@@ -463,10 +462,89 @@ mod test {
 
         let terminal = &mut renderer.terminal;
 
-        terminal.find_and_expect_token("Hello".into());
-        terminal.find_and_expect_token("World".into());
-        terminal.find_and_expect_token("\n".into());
-        terminal.find_and_expect_token("\x1b[1;31mWhat\x1b[0m is your name?".into());
+        terminal.match_text("Hello");
+        terminal.match_text("World");
+        terminal.match_text("\r");
+        terminal.match_text("\n");
+        terminal.match_text("\x1b[1;31mWhat\x1b[0m is your name?");
+
+        Ok(())
+    }
+
+    #[test]
+    fn cursor_position_multiline_overflow() -> InquireResult<()> {
+        use super::RenderState;
+
+        let mut output = VecDeque::new();
+        // Set narrow terminal width to force text wrapping
+        let terminal = MockTerminal::new(&mut output).with_size(TerminalSize::new(10, 10));
+        let mut renderer = FrameRenderer::new(terminal)?;
+
+        renderer.start_frame()?;
+
+        // Write exactly 10 characters to fill first line
+        renderer.write("hello worl")?;
+
+        // Test case 1: offset that spans multiple rows
+        // Current line width = 10, offset = 15 means total = 25
+        // This should put cursor at row=2, col=5 (25 / 10 = 2 extra rows, 25 % 10 = 5)
+        renderer.mark_cursor_position(15);
+
+        let expected_position = match &renderer.state {
+            RenderState::ActiveRender { current_frame, .. } => {
+                current_frame.expected_cursor_position
+            }
+            _ => None,
+        };
+
+        if let Some(pos) = expected_position {
+            assert_eq!(
+                pos.row, 2,
+                "Expected cursor row to be 2 when spanning multiple lines"
+            );
+            assert_eq!(pos.col, 5, "Expected cursor col to be 5 after wrapping");
+        } else {
+            panic!("Expected cursor position to be set");
+        }
+
+        // Test case 2: exact multiple of terminal width
+        // offset = 20 means total = 30, should be row=3, col=0
+        renderer.mark_cursor_position(20);
+
+        let expected_position = match &renderer.state {
+            RenderState::ActiveRender { current_frame, .. } => {
+                current_frame.expected_cursor_position
+            }
+            _ => None,
+        };
+
+        if let Some(pos) = expected_position {
+            assert_eq!(pos.row, 3, "Expected cursor row to be 3 for exact multiple");
+            assert_eq!(pos.col, 0, "Expected cursor col to be 0 for exact multiple");
+        } else {
+            panic!("Expected cursor position to be set");
+        }
+
+        // Test case 3: spanning multiple lines
+        // offset = 99 means total = 109, should be row=10, col=9
+        renderer.mark_cursor_position(99);
+
+        let expected_position = match &renderer.state {
+            RenderState::ActiveRender { current_frame, .. } => {
+                current_frame.expected_cursor_position
+            }
+            _ => None,
+        };
+
+        if let Some(pos) = expected_position {
+            assert_eq!(
+                pos.row, 10,
+                "Expected cursor row to be 3 for exact multiple"
+            );
+            assert_eq!(pos.col, 9, "Expected cursor col to be 0 for exact multiple");
+        } else {
+            panic!("Expected cursor position to be set");
+        }
 
         Ok(())
     }

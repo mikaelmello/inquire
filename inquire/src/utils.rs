@@ -62,7 +62,7 @@ pub fn paginate<T>(page_size: usize, choices: &[T], sel: Option<usize>) -> Page<
     Page {
         first: start == 0,
         last: end == choices.len(),
-        content: &choices[start..end],
+        content: choices.get(start..end).unwrap(),
         cursor,
         total: choices.len(),
     }

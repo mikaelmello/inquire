@@ -4,10 +4,40 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
-- Fix autocomplete suggestions not being updated after a suggestion is accepted. Thanks @moritz-hoelting and @istudyatuni for reporting and fixing it!
-- Fix incorrect cursor placement when inputting CJK characters. Thanks @phostann (#270) for reporting it!
-- Removed unused dependency (newline-converter). Thanks @jonassmedegaard (#267) for catching it!
-- Add `InquireChoose` Derive macro to streamline the creation of a menu to select from the variants of an enum
+- Add `InquireChoose` derive macro to streamline the creation of a menu to select from the variants of an enum.
+
+## [0.8.0] - 2025-09-14
+
+### Features
+
+- Improve end user experience when prompting for input without a message.
+- Implement `raw_prompt_skippable` for `Select`.
+
+### Fixes
+
+- Fix bug where inputs spanning 3+ lines would break text rendering.
+- Fix bug where Select and MultiSelect prompts would render the first option incorrectly when filtering is disabled.
+- Fix autocomplete suggestions not being updated after a suggestion is accepted.
+- Fix incorrect cursor placement when inputting CJK characters.
+
+### API Changes
+
+- Don't require static lifetime for autocompleter and validator.
+
+### Dependencies
+
+- Upgraded `crossterm` to 0.28.1.
+- Raised minimum supported Rust version to 1.80.0.
+- Migrate from `once_cell` to `stdlib`.
+- Migrate from `fxhash` to `stdlib`.
+- Removed unused dependency (newline-converter).
+- Fix GitHub Action outdated dependencies.
+
+### Acknowledgments
+
+Thanks to all the who helped improve this library with their feedback and contributions!
+
+@basbossink-ds, @CraftSpider, @ereOn, @istudyatuni, @jarjk, @jonassmedegaard, @Maffey, @moritz-hoelting, @phostann, @stormshield-guillaumed, @theRookieCoder, @tusharmath
 
 ## [0.7.5] - 2024-04-23
 
@@ -331,7 +361,8 @@ The library is already featureful enough to warrant a higher version number, bum
 
 <!-- next-url -->
 
-[unreleased]: https://github.com/mikaelmello/inquire/compare/v0.7.5...HEAD
+[unreleased]: https://github.com/mikaelmello/inquire/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/mikaelmello/inquire/compare/v0.7.5...v0.8.0
 [0.7.5]: https://github.com/mikaelmello/inquire/compare/v0.7.4...v0.7.5
 [0.7.4]: https://github.com/mikaelmello/inquire/compare/v0.7.3...v0.7.4
 [0.7.3]: https://github.com/mikaelmello/inquire/compare/v0.7.2...v0.7.3

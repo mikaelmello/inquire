@@ -24,9 +24,10 @@ use self::prompt::SelectPrompt;
 #[cfg(feature = "fuzzy")]
 use fuzzy_matcher::{skim::SkimMatcherV2, FuzzyMatcher};
 #[cfg(feature = "fuzzy")]
-use once_cell::sync::Lazy;
+use std::sync::LazyLock;
 #[cfg(feature = "fuzzy")]
-static DEFAULT_MATCHER: Lazy<SkimMatcherV2> = Lazy::new(|| SkimMatcherV2::default().ignore_case());
+static DEFAULT_MATCHER: LazyLock<SkimMatcherV2> =
+    LazyLock::new(|| SkimMatcherV2::default().ignore_case());
 /// Prompt suitable for when you need the user to select one option among many.
 ///
 /// The user can select and submit the current highlighted option by pressing enter.
@@ -319,6 +320,26 @@ where
     /// type with `Some`.
     pub fn prompt_skippable(self) -> InquireResult<Option<T>> {
         match self.prompt() {
+            Ok(answer) => Ok(Some(answer)),
+            Err(InquireError::OperationCanceled) => Ok(None),
+            Err(err) => Err(err),
+        }
+    }
+
+    /// Parses the provided behavioral and rendering options and prompts
+    /// the CLI user for input according to the defined rules.
+    ///
+    /// Returns a [`ListOption`](crate::list_option::ListOption) containing
+    /// the index of the selection and the owned object selected by the user.
+    ///
+    /// This method is intended for flows where the user skipping/cancelling
+    /// the prompt - by pressing ESC - is considered normal behavior. In this case,
+    /// it does not return `Err(InquireError::OperationCanceled)`, but `Ok(None)`.
+    ///
+    /// Meanwhile, if the user does submit an answer, the method wraps the return
+    /// type with `Some`.
+    pub fn raw_prompt_skippable(self) -> InquireResult<Option<ListOption<T>>> {
+        match self.raw_prompt() {
             Ok(answer) => Ok(Some(answer)),
             Err(InquireError::OperationCanceled) => Ok(None),
             Err(err) => Err(err),
