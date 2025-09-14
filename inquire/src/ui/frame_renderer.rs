@@ -470,4 +470,82 @@ mod test {
 
         Ok(())
     }
+
+    #[test]
+    fn cursor_position_multiline_overflow() -> InquireResult<()> {
+        use super::RenderState;
+
+        let mut output = VecDeque::new();
+        // Set narrow terminal width to force text wrapping
+        let terminal = MockTerminal::new(&mut output).with_size(TerminalSize::new(10, 10));
+        let mut renderer = FrameRenderer::new(terminal)?;
+
+        renderer.start_frame()?;
+
+        // Write exactly 10 characters to fill first line
+        renderer.write("hello worl")?;
+
+        // Test case 1: offset that spans multiple rows
+        // Current line width = 10, offset = 15 means total = 25
+        // This should put cursor at row=2, col=5 (25 / 10 = 2 extra rows, 25 % 10 = 5)
+        renderer.mark_cursor_position(15);
+
+        let expected_position = match &renderer.state {
+            RenderState::ActiveRender { current_frame, .. } => {
+                current_frame.expected_cursor_position
+            }
+            _ => None,
+        };
+
+        if let Some(pos) = expected_position {
+            assert_eq!(
+                pos.row, 2,
+                "Expected cursor row to be 2 when spanning multiple lines"
+            );
+            assert_eq!(pos.col, 5, "Expected cursor col to be 5 after wrapping");
+        } else {
+            panic!("Expected cursor position to be set");
+        }
+
+        // Test case 2: exact multiple of terminal width
+        // offset = 20 means total = 30, should be row=3, col=0
+        renderer.mark_cursor_position(20);
+
+        let expected_position = match &renderer.state {
+            RenderState::ActiveRender { current_frame, .. } => {
+                current_frame.expected_cursor_position
+            }
+            _ => None,
+        };
+
+        if let Some(pos) = expected_position {
+            assert_eq!(pos.row, 3, "Expected cursor row to be 3 for exact multiple");
+            assert_eq!(pos.col, 0, "Expected cursor col to be 0 for exact multiple");
+        } else {
+            panic!("Expected cursor position to be set");
+        }
+
+        // Test case 3: spanning multiple lines
+        // offset = 99 means total = 109, should be row=10, col=9
+        renderer.mark_cursor_position(99);
+
+        let expected_position = match &renderer.state {
+            RenderState::ActiveRender { current_frame, .. } => {
+                current_frame.expected_cursor_position
+            }
+            _ => None,
+        };
+
+        if let Some(pos) = expected_position {
+            assert_eq!(
+                pos.row, 10,
+                "Expected cursor row to be 3 for exact multiple"
+            );
+            assert_eq!(pos.col, 9, "Expected cursor col to be 0 for exact multiple");
+        } else {
+            panic!("Expected cursor position to be set");
+        }
+
+        Ok(())
+    }
 }
