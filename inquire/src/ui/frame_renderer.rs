@@ -277,7 +277,7 @@ where
             current_frame.frame_size.height(),
         );
 
-        // self.terminal.cursor_hide()?;
+        self.terminal.cursor_hide()?;
         self.move_cursor_to(Position { row: 0, col: 0 })?;
 
         for i in 0..rows_to_iterate {
