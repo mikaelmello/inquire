@@ -4,19 +4,36 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
+### Features
+
+- Improve end user experience when prompting for input without a message (#307), thanks @CraftSpider for the feature request!
+- Implement `raw_prompt_skippable` for `Select`, thanks @theRookieCoder for the feature request!
+
+### Fixes
+
 - Fix bug where inputs spanning 3+ lines would break text rendering. Thanks @tusharmath for reporting!
 - Fix bug where Select and MultiSelect prompts would render the first option incorrectly when filtering is disabled. Thanks @Maffey for reporting!
-- Support prompting for input without a message (#307), thanks @CraftSpider for the feature request!
-- Don't require static lifetime for autocompleter and validator, thanks @stormshield-guillaumed (#272)!
-- Upgraded `crossterm` to 0.28.1.
-- Raised minimum supported Rust version to 1.80.0.
-- Migrate functionality from `once_cell` to `stdlib`. Thanks @jarjk for cutting down on a dependency!
-- Migrate functionality from `fxhash` to `stdlib`, as the dependency is no longer maintained. Thanks @ereOn for reporting, and @jarjk for fixing it!
-- Fix GitHub Action outdated dependencies. Thanks @jarjk and @basbossink-ds (#303, #304, #305)!
 - Fix autocomplete suggestions not being updated after a suggestion is accepted. Thanks @moritz-hoelting and @istudyatuni for reporting and fixing it!
 - Fix incorrect cursor placement when inputting CJK characters. Thanks @phostann (#270) for reporting it!
+
+### API Changes
+
+- Don't require static lifetime for autocompleter and validator, thanks @stormshield-guillaumed (#272)!
+
+### Dependencies
+
+- Upgraded `crossterm` to 0.28.1.
+- Raised minimum supported Rust version to 1.80.0.
+- Migrate from `once_cell` to `stdlib`. Thanks @jarjk for cutting down on a dependency!
+- Migrate from `fxhash` to `stdlib`. Thanks @ereOn for reporting, and @jarjk for fixing it!
 - Removed unused dependency (newline-converter). Thanks @jonassmedegaard (#267) for catching it!
-- Implement `raw_prompt_skippable` for `Select`
+- Fix GitHub Action outdated dependencies. Thanks @jarjk and @basbossink-ds (#303, #304, #305)!
+
+### Acknowledgments
+
+Thanks to all the users and contributors who helped improve this library with their feedback and contributions!
+
+@basbossink-ds, @CraftSpider, @ereOn, @isudyatuni, @jarjk, @jonassmedegaard, @Maffey, @moritz-hoelting, @phostann, @stormshield-guillaumed, @theRookieCoder, @tusharmath
 
 ## [0.7.5] - 2024-04-23
 
