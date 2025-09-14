@@ -10,28 +10,28 @@
 
 ### Features
 
-- Improve end user experience when prompting for input without a message (#307), thanks @CraftSpider for the feature request!
-- Implement `raw_prompt_skippable` for `Select`, thanks @theRookieCoder for the feature request!
+- Improve end user experience when prompting for input without a message.
+- Implement `raw_prompt_skippable` for `Select`.
 
 ### Fixes
 
-- Fix bug where inputs spanning 3+ lines would break text rendering. Thanks @tusharmath for reporting!
-- Fix bug where Select and MultiSelect prompts would render the first option incorrectly when filtering is disabled. Thanks @Maffey for reporting!
-- Fix autocomplete suggestions not being updated after a suggestion is accepted. Thanks @moritz-hoelting and @istudyatuni for reporting and fixing it!
-- Fix incorrect cursor placement when inputting CJK characters. Thanks @phostann (#270) for reporting it!
+- Fix bug where inputs spanning 3+ lines would break text rendering.
+- Fix bug where Select and MultiSelect prompts would render the first option incorrectly when filtering is disabled.
+- Fix autocomplete suggestions not being updated after a suggestion is accepted.
+- Fix incorrect cursor placement when inputting CJK characters.
 
 ### API Changes
 
-- Don't require static lifetime for autocompleter and validator, thanks @stormshield-guillaumed (#272)!
+- Don't require static lifetime for autocompleter and validator.
 
 ### Dependencies
 
 - Upgraded `crossterm` to 0.28.1.
 - Raised minimum supported Rust version to 1.80.0.
-- Migrate from `once_cell` to `stdlib`. Thanks @jarjk for cutting down on a dependency!
-- Migrate from `fxhash` to `stdlib`. Thanks @ereOn for reporting, and @jarjk for fixing it!
-- Removed unused dependency (newline-converter). Thanks @jonassmedegaard (#267) for catching it!
-- Fix GitHub Action outdated dependencies. Thanks @jarjk and @basbossink-ds (#303, #304, #305)!
+- Migrate from `once_cell` to `stdlib`.
+- Migrate from `fxhash` to `stdlib`.
+- Removed unused dependency (newline-converter).
+- Fix GitHub Action outdated dependencies.
 
 ### Acknowledgments
 
