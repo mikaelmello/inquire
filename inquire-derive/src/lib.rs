@@ -2,7 +2,7 @@ use proc_macro::TokenStream;
 use quote::{format_ident, quote};
 use syn::{parse_macro_input, Data};
 
-fn enum_choose_impl(input: TokenStream) -> TokenStream {
+fn selectable_impl(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as syn::DeriveInput);
     let enum_name = &input.ident;
 
@@ -13,10 +13,10 @@ fn enum_choose_impl(input: TokenStream) -> TokenStream {
             .map(|v| &v.ident)
             .collect::<Vec<_>>()
     } else {
-        panic!("Choose can only be derived for enums");
+        panic!("Selectable can only be derived for enums");
     };
 
-    let module_name = format_ident!("__choice_for_{}", enum_name.to_string().to_lowercase());
+    let module_name = format_ident!("__selection_for_{}", enum_name.to_string().to_lowercase());
 
     let expanded = quote! {
         mod #module_name {
@@ -35,7 +35,7 @@ fn enum_choose_impl(input: TokenStream) -> TokenStream {
         }
 
         impl #enum_name {
-            pub fn choose(prompt: &str) -> ::inquire::error::InquireResult<Self>
+            pub fn select(prompt: &str) -> ::inquire::error::InquireResult<Self>
             where
                 Self: ::std::fmt::Display + ::std::fmt::Debug + Copy + Clone + 'static,
             {
@@ -50,7 +50,7 @@ fn enum_choose_impl(input: TokenStream) -> TokenStream {
     TokenStream::from(expanded)
 }
 
-#[proc_macro_derive(InquireChoose)]
-pub fn derive_choose(input: TokenStream) -> TokenStream {
-    enum_choose_impl(input)
+#[proc_macro_derive(Selectable)]
+pub fn derive_selectable(input: TokenStream) -> TokenStream {
+    selectable_impl(input)
 }
