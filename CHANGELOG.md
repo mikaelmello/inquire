@@ -4,6 +4,7 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
+- Fix bug where inputs spanning 3+ lines would break text rendering. Thanks @tusharmath for reporting!
 - Fix bug where Select and MultiSelect prompts would render the first option incorrectly when filtering is disabled. Thanks @Maffey for reporting!
 - Support prompting for input without a message (#307), thanks @CraftSpider for the feature request!
 - Don't require static lifetime for autocompleter and validator, thanks @stormshield-guillaumed (#272)!

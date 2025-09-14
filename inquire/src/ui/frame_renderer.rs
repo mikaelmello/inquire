@@ -102,15 +102,12 @@ impl FrameState {
     }
 
     pub fn mark_cursor_position(&mut self, offset: isize) {
-        let mut row = self.finished_rows.len() as u16;
-        let mut col = self.current_line_width;
+        let row = self.finished_rows.len() as u16;
+        let col = self.current_line_width.saturating_add(offset as u16);
 
-        col = col.saturating_add(offset as u16);
-
-        if col >= self.terminal_size.width() {
-            col -= self.terminal_size.width();
-            row += 1;
-        }
+        let row_offset = col / self.terminal_size.width();
+        let row = row + row_offset;
+        let col = col % self.terminal_size.width();
 
         self.expected_cursor_position = Some(Position { row, col });
     }
@@ -280,7 +277,7 @@ where
             current_frame.frame_size.height(),
         );
 
-        self.terminal.cursor_hide()?;
+        // self.terminal.cursor_hide()?;
         self.move_cursor_to(Position { row: 0, col: 0 })?;
 
         for i in 0..rows_to_iterate {
