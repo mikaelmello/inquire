@@ -47,7 +47,7 @@ fuzzy-matcher = { version = "0.3.7", default-features = false, optional = true }
 bitflags = "2"
 dyn-clone = "1"
 unicode-segmentation = "1"
-unicode-width = "0.1"
+unicode-width = "0.2"
 
 [dev-dependencies]
 rstest = "0.22.0"
