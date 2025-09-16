@@ -4,7 +4,9 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
-- No changes since the latest release below.
+### Dependencies
+
+- Updated `unicode-width` requirement from 0.1 to 0.2.
 
 ## [0.8.0] - 2025-09-14
 
