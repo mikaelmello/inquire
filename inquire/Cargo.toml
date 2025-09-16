@@ -50,7 +50,7 @@ unicode-segmentation = "1"
 unicode-width = "0.2"
 
 [dev-dependencies]
-rstest = "0.22.0"
+rstest = "0.26.1"
 chrono = { version = "0.4" }
 
 [[example]]
