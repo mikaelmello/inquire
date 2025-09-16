@@ -83,7 +83,10 @@ impl FrameState {
                 continue;
             }
 
-            let remaining_width_space = self.terminal_size.width() - self.current_line_width;
+            let remaining_width_space = self
+                .terminal_size
+                .width()
+                .saturating_sub(self.current_line_width);
             let character_length = UnicodeWidthChar::width(current_char).unwrap_or(0) as u16;
 
             if character_length > remaining_width_space {
@@ -396,7 +399,8 @@ where
         let terminal_size = self
             .terminal
             .get_size()
-            .unwrap_or(TerminalSize::new(1000, 1000));
+            .unwrap_or_default()
+            .unwrap_or_default();
 
         if terminal_size.width() < self.cursor_position.col {
             let new_line_offset = self.cursor_position.col / terminal_size.width();
@@ -450,7 +454,7 @@ mod test {
     #[test]
     fn ensure_inline_ansi_codes_are_maintained() -> InquireResult<()> {
         let mut output = VecDeque::new();
-        let terminal = MockTerminal::new(&mut output).with_size(TerminalSize::new(200, 200));
+        let terminal = MockTerminal::new(&mut output).with_size(TerminalSize::default());
         let mut renderer = FrameRenderer::new(terminal)?;
 
         renderer.start_frame()?;
@@ -477,7 +481,7 @@ mod test {
 
         let mut output = VecDeque::new();
         // Set narrow terminal width to force text wrapping
-        let terminal = MockTerminal::new(&mut output).with_size(TerminalSize::new(10, 10));
+        let terminal = MockTerminal::new(&mut output).with_size(TerminalSize::new(10, 10).unwrap());
         let mut renderer = FrameRenderer::new(terminal)?;
 
         renderer.start_frame()?;

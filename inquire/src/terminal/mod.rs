@@ -2,7 +2,7 @@ use std::{fmt::Display, io::Result};
 
 use crate::{
     error::InquireResult,
-    ui::{dimension::Dimension, InputReader, Styled},
+    ui::{InputReader, Styled},
 };
 
 #[cfg(feature = "crossterm")]
@@ -20,10 +20,44 @@ pub mod console;
 #[cfg(test)]
 pub(crate) mod test;
 
-pub type TerminalSize = Dimension;
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct TerminalSize {
+    width: u16,
+    height: u16,
+}
+
+impl TerminalSize {
+    /**
+     * Returns None if the width or height is 0
+     */
+    pub fn new(width: u16, height: u16) -> Option<Self> {
+        if width == 0 || height == 0 {
+            None
+        } else {
+            Some(Self { width, height })
+        }
+    }
+
+    pub fn width(&self) -> u16 {
+        self.width
+    }
+
+    pub fn height(&self) -> u16 {
+        self.height
+    }
+}
+
+impl Default for TerminalSize {
+    fn default() -> Self {
+        Self {
+            width: 80,
+            height: 24,
+        }
+    }
+}
 
 pub trait Terminal: Sized {
-    fn get_size(&self) -> Result<TerminalSize>;
+    fn get_size(&self) -> Result<Option<TerminalSize>>;
 
     fn write<T: Display>(&mut self, val: T) -> Result<()>;
     fn write_styled<T: Display>(&mut self, val: &Styled<T>) -> Result<()>;

@@ -4,7 +4,9 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
-- No changes since the latest release below.
+### Fixes
+
+- Fix panicking when terminal backend reports size with 0 width.
 
 ## [0.9.0] - 2025-09-16
 
