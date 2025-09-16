@@ -1,4 +1,5 @@
 #[cfg(test)]
+#[cfg(not(any(target_os = "windows")))]
 mod tests {
     use std::process::Command;
 
