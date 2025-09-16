@@ -4,8 +4,18 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
-- Updated `unicode-width` requirement from 0.1 to 0.2.
-- Add `InquireChoose` derive macro to streamline the creation of a menu to select from the variants of an enum.
+### Features
+
+Adds `Selectable` derive macro for enums! You can now easily create enum-based prompts (e.g. menus) by using the `Selectable` derive macro on your enums.
+
+See the [example](https://github.com/mikaelmello/inquire/blob/main/examples/enum_select_derive.rs) for more details. Thank you @TheBearodactyl for the contribution!
+
+### Dependencies
+
+- Updated `unicode-width` to 0.2.
+- Updated `crossterm` to 0.29.
+- Updated `termion` to 4.0.
+- Updated `console` to 0.16.
 
 ## [0.8.0] - 2025-09-14
 
