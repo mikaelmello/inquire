@@ -4,6 +4,10 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
+- No changes since the latest release below.
+
+## [0.8.1] - 2025-09-16
+
 ### Fixes
 
 - Fix panicking when terminal backend reports size with 0 width.
@@ -363,7 +367,8 @@ The library is already featureful enough to warrant a higher version number, bum
 
 <!-- next-url -->
 
-[unreleased]: https://github.com/mikaelmello/inquire/compare/v0.8.0...HEAD
+[unreleased]: https://github.com/mikaelmello/inquire/compare/v0.8.1...HEAD
+[0.8.1]: https://github.com/mikaelmello/inquire/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/mikaelmello/inquire/compare/v0.7.5...v0.8.0
 [0.7.5]: https://github.com/mikaelmello/inquire/compare/v0.7.4...v0.7.5
 [0.7.4]: https://github.com/mikaelmello/inquire/compare/v0.7.3...v0.7.4
