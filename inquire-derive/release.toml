@@ -1,5 +1,3 @@
-publish = false
-
 pre-release-replacements = [
   {file="CRATE_README.md", search="inquire = \".*\"", replace="inquire = \"{{version}}\""},
   {file="CRATE_README.md", search="inquire-derive = \".*\"", replace="inquire-derive = \"{{version}}\""},

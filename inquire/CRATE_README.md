@@ -50,14 +50,39 @@ It provides several different prompts in order to interactively ask the user for
 
 Put this line in your `Cargo.toml`, under `[dependencies]`.
 
-```
+```toml
 inquire = "0.9.0"
 ```
 
 \* This prompt type is gated under a feature flag, e.g.:
 
-```
+```toml
 inquire = { version = "0.9.0", features = ["date", "editor"] }
+```
+
+### Derive Macros
+
+For enum types, you can use the `Selectable` derive macro from the `inquire-derive` crate to automatically generate `Select` and `MultiSelect` prompts:
+
+Add this to your `Cargo.toml`:
+
+```toml
+inquire = "0.9.0"
+inquire-derive = "0.9.0"
+```
+
+```rust
+#[derive(Debug, Copy, Clone, Selectable)]
+enum Color {
+    Red,
+    Green,
+    Blue,
+}
+
+fn main() -> InquireResult<()> {
+    let color = Color::select("Choose a color:").prompt()?;
+    Ok(())
+}
 ```
 
 [`text`]: https://docs.rs/inquire/*/inquire/prompts/text/struct.Text.html

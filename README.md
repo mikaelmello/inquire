@@ -59,7 +59,7 @@ It provides several different prompts in order to interactively ask the user for
 
 Examples can be found in the `examples` directory. Run them to see basic behavior:
 
-```
+```bash
 cargo run --example expense_tracker -p inquire-examples
 ```
 
@@ -67,13 +67,13 @@ cargo run --example expense_tracker -p inquire-examples
 
 Put this line in your `Cargo.toml`, under `[dependencies]`.
 
-```
+```toml
 inquire = "0.9.0"
 ```
 
 \* This prompt type is gated under a feature flag, e.g.:
 
-```
+```toml
 inquire = { version = "0.9.0", features = ["date"] }
 ```
 
@@ -315,6 +315,32 @@ Like all others, this prompt also allows you to customize several aspects of it:
 - **Display option indexes**: On long lists, it might be helpful to display the indexes of the options to the user. Via the `RenderConfig`, you can set the display mode of the indexes as a prefix of an option. The default configuration is `None`, to not render any index when displaying the options.
 - **Scoring function**: Function that defines the order of options and if an option is displayed or not based on the current user input.
 
+### Derive Macro for Enums
+
+For enum types, you can use the `Selectable` derive macro from the `inquire-derive` crate to automatically generate `Select` and `MultiSelect` prompts:
+
+Add this to your `Cargo.toml`:
+
+```toml
+inquire = "0.9.0"
+inquire-derive = "0.9.0"
+```
+
+```rust
+#[derive(Debug, Copy, Clone, Selectable)]
+enum Color {
+    Red,
+    Green,
+    Blue,
+}
+
+fn main() -> InquireResult<()> {
+    let color = Color::select("Choose a color:").prompt()?;
+    println!("Selected: {}", color);
+    Ok(())
+}
+```
+
 ## MultiSelect
 
 ![Animated GIF making a demonstration of a simple MultiSelect prompt created with this library. You can replay this recording in your terminal with asciinema play command using the file ./assets/multiselect.cast](./assets/multiselect.gif)
@@ -346,6 +372,32 @@ Customizable options:
 - **Display option indexes**: On long lists, it might be helpful to display the indexes of the options to the user. Via the `RenderConfig`, you can set the display mode of the indexes as a prefix of an option. The default configuration is `None`, to not render any index when displaying the options.
 - **Scoring function**: Function that defines the order of options and if an option is displayed or not based on the current user input.
 - **Keep filter flag**: Whether the current filter input should be cleared or not after a selection is made. Defaults to true.
+
+### Derive Macro for Enums
+
+For enum types, you can use the `Selectable` derive macro from the `inquire-derive` crate to automatically generate `Select` and `MultiSelect` prompts:
+
+Add this to your `Cargo.toml`:
+
+```toml
+inquire = "0.9.0"
+inquire-derive = "0.9.0"
+```
+
+```rust
+#[derive(Debug, Copy, Clone, Selectable)]
+enum Color {
+    Red,
+    Green,
+    Blue,
+}
+
+fn main() -> InquireResult<()> {
+    let colors = Color::multi_select("Choose colors:").prompt()?;
+    println!("Selected: {:?}", colors);
+    Ok(())
+}
+```
 
 ## Editor
 
