@@ -58,7 +58,7 @@ static DEFAULT_MATCHER: LazyLock<SkimMatcherV2> =
 ///
 /// # Example
 ///
-/// For a full-featured example, check the [GitHub repository](https://github.com/mikaelmello/inquire/blob/main/inquire/examples/multiselect.rs).
+/// For a full-featured example, check the [GitHub repository](https://github.com/mikaelmello/inquire/blob/main/examples/multiselect.rs).
 ///
 /// [`InquireError::InvalidConfiguration`]: crate::error::InquireError::InvalidConfiguration
 #[derive(Clone)]

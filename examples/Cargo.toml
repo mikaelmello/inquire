@@ -1,0 +1,106 @@
+[package]
+name = "inquire-examples"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+path = "lib.rs"
+
+[dependencies]
+inquire = { path = "../inquire", features = ["date", "editor", "macros"] }
+inquire-derive = { path = "../inquire-derive" }
+chrono = "0.4"
+
+[[example]]
+name = "form"
+path = "form.rs"
+required-features = ["date", "macros"]
+
+[[example]]
+name = "date"
+path = "date.rs"
+required-features = ["date", "macros"]
+
+[[example]]
+name = "editor"
+path = "editor.rs"
+required-features = ["editor"]
+
+[[example]]
+name = "expense_tracker"
+path = "expense_tracker.rs"
+required-features = ["date", "macros"]
+
+[[example]]
+name = "render_config"
+path = "render_config.rs"
+required-features = ["date", "macros"]
+
+[[example]]
+name = "empty_render_config"
+path = "empty_render_config.rs"
+required-features = ["date", "macros"]
+
+[[example]]
+name = "text_options"
+path = "text_options.rs"
+required-features = ["macros"]
+
+[[example]]
+name = "password_full_featured"
+path = "password_full_featured.rs"
+required-features = ["macros"]
+
+[[example]]
+name = "manual_date_input"
+path = "manual_date_input.rs"
+required-features = ["date"]
+
+[[example]]
+name = "text_simple"
+path = "text_simple.rs"
+
+[[example]]
+name = "confirm_simple"
+path = "confirm_simple.rs"
+
+[[example]]
+name = "confirm"
+path = "confirm.rs"
+
+[[example]]
+name = "custom_type"
+path = "custom_type.rs"
+
+[[example]]
+name = "multiselect"
+path = "multiselect.rs"
+
+[[example]]
+name = "password_no_confirmation"
+path = "password_no_confirmation.rs"
+
+[[example]]
+name = "password_simple"
+path = "password_simple.rs"
+
+[[example]]
+name = "select"
+path = "select.rs"
+
+[[example]]
+name = "complex_autocompletion"
+path = "complex_autocompletion.rs"
+
+[[example]]
+name = "enum_select_raw"
+path = "enum_select_raw.rs"
+
+[[example]]
+name = "enum_comprehensive"
+path = "enum_comprehensive.rs"
+
+[[example]]
+name = "enum_select_derive"
+path = "enum_select_derive.rs"

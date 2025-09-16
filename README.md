@@ -33,7 +33,7 @@ It provides several different prompts in order to interactively ask the user for
 ## Demo
 
 ![Animated GIF making a demonstration of a questionnaire created with this library. You can replay this recording in your terminal with asciinema play command - asciinema play ./assets/expense_tracker.cast](./assets/expense_tracker.gif)
-[Source](./inquire/examples/expense_tracker.rs)
+[Source](./examples/expense_tracker.rs)
 
 ## Features
 
@@ -60,7 +60,7 @@ It provides several different prompts in order to interactively ask the user for
 Examples can be found in the `examples` directory. Run them to see basic behavior:
 
 ```
-cargo run --example expense_tracker --features date
+cargo run --example expense_tracker -p inquire-examples
 ```
 
 ## Usage
@@ -89,12 +89,12 @@ With `RenderConfig`, you can customize foreground color, background color and at
 
 This allows you to have greater control over the style of your application while continuing to have a clean API to create prompts as smoothly as possible.
 
-In the [`render_config.rs`](./inquire/examples/render_config.rs) example, you can take a look at the capabilities of this API. The example is exactly the same one as [`expense_tracker.rs`](./inquire/examples/expense_tracker.rs), but with several style aspects customized. Take a look at their differences:
+In the [`render_config.rs`](./examples/render_config.rs) example, you can take a look at the capabilities of this API. The example is exactly the same one as [`expense_tracker.rs`](./examples/expense_tracker.rs), but with several style aspects customized. Take a look at their differences:
 
 ![Animated GIF making a demonstration of the expense_tracker example. You can replay this recording in your terminal with asciinema play command - asciinema play ./assets/expense_tracker.cast](./assets/expense_tracker_gifcast.gif)
-[Source](./inquire/examples/expense_tracker.rs)
+[Source](./examples/expense_tracker.rs)
 ![Animated GIF making a demonstration of the render_config example. You can replay this recording in your terminal with asciinema play command - asciinema play ./assets/render_config.cast](./assets/render_config_gifcast.gif)
-[Source](./inquire/examples/render_config.rs)
+[Source](./examples/render_config.rs)
 
 ## Validation
 
@@ -114,7 +114,7 @@ Finally, `inquire` has a feature called `macros` that is included by default. Wh
 
 In the [demo](#demo) you can see the behavior of an input not passing the requirements in the _amount_ prompt, when the error message "Please type a valid number" is displayed. _Full disclosure, this error message was displayed due to a parsing, not validation, error, but the user experience is the same for both cases._
 
-If you'd like to see more examples, the [`date.rs`](./inquire/examples/date.rs) and [`multiselect.rs`](./inquire/examples/multiselect.rs) files contain custom validators.
+If you'd like to see more examples, the [`date.rs`](./examples/date.rs) and [`multiselect.rs`](./examples/multiselect.rs) files contain custom validators.
 
 ## Terminal Back-end
 
@@ -319,7 +319,7 @@ Like all others, this prompt also allows you to customize several aspects of it:
 
 ![Animated GIF making a demonstration of a simple MultiSelect prompt created with this library. You can replay this recording in your terminal with asciinema play command using the file ./assets/multiselect.cast](./assets/multiselect.gif)
 
-The source is too long, find it [here](./inquire/examples/multiselect.rs).
+The source is too long, find it [here](./examples/multiselect.rs).
 
 `MultiSelect` prompts are suitable for when you need the user to select many options (including none if applicable) among a list of them.
 
@@ -351,7 +351,7 @@ Customizable options:
 
 ![Animated GIF making a demonstration of a simple Editor prompt created with this library. You can replay this recording in your terminal with asciinema play command using the file ./assets/editor.cast](./assets/editor.gif)
 
-The source is too long, find it [here](./inquire/examples/editor.rs).
+The source is too long, find it [here](./examples/editor.rs).
 
 `Editor` prompts are meant for cases where you need the user to write some text that might not fit in a single line, such as long descriptions or commit messages.
 
