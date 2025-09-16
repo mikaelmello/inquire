@@ -17,8 +17,8 @@ Derive macros for the [inquire](https://crates.io/crates/inquire) crate.
 Put these lines in your `Cargo.toml`, under `[dependencies]`.
 
 ```toml
-inquire = "0.8.0"
-inquire-derive = "0.8.0"
+inquire = "0.9.0"
+inquire-derive = "0.9.0"
 ```
 
 Then use the `Selectable` derive macro on your enums:
