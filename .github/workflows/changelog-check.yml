@@ -24,7 +24,7 @@ jobs:
       - name: Get changed files in the docs folder
         if: fromJSON(env.CHANGELOG_REQUIRED)
         id: changelog-changed
-        uses: tj-actions/changed-files@v42
+        uses: tj-actions/changed-files@v46
         with:
           files: CHANGELOG.md
 
