@@ -12,6 +12,8 @@ inquire = { path = "../inquire", features = ["date", "editor", "macros"] }
 inquire-derive = { path = "../inquire-derive" }
 chrono = "0.4"
 fuzzy-matcher = "0.3.7"
+
+[target.'cfg(not(target_os = "windows"))'.dependencies]
 rexpect = "0.6.2"
 anyhow = "1.0.99"
 assert_cmd = "2.0.17"
