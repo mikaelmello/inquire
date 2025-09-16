@@ -68,7 +68,7 @@ pub fn match_token(output: &mut VecDeque<MockTerminalToken>, token: MockTerminal
 impl<'a> MockTerminal<'a> {
     pub fn new(output: &'a mut VecDeque<MockTerminalToken>) -> Self {
         Self {
-            size: TerminalSize::new(80, 40),
+            size: TerminalSize::new(80, 40).unwrap(),
             output,
         }
     }
@@ -84,8 +84,8 @@ impl<'a> MockTerminal<'a> {
 }
 
 impl<'a> Terminal for MockTerminal<'a> {
-    fn get_size(&self) -> std::io::Result<TerminalSize> {
-        Ok(self.size)
+    fn get_size(&self) -> std::io::Result<Option<TerminalSize>> {
+        Ok(Some(self.size))
     }
 
     fn write<T: Display>(&mut self, val: T) -> std::io::Result<()> {

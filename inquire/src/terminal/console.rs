@@ -71,7 +71,7 @@ impl Terminal for ConsoleTerminal {
         self.term.flush()
     }
 
-    fn get_size(&self) -> Result<super::TerminalSize> {
+    fn get_size(&self) -> Result<Option<super::TerminalSize>> {
         let (height, width) = self.term.size();
 
         Ok(super::TerminalSize::new(width, height))
