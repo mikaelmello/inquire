@@ -11,51 +11,43 @@ path = "lib.rs"
 inquire = { path = "../inquire", features = ["date", "editor", "macros"] }
 inquire-derive = { path = "../inquire-derive" }
 chrono = "0.4"
+fuzzy-matcher = "0.3.7"
 
 [[example]]
 name = "form"
 path = "form.rs"
-required-features = ["date", "macros"]
 
 [[example]]
 name = "date"
 path = "date.rs"
-required-features = ["date", "macros"]
 
 [[example]]
 name = "editor"
 path = "editor.rs"
-required-features = ["editor"]
 
 [[example]]
 name = "expense_tracker"
 path = "expense_tracker.rs"
-required-features = ["date", "macros"]
 
 [[example]]
 name = "render_config"
 path = "render_config.rs"
-required-features = ["date", "macros"]
 
 [[example]]
 name = "empty_render_config"
 path = "empty_render_config.rs"
-required-features = ["date", "macros"]
 
 [[example]]
 name = "text_options"
 path = "text_options.rs"
-required-features = ["macros"]
 
 [[example]]
 name = "password_full_featured"
 path = "password_full_featured.rs"
-required-features = ["macros"]
 
 [[example]]
 name = "manual_date_input"
 path = "manual_date_input.rs"
-required-features = ["date"]
 
 [[example]]
 name = "text_simple"
