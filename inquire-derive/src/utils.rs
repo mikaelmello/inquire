@@ -11,12 +11,18 @@ mod tests {
     #[test]
     fn test_enum_name_to_module_name() {
         let module_name = enum_name_to_module_name("TestEnum");
-        assert_eq!(module_name.to_string(), "__inquire_enum_choice_for_testenum");
+        assert_eq!(
+            module_name.to_string(),
+            "__inquire_enum_choice_for_testenum"
+        );
     }
 
     #[test]
     fn test_enum_name_with_underscores() {
         let module_name = enum_name_to_module_name("Test_Enum_Name");
-        assert_eq!(module_name.to_string(), "__inquire_enum_choice_for_test_enum_name");
+        assert_eq!(
+            module_name.to_string(),
+            "__inquire_enum_choice_for_test_enum_name"
+        );
     }
 }
