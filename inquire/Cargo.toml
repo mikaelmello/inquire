@@ -53,38 +53,3 @@ unicode-width = "0.1"
 rstest = "0.26.1"
 chrono = { version = "0.4" }
 
-[[example]]
-name = "form"
-required-features = ["date", "macros"]
-
-[[example]]
-name = "date"
-required-features = ["date", "macros"]
-
-[[example]]
-name = "editor"
-required-features = ["editor"]
-
-[[example]]
-name = "expense_tracker"
-required-features = ["date", "macros"]
-
-[[example]]
-name = "render_config"
-required-features = ["date", "macros"]
-
-[[example]]
-name = "empty_render_config"
-required-features = ["date", "macros"]
-
-[[example]]
-name = "text_options"
-required-features = ["macros"]
-
-[[example]]
-name = "password_full_featured"
-required-features = ["macros"]
-
-[[example]]
-name = "manual_date_input"
-required-features = ["date"]
