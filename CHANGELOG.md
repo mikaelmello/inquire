@@ -4,6 +4,7 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
+- Updated `unicode-width` requirement from 0.1 to 0.2.
 - Add `InquireChoose` derive macro to streamline the creation of a menu to select from the variants of an enum.
 
 ## [0.8.0] - 2025-09-14
