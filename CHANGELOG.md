@@ -4,7 +4,7 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
-- No changes since the latest release below.
+- Introduce an optional method of auto-implementing `Display` for `Selectable` enums via doc comments
 
 ## [0.9.1] - 2025-09-16
 
