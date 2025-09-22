@@ -127,6 +127,16 @@ where
         option: &ListOption<D>,
         page: &Page<'_, ListOption<D>>,
     ) -> Result<()> {
+        self.print_option_value_with_checkbox_width(option_relative_index, option, page, None)
+    }
+
+    fn print_option_value_with_checkbox_width<D: Display>(
+        &mut self,
+        option_relative_index: usize,
+        option: &ListOption<D>,
+        page: &Page<'_, ListOption<D>>,
+        checkbox_width: Option<usize>,
+    ) -> Result<()> {
         let stylesheet = if let Some(selected_option_style) = self.render_config.selected_option {
             match page.cursor {
                 Some(cursor) if cursor == option_relative_index => selected_option_style,
@@ -136,8 +146,79 @@ where
             self.render_config.option
         };
 
-        self.frame_renderer
-            .write_styled(Styled::new(&option.value).with_style_sheet(stylesheet))
+        // Convert the option value to string and handle multiline content
+        let option_str = option.value.to_string();
+        
+        // Check if the option value contains newlines
+        if option_str.contains('\n') {
+            // Calculate the indentation needed for subsequent lines
+            let mut indent_width = 0;
+            
+            // Add width of the prefix (e.g., ">" or " ")
+            let prefix = if page.cursor == Some(option_relative_index) {
+                self.render_config.highlighted_option_prefix
+            } else if option_relative_index == 0 && !page.first {
+                self.render_config.scroll_up_prefix
+            } else if (option_relative_index + 1) == page.content.len() && !page.last {
+                self.render_config.scroll_down_prefix
+            } else {
+                Styled::new(" ")
+            };
+            indent_width += UnicodeWidthStr::width(prefix.content);
+            
+            // Add 1 for the space after prefix
+            indent_width += 1;
+            
+            // Add width of index prefix if present
+            if let Some(index_prefix_width) = self.get_option_index_prefix_width(option.index, page.total) {
+                indent_width += index_prefix_width;
+                indent_width += 1; // space after index prefix
+            }
+            
+            // Add checkbox width if provided (for multiselect)
+            if let Some(checkbox_w) = checkbox_width {
+                indent_width += checkbox_w;
+                indent_width += 1; // space after checkbox
+            }
+            
+            // Create indentation string
+            let indent = " ".repeat(indent_width);
+            
+            // Split the option string into lines and add proper indentation
+            let lines: Vec<&str> = option_str.lines().collect();
+            for (i, line) in lines.iter().enumerate() {
+                if i > 0 {
+                    // For lines after the first, add a newline and indentation
+                    self.frame_renderer.write("\n")?;
+                    self.frame_renderer.write(&indent)?;
+                }
+                self.frame_renderer
+                    .write_styled(Styled::new(line).with_style_sheet(stylesheet))?;
+            }
+        } else {
+            // Single line - use the original logic
+            self.frame_renderer
+                .write_styled(Styled::new(&option_str).with_style_sheet(stylesheet))?;
+        }
+        
+        Ok(())
+    }
+
+    fn get_option_index_prefix_width(&self, index: usize, max_index: usize) -> Option<usize> {
+        let index = index.saturating_add(1);
+
+        match self.render_config.option_index_prefix {
+            IndexPrefix::None => None,
+            IndexPrefix::Simple => Some(format!("{index})").len()),
+            IndexPrefix::SpacePadded => {
+                let width = int_log10(max_index.saturating_add(1));
+                Some(format!("{index:width$})").len())
+            }
+            IndexPrefix::ZeroPadded => {
+                let width = int_log10(max_index.saturating_add(1));
+                Some(format!("{index:0width$})").len())
+            }
+        }
     }
 
     fn print_option_index_prefix(&mut self, index: usize, max_index: usize) -> Option<Result<()>> {
@@ -441,7 +522,9 @@ where
 
             self.frame_renderer.write(" ")?;
 
-            self.print_option_value(idx, option, &page)?;
+            // Calculate checkbox width for proper multiline indentation
+            let checkbox_width = UnicodeWidthStr::width(checkbox.content);
+            self.print_option_value_with_checkbox_width(idx, option, &page, Some(checkbox_width))?;
 
             self.new_line()?;
         }

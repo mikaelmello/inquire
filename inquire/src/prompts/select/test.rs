@@ -188,3 +188,77 @@ fn first_option_renders_on_new_line_without_filtering() {
     match_text(&mut output, "\r");
     match_text(&mut output, "\n");
 }
+
+#[test]
+// Test for multiline option indentation
+fn multiline_options_are_properly_indented() {
+    use crate::{
+        terminal::test::{MockTerminal, match_text},
+        ui::{Backend, InputReader, Key, RenderConfig},
+    };
+    use std::collections::VecDeque;
+
+    // Create input reader
+    struct MockInputReader;
+    impl InputReader for MockInputReader {
+        fn read_key(&mut self) -> crate::error::InquireResult<Key> {
+            Ok(Key::Enter)
+        }
+    }
+
+    let mut output = VecDeque::new();
+    let terminal = MockTerminal::new(&mut output);
+    let input_reader = MockInputReader;
+    let render_config = RenderConfig::default();
+
+    // Create options with multiline text
+    let options = vec![
+        "Mr. Anderson\nSesame st. 10, NY\n90210",
+        "Mrs. Anderson\nSesame st. 10, NY\n90210",
+    ];
+
+    {
+        let mut backend = Backend::new(input_reader, terminal, render_config).unwrap();
+        let _ans = Select::new("Choose a person:", options)
+            .without_filtering()
+            .prompt_with_backend(&mut backend)
+            .unwrap();
+    }
+
+    // Check that the output contains properly indented multiline options
+    // Skip the initial setup tokens and go to the first option
+    match_text(&mut output, "?");
+    match_text(&mut output, " ");
+    match_text(&mut output, "Choose a person:");
+    match_text(&mut output, " ");
+    match_text(&mut output, "\r");
+    match_text(&mut output, "\n");
+    
+    // First option (selected, should have ">" prefix)
+    match_text(&mut output, ">");
+    match_text(&mut output, " ");
+    match_text(&mut output, "Mr. Anderson");
+    match_text(&mut output, "\r");
+    match_text(&mut output, "\n");
+    match_text(&mut output, "  "); // Indentation for second line (2 spaces: ">" + " ")
+    match_text(&mut output, "Sesame st. 10, NY");
+    match_text(&mut output, "\r");
+    match_text(&mut output, "\n");
+    match_text(&mut output, "  "); // Indentation for third line
+    match_text(&mut output, "90210");
+    match_text(&mut output, "\r");
+    match_text(&mut output, "\n");
+    
+    // Second option (not selected, should have " " prefix)
+    match_text(&mut output, " ");
+    match_text(&mut output, " ");
+    match_text(&mut output, "Mrs. Anderson");
+    match_text(&mut output, "\r");
+    match_text(&mut output, "\n");
+    match_text(&mut output, "  "); // Indentation for second line (2 spaces: " " + " ")
+    match_text(&mut output, "Sesame st. 10, NY");
+    match_text(&mut output, "\r");
+    match_text(&mut output, "\n");
+    match_text(&mut output, "  "); // Indentation for third line
+    match_text(&mut output, "90210");
+}
