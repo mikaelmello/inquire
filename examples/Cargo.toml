@@ -101,7 +101,3 @@ path = "enum_comprehensive.rs"
 [[example]]
 name = "enum_select_derive"
 path = "enum_select_derive.rs"
-
-[[example]]
-name = "multiline_demo"
-path = "multiline_demo.rs"
