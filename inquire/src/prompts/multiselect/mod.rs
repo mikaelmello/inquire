@@ -15,6 +15,7 @@ use crate::{
     formatter::MultiOptionFormatter,
     list_option::ListOption,
     prompts::prompt::Prompt,
+    tabular::ColumnConfig,
     terminal::get_default_terminal,
     type_aliases::Scorer,
     ui::{Backend, MultiSelectBackend, RenderConfig},
@@ -122,6 +123,12 @@ pub struct MultiSelect<'a, T> {
     /// config is treated as the only source of truth. If you want to customize colors
     /// and still support NO_COLOR, you will have to do this on your end.
     pub render_config: RenderConfig<'a>,
+
+    /// Column configurations for tabular formatting.
+    ///
+    /// When set, options will be formatted with aligned columns according to the
+    /// specified column separators and alignments.
+    pub tabular_columns: Option<Vec<ColumnConfig>>,
 }
 
 impl<'a, T> MultiSelect<'a, T>
@@ -236,6 +243,7 @@ where
             formatter: Self::DEFAULT_FORMATTER,
             validator: None,
             render_config: get_configuration(),
+            tabular_columns: None,
         }
     }
 
@@ -356,6 +364,40 @@ where
     /// and still support NO_COLOR, you will have to do this on your end.
     pub fn with_render_config(mut self, render_config: RenderConfig<'a>) -> Self {
         self.render_config = render_config;
+        self
+    }
+
+    /// Enables tabular formatting with the specified column configurations.
+    ///
+    /// When enabled, the options will be displayed with aligned columns based on
+    /// the provided column separators and alignments.
+    ///
+    /// # Arguments
+    ///
+    /// * `columns` - Vector of column configurations specifying separators and alignments
+    ///
+    /// # Example
+    ///
+    /// ```rust no_run
+    /// use inquire::{MultiSelect, tabular::{ColumnConfig, ColumnAlignment}};
+    ///
+    /// let options = vec![
+    ///     "project1: 100 KB (2024-01-01), /path1",
+    ///     "project2: 2 MB (2024-01-02), /path2",
+    /// ];
+    ///
+    /// let columns = vec![
+    ///     ColumnConfig::new_with_separator(": ", ColumnAlignment::Left),
+    ///     ColumnConfig::new(ColumnAlignment::Right),  // Uses default " " separator
+    ///     ColumnConfig::new_with_separator(", ", ColumnAlignment::Left),
+    /// ];
+    ///
+    /// let answer = MultiSelect::new("Select projects:", options)
+    ///     .with_tabular_columns(columns)
+    ///     .prompt();
+    /// ```
+    pub fn with_tabular_columns(mut self, columns: Vec<ColumnConfig>) -> Self {
+        self.tabular_columns = Some(columns);
         self
     }
 
