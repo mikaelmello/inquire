@@ -182,7 +182,7 @@ fn calculate_column_widths(rows: &[Vec<String>]) -> Vec<usize> {
         return Vec::new();
     }
 
-    let num_columns = rows.first().map_or(0, Vec::len);
+    let num_columns = rows.first().map(Vec::len).unwrap_or(0);
     let mut max_widths = vec![0; num_columns];
 
     for row in rows {
