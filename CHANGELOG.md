@@ -4,7 +4,13 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
-- No changes since the latest release below.
+### Features
+
+- Add tabular formatting for `MultiSelect` prompts, allowing options to be displayed with aligned columns (#308).
+  - New `tabular` module with `ColumnConfig`, `ColumnAlignment`, and `format_as_table` utilities.
+  - New `with_tabular_columns()` method for configuring column separators and alignments.
+  - Perfect for displaying structured data like file listings, project metadata, or any multi-field information.
+  - See [multiselect_tabular.rs](./examples/multiselect_tabular.rs) and [multiselect_tabular_separators.rs](./examples/multiselect_tabular_separators.rs) examples.
 
 ## [0.9.1] - 2025-09-16
 
