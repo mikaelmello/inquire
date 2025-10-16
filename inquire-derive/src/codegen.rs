@@ -4,7 +4,7 @@ use syn::{Data::Enum, DeriveInput};
 
 use crate::utils::enum_name_to_module_name;
 
-pub fn generate_selectable_impl(input: DeriveInput) -> TokenStream {
+pub fn generate_selectable_impl(input: &DeriveInput) -> TokenStream {
     let enum_name = &input.ident;
     let variants = if let Enum(data_enum) = &input.data {
         data_enum

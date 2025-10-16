@@ -75,6 +75,14 @@ name = "multiselect"
 path = "multiselect.rs"
 
 [[example]]
+name = "multiselect_tabular"
+path = "multiselect_tabular.rs"
+
+[[example]]
+name = "multiselect_tabular_separators"
+path = "multiselect_tabular_separators.rs"
+
+[[example]]
 name = "password_no_confirmation"
 path = "password_no_confirmation.rs"
 

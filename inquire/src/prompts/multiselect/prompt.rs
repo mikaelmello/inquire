@@ -6,6 +6,7 @@ use crate::{
     input::{Input, InputActionResult},
     list_option::ListOption,
     prompts::prompt::{ActionResult, Prompt},
+    tabular::{format_as_table, ColumnConfig},
     type_aliases::Scorer,
     ui::MultiSelectBackend,
     utils::paginate,
@@ -14,6 +15,17 @@ use crate::{
 };
 
 use super::{action::MultiSelectPromptAction, config::MultiSelectConfig};
+
+/// Wrapper for displaying formatted strings in place of original values
+struct FormattedDisplay<'a> {
+    formatted: &'a str,
+}
+
+impl<'a> Display for FormattedDisplay<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.formatted)
+    }
+}
 
 pub struct MultiSelectPrompt<'a, T> {
     message: &'a str,
@@ -29,6 +41,8 @@ pub struct MultiSelectPrompt<'a, T> {
     formatter: MultiOptionFormatter<'a, T>,
     validator: Option<Box<dyn MultiOptionValidator<T>>>,
     error: Option<ErrorMessage>,
+    tabular_columns: Option<Vec<ColumnConfig>>,
+    formatted_options: Option<Vec<String>>,
 }
 
 impl<'a, T> MultiSelectPrompt<'a, T>
@@ -87,6 +101,8 @@ where
             validator: mso.validator,
             error: None,
             checked: checked_options,
+            tabular_columns: mso.tabular_columns,
+            formatted_options: None,
         })
     }
 
@@ -231,10 +247,29 @@ where
 
         self.scored_options = new_scored_options;
 
+        // Update formatted options if tabular formatting is enabled
+        self.update_formatted_options();
+
         if self.config.reset_cursor {
             let _ = self.update_cursor_position(0);
         } else if self.scored_options.len() <= self.cursor_index {
             let _ = self.update_cursor_position(self.scored_options.len().saturating_sub(1));
+        }
+    }
+
+    fn update_formatted_options(&mut self) {
+        if let Some(columns) = &self.tabular_columns {
+            // Get the string representations of scored options in order
+            let visible_strings: Vec<String> = self
+                .scored_options
+                .iter()
+                .filter_map(|&idx| self.string_options.get(idx).cloned())
+                .collect();
+
+            // Format them as a table
+            let formatted = format_as_table(&visible_strings, columns);
+
+            self.formatted_options = Some(formatted);
         }
     }
 }
@@ -263,6 +298,8 @@ where
 
     fn setup(&mut self) -> InquireResult<()> {
         self.run_scorer();
+        // Ensure formatted options are initialized even without filter input
+        self.update_formatted_options();
         Ok(())
     }
 
@@ -328,16 +365,40 @@ where
 
         backend.render_multiselect_prompt(prompt, self.input.as_ref())?;
 
-        let choices = self
-            .scored_options
-            .iter()
-            .cloned()
-            .map(|i| ListOption::new(i, self.options.get(i).unwrap()))
-            .collect::<Vec<ListOption<&T>>>();
+        // If we have formatted options, use them; otherwise use original
+        if let Some(formatted) = &self.formatted_options {
+            let formatted_choices: Vec<ListOption<FormattedDisplay<'_>>> = self
+                .scored_options
+                .iter()
+                .enumerate()
+                .filter_map(|(rel_idx, &orig_idx)| {
+                    formatted.get(rel_idx).map(|formatted_str| {
+                        ListOption::new(
+                            orig_idx,
+                            FormattedDisplay {
+                                formatted: formatted_str.as_str(),
+                            },
+                        )
+                    })
+                })
+                .collect();
 
-        let page = paginate(self.config.page_size, &choices, Some(self.cursor_index));
+            let page = paginate(
+                self.config.page_size,
+                &formatted_choices,
+                Some(self.cursor_index),
+            );
+            backend.render_options(page, &self.checked)?;
+        } else {
+            let choices = self
+                .scored_options
+                .iter()
+                .filter_map(|&i| self.options.get(i).map(|opt| ListOption::new(i, opt)))
+                .collect::<Vec<ListOption<&T>>>();
 
-        backend.render_options(page, &self.checked)?;
+            let page = paginate(self.config.page_size, &choices, Some(self.cursor_index));
+            backend.render_options(page, &self.checked)?;
+        }
 
         if let Some(help_message) = self.help_message {
             backend.render_help_message(help_message)?;
