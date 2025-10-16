@@ -236,9 +236,9 @@ fn pad_string(text: &str, width: usize, alignment: ColumnAlignment) -> String {
 /// use inquire::tabular::{format_as_table, ColumnConfig, ColumnAlignment};
 ///
 /// let options = vec![
-///     "copy_current_location: 898.95 KB (2025-10-12 15:41), /path1",
-///     "summary-gen: 211.29 MB (2025-10-13 20:04), /path2",
-///     "rona: 1.26 GB (2025-10-14 18:29), /path3",
+///     "copy_current_location: 898.95 KB (2025-10-12 15:41), /path1".to_string(),
+///     "summary-gen: 211.29 MB (2025-10-13 20:04), /path2".to_string(),
+///     "rona: 1.26 GB (2025-10-14 18:29), /path3".to_string(),
 /// ];
 ///
 /// let columns = vec![
