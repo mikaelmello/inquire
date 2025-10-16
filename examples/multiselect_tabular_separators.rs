@@ -5,16 +5,16 @@ use inquire::{
 
 fn main() {
     println!("Example: Understanding Column Separators in Tabular Formatting\n");
-    
+
     example_default_separator();
     println!("\n{}\n", "=".repeat(70));
-    
+
     example_custom_separators();
     println!("\n{}\n", "=".repeat(70));
-    
+
     example_replacing_separator();
     println!("\n{}\n", "=".repeat(70));
-    
+
     example_raw_vs_formatted();
 }
 
@@ -31,10 +31,10 @@ fn example_default_separator() {
 
     // All columns use default separator (single space)
     let columns = vec![
-        ColumnConfig::new(ColumnAlignment::Left),   // Project name + " "
-        ColumnConfig::new(ColumnAlignment::Right),  // Size + " "
-        ColumnConfig::new(ColumnAlignment::Left),   // Date + " "
-        ColumnConfig::new(ColumnAlignment::Left),   // Status (last column)
+        ColumnConfig::new(ColumnAlignment::Left), // Project name + " "
+        ColumnConfig::new(ColumnAlignment::Right), // Size + " "
+        ColumnConfig::new(ColumnAlignment::Left), // Date + " "
+        ColumnConfig::new(ColumnAlignment::Left), // Status (last column)
     ];
 
     println!("Column configuration:");
@@ -67,10 +67,10 @@ fn example_custom_separators() {
 
     // Mix of custom and default separators
     let columns = vec![
-        ColumnConfig::new_with_separator(": ", ColumnAlignment::Left),   // Server name + ": "
-        ColumnConfig::new_with_separator(", ", ColumnAlignment::Right),  // IP + ", "
-        ColumnConfig::new_with_separator(", ", ColumnAlignment::Right),  // Port + ", "
-        ColumnConfig::new(ColumnAlignment::Left),                        // Status (last column)
+        ColumnConfig::new_with_separator(": ", ColumnAlignment::Left), // Server name + ": "
+        ColumnConfig::new_with_separator(", ", ColumnAlignment::Right), // IP + ", "
+        ColumnConfig::new_with_separator(", ", ColumnAlignment::Right), // Port + ", "
+        ColumnConfig::new(ColumnAlignment::Left),                      // Status (last column)
     ];
 
     println!("Column configuration:");
@@ -103,16 +103,10 @@ fn example_replacing_separator() {
 
     // Start with default separator, then set it to something else
     let columns = vec![
-        ColumnConfig::new(ColumnAlignment::Left)
-            .separator(": "),  // Set separator to ": "
-        
-        ColumnConfig::new(ColumnAlignment::Left)
-            .separator(", "),  // Set separator to ", "
-        
-        ColumnConfig::new_with_separator(" | ", ColumnAlignment::Left)
-            .separator(", "),  // Replace " | " with ", "
-        
-        ColumnConfig::new(ColumnAlignment::Left),  // Last column
+        ColumnConfig::new(ColumnAlignment::Left).separator(": "), // Set separator to ": "
+        ColumnConfig::new(ColumnAlignment::Left).separator(", "), // Set separator to ", "
+        ColumnConfig::new_with_separator(" | ", ColumnAlignment::Left).separator(", "), // Replace " | " with ", "
+        ColumnConfig::new(ColumnAlignment::Left), // Last column
     ];
 
     println!("Column configuration:");
@@ -160,10 +154,10 @@ fn example_raw_vs_formatted() {
 
     // Configure columns for formatting
     let columns = vec![
-        ColumnConfig::new_with_separator(": ", ColumnAlignment::Left),   // Filename
-        ColumnConfig::new_with_separator(", ", ColumnAlignment::Right),  // Size
-        ColumnConfig::new_with_separator(", ", ColumnAlignment::Left),   // Date
-        ColumnConfig::new(ColumnAlignment::Left),                        // Path
+        ColumnConfig::new_with_separator(": ", ColumnAlignment::Left), // Filename
+        ColumnConfig::new_with_separator(", ", ColumnAlignment::Right), // Size
+        ColumnConfig::new_with_separator(", ", ColumnAlignment::Left), // Date
+        ColumnConfig::new(ColumnAlignment::Left),                      // Path
     ];
 
     // Format the rows

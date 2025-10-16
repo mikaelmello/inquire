@@ -373,12 +373,21 @@ where
                 .enumerate()
                 .filter_map(|(rel_idx, &orig_idx)| {
                     formatted.get(rel_idx).map(|formatted_str| {
-                        ListOption::new(orig_idx, FormattedDisplay { formatted: formatted_str.as_str() })
+                        ListOption::new(
+                            orig_idx,
+                            FormattedDisplay {
+                                formatted: formatted_str.as_str(),
+                            },
+                        )
                     })
                 })
                 .collect();
 
-            let page = paginate(self.config.page_size, &formatted_choices, Some(self.cursor_index));
+            let page = paginate(
+                self.config.page_size,
+                &formatted_choices,
+                Some(self.cursor_index),
+            );
             backend.render_options(page, &self.checked)?;
         } else {
             let choices = self

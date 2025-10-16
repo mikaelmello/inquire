@@ -28,9 +28,9 @@ fn example_project_selection() {
 
     // Define columns: name (left-aligned), size (right-aligned), date (left), path (left)
     let columns = vec![
-        ColumnConfig::new_with_separator(": ", ColumnAlignment::Left),   // Project name
-        ColumnConfig::new(ColumnAlignment::Right),   // Size (right-aligned for comparison)
-        ColumnConfig::new_with_separator(", ", ColumnAlignment::Left),   // Date
+        ColumnConfig::new_with_separator(": ", ColumnAlignment::Left), // Project name
+        ColumnConfig::new(ColumnAlignment::Right), // Size (right-aligned for comparison)
+        ColumnConfig::new_with_separator(", ", ColumnAlignment::Left), // Date
     ];
 
     let ans = MultiSelect::new("Select projects to clean:", projects)
@@ -61,9 +61,9 @@ fn example_package_manager() {
     ];
 
     let columns = vec![
-        ColumnConfig::new_with_separator(": ", ColumnAlignment::Left),   // Package name
-        ColumnConfig::new(ColumnAlignment::Right),   // Version (default separator)
-        ColumnConfig::new_with_separator(", ", ColumnAlignment::Left),   // Size
+        ColumnConfig::new_with_separator(": ", ColumnAlignment::Left), // Package name
+        ColumnConfig::new(ColumnAlignment::Right), // Version (default separator)
+        ColumnConfig::new_with_separator(", ", ColumnAlignment::Left), // Size
     ];
 
     let ans = MultiSelect::new("Select packages to install:", packages)
@@ -93,9 +93,9 @@ fn example_file_browser() {
     ];
 
     let columns = vec![
-        ColumnConfig::new_with_separator(": ", ColumnAlignment::Left),   // Filename
-        ColumnConfig::new(ColumnAlignment::Left),    // Permissions (default separator)
-        ColumnConfig::new_with_separator(", ", ColumnAlignment::Right),  // Size
+        ColumnConfig::new_with_separator(": ", ColumnAlignment::Left), // Filename
+        ColumnConfig::new(ColumnAlignment::Left), // Permissions (default separator)
+        ColumnConfig::new_with_separator(", ", ColumnAlignment::Right), // Size
     ];
 
     let ans = MultiSelect::new("Select files to include:", files)
