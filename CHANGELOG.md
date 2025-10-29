@@ -4,7 +4,13 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
-- No changes since the latest release below.
+### Features
+
+- The `CustomType` and `Confirm` prompts now support auto-submitting on valid input. [#321](https://github.com/mikaelmello/inquire/pull/321).
+
+### Dependencies
+
+- Raised minimum supported Rust version to 1.82.0.
 
 ## [0.9.1] - 2025-09-16
 

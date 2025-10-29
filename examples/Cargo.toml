@@ -67,6 +67,10 @@ name = "confirm"
 path = "confirm.rs"
 
 [[example]]
+name = "confirm_on_input"
+path = "confirm_on_input.rs"
+
+[[example]]
 name = "custom_type"
 path = "custom_type.rs"
 
