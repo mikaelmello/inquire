@@ -254,6 +254,7 @@ impl<'a> From<Confirm<'a>> for CustomType<'a, bool> {
             validators: vec![],
             error_message: co.error_message,
             render_config: co.render_config,
+            submit_on_valid_parse: false,
         }
     }
 }
