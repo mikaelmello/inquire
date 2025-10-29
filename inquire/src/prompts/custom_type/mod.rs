@@ -54,6 +54,7 @@ use self::prompt::CustomTypePrompt;
 ///         Ok(val) => Ok(val),
 ///         Err(_) => Err(()),
 ///     },
+///     submit_on_valid_parse: false,
 ///     render_config: RenderConfig::default(),
 /// };
 /// ```
