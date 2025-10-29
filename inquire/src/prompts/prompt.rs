@@ -14,11 +14,15 @@ pub enum ActionResult {
     /// The action either didn't result in a state change or the state
     /// change does not require a redraw.
     Clean,
+
+    /// The prompt should attempt to submit now
+    Submit,
 }
 
 impl ActionResult {
     pub fn merge(self, other: Self) -> Self {
         match (self, other) {
+            (Self::Submit, _) | (_, Self::Submit) => Self::Submit,
             (Self::NeedsRedraw, _) | (_, Self::NeedsRedraw) => Self::NeedsRedraw,
             (Self::Clean, Self::Clean) => Self::Clean,
         }
@@ -151,7 +155,13 @@ where
                         ActionResult::NeedsRedraw
                     }
                     Action::Interrupt => return Err(InquireError::OperationInterrupted),
-                    Action::Inner(inner_action) => self.handle(inner_action)?,
+                    Action::Inner(inner_action) => match self.handle(inner_action)? {
+                        ActionResult::Submit => match self.submit()? {
+                            Some(answer) => break answer,
+                            None => ActionResult::NeedsRedraw,
+                        },
+                        other => other,
+                    },
                 };
             }
         };

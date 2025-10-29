@@ -91,6 +91,9 @@ pub struct Confirm<'a> {
     /// Error message displayed when a value could not be parsed from input.
     pub error_message: String,
 
+    /// Whether to confirm immediately when 'y' or 'n' is typed, without requiring Enter.
+    pub confirm_on_input: bool,
+
     /// RenderConfig to apply to the rendered interface.
     ///
     /// Note: The default render config considers if the NO_COLOR environment variable
@@ -132,6 +135,7 @@ impl<'a> Confirm<'a> {
             parser: Self::DEFAULT_PARSER,
             default_value_formatter: Self::DEFAULT_DEFAULT_VALUE_FORMATTER,
             error_message: String::from(Self::DEFAULT_ERROR_MESSAGE),
+            confirm_on_input: false,
             render_config: get_configuration(),
         }
     }
@@ -201,6 +205,12 @@ impl<'a> Confirm<'a> {
         self
     }
 
+    /// Sets whether to confirm immediately when 'y' or 'n' is typed, without requiring Enter.
+    pub fn with_confirm_on_input(mut self, confirm_on_input: bool) -> Self {
+        self.confirm_on_input = confirm_on_input;
+        self
+    }
+
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to the defined rules.
     ///
@@ -254,6 +264,7 @@ impl<'a> From<Confirm<'a>> for CustomType<'a, bool> {
             validators: vec![],
             error_message: co.error_message,
             render_config: co.render_config,
+            submit_on_valid_parse: co.confirm_on_input,
         }
     }
 }

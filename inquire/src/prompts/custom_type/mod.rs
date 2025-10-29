@@ -54,6 +54,7 @@ use self::prompt::CustomTypePrompt;
 ///         Ok(val) => Ok(val),
 ///         Err(_) => Err(()),
 ///     },
+///     submit_on_valid_parse: false,
 ///     render_config: RenderConfig::default(),
 /// };
 /// ```
@@ -126,6 +127,10 @@ pub struct CustomType<'a, T> {
     /// config is treated as the only source of truth. If you want to customize colors
     /// and still support NO_COLOR, you will have to do this on your end.
     pub render_config: RenderConfig<'a>,
+
+    /// If true, submits immediately when parser successfully parses input
+    /// Useful for single-character selection prompts
+    pub submit_on_valid_parse: bool,
 }
 
 impl<'a, T> CustomType<'a, T>
@@ -152,6 +157,7 @@ where
             validators: Self::DEFAULT_VALIDATORS,
             error_message: "Invalid input".into(),
             render_config: get_configuration(),
+            submit_on_valid_parse: false,
         }
     }
 
@@ -251,6 +257,16 @@ where
     /// and still support NO_COLOR, you will have to do this on your end.
     pub fn with_render_config(mut self, render_config: RenderConfig<'a>) -> Self {
         self.render_config = render_config;
+        self
+    }
+
+    /// Enables automatic submission when input is successfully parsed.
+    ///
+    /// When enabled, the prompt will submit immediately after each keystroke
+    /// that results in successful parsing and validation, without requiring
+    /// Enter.
+    pub fn with_submit_on_valid_parse(mut self, enabled: bool) -> Self {
+        self.submit_on_valid_parse = enabled;
         self
     }
 

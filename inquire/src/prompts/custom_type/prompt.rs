@@ -23,6 +23,7 @@ pub struct CustomTypePrompt<'a, T> {
     validators: Vec<Box<dyn CustomTypeValidator<T>>>,
     parser: CustomTypeParser<'a, T>,
     error_message: String,
+    submit_on_valid_parse: bool,
 }
 
 impl<'a, T> From<CustomType<'a, T>> for CustomTypePrompt<'a, T>
@@ -49,6 +50,7 @@ where
             parser: co.parser,
             input,
             error_message: co.error_message,
+            submit_on_valid_parse: co.submit_on_valid_parse,
         }
     }
 }
@@ -127,6 +129,16 @@ where
                 self.input.handle(input_action).into()
             }
         };
+
+        // Check if we should auto-submit after this input change
+        if self.submit_on_valid_parse {
+            // Try to parse and validate the current input
+            if let Ok(answer) = self.get_final_answer() {
+                if matches!(self.validate_current_answer(&answer)?, Validation::Valid) {
+                    return Ok(ActionResult::Submit);
+                }
+            }
+        }
 
         Ok(result)
     }
