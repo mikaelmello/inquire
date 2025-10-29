@@ -6,7 +6,7 @@
 
 ### Features
 
-- The `CustomType` prompt now supports auto-submitting on valid input. [#321](https://github.com/mikaelmello/inquire/pull/321).
+- The `CustomType` and `Confirm` prompts now support auto-submitting on valid input. [#321](https://github.com/mikaelmello/inquire/pull/321).
 
 ### Dependencies
 
