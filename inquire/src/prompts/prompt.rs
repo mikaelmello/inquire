@@ -156,8 +156,7 @@ where
             }
         };
 
-        let mut formatted = self.format_answer(&final_answer);
-        formatted.insert_str(0, "\n| ");
+        let formatted = self.format_answer(&final_answer);
 
         backend.frame_setup()?;
         backend.render_prompt_with_answer(self.message(), &formatted)?;

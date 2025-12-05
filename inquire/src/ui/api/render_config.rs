@@ -21,6 +21,9 @@ use super::{Color, StyleSheet, Styled};
 /// ```
 #[derive(Copy, Clone, Debug)]
 pub struct RenderConfig<'a> {
+    /// Prefix added at the beginning of a new line.
+    pub new_line_prefix: Option<Styled<&'a str>>,
+
     /// Prefix added before prompts.
     ///
     /// Note: a space character will be added to separate the prefix
@@ -74,6 +77,10 @@ pub struct RenderConfig<'a> {
     /// a separator from the prompt message (or default value display).
     pub answer: StyleSheet,
 
+    /// If you want to print the answer on a new line, set the value to "true".
+    /// The default value is "false".
+    pub answer_from_new_line: bool,
+
     /// Render configuration of the message printed in the place of an answer
     /// when the prompt is canceled by the user - by pressing ESC.
     ///
@@ -89,6 +96,12 @@ pub struct RenderConfig<'a> {
     /// Note: a space character will be added to separate the prefix
     /// and the option value or the checkbox.
     pub highlighted_option_prefix: Styled<&'a str>,
+
+    /// Prefix for an unhighlighted option.
+    ///
+    /// Note: a space character will be added to separate the prefix
+    /// and the option value.
+    pub unhighlighted_option_prefix: Styled<&'a str>,
 
     /// Prefix for the option listed at the top of the page, when it is possible
     /// to scroll up.
@@ -152,6 +165,7 @@ impl<'a> RenderConfig<'a> {
     /// RenderConfig in which no colors or attributes are applied.
     pub fn empty() -> Self {
         Self {
+            new_line_prefix: None,
             prompt_prefix: Styled::new("?"),
             answered_prompt_prefix: Styled::new("?"),
             prompt: StyleSheet::empty(),
@@ -161,9 +175,11 @@ impl<'a> RenderConfig<'a> {
             text_input: StyleSheet::empty(),
             error_message: ErrorMessageRenderConfig::empty(),
             answer: StyleSheet::empty(),
+            answer_from_new_line: false,
             canceled_prompt_indicator: Styled::new("<canceled>"),
             password_mask: '*',
             highlighted_option_prefix: Styled::new(">"),
+            unhighlighted_option_prefix: Styled::new(" "),
             scroll_up_prefix: Styled::new("^"),
             scroll_down_prefix: Styled::new("v"),
             selected_checkbox: Styled::new("[x]"),
@@ -183,6 +199,7 @@ impl<'a> RenderConfig<'a> {
     /// RenderConfig where default colors and attributes are applied.
     pub fn default_colored() -> Self {
         Self {
+            new_line_prefix: None,
             prompt_prefix: Styled::new("?").with_fg(Color::LightGreen),
             answered_prompt_prefix: Styled::new(">").with_fg(Color::LightGreen),
             prompt: StyleSheet::empty(),
@@ -193,8 +210,10 @@ impl<'a> RenderConfig<'a> {
             error_message: ErrorMessageRenderConfig::default_colored(),
             password_mask: '*',
             answer: StyleSheet::empty().with_fg(Color::LightCyan),
+            answer_from_new_line: false,
             canceled_prompt_indicator: Styled::new("<canceled>").with_fg(Color::DarkRed),
             highlighted_option_prefix: Styled::new(">").with_fg(Color::LightCyan),
+            unhighlighted_option_prefix: Styled::new(" ").with_fg(Color::LightCyan),
             scroll_up_prefix: Styled::new("^"),
             scroll_down_prefix: Styled::new("v"),
             selected_checkbox: Styled::new("[x]").with_fg(Color::LightGreen),
