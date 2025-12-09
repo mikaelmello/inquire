@@ -280,13 +280,12 @@ where
             let token = Styled::new(answer).with_style_sheet(self.render_config.answer);
             self.frame_renderer.write_styled(token)?;
             self.new_line()?;
-            return Ok(());
-        }
-
-        for part_answer in answer.lines() {
-            let token = Styled::new(part_answer).with_style_sheet(self.render_config.answer);
-            self.frame_renderer.write_styled(token)?;
-            self.new_line()?;
+        } else {
+            for part_answer in answer.lines() {
+                let token = Styled::new(part_answer).with_style_sheet(self.render_config.answer);
+                self.frame_renderer.write_styled(token)?;
+                self.new_line()?;
+            }
         }
 
         Ok(())
