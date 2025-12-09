@@ -276,10 +276,18 @@ where
             self.new_line()?;
         };
 
-        let token = Styled::new(answer).with_style_sheet(self.render_config.answer);
-        self.frame_renderer.write_styled(token)?;
-
-        self.new_line()?;
+        // Checking the answer for multiple lines
+        if answer.contains("\n") {
+            for part_answer in answer.split("\n") {
+                let token = Styled::new(part_answer).with_style_sheet(self.render_config.answer);
+                self.frame_renderer.write_styled(token)?;
+                self.new_line()?;
+            }
+        } else {
+            let token = Styled::new(answer).with_style_sheet(self.render_config.answer);
+            self.frame_renderer.write_styled(token)?;
+            self.new_line()?;
+        }
 
         Ok(())
     }
