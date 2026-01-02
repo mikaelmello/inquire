@@ -1,4 +1,4 @@
-use std::{cmp::Reverse, fmt::Display};
+use std::fmt::Display;
 
 use crate::{
     error::InquireResult,
@@ -6,7 +6,7 @@ use crate::{
     input::{Input, InputActionResult},
     list_option::ListOption,
     prompts::prompt::{ActionResult, Prompt},
-    type_aliases::Scorer,
+    type_aliases::{Scorer, Sorter},
     ui::SelectBackend,
     utils::paginate,
     InquireError, Select,
@@ -24,6 +24,7 @@ pub struct SelectPrompt<'a, T> {
     cursor_index: usize,
     input: Option<Input>,
     scorer: Scorer<'a, T>,
+    sorter: Sorter<'a>,
     formatter: OptionFormatter<'a, T>,
 }
 
@@ -66,6 +67,7 @@ where
             cursor_index: so.starting_cursor,
             input,
             scorer: so.scorer,
+            sorter: so.sorter,
             formatter: so.formatter,
         })
     }
@@ -138,7 +140,7 @@ where
             })
             .collect::<Vec<(usize, i64)>>();
 
-        options.sort_unstable_by_key(|(_idx, score)| Reverse(*score));
+        (self.sorter)(&mut options);
 
         let new_scored_options = options.iter().map(|(idx, _)| *idx).collect::<Vec<usize>>();
 
