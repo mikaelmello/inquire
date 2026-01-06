@@ -73,6 +73,13 @@ use crate::error::CustomUserError;
 /// ```
 pub type Scorer<'a, T> = &'a dyn Fn(&str, &T, &str, usize) -> Option<i64>;
 
+/// Type alias to represent the function used to sort a slice of (index, score) tuples.
+///
+/// The function receives a mutable slice of tuples, where each tuple contains:
+/// - The index of the option in the original list
+/// - The score assigned to that option
+pub type Sorter<'a> = &'a dyn Fn(&mut [(usize, i64)]);
+
 /// Type alias to represent the function used to retrieve text input suggestions.
 /// The function receives the current input and should return a collection of strings
 /// containing the suggestions to be made to the user.
