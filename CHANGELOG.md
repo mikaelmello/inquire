@@ -4,7 +4,7 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
-- No changes since the latest release below.
+- Bumped MSRV from 1.80 -> 1.82 due to new requirements of dependencies.
 
 ## [0.9.1] - 2025-09-16
 
