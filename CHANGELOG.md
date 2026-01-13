@@ -6,6 +6,9 @@
 
 - Bumped MSRV from 1.80 -> 1.82 due to new requirements of dependencies.
 
+### Fixes
+- Fix prompts not spawning on macOS when run from shell scripts that redirect stdin to /dev/tty.
+
 ## [0.9.1] - 2025-09-16
 
 ### Fixes
