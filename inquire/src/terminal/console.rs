@@ -7,103 +7,150 @@ use crate::{
     ui::{Attributes, InputReader, StyleSheet, Styled},
 };
 
-use super::Terminal;
+use super::{Io, Terminal};
 
-#[derive(Clone)]
-pub struct ConsoleTerminal {
-    term: Term,
+pub struct ConsoleTerminal<'a> {
+    io: Io<'a, Term>,
 }
 
-impl ConsoleTerminal {
-    #[allow(unused)]
-    pub fn new() -> Self {
+impl<'a> ConsoleTerminal<'a> {
+    pub fn new(term: Term) -> Self {
         Self {
-            term: Term::stderr(),
+            io: Io::Owned(term),
+        }
+    }
+
+    pub fn new_with_writer(writer: &'a mut dyn Write) -> Self {
+        Self {
+            io: Io::Borrowed(writer),
+        }
+    }
+
+    fn get_writer(&mut self) -> &mut dyn Write {
+        match &mut self.io {
+            Io::Owned(w) => w,
+            Io::Borrowed(w) => w,
         }
     }
 }
 
-impl InputReader for ConsoleTerminal {
+pub struct ConsoleKeyReader {
+    term: Term,
+}
+
+impl InputReader for ConsoleKeyReader {
     fn read_key(&mut self) -> InquireResult<crate::ui::Key> {
         let key = self.term.read_key()?;
         Ok(key.into())
     }
 }
 
-impl Terminal for ConsoleTerminal {
+impl Terminal for ConsoleTerminal<'_> {
     fn cursor_up(&mut self, cnt: u16) -> Result<()> {
         match cnt {
             0 => Ok(()),
-            cnt => self.term.move_cursor_up(cnt as usize),
+            cnt => match self.io {
+                Io::Owned(ref mut term) => term.move_cursor_up(cnt as usize),
+                Io::Borrowed(_) => Ok(()),
+            },
         }
     }
 
     fn cursor_down(&mut self, cnt: u16) -> Result<()> {
         match cnt {
             0 => Ok(()),
-            cnt => self.term.move_cursor_down(cnt as usize),
+            cnt => match self.io {
+                Io::Owned(ref mut term) => term.move_cursor_down(cnt as usize),
+                Io::Borrowed(_) => Ok(()),
+            },
         }
     }
 
     fn cursor_left(&mut self, cnt: u16) -> Result<()> {
         match cnt {
             0 => Ok(()),
-            cnt => self.term.move_cursor_left(cnt as usize),
+            cnt => match self.io {
+                Io::Owned(ref mut term) => term.move_cursor_left(cnt as usize),
+                Io::Borrowed(_) => Ok(()),
+            },
         }
     }
 
     fn cursor_right(&mut self, cnt: u16) -> Result<()> {
         match cnt {
             0 => Ok(()),
-            cnt => self.term.move_cursor_right(cnt as usize),
+            cnt => match self.io {
+                Io::Owned(ref mut term) => term.move_cursor_right(cnt as usize),
+                Io::Borrowed(_) => Ok(()),
+            },
         }
     }
 
     fn cursor_move_to_column(&mut self, idx: u16) -> Result<()> {
         // console has no built-in method to set cursor column ¯\_(ツ)_/¯
-        self.term.move_cursor_left(1000)?;
-        self.term.move_cursor_right(idx as usize)?;
+        match self.io {
+            Io::Owned(ref mut term) => {
+                term.move_cursor_left(1000)?;
+                term.move_cursor_right(idx as usize)?;
+            }
+            Io::Borrowed(_) => {}
+        }
 
         Ok(())
     }
 
     fn flush(&mut self) -> Result<()> {
-        self.term.flush()
+        match self.io {
+            Io::Owned(ref mut term) => term.flush(),
+            Io::Borrowed(ref mut writer) => writer.flush(),
+        }
     }
 
     fn get_size(&self) -> Result<Option<super::TerminalSize>> {
-        let (height, width) = self.term.size();
+        let (height, width) = match &self.io {
+            Io::Owned(term) => term.size(),
+            Io::Borrowed(_) => (0, 0),
+        };
 
         Ok(super::TerminalSize::new(width, height))
     }
 
     fn write<T: std::fmt::Display>(&mut self, val: T) -> Result<()> {
-        write!(self.term, "{}", val)
+        write!(self.get_writer(), "{}", val)
     }
 
     fn write_styled<T: std::fmt::Display>(&mut self, val: &Styled<T>) -> Result<()> {
         let styled_object = Style::from(val.style).apply_to(&val.content);
-        write!(self.term, "{}", styled_object)
+        write!(self.get_writer(), "{}", styled_object)
     }
 
     fn clear_line(&mut self) -> Result<()> {
-        self.term.clear_line()
+        match self.io {
+            Io::Owned(ref mut term) => term.clear_line(),
+            Io::Borrowed(_) => Ok(()),
+        }
     }
 
     fn clear_until_new_line(&mut self) -> Result<()> {
-        write!(self.term, "\x1b[K")
+        write!(self.get_writer(), "\x1b[K")
     }
 
     fn cursor_hide(&mut self) -> Result<()> {
-        self.term.hide_cursor()
+        match self.io {
+            Io::Owned(ref mut term) => term.hide_cursor(),
+            Io::Borrowed(_) => Ok(()),
+        }
     }
 
     fn cursor_show(&mut self) -> Result<()> {
-        self.term.show_cursor()
+        match self.io {
+            Io::Owned(ref mut term) => term.show_cursor(),
+            Io::Borrowed(_) => Ok(()),
+        }
     }
 }
 
-impl Drop for ConsoleTerminal {
+impl Drop for ConsoleTerminal<'_> {
     fn drop(&mut self) {
         let _unused = self.flush();
     }

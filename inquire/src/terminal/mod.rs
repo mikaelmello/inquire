@@ -1,4 +1,7 @@
-use std::{fmt::Display, io::Result};
+use std::{
+    fmt::Display,
+    io::{Result, Write},
+};
 
 use crate::{
     error::InquireResult,
@@ -73,6 +76,11 @@ pub trait Terminal: Sized {
     fn flush(&mut self) -> Result<()>;
 }
 
+enum Io<'a, T> {
+    Owned(T),
+    Borrowed(&'a mut dyn Write),
+}
+
 pub fn get_default_terminal() -> InquireResult<(impl InputReader, impl Terminal)> {
     #[cfg(feature = "crossterm")]
     return Ok((
@@ -92,8 +100,52 @@ pub fn get_default_terminal() -> InquireResult<(impl InputReader, impl Terminal)
         not(feature = "crossterm")
     ))]
     {
-        let console_terminal = console::ConsoleTerminal::new();
-        let console_key_reader = console_terminal.clone();
+        let term = ::console::Term::stderr();
+        let console_terminal = console::ConsoleTerminal::new(term.clone());
+        let console_key_reader = console::ConsoleKeyReader::new(term);
+        return Ok((console_key_reader, console_terminal));
+    }
+
+    #[cfg(all(
+        not(feature = "crossterm"),
+        not(feature = "termion"),
+        not(feature = "console")
+    ))]
+    {
+        compile_error!("At least one of crossterm, termion or console must be enabled");
+
+        // this is here to silence an additional compilation error
+        // when no terminals are enabled. it complains about mismatched
+        // return types.
+        Err(crate::error::InquireError::InvalidConfiguration(
+            "Missing terminal backend".into(),
+        ))
+    }
+}
+
+pub fn get_default_terminal_with_writer<'a>(
+    writer: &'a mut dyn Write,
+) -> InquireResult<(impl InputReader, impl Terminal + use<'a>)> {
+    #[cfg(feature = "crossterm")]
+    return Ok((
+        crossterm::CrosstermKeyReader::new(),
+        crossterm::CrosstermTerminal::<'a>::new_with_writer(writer),
+    ));
+
+    #[cfg(all(feature = "termion", not(feature = "crossterm")))]
+    return Ok((
+        termion::TermionKeyReader::new()?,
+        termion::TermionTerminal::new_with_writer(writer)?,
+    ));
+
+    #[cfg(all(
+        feature = "console",
+        not(feature = "termion"),
+        not(feature = "crossterm")
+    ))]
+    {
+        let console_terminal = console::ConsoleTerminal::new_with_writer(writer);
+        let console_key_reader = console::ConsoleKeyReader::new(::console::Term::stderr());
         return Ok((console_key_reader, console_terminal));
     }
 

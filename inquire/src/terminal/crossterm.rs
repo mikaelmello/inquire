@@ -11,19 +11,14 @@ use crossterm::{
 
 use crate::{
     error::InquireResult,
+    terminal::Io,
     ui::{Attributes, InputReader, Key, Styled},
 };
 
 use super::Terminal;
 
-enum IO {
-    Std(Stderr),
-    #[allow(unused)]
-    Test(Vec<u8>),
-}
-
-pub struct CrosstermTerminal {
-    io: IO,
+pub struct CrosstermTerminal<'a> {
+    io: Io<'a, Stderr>,
 }
 
 pub struct CrosstermKeyReader;
@@ -46,19 +41,25 @@ impl InputReader for CrosstermKeyReader {
     }
 }
 
-impl CrosstermTerminal {
+impl<'a> CrosstermTerminal<'a> {
     pub fn new() -> InquireResult<Self> {
         terminal::enable_raw_mode()?;
 
         Ok(Self {
-            io: IO::Std(stderr()),
+            io: Io::Owned(stderr()),
         })
+    }
+
+    pub fn new_with_writer(writer: &'a mut dyn Write) -> Self {
+        Self {
+            io: Io::Borrowed(writer),
+        }
     }
 
     fn get_writer(&mut self) -> &mut dyn Write {
         match &mut self.io {
-            IO::Std(w) => w,
-            IO::Test(w) => w,
+            Io::Owned(w) => w,
+            Io::Borrowed(w) => w,
         }
     }
 
@@ -98,7 +99,7 @@ impl CrosstermTerminal {
     }
 }
 
-impl Terminal for CrosstermTerminal {
+impl Terminal for CrosstermTerminal<'_> {
     fn cursor_up(&mut self, cnt: u16) -> Result<()> {
         match cnt {
             0 => Ok(()),
@@ -186,12 +187,12 @@ impl Terminal for CrosstermTerminal {
     }
 }
 
-impl Drop for CrosstermTerminal {
+impl Drop for CrosstermTerminal<'_> {
     fn drop(&mut self) {
         let _unused = self.flush();
         let _unused = match self.io {
-            IO::Std(_) => terminal::disable_raw_mode(),
-            IO::Test(_) => Ok(()),
+            Io::Owned(_) => terminal::disable_raw_mode(),
+            Io::Borrowed(_) => Ok(()),
         };
     }
 }
@@ -330,104 +331,96 @@ mod test {
 
     use super::Attributes;
     use super::CrosstermTerminal;
-    use super::IO;
-
-    impl CrosstermTerminal {
-        pub fn new_in_memory_output() -> Self {
-            Self {
-                io: IO::Test(Vec::new()),
-            }
-        }
-
-        pub fn get_buffer_content(&mut self) -> Vec<u8> {
-            match &mut self.io {
-                IO::Std(_) => panic!("Cannot get write buffer from standard output"),
-                IO::Test(w) => {
-                    let mut buffer = Vec::new();
-                    std::mem::swap(&mut buffer, w);
-                    buffer
-                }
-            }
-        }
-    }
 
     #[test]
     fn writer() {
-        let mut terminal = CrosstermTerminal::new_in_memory_output();
+        let mut buf = Vec::new();
 
-        terminal.write("testing ").unwrap();
-        terminal.write("writing ").unwrap();
-        terminal.flush().unwrap();
-        terminal.write("wow").unwrap();
+        {
+            let mut terminal = CrosstermTerminal::new_with_writer(&mut buf);
+            terminal.write("testing ").unwrap();
+            terminal.write("writing ").unwrap();
+            terminal.flush().unwrap();
+            terminal.write("wow").unwrap();
+        }
 
         #[cfg(unix)]
-        assert_eq!(
-            "testing writing wow",
-            std::str::from_utf8(&terminal.get_buffer_content()).unwrap()
-        );
+        assert_eq!("testing writing wow", std::str::from_utf8(&buf).unwrap());
     }
 
     #[test]
     fn style_management() {
-        let mut terminal = CrosstermTerminal::new_in_memory_output();
+        let mut buf = Vec::new();
 
-        terminal.set_attributes(Attributes::BOLD).unwrap();
-        terminal.set_attributes(Attributes::ITALIC).unwrap();
-        terminal.set_attributes(Attributes::BOLD).unwrap();
-        terminal.reset_attributes().unwrap();
+        {
+            let mut terminal = CrosstermTerminal::new_with_writer(&mut buf);
+
+            terminal.set_attributes(Attributes::BOLD).unwrap();
+            terminal.set_attributes(Attributes::ITALIC).unwrap();
+            terminal.set_attributes(Attributes::BOLD).unwrap();
+            terminal.reset_attributes().unwrap();
+        }
 
         #[cfg(unix)]
         assert_eq!(
             "\x1B[1m\x1B[3m\x1B[1m\x1B[0m",
-            std::str::from_utf8(&terminal.get_buffer_content()).unwrap()
+            std::str::from_utf8(&buf).unwrap()
         );
     }
 
     #[test]
     fn style_management_with_flags() {
-        let mut terminal = CrosstermTerminal::new_in_memory_output();
+        let mut buf = Vec::new();
 
-        terminal
-            .set_attributes(Attributes::BOLD | Attributes::ITALIC | Attributes::BOLD)
-            .unwrap();
-        terminal.reset_attributes().unwrap();
+        {
+            let mut terminal = CrosstermTerminal::new_with_writer(&mut buf);
+
+            terminal
+                .set_attributes(Attributes::BOLD | Attributes::ITALIC | Attributes::BOLD)
+                .unwrap();
+            terminal.reset_attributes().unwrap();
+        }
 
         #[cfg(unix)]
-        assert_eq!(
-            "\x1B[1m\x1B[3m\x1B[0m",
-            std::str::from_utf8(&terminal.get_buffer_content()).unwrap()
-        );
+        assert_eq!("\x1B[1m\x1B[3m\x1B[0m", std::str::from_utf8(&buf).unwrap());
     }
 
     #[test]
     fn fg_color_management() {
-        let mut terminal = CrosstermTerminal::new_in_memory_output();
+        let mut buf = Vec::new();
+        {
+            let mut terminal = CrosstermTerminal::new_with_writer(&mut buf);
 
-        terminal.set_fg_color(Color::LightRed).unwrap();
-        terminal.reset_fg_color().unwrap();
-        terminal.set_fg_color(Color::Black).unwrap();
-        terminal.set_fg_color(Color::LightGreen).unwrap();
+            terminal.set_fg_color(Color::LightRed).unwrap();
+            terminal.reset_fg_color().unwrap();
+            terminal.set_fg_color(Color::Black).unwrap();
+            terminal.set_fg_color(Color::LightGreen).unwrap();
+        }
 
         #[cfg(unix)]
         assert_eq!(
             "\x1B[38;5;9m\x1B[39m\x1B[38;5;0m\x1B[38;5;10m",
-            std::str::from_utf8(&terminal.get_buffer_content()).unwrap()
+            std::str::from_utf8(&buf).unwrap()
         );
     }
 
     #[test]
     fn bg_color_management() {
-        let mut terminal = CrosstermTerminal::new_in_memory_output();
+        let mut buf = Vec::new();
 
-        terminal.set_bg_color(Color::LightRed).unwrap();
-        terminal.reset_bg_color().unwrap();
-        terminal.set_bg_color(Color::Black).unwrap();
-        terminal.set_bg_color(Color::LightGreen).unwrap();
+        {
+            let mut terminal = CrosstermTerminal::new_with_writer(&mut buf);
+
+            terminal.set_bg_color(Color::LightRed).unwrap();
+            terminal.reset_bg_color().unwrap();
+            terminal.set_bg_color(Color::Black).unwrap();
+            terminal.set_bg_color(Color::LightGreen).unwrap();
+        }
 
         #[cfg(unix)]
         assert_eq!(
             "\x1B[48;5;9m\x1B[49m\x1B[48;5;0m\x1B[48;5;10m",
-            std::str::from_utf8(&terminal.get_buffer_content()).unwrap()
+            std::str::from_utf8(&buf).unwrap()
         );
     }
 }
