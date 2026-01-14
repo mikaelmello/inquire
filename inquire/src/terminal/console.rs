@@ -14,18 +14,21 @@ pub struct ConsoleTerminal<'a> {
 }
 
 impl<'a> ConsoleTerminal<'a> {
+    #[allow(unused)]
     pub fn new(term: Term) -> Self {
         Self {
             io: Io::Owned(term),
         }
     }
 
+    #[allow(unused)]
     pub fn new_with_writer(writer: &'a mut dyn Write) -> Self {
         Self {
             io: Io::Borrowed(writer),
         }
     }
 
+    #[allow(unused)]
     fn get_writer(&mut self) -> &mut dyn Write {
         match &mut self.io {
             Io::Owned(w) => w,
@@ -34,6 +37,7 @@ impl<'a> ConsoleTerminal<'a> {
     }
 }
 
+#[allow(unused)]
 pub struct ConsoleKeyReader {
     term: Term,
 }

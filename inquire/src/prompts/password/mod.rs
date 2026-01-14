@@ -5,7 +5,7 @@ mod prompt;
 #[cfg(feature = "crossterm")]
 mod test;
 
-use std::{io::Write, rc::Rc, sync::Mutex};
+use std::io::Write;
 
 pub use action::*;
 

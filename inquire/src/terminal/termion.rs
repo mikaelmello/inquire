@@ -60,6 +60,7 @@ impl<'a> TermionTerminal<'a> {
         })
     }
 
+    #[allow(unused)]
     pub fn new_with_writer<W: 'a + Write>(writer: &'a mut W) -> Self {
         Self {
             io: Io::Borrowed(writer),

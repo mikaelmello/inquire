@@ -5,6 +5,7 @@
 ## [Unreleased] <!-- ReleaseDate -->
 
 - Bumped MSRV from 1.80 -> 1.82 due to new requirements of dependencies.
+- Allow using custom writer for all prompts using `prompt_with_writer` method.
 
 ## [0.9.1] - 2025-09-16
 
