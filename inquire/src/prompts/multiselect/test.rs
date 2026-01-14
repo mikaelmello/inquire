@@ -11,7 +11,11 @@ use crate::{
 /// Tests that a closure that actually closes on a variable can be used
 /// as a Select formatter.
 fn closure_formatter() {
-    let mut backend = fake_backend(vec![Key::Char(' ', KeyModifiers::NONE), Key::Enter]);
+    let mut buf = Vec::new();
+    let mut backend = fake_backend(
+        &mut buf,
+        vec![Key::Char(' ', KeyModifiers::NONE), Key::Enter],
+    );
 
     let formatted = String::from("Thanks!");
     let formatter: MultiOptionFormatter<'_, i32> = &|_| formatted.clone();
@@ -29,15 +33,19 @@ fn closure_formatter() {
 #[test]
 // Anti-regression test: https://github.com/mikaelmello/inquire/issues/30
 fn down_arrow_on_empty_list_does_not_panic() {
-    let mut backend = fake_backend(vec![
-        Key::Char('9', KeyModifiers::NONE),
-        Key::Down(KeyModifiers::NONE),
-        Key::Backspace,
-        Key::Char('3', KeyModifiers::NONE),
-        Key::Down(KeyModifiers::NONE),
-        Key::Backspace,
-        Key::Enter,
-    ]);
+    let mut buf = Vec::new();
+    let mut backend = fake_backend(
+        &mut buf,
+        vec![
+            Key::Char('9', KeyModifiers::NONE),
+            Key::Down(KeyModifiers::NONE),
+            Key::Backspace,
+            Key::Char('3', KeyModifiers::NONE),
+            Key::Down(KeyModifiers::NONE),
+            Key::Backspace,
+            Key::Enter,
+        ],
+    );
 
     let options = vec![1, 2, 3];
 
@@ -50,7 +58,8 @@ fn down_arrow_on_empty_list_does_not_panic() {
 
 #[test]
 fn selecting_all_by_default_behavior() {
-    let mut backend = fake_backend(vec![Key::Enter, Key::Enter]);
+    let mut buf = Vec::new();
+    let mut backend = fake_backend(&mut buf, vec![Key::Enter, Key::Enter]);
     let options = vec![1, 2, 3];
 
     let answer_with_all_selected_by_default = MultiSelect::new("Question", options.clone())
@@ -78,13 +87,17 @@ fn selecting_all_by_default_behavior() {
 #[test]
 // Anti-regression test: https://github.com/mikaelmello/inquire/issues/31
 fn list_option_indexes_are_relative_to_input_vec() {
-    let mut backend = fake_backend(vec![
-        Key::Down(KeyModifiers::NONE),
-        Key::Char(' ', KeyModifiers::NONE),
-        Key::Down(KeyModifiers::NONE),
-        Key::Char(' ', KeyModifiers::NONE),
-        Key::Enter,
-    ]);
+    let mut buf = Vec::new();
+    let mut backend = fake_backend(
+        &mut buf,
+        vec![
+            Key::Down(KeyModifiers::NONE),
+            Key::Char(' ', KeyModifiers::NONE),
+            Key::Down(KeyModifiers::NONE),
+            Key::Char(' ', KeyModifiers::NONE),
+            Key::Enter,
+        ],
+    );
 
     let options = vec![1, 2, 3];
 
@@ -98,7 +111,11 @@ fn list_option_indexes_are_relative_to_input_vec() {
 #[test]
 // Anti-regression test: https://github.com/mikaelmello/inquire/issues/195
 fn starting_cursor_is_respected() {
-    let mut backend = fake_backend(vec![Key::Char(' ', KeyModifiers::NONE), Key::Enter]);
+    let mut buf = Vec::new();
+    let mut backend = fake_backend(
+        &mut buf,
+        vec![Key::Char(' ', KeyModifiers::NONE), Key::Enter],
+    );
     let options = vec![1, 2, 3];
 
     let ans = MultiSelect::new("Question", options)
@@ -111,14 +128,18 @@ fn starting_cursor_is_respected() {
 
 #[test]
 fn naive_assert_fuzzy_match_as_default_scorer() {
-    let mut backend = fake_backend(vec![
-        Key::Char('w', KeyModifiers::NONE),
-        Key::Char('r', KeyModifiers::NONE),
-        Key::Char('r', KeyModifiers::NONE),
-        Key::Char('y', KeyModifiers::NONE),
-        Key::Char(' ', KeyModifiers::NONE),
-        Key::Enter,
-    ]);
+    let mut buf = Vec::new();
+    let mut backend = fake_backend(
+        &mut buf,
+        vec![
+            Key::Char('w', KeyModifiers::NONE),
+            Key::Char('r', KeyModifiers::NONE),
+            Key::Char('r', KeyModifiers::NONE),
+            Key::Char('y', KeyModifiers::NONE),
+            Key::Char(' ', KeyModifiers::NONE),
+            Key::Enter,
+        ],
+    );
 
     let options = vec![
         "Banana",
@@ -143,14 +164,18 @@ fn naive_assert_fuzzy_match_as_default_scorer() {
 
 #[test]
 fn chars_do_not_affect_prompt_without_filtering() {
-    let mut backend = fake_backend(vec![
-        Key::Char('w', KeyModifiers::NONE),
-        Key::Char('r', KeyModifiers::NONE),
-        Key::Char('r', KeyModifiers::NONE),
-        Key::Char('y', KeyModifiers::NONE),
-        Key::Char(' ', KeyModifiers::NONE),
-        Key::Enter,
-    ]);
+    let mut buf = Vec::new();
+    let mut backend = fake_backend(
+        &mut buf,
+        vec![
+            Key::Char('w', KeyModifiers::NONE),
+            Key::Char('r', KeyModifiers::NONE),
+            Key::Char('r', KeyModifiers::NONE),
+            Key::Char('y', KeyModifiers::NONE),
+            Key::Char(' ', KeyModifiers::NONE),
+            Key::Enter,
+        ],
+    );
 
     let options = vec![
         "Banana",
@@ -176,13 +201,17 @@ fn chars_do_not_affect_prompt_without_filtering() {
 
 #[test]
 fn keep_filter_false_behavior() {
-    let mut backend = fake_backend(vec![
-        Key::Char('1', KeyModifiers::NONE), // filter to option 1
-        Key::Char(' ', KeyModifiers::NONE), // toggle, filter input is reset to empty
-        Key::Char('2', KeyModifiers::NONE), // filter is now '2' and shows option 2
-        Key::Char(' ', KeyModifiers::NONE), // toggle
-        Key::Enter,
-    ]);
+    let mut buf = Vec::new();
+    let mut backend = fake_backend(
+        &mut buf,
+        vec![
+            Key::Char('1', KeyModifiers::NONE), // filter to option 1
+            Key::Char(' ', KeyModifiers::NONE), // toggle, filter input is reset to empty
+            Key::Char('2', KeyModifiers::NONE), // filter is now '2' and shows option 2
+            Key::Char(' ', KeyModifiers::NONE), // toggle
+            Key::Enter,
+        ],
+    );
 
     let options = vec![1, 2, 3, 4, 5];
 
@@ -197,13 +226,17 @@ fn keep_filter_false_behavior() {
 
 #[test]
 fn keep_filter_true_behavior() {
-    let mut backend = fake_backend(vec![
-        Key::Char('1', KeyModifiers::NONE), // filter to option 1
-        Key::Char(' ', KeyModifiers::NONE), // toggle, filter input is NOT reset
-        Key::Char('2', KeyModifiers::NONE), // filter is now '12' and shows no option
-        Key::Char(' ', KeyModifiers::NONE), // should be no-op
-        Key::Enter,
-    ]);
+    let mut buf = Vec::new();
+    let mut backend = fake_backend(
+        &mut buf,
+        vec![
+            Key::Char('1', KeyModifiers::NONE), // filter to option 1
+            Key::Char(' ', KeyModifiers::NONE), // toggle, filter input is NOT reset
+            Key::Char('2', KeyModifiers::NONE), // filter is now '12' and shows no option
+            Key::Char(' ', KeyModifiers::NONE), // should be no-op
+            Key::Enter,
+        ],
+    );
 
     let options = vec![1, 2, 3, 4, 5];
 
@@ -218,13 +251,17 @@ fn keep_filter_true_behavior() {
 
 #[test]
 fn keep_filter_should_be_true_by_default() {
-    let mut backend = fake_backend(vec![
-        Key::Char('1', KeyModifiers::NONE), // filter to option 1
-        Key::Char(' ', KeyModifiers::NONE), // toggle, filter input is NOT reset
-        Key::Char('2', KeyModifiers::NONE), // filter is now '12' and shows no option
-        Key::Char(' ', KeyModifiers::NONE), // should be no-op
-        Key::Enter,
-    ]);
+    let mut buf = Vec::new();
+    let mut backend = fake_backend(
+        &mut buf,
+        vec![
+            Key::Char('1', KeyModifiers::NONE), // filter to option 1
+            Key::Char(' ', KeyModifiers::NONE), // toggle, filter input is NOT reset
+            Key::Char('2', KeyModifiers::NONE), // filter is now '12' and shows no option
+            Key::Char(' ', KeyModifiers::NONE), // should be no-op
+            Key::Enter,
+        ],
+    );
 
     let options = vec![1, 2, 3, 4, 5];
 
@@ -239,12 +276,16 @@ fn keep_filter_should_be_true_by_default() {
 #[test]
 // Anti-regression test: https://github.com/mikaelmello/inquire/issues/238
 fn keep_filter_false_should_reset_option_list() {
-    let mut backend = fake_backend(vec![
-        Key::Char('3', KeyModifiers::NONE), // filter to option 3
-        Key::Char(' ', KeyModifiers::NONE), // toggle option 3, filter input is reset
-        Key::Char(' ', KeyModifiers::NONE), // toggle option 1 after option list is reset
-        Key::Enter,
-    ]);
+    let mut buf = Vec::new();
+    let mut backend = fake_backend(
+        &mut buf,
+        vec![
+            Key::Char('3', KeyModifiers::NONE), // filter to option 3
+            Key::Char(' ', KeyModifiers::NONE), // toggle option 3, filter input is reset
+            Key::Char(' ', KeyModifiers::NONE), // toggle option 1 after option list is reset
+            Key::Enter,
+        ],
+    );
 
     let options = vec![1, 2, 3, 4, 5];
 

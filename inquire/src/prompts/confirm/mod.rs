@@ -2,6 +2,8 @@ mod action;
 #[cfg(test)]
 mod test;
 
+use std::io::Write;
+
 pub use action::*;
 
 use crate::{
@@ -9,7 +11,7 @@ use crate::{
     error::{InquireError, InquireResult},
     formatter::{BoolFormatter, DEFAULT_BOOL_FORMATTER},
     parser::{BoolParser, DEFAULT_BOOL_PARSER},
-    terminal::get_default_terminal,
+    terminal::{get_default_terminal, get_default_terminal_with_writer},
     ui::{Backend, CustomTypeBackend, RenderConfig},
     CustomType,
 };
@@ -210,6 +212,10 @@ impl<'a> Confirm<'a> {
     ///
     /// Meanwhile, if the user does submit an answer, the method wraps the return
     /// type with `Some`.
+    ///
+    /// If you want to use a custom writer, you can use
+    /// [`prompt_with_writer`](Self::prompt_with_writer), and match on
+    /// [`InquireError::OperationCanceled`] instead to get the same behavior.
     pub fn prompt_skippable(self) -> InquireResult<Option<bool>> {
         match self.prompt() {
             Ok(answer) => Ok(Some(answer)),
@@ -220,8 +226,24 @@ impl<'a> Confirm<'a> {
 
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to the defined rules.
+    ///
+    /// This method uses [`std::io::stderr`] as the default writer for the
+    /// prompt. See [`prompt_with_writer`](Self::prompt_with_writer) for more
+    /// details.
     pub fn prompt(self) -> InquireResult<bool> {
         let (input_reader, terminal) = get_default_terminal()?;
+        let mut backend = Backend::new(input_reader, terminal, self.render_config)?;
+        self.prompt_with_backend(&mut backend)
+    }
+
+    /// Parses the provided behavioral and rendering options and prompts
+    /// the CLI user for input according to the defined rules.
+    ///
+    /// This method allows for a custom writer to be used for the prompt. The
+    /// default writer is [`std::io::stderr`], but any other [`std::io::Write`]
+    /// implementation can be used.
+    pub fn prompt_with_writer(self, writer: &mut dyn Write) -> InquireResult<bool> {
+        let (input_reader, terminal) = get_default_terminal_with_writer(writer)?;
         let mut backend = Backend::new(input_reader, terminal, self.render_config)?;
         self.prompt_with_backend(&mut backend)
     }

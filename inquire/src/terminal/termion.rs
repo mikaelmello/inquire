@@ -18,14 +18,7 @@ use crate::{
     ui::{Attributes, InputReader, Styled},
 };
 
-use super::Terminal;
-
-#[allow(clippy::upper_case_acronyms)]
-enum IO<'a> {
-    TTY(RawTerminal<File>),
-    #[allow(unused)]
-    Custom(&'a mut (dyn Write)),
-}
+use super::{Io, Terminal};
 
 pub struct TermionKeyReader {
     keys: Keys<File>,
@@ -52,7 +45,7 @@ impl InputReader for TermionKeyReader {
 }
 
 pub struct TermionTerminal<'a> {
-    io: IO<'a>,
+    io: Io<'a, RawTerminal<File>>,
 }
 
 impl<'a> TermionTerminal<'a> {
@@ -63,24 +56,21 @@ impl<'a> TermionTerminal<'a> {
         let keys = raw_terminal.try_clone()?.keys();
 
         Ok(Self {
-            io: IO::TTY(raw_terminal),
+            io: Io::Owned(raw_terminal),
         })
     }
 
-    /// # Errors
-    ///
-    /// Will return `std::io::Error` if it fails to get terminal size
-    #[cfg(test)]
+    #[allow(unused)]
     pub fn new_with_writer<W: 'a + Write>(writer: &'a mut W) -> Self {
         Self {
-            io: IO::Custom(writer),
+            io: Io::Borrowed(writer),
         }
     }
 
     fn get_writer(&mut self) -> &mut dyn Write {
         match &mut self.io {
-            IO::TTY(w) => w,
-            IO::Custom(w) => w,
+            Io::Owned(w) => w,
+            Io::Borrowed(w) => w,
         }
     }
 

@@ -1,3 +1,5 @@
+use std::io::Write;
+
 use crate::{
     terminal::crossterm::CrosstermTerminal,
     ui::{Backend, InputReader, Key, RenderConfig},
@@ -17,7 +19,10 @@ where
     }
 }
 
-pub fn fake_backend(input: Vec<Key>) -> Backend<'static, impl InputReader, CrosstermTerminal> {
-    let output = CrosstermTerminal::new_in_memory_output();
+pub fn fake_backend<'a>(
+    buf: &'a mut dyn Write,
+    input: Vec<Key>,
+) -> Backend<'static, impl InputReader, CrosstermTerminal<'a>> {
+    let output = CrosstermTerminal::new_with_writer(buf);
     Backend::new(input.into_iter(), output, RenderConfig::default()).unwrap()
 }

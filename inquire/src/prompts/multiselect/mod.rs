@@ -7,7 +7,7 @@ mod test;
 
 pub use action::*;
 
-use std::fmt::Display;
+use std::{fmt::Display, io::Write};
 
 use crate::{
     config::get_configuration,
@@ -15,7 +15,7 @@ use crate::{
     formatter::MultiOptionFormatter,
     list_option::ListOption,
     prompts::prompt::Prompt,
-    terminal::get_default_terminal,
+    terminal::{get_default_terminal, get_default_terminal_with_writer},
     type_aliases::Scorer,
     ui::{Backend, MultiSelectBackend, RenderConfig},
     validator::MultiOptionValidator,
@@ -370,6 +370,10 @@ where
     ///
     /// Meanwhile, if the user does submit an answer, the method wraps the return
     /// type with `Some`.
+    ///
+    /// If you want to use a custom writer, you can use
+    /// [`prompt_with_writer`](Self::prompt_with_writer), and match on
+    /// [`InquireError::OperationCanceled`] instead to get the same behavior.
     pub fn prompt_skippable(self) -> InquireResult<Option<Vec<T>>> {
         match self.prompt() {
             Ok(answer) => Ok(Some(answer)),
@@ -381,9 +385,24 @@ where
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to the defined rules.
     ///
+    /// This method uses [`std::io::stderr`] as the default writer for the
+    /// prompt. See [`prompt_with_writer`](Self::prompt_with_writer) for more
+    /// details.
+    ///
     /// Returns the owned objects selected by the user.
     pub fn prompt(self) -> InquireResult<Vec<T>> {
         self.raw_prompt()
+            .map(|op| op.into_iter().map(|o| o.value).collect())
+    }
+
+    /// Parses the provided behavioral and rendering options and prompts
+    /// the CLI user for input according to the defined rules.
+    ///
+    /// This method allows for a custom writer to be used for the prompt. The
+    /// default writer is [`std::io::stderr`], but any other [`std::io::Write`]
+    /// implementation can be used.
+    pub fn prompt_with_writer(self, writer: &mut dyn Write) -> InquireResult<Vec<T>> {
+        self.raw_prompt_with_writer(writer)
             .map(|op| op.into_iter().map(|o| o.value).collect())
     }
 
@@ -399,6 +418,10 @@ where
     ///
     /// Meanwhile, if the user does submit an answer, the method wraps the return
     /// type with `Some`.
+    ///
+    /// If you want to use a custom writer, you can use
+    /// [`raw_prompt_with_writer`](Self::raw_prompt_with_writer), and match on
+    /// [`InquireError::OperationCanceled`] instead to get the same behavior.
     pub fn raw_prompt_skippable(self) -> InquireResult<Option<Vec<ListOption<T>>>> {
         match self.raw_prompt() {
             Ok(answer) => Ok(Some(answer)),
@@ -410,10 +433,32 @@ where
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to the defined rules.
     ///
+    /// This method uses [`std::io::stderr`] as the default writer for the
+    /// prompt. See [`raw_prompt_with_writer`](Self::raw_prompt_with_writer) for
+    /// more details.
+    ///
     /// Returns a [`ListOption`](crate::list_option::ListOption) containing
     /// the index of the selection and the owned object selected by the user.
     pub fn raw_prompt(self) -> InquireResult<Vec<ListOption<T>>> {
         let (input_reader, terminal) = get_default_terminal()?;
+        let mut backend = Backend::new(input_reader, terminal, self.render_config)?;
+        self.prompt_with_backend(&mut backend)
+    }
+
+    /// Parses the provided behavioral and rendering options and prompts
+    /// the CLI user for input according to the defined rules.
+    ///
+    /// This method allows for a custom writer to be used for the prompt. The
+    /// default writer is [`std::io::stderr`], but any other [`std::io::Write`]
+    /// implementation can be used.
+    ///
+    /// Returns a [`ListOption`](crate::list_option::ListOption) containing
+    /// the index of the selection and the owned object selected by the user.
+    pub fn raw_prompt_with_writer(
+        self,
+        writer: &mut dyn Write,
+    ) -> InquireResult<Vec<ListOption<T>>> {
+        let (input_reader, terminal) = get_default_terminal_with_writer(writer)?;
         let mut backend = Backend::new(input_reader, terminal, self.render_config)?;
         self.prompt_with_backend(&mut backend)
     }

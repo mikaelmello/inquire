@@ -11,7 +11,8 @@ use crate::{
 /// Tests that a closure that actually closes on a variable can be used
 /// as a Select formatter.
 fn closure_formatter() {
-    let mut backend = fake_backend(vec![Key::Down(KeyModifiers::NONE), Key::Enter]);
+    let mut buf = Vec::new();
+    let mut backend = fake_backend(&mut buf, vec![Key::Down(KeyModifiers::NONE), Key::Enter]);
 
     let formatter: OptionFormatter<'_, i32> = &|_| String::from("Thanks!");
     let options = vec![1, 2, 3];
@@ -27,13 +28,17 @@ fn closure_formatter() {
 #[test]
 // Anti-regression test: https://github.com/mikaelmello/inquire/issues/29
 fn enter_arrow_on_empty_list_does_not_panic() {
-    let mut backend = fake_backend(vec![
-        Key::Char('9', KeyModifiers::NONE),
-        Key::Enter,
-        Key::Backspace,
-        Key::Char('3', KeyModifiers::NONE),
-        Key::Enter,
-    ]);
+    let mut buf = Vec::new();
+    let mut backend = fake_backend(
+        &mut buf,
+        vec![
+            Key::Char('9', KeyModifiers::NONE),
+            Key::Enter,
+            Key::Backspace,
+            Key::Char('3', KeyModifiers::NONE),
+            Key::Enter,
+        ],
+    );
 
     let options = vec![1, 2, 3];
 
@@ -47,15 +52,19 @@ fn enter_arrow_on_empty_list_does_not_panic() {
 #[test]
 // Anti-regression test: https://github.com/mikaelmello/inquire/issues/30
 fn down_arrow_on_empty_list_does_not_panic() {
-    let mut backend = fake_backend(vec![
-        Key::Char('9', KeyModifiers::NONE),
-        Key::Down(KeyModifiers::NONE),
-        Key::Backspace,
-        Key::Char('3', KeyModifiers::NONE),
-        Key::Down(KeyModifiers::NONE),
-        Key::Backspace,
-        Key::Enter,
-    ]);
+    let mut buf = Vec::new();
+    let mut backend = fake_backend(
+        &mut buf,
+        vec![
+            Key::Char('9', KeyModifiers::NONE),
+            Key::Down(KeyModifiers::NONE),
+            Key::Backspace,
+            Key::Char('3', KeyModifiers::NONE),
+            Key::Down(KeyModifiers::NONE),
+            Key::Backspace,
+            Key::Enter,
+        ],
+    );
 
     let options = vec![1, 2, 3];
 
@@ -69,7 +78,8 @@ fn down_arrow_on_empty_list_does_not_panic() {
 #[test]
 // Anti-regression test: https://github.com/mikaelmello/inquire/issues/195
 fn starting_cursor_is_respected() {
-    let mut backend = fake_backend(vec![Key::Enter]);
+    let mut buf = Vec::new();
+    let mut backend = fake_backend(&mut buf, vec![Key::Enter]);
 
     let options = vec![1, 2, 3];
 
@@ -83,13 +93,17 @@ fn starting_cursor_is_respected() {
 
 #[test]
 fn naive_assert_fuzzy_match_as_default_scorer() {
-    let mut backend = fake_backend(vec![
-        Key::Char('w', KeyModifiers::NONE),
-        Key::Char('r', KeyModifiers::NONE),
-        Key::Char('r', KeyModifiers::NONE),
-        Key::Char('y', KeyModifiers::NONE),
-        Key::Enter,
-    ]);
+    let mut buf = Vec::new();
+    let mut backend = fake_backend(
+        &mut buf,
+        vec![
+            Key::Char('w', KeyModifiers::NONE),
+            Key::Char('r', KeyModifiers::NONE),
+            Key::Char('r', KeyModifiers::NONE),
+            Key::Char('y', KeyModifiers::NONE),
+            Key::Enter,
+        ],
+    );
 
     let options = vec![
         "Banana",
@@ -114,13 +128,17 @@ fn naive_assert_fuzzy_match_as_default_scorer() {
 
 #[test]
 fn chars_do_not_affect_prompt_without_filtering() {
-    let mut backend = fake_backend(vec![
-        Key::Char('w', KeyModifiers::NONE),
-        Key::Char('r', KeyModifiers::NONE),
-        Key::Char('r', KeyModifiers::NONE),
-        Key::Char('y', KeyModifiers::NONE),
-        Key::Enter,
-    ]);
+    let mut buf = Vec::new();
+    let mut backend = fake_backend(
+        &mut buf,
+        vec![
+            Key::Char('w', KeyModifiers::NONE),
+            Key::Char('r', KeyModifiers::NONE),
+            Key::Char('r', KeyModifiers::NONE),
+            Key::Char('y', KeyModifiers::NONE),
+            Key::Enter,
+        ],
+    );
 
     let options = vec![
         "Banana",

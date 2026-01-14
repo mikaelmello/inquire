@@ -16,7 +16,8 @@ macro_rules! password_test {
         #[test]
         $(#[$meta])?
         fn $name() {
-            let mut backend = crate::prompts::test::fake_backend($input);
+            let mut buf = Vec::new();
+            let mut backend = crate::prompts::test::fake_backend(&mut buf, $input);
 
             let ans = $prompt.prompt_with_backend(&mut backend).unwrap();
 
