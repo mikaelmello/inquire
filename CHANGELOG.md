@@ -5,6 +5,7 @@
 ## [Unreleased] <!-- ReleaseDate -->
 
 - Bumped MSRV from 1.80 -> 1.82 due to new requirements of dependencies.
+- Expose the sorting function used by `Select` (thanks @devjgm!)
 
 ## [0.9.1] - 2025-09-16
 
