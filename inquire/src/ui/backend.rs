@@ -106,8 +106,6 @@ where
         option_relative_index: usize,
         page: &Page<'_, ListOption<D>>,
     ) -> Result<()> {
-        let empty_prefix = Styled::new(" ");
-
         let x = if page.cursor == Some(option_relative_index) {
             self.render_config.highlighted_option_prefix
         } else if option_relative_index == 0 && !page.first {
@@ -115,7 +113,7 @@ where
         } else if (option_relative_index + 1) == page.content.len() && !page.last {
             self.render_config.scroll_down_prefix
         } else {
-            empty_prefix
+            self.render_config.unhighlighted_option_prefix
         };
 
         self.frame_renderer.write_styled(x)
@@ -240,6 +238,9 @@ where
 
     fn new_line(&mut self) -> Result<()> {
         self.frame_renderer.write("\n")?;
+        if let Some(prefix) = self.render_config.new_line_prefix {
+            self.frame_renderer.write_styled(prefix)?;
+        }
         Ok(())
     }
 }
@@ -271,10 +272,21 @@ where
     fn render_prompt_with_answer(&mut self, prompt: &str, answer: &str) -> Result<()> {
         self.print_prompt_with_prefix(self.render_config.answered_prompt_prefix, prompt)?;
 
-        let token = Styled::new(answer).with_style_sheet(self.render_config.answer);
-        self.frame_renderer.write_styled(token)?;
+        if self.render_config.answer_from_new_line {
+            self.new_line()?;
+        };
 
-        self.new_line()?;
+        if self.render_config.new_line_prefix.is_none() {
+            let token = Styled::new(answer).with_style_sheet(self.render_config.answer);
+            self.frame_renderer.write_styled(token)?;
+            self.new_line()?;
+        } else {
+            for part_answer in answer.lines() {
+                let token = Styled::new(part_answer).with_style_sheet(self.render_config.answer);
+                self.frame_renderer.write_styled(token)?;
+                self.new_line()?;
+            }
+        }
 
         Ok(())
     }
