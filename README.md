@@ -372,6 +372,71 @@ Customizable options:
 - **Display option indexes**: On long lists, it might be helpful to display the indexes of the options to the user. Via the `RenderConfig`, you can set the display mode of the indexes as a prefix of an option. The default configuration is `None`, to not render any index when displaying the options.
 - **Scoring function**: Function that defines the order of options and if an option is displayed or not based on the current user input.
 - **Keep filter flag**: Whether the current filter input should be cleared or not after a selection is made. Defaults to true.
+ - **Tabular columns**: Optional column configurations for displaying options with aligned columns. Perfect for showing structured data like file listings, project metadata, or any data with multiple fields.
+
+### Tabular Formatting
+
+When displaying options with multiple data fields (such as name, size, date, and path), you can enable tabular formatting to align columns for better readability:
+
+```rust
+use inquire::{MultiSelect, tabular::{ColumnConfig, ColumnAlignment}};
+
+let projects = vec![
+    "copy_current_location: 898.95 KB (2025-10-12 15:41), /path1",
+    "summary-gen: 211.29 MB (2025-10-13 20:04), /path2",
+    "rona: 1.26 GB (2025-10-14 18:29), /path3",
+];
+
+let columns = vec![
+    ColumnConfig::new_with_separator(": ", ColumnAlignment::Left),   // Project name
+    ColumnConfig::new(ColumnAlignment::Right),   // Size (right-aligned, default separator)
+    ColumnConfig::new_with_separator(", ", ColumnAlignment::Left),   // Date
+];
+
+let ans = MultiSelect::new("Select projects:", projects)
+    .with_tabular_columns(columns)
+    .prompt()?;
+```
+
+This will display:
+```
+Select projects:
+> [x] copy_current_location: 898.95 KB (2025-10-12 15:41), /path1
+  [x] summary-gen:           211.29 MB (2025-10-13 20:04), /path2
+  [x] rona:                  1.26 GB   (2025-10-14 18:29), /path3
+```
+
+#### Column Separators
+
+You can configure how columns are separated:
+
+- **`ColumnConfig::new(alignment)`** - Uses default separator (single space `" "`)
+- **`ColumnConfig::new_with_separator(separator, alignment)`** - Creates with custom separator (e.g., `": "`, `", "`, `" | "`)
+- **`config.separator(separator)`** - Sets/replaces the separator (builder pattern)
+
+```rust
+let columns = vec![
+    // Custom separator ": " between column 1 and 2
+    ColumnConfig::new_with_separator(": ", ColumnAlignment::Left),
+    
+    // Default separator " " between column 2 and 3
+    ColumnConfig::new(ColumnAlignment::Right),
+    
+    // Custom separator ", " between column 3 and 4
+    ColumnConfig::new_with_separator(", ", ColumnAlignment::Left),
+    
+    // Last column (no separator needed)
+    ColumnConfig::new(ColumnAlignment::Left),
+];
+
+// Or set separator using builder pattern
+let col = ColumnConfig::new(ColumnAlignment::Left)
+    .separator(": ");  // Set separator to ": "
+```
+
+**Examples:**
+- [multiselect_tabular.rs](./examples/multiselect_tabular.rs) - Basic tabular formatting
+- [multiselect_tabular_separators.rs](./examples/multiselect_tabular_separators.rs) - Demonstrates default vs custom separators
 
 ### Derive Macro for Enums
 
