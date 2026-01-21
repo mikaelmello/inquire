@@ -35,6 +35,7 @@ fn main() {
             true => String::from("sim"),
             false => String::from("não"),
         },
+        confirm_on_input: false,
         render_config: RenderConfig::default(),
     }
     .prompt()
