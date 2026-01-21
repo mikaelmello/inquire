@@ -10,37 +10,80 @@ use syn::{parse_macro_input, DeriveInput};
 /// allowing them to be used directly with inquire's Select and MultiSelect prompts.
 /// The methods return the prompt builders, allowing for further customization.
 ///
-/// The enum must implement `Display`, `Debug`, `Copy`, `Clone`, and be `'static`.
+/// ## Display Implementation
 ///
-/// # Example
+/// The macro automatically implements `Display` for enums **if and only if** any variant
+/// has a doc comment. If doc comments are present on some variants:
+/// - Variants with doc comments use the comment text as their display value
+/// - Variants without doc comments fall back to their variant name
+///
+/// If no variants have doc comments, you must manually implement `Display` before
+/// using the `Selectable` macro, otherwise compilation will fail.
+///
+/// The enum must also implement `Debug`, `Copy`, `Clone`, and be `'static`.
+///
+/// ## Examples
+///
+/// ### With Doc Comments (Auto Display)
 ///
 /// ```ignore
 /// use inquire_derive::Selectable;
-/// use std::fmt::{Display, Formatter};
 ///
 /// #[derive(Debug, Copy, Clone, Selectable)]
 /// enum Color {
+///     /// Bright red color
 ///     Red,
+///     /// Vibrant green color  
 ///     Green,
+///     /// Deep blue color
 ///     Blue,
+///     // This variant will display as "Yellow" (variant name)
+///     Yellow,
 /// }
 ///
-/// impl Display for Color {
-///     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-///         write!(f, "{:?}", self)
+/// // Usage:
+/// let color: Result<Color, inquire::InquireError> = Color::select("Choose a color:").prompt();
+/// ```
+///
+/// ### Without Doc Comments (Manual Display)
+///
+/// ```ignore
+/// use inquire_derive::Selectable;
+/// use std::fmt::{Display, Formatter, Result as FmtResult};
+///
+/// #[derive(Debug, Copy, Clone, Selectable)]
+/// enum Priority {
+///     Low,
+///     Medium,
+///     High,
+/// }
+///
+/// impl Display for Priority {
+///     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+///         let display_str: &str = match self {
+///             Priority::Low => "Low Priority",
+///             Priority::Medium => "Medium Priority",
+///             Priority::High => "High Priority",
+///         };
+///         write!(f, "{}", display_str)
 ///     }
 /// }
 ///
 /// // Usage:
-/// // let color = Color::select("Choose a color:").prompt()?;
-/// //
-/// // With customization:
-/// // let color = Color::select("Choose a color:")
-/// //     .with_help_message("Use arrow keys to navigate")
-/// //     .prompt()?;
-/// //
-/// // Multi-select:
-/// // let colors = Color::multi_select("Choose colors:").prompt()?;
+/// let priority: Result<Priority, inquire::InquireError> = Priority::select("Select priority:").prompt();
+/// ```
+///
+/// ### With Customization
+///
+/// ```ignore
+/// let color: Result<Color, inquire::InquireError> = Color::select("Choose a color:")
+///     .with_help_message("Use arrow keys to navigate")
+///     .with_page_size(5)
+///     .prompt();
+///
+/// let colors: Result<Vec<Color>, inquire::InquireError> = Color::multi_select("Choose multiple colors:")
+///     .with_default(&[Color::Red, Color::Blue])
+///     .prompt();
 /// ```
 #[proc_macro_derive(Selectable, attributes(desc))]
 pub fn derive_selectable(input: TokenStream) -> TokenStream {
