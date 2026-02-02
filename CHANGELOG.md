@@ -4,7 +4,9 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
-- No changes since the latest release below.
+### Features
+
+- Added styling options for "newline", "option selection" and "answer".
 
 ## [0.9.2] - 2026-01-17
 
