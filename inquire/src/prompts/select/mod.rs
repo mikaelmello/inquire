@@ -15,7 +15,7 @@ use crate::{
     list_option::ListOption,
     prompts::prompt::Prompt,
     terminal::get_default_terminal,
-    type_aliases::Scorer,
+    type_aliases::{Scorer, Sorter},
     ui::{Backend, RenderConfig, SelectBackend},
 };
 
@@ -107,6 +107,9 @@ pub struct Select<'a, T> {
     /// options.
     pub scorer: Scorer<'a, T>,
 
+    /// Function called to sort the scored options.
+    pub sorter: Sorter<'a>,
+
     /// Function that formats the user input and presents it to the user as the final rendering of the prompt.
     pub formatter: OptionFormatter<'a, T>,
 
@@ -179,6 +182,11 @@ where
             }
         };
 
+    /// Default sorting function, called to sort the scored options in descending order.
+    pub const DEFAULT_SORTER: Sorter<'a> = &|options: &mut [(usize, i64)]| {
+        options.sort_unstable_by_key(|(_idx, score)| std::cmp::Reverse(*score));
+    };
+
     /// Default page size.
     pub const DEFAULT_PAGE_SIZE: usize = crate::config::DEFAULT_PAGE_SIZE;
 
@@ -212,6 +220,7 @@ where
             reset_cursor: Self::DEFAULT_RESET_CURSOR,
             filter_input_enabled: Self::DEFAULT_FILTER_INPUT_ENABLED,
             scorer: Self::DEFAULT_SCORER,
+            sorter: Self::DEFAULT_SORTER,
             formatter: Self::DEFAULT_FORMATTER,
             render_config: get_configuration(),
             starting_filter_input: None,
@@ -245,6 +254,12 @@ where
     /// Sets the scoring function.
     pub fn with_scorer(mut self, scorer: Scorer<'a, T>) -> Self {
         self.scorer = scorer;
+        self
+    }
+
+    /// Sets the sorting function.
+    pub fn with_sorter(mut self, sorter: Sorter<'a>) -> Self {
+        self.sorter = sorter;
         self
     }
 
