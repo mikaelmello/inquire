@@ -4,6 +4,10 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
+- No changes since the latest release below.
+
+## [0.9.3] - 2026-02-06
+
 ### Features
 
 - Added `new_line_prefix` option to `RenderConfig`, allowing a styled prefix to be displayed at the beginning of every new line.
@@ -391,7 +395,8 @@ The library is already featureful enough to warrant a higher version number, bum
 
 <!-- next-url -->
 
-[unreleased]: https://github.com/mikaelmello/inquire/compare/v0.9.2...HEAD
+[unreleased]: https://github.com/mikaelmello/inquire/compare/v0.9.3...HEAD
+[0.9.3]: https://github.com/mikaelmello/inquire/compare/v0.9.2...v0.9.3
 [0.9.2]: https://github.com/mikaelmello/inquire/compare/v0.9.1...v0.9.2
 [0.9.1]: https://github.com/mikaelmello/inquire/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/mikaelmello/inquire/compare/v0.8.0...v0.9.0
