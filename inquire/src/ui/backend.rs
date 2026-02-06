@@ -274,20 +274,17 @@ where
 
         if self.render_config.answer_from_new_line {
             self.new_line()?;
-        };
-
-        if self.render_config.new_line_prefix.is_none() {
-            let token = Styled::new(answer).with_style_sheet(self.render_config.answer);
-            self.frame_renderer.write_styled(token)?;
-            self.new_line()?;
-        } else {
-            for part_answer in answer.lines() {
-                let token = Styled::new(part_answer).with_style_sheet(self.render_config.answer);
-                self.frame_renderer.write_styled(token)?;
-                self.new_line()?;
-            }
         }
 
+        for (i, line) in answer.lines().enumerate() {
+            if i > 0 {
+                self.new_line()?;
+            }
+            let token = Styled::new(line).with_style_sheet(self.render_config.answer);
+            self.frame_renderer.write_styled(token)?;
+        }
+
+        self.new_line()?;
         Ok(())
     }
 
@@ -684,7 +681,16 @@ pub(crate) mod test {
         validator::ErrorMessage,
     };
 
-    use super::{CommonBackend, CustomTypeBackend};
+    use crate::ui::RenderConfig;
+
+    use super::{Backend, CommonBackend, CustomTypeBackend};
+
+    struct MockInputReader;
+    impl InputReader for MockInputReader {
+        fn read_key(&mut self) -> crate::error::InquireResult<Key> {
+            Ok(Key::Enter)
+        }
+    }
 
     #[derive(Debug, Clone, PartialEq)]
     pub enum Token {
@@ -852,18 +858,9 @@ pub(crate) mod test {
 
     #[test]
     fn test_empty_prompt_spacing() {
-        use super::Backend;
         use crate::input::Input;
         use crate::terminal::test::match_token;
-        use crate::ui::{InputReader, Key, RenderConfig};
-
-        // Create a simple mock input reader
-        struct MockInputReader;
-        impl InputReader for MockInputReader {
-            fn read_key(&mut self) -> crate::error::InquireResult<Key> {
-                Ok(Key::Enter) // Just return Enter for testing
-            }
-        }
+        use crate::ui::RenderConfig;
 
         let mut output = VecDeque::new();
         let terminal = MockTerminal::new(&mut output);
@@ -906,5 +903,174 @@ pub(crate) mod test {
         match_token(&mut output, MockTerminalToken::ClearUntilNewLine);
         match_token(&mut output, "\r".into());
         match_token(&mut output, MockTerminalToken::CursorRight(9));
+    }
+
+    /// Helper to create a Backend with the given RenderConfig and run a closure,
+    /// returning the output token queue.
+    fn run_with_config<F>(render_config: RenderConfig<'_>, f: F) -> VecDeque<MockTerminalToken>
+    where
+        F: FnOnce(&mut Backend<'_, MockInputReader, MockTerminal<'_>>),
+    {
+        let mut output = VecDeque::new();
+        let terminal = MockTerminal::new(&mut output);
+        let input_reader = MockInputReader;
+        {
+            let mut backend = Backend::new(input_reader, terminal, render_config).unwrap();
+            f(&mut backend);
+        }
+        output
+    }
+
+    #[test]
+    fn test_render_prompt_with_answer_single_line() {
+        use crate::terminal::test::match_token;
+
+        let render_config = RenderConfig::empty();
+        let mut output = run_with_config(render_config, |backend| {
+            backend.frame_setup().unwrap();
+            backend
+                .render_prompt_with_answer("Question?", "yes")
+                .unwrap();
+            backend.frame_finish(true).unwrap();
+        });
+
+        match_token(&mut output, MockTerminalToken::CursorHide);
+        match_token(&mut output, render_config.answered_prompt_prefix.into());
+        match_token(&mut output, " ".into());
+        match_token(&mut output, "Question?".into());
+        match_token(&mut output, " ".into());
+        match_token(&mut output, "yes".into());
+        // row end + add_empty_line
+        match_token(&mut output, "\r".into());
+        match_token(&mut output, "\n".into());
+    }
+
+    #[test]
+    fn test_render_prompt_with_answer_multi_line() {
+        use crate::terminal::test::match_token;
+
+        let render_config = RenderConfig::empty();
+        let mut output = run_with_config(render_config, |backend| {
+            backend.frame_setup().unwrap();
+            backend
+                .render_prompt_with_answer("Q?", "line1\nline2\nline3")
+                .unwrap();
+            backend.frame_finish(true).unwrap();
+        });
+
+        match_token(&mut output, MockTerminalToken::CursorHide);
+        match_token(&mut output, render_config.answered_prompt_prefix.into());
+        match_token(&mut output, " ".into());
+        match_token(&mut output, "Q?".into());
+        match_token(&mut output, " ".into());
+        match_token(&mut output, "line1".into());
+        match_token(&mut output, "\r".into());
+        match_token(&mut output, "\n".into());
+        match_token(&mut output, "line2".into());
+        match_token(&mut output, "\r".into());
+        match_token(&mut output, "\n".into());
+        match_token(&mut output, "line3".into());
+        match_token(&mut output, "\r".into());
+        match_token(&mut output, "\n".into());
+    }
+
+    #[test]
+    fn test_render_prompt_with_answer_from_new_line() {
+        use crate::terminal::test::match_token;
+
+        let mut render_config = RenderConfig::empty();
+        render_config.answer_from_new_line = true;
+
+        let mut output = run_with_config(render_config, |backend| {
+            backend.frame_setup().unwrap();
+            backend.render_prompt_with_answer("Q?", "yes").unwrap();
+            backend.frame_finish(true).unwrap();
+        });
+
+        match_token(&mut output, MockTerminalToken::CursorHide);
+        match_token(&mut output, render_config.answered_prompt_prefix.into());
+        match_token(&mut output, " ".into());
+        match_token(&mut output, "Q?".into());
+        match_token(&mut output, " ".into());
+        // answer_from_new_line: prompt row ends, answer on next row
+        match_token(&mut output, "\r".into());
+        match_token(&mut output, "\n".into());
+        match_token(&mut output, "yes".into());
+        match_token(&mut output, "\r".into());
+        match_token(&mut output, "\n".into());
+    }
+
+    #[test]
+    fn test_render_prompt_with_answer_new_line_prefix_on_continuation() {
+        use crate::terminal::test::match_token;
+        use crate::ui::Styled;
+
+        let mut render_config = RenderConfig::empty();
+        render_config.new_line_prefix = Some(Styled::new("| "));
+
+        let mut output = run_with_config(render_config, |backend| {
+            backend.frame_setup().unwrap();
+            backend
+                .render_prompt_with_answer("Q?", "line1\nline2")
+                .unwrap();
+            backend.frame_finish(true).unwrap();
+        });
+
+        match_token(&mut output, MockTerminalToken::CursorHide);
+        match_token(&mut output, render_config.answered_prompt_prefix.into());
+        match_token(&mut output, " ".into());
+        match_token(&mut output, "Q?".into());
+        match_token(&mut output, " ".into());
+        match_token(&mut output, "line1".into());
+        match_token(&mut output, "\r".into());
+        match_token(&mut output, "\n".into());
+        // new_line_prefix appears on continuation lines
+        match_token(&mut output, "| ".into());
+        match_token(&mut output, "line2".into());
+        match_token(&mut output, "\r".into());
+        match_token(&mut output, "\n".into());
+        // trailing new_line also gets the prefix
+        match_token(&mut output, "| ".into());
+        match_token(&mut output, "\r".into());
+        match_token(&mut output, "\n".into());
+    }
+
+    #[test]
+    fn test_render_prompt_with_answer_from_new_line_and_prefix() {
+        use crate::terminal::test::match_token;
+        use crate::ui::Styled;
+
+        let mut render_config = RenderConfig::empty();
+        render_config.answer_from_new_line = true;
+        render_config.new_line_prefix = Some(Styled::new(">> "));
+
+        let mut output = run_with_config(render_config, |backend| {
+            backend.frame_setup().unwrap();
+            backend
+                .render_prompt_with_answer("Q?", "line1\nline2")
+                .unwrap();
+            backend.frame_finish(true).unwrap();
+        });
+
+        match_token(&mut output, MockTerminalToken::CursorHide);
+        match_token(&mut output, render_config.answered_prompt_prefix.into());
+        match_token(&mut output, " ".into());
+        match_token(&mut output, "Q?".into());
+        match_token(&mut output, " ".into());
+        // answer_from_new_line + prefix
+        match_token(&mut output, "\r".into());
+        match_token(&mut output, "\n".into());
+        match_token(&mut output, ">> ".into());
+        match_token(&mut output, "line1".into());
+        match_token(&mut output, "\r".into());
+        match_token(&mut output, "\n".into());
+        match_token(&mut output, ">> ".into());
+        match_token(&mut output, "line2".into());
+        match_token(&mut output, "\r".into());
+        match_token(&mut output, "\n".into());
+        // trailing empty row with prefix
+        match_token(&mut output, ">> ".into());
+        match_token(&mut output, "\r".into());
+        match_token(&mut output, "\n".into());
     }
 }

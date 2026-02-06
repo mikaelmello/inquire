@@ -6,7 +6,9 @@
 
 ### Features
 
-- Added styling options for "newline", "option selection" and "answer".
+- Added `new_line_prefix` option to `RenderConfig`, allowing a styled prefix to be displayed at the beginning of every new line.
+- Added `answer_from_new_line` option to `RenderConfig`, allowing the submitted answer to be rendered on a new line below the prompt.
+- Added `unhighlighted_option_prefix` option to `RenderConfig`, allowing customization of the prefix for non-highlighted options in Select and MultiSelect prompts.
 
 ## [0.9.2] - 2026-01-17
 
