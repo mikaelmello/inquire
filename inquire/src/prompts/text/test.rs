@@ -53,6 +53,34 @@ text_test!(
 );
 
 text_test!(
+    alt_enter_inserts_newline,
+    {
+        let mut events = vec![];
+        events.append(&mut text_to_events!("ab"));
+        events.push(Key::Char('\n', KeyModifiers::ALT));
+        events.append(&mut text_to_events!("cd"));
+        events.push(Key::Enter);
+        events
+    },
+    "ab\ncd"
+);
+
+text_test!(
+    multiline_input_with_multiple_newlines,
+    {
+        let mut events = vec![];
+        events.append(&mut text_to_events!("line1"));
+        events.push(Key::Char('\n', KeyModifiers::ALT));
+        events.append(&mut text_to_events!("line2"));
+        events.push(Key::Char('\n', KeyModifiers::ALT));
+        events.append(&mut text_to_events!("line3"));
+        events.push(Key::Enter);
+        events
+    },
+    "line1\nline2\nline3"
+);
+
+text_test!(
     input_and_correction,
     {
         let mut events = vec![];

@@ -70,6 +70,11 @@ impl<'a> From<&'a str> for Password<'a> {
 }
 
 impl<'a> PasswordPrompt<'a> {
+    /// Creates a display-only Input with newlines replaced by ↵ for Full mode rendering.
+    fn display_input_for_full_mode(input: &Input) -> Input {
+        Input::new_with(input.content().replace('\n', "↵")).with_cursor(input.cursor())
+    }
+
     fn active_input_mut(&mut self) -> &mut Input {
         if let Some(c) = &mut self.confirmation {
             if self.confirmation_stage {
@@ -236,14 +241,14 @@ where
                 }
             }
             PasswordDisplayMode::Full => {
-                backend.render_prompt_with_full_input(self.message, &self.input)?;
+                let display_input = Self::display_input_for_full_mode(&self.input);
+                backend.render_prompt_with_full_input(self.message, &display_input)?;
 
                 match &self.confirmation {
                     Some(confirmation) if self.confirmation_stage => {
-                        backend.render_prompt_with_full_input(
-                            confirmation.message,
-                            &confirmation.input,
-                        )?;
+                        let display_input = Self::display_input_for_full_mode(&confirmation.input);
+                        backend
+                            .render_prompt_with_full_input(confirmation.message, &display_input)?;
                     }
                     _ => {}
                 }

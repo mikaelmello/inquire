@@ -4,7 +4,9 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
-- No changes since the latest release below.
+### Features
+
+- Added multi-line input support for `Password` and `Text` prompts via `Alt+Enter`.
 
 ## [0.9.3] - 2026-02-06
 
