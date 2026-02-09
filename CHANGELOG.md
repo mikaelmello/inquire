@@ -4,7 +4,9 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
-- No changes since the latest release below.
+### Features
+
+- Added `select_on_empty_submit` to MultiSelect to toggle option under cursor when submitting an empty prompt.
 
 ## [0.9.3] - 2026-02-06
 
