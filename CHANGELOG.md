@@ -6,7 +6,7 @@
 
 ### Features
 
-- Added multi-line input support for `Password` and `Text` prompts via `Alt+Enter`.
+Experimental: Added multi-line input support for `Password` and `Text` prompts via `Alt+Enter`. Enable the `experimental-multiline-input` feature to use it. It is only supported when using `crossterm` (default) as the terminal back-end.
 
 ## [0.9.3] - 2026-02-06
 

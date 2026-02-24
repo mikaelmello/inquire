@@ -26,6 +26,7 @@ one-liners = []
 date = ["chrono"]
 editor = ["tempfile"]
 fuzzy = ["fuzzy-matcher"]
+experimental-multiline-input = []
 
 [package.metadata.docs.rs]
 all-features = true

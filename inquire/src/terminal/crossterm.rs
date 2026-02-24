@@ -304,6 +304,7 @@ impl From<KeyEvent> for Key {
             KeyEvent {
                 code: KeyCode::Esc, ..
             } => Self::Escape,
+            #[cfg(feature = "experimental-multiline-input")]
             KeyEvent {
                 code: KeyCode::Enter | KeyCode::Char('\n' | '\r'),
                 modifiers: m,
@@ -483,6 +484,7 @@ mod test {
         );
     }
 
+    #[cfg(feature = "experimental-multiline-input")]
     #[test]
     fn alt_enter_converts_to_char_newline() {
         use super::{Key, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
