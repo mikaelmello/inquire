@@ -7,7 +7,7 @@ use syn::{parse_macro_input, DeriveInput};
 /// Derive macro for making enums selectable in inquire prompts.
 ///
 /// This macro generates `select()` and `multi_select()` methods for enums,
-/// allowing them to be used directly with inquire's Select and MultiSelect prompts.
+/// allowing them to be used directly with inquire's `Select` and `MultiSelect` prompts.
 /// The methods return the prompt builders, allowing for further customization.
 ///
 /// The enum must implement `Display`, `Debug`, `Copy`, `Clone`, and be `'static`.
@@ -45,7 +45,7 @@ use syn::{parse_macro_input, DeriveInput};
 #[proc_macro_derive(Selectable, attributes(desc))]
 pub fn derive_selectable(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
-    codegen::generate_selectable_impl(input)
+    codegen::generate_selectable_impl(&input)
 }
 
 #[cfg(test)]

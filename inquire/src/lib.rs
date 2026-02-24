@@ -12,7 +12,7 @@
 //! - [`CustomType`] for text prompts that you would like to parse to a custom type, such as numbers or UUIDs;
 //! - [`Password`] for secretive text prompts.
 //!
-//! \* The Editor and DateSelect prompts are available by enabling the `editor` and `date` features, respectively.
+//! \* The Editor and `DateSelect` prompts are available by enabling the `editor` and `date` features, respectively.
 //!
 //! Check out the [GitHub repository](https://github.com/mikaelmello/inquire) to see demos of what you can do with `inquire`.
 //!
@@ -77,6 +77,7 @@ mod input;
 pub mod list_option;
 pub mod parser;
 mod prompts;
+pub mod tabular;
 mod terminal;
 pub mod type_aliases;
 pub mod ui;
