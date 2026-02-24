@@ -548,3 +548,63 @@ fn ctrl_c_interrupts_prompt() -> InquireResult<()> {
 
     Ok(())
 }
+
+#[rstest]
+#[case('y', true)]
+#[case('Y', true)]
+#[case('n', false)]
+#[case('N', false)]
+fn confirm_on_input_submits_immediately_on_yn(
+    #[case] input_char: char,
+    #[case] expected_result: bool,
+) -> InquireResult<()> {
+    let mut backend = FakeBackend::new(vec![Key::Char(input_char, KeyModifiers::NONE)]);
+
+    let result = Confirm::new("Question")
+        .with_confirm_on_input(true)
+        .prompt_with_backend(&mut backend)?;
+
+    assert_eq!(expected_result, result, "Answer was not the expected one");
+
+    let final_frame = backend.frames().last().unwrap();
+    let expected_answer = if expected_result { "Yes" } else { "No" };
+
+    assert!(
+        final_frame.has_token(&Token::AnsweredPrompt(
+            "Question".into(),
+            expected_answer.into()
+        )),
+        "Final frame did not contain the correct answer token"
+    );
+
+    Ok(())
+}
+
+#[test]
+fn confirm_on_input_still_allows_regular_input() -> InquireResult<()> {
+    let mut keys = Key::char_keys_from_str("yes");
+    keys.push(Key::Enter);
+
+    let mut backend = FakeBackend::new(keys);
+
+    let result = Confirm::new("Question")
+        .with_confirm_on_input(true)
+        .prompt_with_backend(&mut backend)?;
+
+    assert!(result, "Answer was not the expected one");
+
+    Ok(())
+}
+
+#[test]
+fn confirm_on_input_disabled_works_normally() -> InquireResult<()> {
+    let mut backend = FakeBackend::new(vec![Key::Char('y', KeyModifiers::NONE), Key::Enter]);
+
+    let result = Confirm::new("Question")
+        .with_confirm_on_input(false)
+        .prompt_with_backend(&mut backend)?;
+
+    assert!(result, "Answer was not the expected one");
+
+    Ok(())
+}

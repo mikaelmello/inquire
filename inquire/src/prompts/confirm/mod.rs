@@ -8,10 +8,13 @@ use crate::{
     config::get_configuration,
     error::{InquireError, InquireResult},
     formatter::{BoolFormatter, DEFAULT_BOOL_FORMATTER},
+    input::Input,
     parser::{BoolParser, DEFAULT_BOOL_PARSER},
+    prompts::action::InnerAction,
     terminal::get_default_terminal,
-    ui::{Backend, CustomTypeBackend, RenderConfig},
-    CustomType,
+    ui::{Backend, CustomTypeBackend, Key, KeyModifiers, RenderConfig},
+    validator::ErrorMessage,
+    CustomType, InputAction,
 };
 
 /// Prompt to ask the user for simple yes/no questions, commonly known by asking the user displaying the `(y/n)` text.
@@ -39,6 +42,8 @@ use crate::{
 ///   - By default, displays "y/n" with the default value capitalized, e.g. "y/N".
 /// - **Error message**: Error message to display when a value could not be parsed from the input.
 ///   - Set to "Invalid answer, try typing 'y' for yes or 'n' for no" by default.
+/// - **Confirm on input**: When enabled, typing 'y' or 'n' immediately submits the prompt without requiring Enter.
+///   - Disabled by default, requiring the user to press Enter after typing their choice.
 ///
 /// # Example
 ///
@@ -91,6 +96,9 @@ pub struct Confirm<'a> {
     /// Error message displayed when a value could not be parsed from input.
     pub error_message: String,
 
+    /// Whether to confirm immediately when 'y' or 'n' is typed, without requiring Enter.
+    pub confirm_on_input: bool,
+
     /// RenderConfig to apply to the rendered interface.
     ///
     /// Note: The default render config considers if the NO_COLOR environment variable
@@ -132,6 +140,7 @@ impl<'a> Confirm<'a> {
             parser: Self::DEFAULT_PARSER,
             default_value_formatter: Self::DEFAULT_DEFAULT_VALUE_FORMATTER,
             error_message: String::from(Self::DEFAULT_ERROR_MESSAGE),
+            confirm_on_input: false,
             render_config: get_configuration(),
         }
     }
@@ -201,6 +210,12 @@ impl<'a> Confirm<'a> {
         self
     }
 
+    /// Sets whether to confirm immediately when 'y' or 'n' is typed, without requiring Enter.
+    pub fn with_confirm_on_input(mut self, confirm_on_input: bool) -> Self {
+        self.confirm_on_input = confirm_on_input;
+        self
+    }
+
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to the defined rules.
     ///
@@ -230,7 +245,105 @@ impl<'a> Confirm<'a> {
         self,
         backend: &mut B,
     ) -> InquireResult<bool> {
-        CustomType::from(self).prompt_with_backend(backend)
+        if self.confirm_on_input {
+            self.prompt_with_confirm_on_input(backend)
+        } else {
+            CustomType::from(self).prompt_with_backend(backend)
+        }
+    }
+
+    fn prompt_with_confirm_on_input<B: CustomTypeBackend>(
+        self,
+        backend: &mut B,
+    ) -> InquireResult<bool> {
+        let mut input = Input::new_with(self.starting_input.unwrap_or_default());
+        if let Some(placeholder) = self.placeholder {
+            input = input.with_placeholder(placeholder);
+        }
+
+        let mut error_message: Option<String> = None;
+
+        loop {
+            backend.frame_setup()?;
+
+            if let Some(ref error) = error_message {
+                backend.render_error_message(&ErrorMessage::from(error.clone()))?;
+            }
+
+            let default_message = self
+                .default
+                .as_ref()
+                .map(|val| (self.default_value_formatter)(*val));
+
+            backend.render_prompt(self.message, default_message.as_deref(), &input)?;
+
+            if let Some(message) = self.help_message {
+                backend.render_help_message(message)?;
+            }
+
+            backend.frame_finish(false)?;
+
+            let key = backend.read_key()?;
+
+            match key {
+                Key::Char('y' | 'Y', _) => {
+                    let formatted = (self.formatter)(true);
+                    backend.frame_setup()?;
+                    backend.render_prompt_with_answer(self.message, &formatted)?;
+                    backend.frame_finish(true)?;
+                    return Ok(true);
+                }
+                Key::Char('n' | 'N', _) => {
+                    let formatted = (self.formatter)(false);
+                    backend.frame_setup()?;
+                    backend.render_prompt_with_answer(self.message, &formatted)?;
+                    backend.frame_finish(true)?;
+                    return Ok(false);
+                }
+                Key::Enter
+                | Key::Char('\n', KeyModifiers::NONE)
+                | Key::Char('j', KeyModifiers::CONTROL) => {
+                    let answer = if input.content().is_empty() {
+                        match self.default {
+                            Some(val) => val,
+                            None => {
+                                error_message = Some(self.error_message.clone());
+                                continue;
+                            }
+                        }
+                    } else {
+                        match (self.parser)(input.content()) {
+                            Ok(val) => val,
+                            Err(_) => {
+                                error_message = Some(self.error_message.clone());
+                                continue;
+                            }
+                        }
+                    };
+
+                    let formatted = (self.formatter)(answer);
+                    backend.frame_setup()?;
+                    backend.render_prompt_with_answer(self.message, &formatted)?;
+                    backend.frame_finish(true)?;
+                    return Ok(answer);
+                }
+                Key::Escape | Key::Char('g' | 'd', KeyModifiers::CONTROL) => {
+                    backend.frame_setup()?;
+                    backend.render_canceled_prompt(self.message)?;
+                    backend.frame_finish(true)?;
+                    return Err(InquireError::OperationCanceled);
+                }
+                Key::Char('c', KeyModifiers::CONTROL) => {
+                    return Err(InquireError::OperationInterrupted);
+                }
+                _ => {
+                    if let Some(action) = InputAction::from_key(key, &()) {
+                        input.handle(action);
+                        error_message = None;
+                    }
+                }
+            }
+        }
     }
 }
 
