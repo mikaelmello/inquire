@@ -4,6 +4,10 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
+- No changes since the latest release below.
+
+## [0.9.4] - 2026-02-24
+
 ### Features
 
 Experimental: Added multi-line input support for `Password` and `Text` prompts via `Alt+Enter`. Enable the `experimental-multiline-input` feature to use it. It is only supported when using `crossterm` (default) as the terminal back-end.
@@ -397,7 +401,8 @@ The library is already featureful enough to warrant a higher version number, bum
 
 <!-- next-url -->
 
-[unreleased]: https://github.com/mikaelmello/inquire/compare/v0.9.3...HEAD
+[unreleased]: https://github.com/mikaelmello/inquire/compare/v0.9.4...HEAD
+[0.9.4]: https://github.com/mikaelmello/inquire/compare/v0.9.3...v0.9.4
 [0.9.3]: https://github.com/mikaelmello/inquire/compare/v0.9.2...v0.9.3
 [0.9.2]: https://github.com/mikaelmello/inquire/compare/v0.9.1...v0.9.2
 [0.9.1]: https://github.com/mikaelmello/inquire/compare/v0.9.0...v0.9.1

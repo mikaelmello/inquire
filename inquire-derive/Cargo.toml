@@ -1,6 +1,6 @@
 [package]
 name = "inquire-derive"
-version = "0.9.3"
+version = "0.9.4"
 description = "Derive macros for the inquire crate"
 repository = "https://github.com/mikaelmello/inquire"
 license = "MIT"

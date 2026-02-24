@@ -361,7 +361,7 @@ dependencies = [
 
 [[package]]
 name = "inquire"
-version = "0.9.3"
+version = "0.9.4"
 dependencies = [
  "bitflags",
  "chrono",
@@ -378,7 +378,7 @@ dependencies = [
 
 [[package]]
 name = "inquire-derive"
-version = "0.9.3"
+version = "0.9.4"
 dependencies = [
  "inquire",
  "proc-macro2",
@@ -388,7 +388,7 @@ dependencies = [
 
 [[package]]
 name = "inquire-examples"
-version = "0.9.3"
+version = "0.9.4"
 dependencies = [
  "anyhow",
  "assert_cmd",

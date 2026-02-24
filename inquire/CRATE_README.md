@@ -51,13 +51,13 @@ It provides several different prompts in order to interactively ask the user for
 Put this line in your `Cargo.toml`, under `[dependencies]`.
 
 ```toml
-inquire = "0.9.3"
+inquire = "0.9.4"
 ```
 
 \* This prompt type is gated under a feature flag, e.g.:
 
 ```toml
-inquire = { version = "0.9.3", features = ["date", "editor"] }
+inquire = { version = "0.9.4", features = ["date", "editor"] }
 ```
 
 ### Derive Macros
@@ -67,7 +67,7 @@ For enum types, you can use the `Selectable` derive macro from the `inquire-deri
 Add this to your `Cargo.toml`:
 
 ```toml
-inquire = "0.9.3"
+inquire = "0.9.4"
 inquire-derive = "0.9.0"
 ```
 
