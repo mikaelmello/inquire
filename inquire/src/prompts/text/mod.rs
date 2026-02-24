@@ -142,7 +142,7 @@ impl<'a, 'b> Text<'a, 'b> {
     /// Default formatter, set to [DEFAULT_STRING_FORMATTER](crate::formatter::DEFAULT_STRING_FORMATTER)
     pub const DEFAULT_FORMATTER: StringFormatter<'a> = DEFAULT_STRING_FORMATTER;
 
-    /// Default page size, equal to the global default page size [config::DEFAULT_PAGE_SIZE]
+    /// Default page size, equal to the global default page size [crate::config::DEFAULT_PAGE_SIZE]
     pub const DEFAULT_PAGE_SIZE: usize = crate::config::DEFAULT_PAGE_SIZE;
 
     /// Default validators added to the [Text] prompt, none.
