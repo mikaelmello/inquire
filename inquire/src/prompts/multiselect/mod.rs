@@ -122,6 +122,13 @@ pub struct MultiSelect<'a, T> {
     /// config is treated as the only source of truth. If you want to customize colors
     /// and still support NO_COLOR, you will have to do this on your end.
     pub render_config: RenderConfig<'a>,
+
+    /// If true, will select the option under the cursor if the prompt is submitted without any
+    /// selections.
+    ///
+    /// This allows the MultiSelect to operate like a [Select](crate::Select) if the normal toggle
+    /// selection key has not been pressed.
+    select_on_empty_submit: Option<bool>,
 }
 
 impl<'a, T> MultiSelect<'a, T>
@@ -236,6 +243,7 @@ where
             formatter: Self::DEFAULT_FORMATTER,
             validator: None,
             render_config: get_configuration(),
+            select_on_empty_submit: None,
         }
     }
 
@@ -254,6 +262,15 @@ where
     /// Sets the page size.
     pub fn with_page_size(mut self, page_size: usize) -> Self {
         self.page_size = page_size;
+        self
+    }
+
+    /// Enables selecting the current option when submitting without any selected options.
+    ///
+    /// This allows the MultiSelect to operate like a [Select](crate::Select) if the normal toggle
+    /// selection key has not been pressed.
+    pub fn with_select_on_empty_submit(mut self) -> Self {
+        self.select_on_empty_submit = Some(true);
         self
     }
 

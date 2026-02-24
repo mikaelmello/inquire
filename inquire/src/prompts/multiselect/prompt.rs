@@ -21,6 +21,7 @@ pub struct MultiSelectPrompt<'a, T> {
     options: Vec<T>,
     string_options: Vec<String>,
     help_message: Option<&'a str>,
+    select_on_empty_submit: Option<bool>,
     cursor_index: usize,
     checked: BTreeSet<usize>,
     input: Option<Input>,
@@ -80,6 +81,7 @@ where
             string_options,
             scored_options,
             help_message: mso.help_message,
+            select_on_empty_submit: mso.select_on_empty_submit,
             cursor_index: mso.starting_cursor,
             input,
             scorer: mso.scorer,
@@ -267,6 +269,12 @@ where
     }
 
     fn submit(&mut self) -> InquireResult<Option<Vec<ListOption<T>>>> {
+        if self.select_on_empty_submit.is_some_and(|ose| ose) && self.checked.is_empty() {
+            if let Some(idx) = self.scored_options.get(self.cursor_index) {
+                self.checked.insert(*idx);
+            };
+        }
+
         let answer = match self.validate_current_answer()? {
             Validation::Valid => Some(self.get_final_answer()),
             Validation::Invalid(msg) => {
