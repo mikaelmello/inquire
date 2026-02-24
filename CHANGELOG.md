@@ -25,6 +25,9 @@ Experimental: Added multi-line input support for `Password` and `Text` prompts v
 - Bumped MSRV from 1.80 -> 1.82 due to new requirements of dependencies.
 - Expose the sorting function used by `Select` (thanks @devjgm!)
 
+### Fixes
+- Fix prompts not spawning on macOS when run from shell scripts that redirect stdin to /dev/tty.
+
 ## [0.9.1] - 2025-09-16
 
 ### Fixes
