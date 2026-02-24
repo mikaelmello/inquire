@@ -1,3 +1,4 @@
+use std::collections::VecDeque;
 use std::io::{stderr, Result, Stderr, Write};
 
 use crossterm::{
@@ -11,7 +12,7 @@ use crossterm::{
 
 use crate::{
     error::InquireResult,
-    ui::{Attributes, InputReader, Key, Styled},
+    ui::{Attributes, InputReader, Key, KeyModifiers as InquireKeyModifiers, Styled},
 };
 
 use super::Terminal;
@@ -26,21 +27,59 @@ pub struct CrosstermTerminal {
     io: IO,
 }
 
-pub struct CrosstermKeyReader;
+pub struct CrosstermKeyReader {
+    buffer: VecDeque<Key>,
+}
 
 impl CrosstermKeyReader {
     pub fn new() -> Self {
-        Self
+        Self {
+            buffer: VecDeque::new(),
+        }
+    }
+
+    fn buffer_paste_text(&mut self, text: &str) {
+        let mut chars = text.chars().peekable();
+
+        while let Some(c) = chars.next() {
+            match c {
+                '\r' => {
+                    if matches!(chars.peek(), Some('\n')) {
+                        let _unused = chars.next();
+                    }
+                    self.buffer
+                        .push_back(Key::Char('\n', InquireKeyModifiers::ALT));
+                }
+                '\n' => {
+                    self.buffer
+                        .push_back(Key::Char('\n', InquireKeyModifiers::ALT));
+                }
+                c => self
+                    .buffer
+                    .push_back(Key::Char(c, InquireKeyModifiers::NONE)),
+            }
+        }
     }
 }
 
 impl InputReader for CrosstermKeyReader {
     fn read_key(&mut self) -> InquireResult<Key> {
+        if let Some(key) = self.buffer.pop_front() {
+            return Ok(key);
+        }
+
         loop {
-            if let event::Event::Key(key_event) = event::read()? {
-                if KeyEventKind::Press == key_event.kind {
+            match event::read()? {
+                event::Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
                     return Ok(key_event.into());
                 }
+                event::Event::Paste(text) => {
+                    self.buffer_paste_text(&text);
+                    if let Some(key) = self.buffer.pop_front() {
+                        return Ok(key);
+                    }
+                }
+                _ => {}
             }
         }
     }
@@ -49,6 +88,10 @@ impl InputReader for CrosstermKeyReader {
 impl CrosstermTerminal {
     pub fn new() -> InquireResult<Self> {
         terminal::enable_raw_mode()?;
+        if let Err(err) = crossterm::execute!(stderr(), event::EnableBracketedPaste) {
+            let _unused = terminal::disable_raw_mode();
+            return Err(err.into());
+        }
 
         Ok(Self {
             io: IO::Std(stderr()),
@@ -190,7 +233,10 @@ impl Drop for CrosstermTerminal {
     fn drop(&mut self) {
         let _unused = self.flush();
         let _unused = match self.io {
-            IO::Std(_) => terminal::disable_raw_mode(),
+            IO::Std(_) => {
+                let _unused = crossterm::execute!(stderr(), event::DisableBracketedPaste);
+                terminal::disable_raw_mode()
+            }
             IO::Test(_) => Ok(()),
         };
     }
@@ -260,6 +306,11 @@ impl From<KeyEvent> for Key {
             } => Self::Escape,
             KeyEvent {
                 code: KeyCode::Enter | KeyCode::Char('\n' | '\r'),
+                modifiers: m,
+                ..
+            } if m.contains(KeyModifiers::ALT) => Self::Char('\n', m.into()),
+            KeyEvent {
+                code: KeyCode::Enter | KeyCode::Char('\n' | '\r'),
                 ..
             } => Self::Enter,
             KeyEvent {
@@ -326,9 +377,10 @@ impl From<KeyEvent> for Key {
 #[cfg(test)]
 mod test {
     use crate::terminal::Terminal;
-    use crate::ui::Color;
+    use crate::ui::{Color, Key, KeyModifiers};
 
     use super::Attributes;
+    use super::CrosstermKeyReader;
     use super::CrosstermTerminal;
     use super::IO;
 
@@ -428,6 +480,57 @@ mod test {
         assert_eq!(
             "\x1B[48;5;9m\x1B[49m\x1B[48;5;0m\x1B[48;5;10m",
             std::str::from_utf8(&terminal.get_buffer_content()).unwrap()
+        );
+    }
+
+    #[test]
+    fn alt_enter_converts_to_char_newline() {
+        use super::{Key, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
+
+        let key: Key =
+            KeyEvent::new_with_kind(KeyCode::Enter, KeyModifiers::ALT, KeyEventKind::Press).into();
+
+        assert!(matches!(key, Key::Char('\n', m) if m.contains(crate::ui::KeyModifiers::ALT)));
+    }
+
+    #[test]
+    fn plain_enter_converts_to_key_enter() {
+        use super::{Key, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
+
+        let key: Key =
+            KeyEvent::new_with_kind(KeyCode::Enter, KeyModifiers::NONE, KeyEventKind::Press).into();
+
+        assert_eq!(key, Key::Enter);
+    }
+
+    #[test]
+    fn paste_text_normalizes_crlf_to_single_newline() {
+        let mut reader = CrosstermKeyReader::new();
+        reader.buffer_paste_text("ab\r\ncd");
+
+        assert_eq!(
+            reader.buffer.into_iter().collect::<Vec<_>>(),
+            vec![
+                Key::Char('a', KeyModifiers::NONE),
+                Key::Char('b', KeyModifiers::NONE),
+                Key::Char('\n', KeyModifiers::ALT),
+                Key::Char('c', KeyModifiers::NONE),
+                Key::Char('d', KeyModifiers::NONE),
+            ]
+        );
+    }
+
+    #[test]
+    fn paste_text_maps_lf_and_cr_to_newline() {
+        let mut reader = CrosstermKeyReader::new();
+        reader.buffer_paste_text("\n\r");
+
+        assert_eq!(
+            reader.buffer.into_iter().collect::<Vec<_>>(),
+            vec![
+                Key::Char('\n', KeyModifiers::ALT),
+                Key::Char('\n', KeyModifiers::ALT),
+            ]
         );
     }
 }

@@ -192,6 +192,57 @@ password_test!(
     Password::new("")
 );
 
+password_test!(
+    alt_enter_inserts_newline,
+    {
+        let mut events = vec![];
+        events.append(&mut text_to_events!("ab"));
+        events.push(Key::Char('\n', KeyModifiers::ALT));
+        events.append(&mut text_to_events!("cd"));
+        events.push(Key::Enter);
+        events
+    },
+    "ab\ncd",
+    Password::new("").without_confirmation()
+);
+
+password_test!(
+    multiline_password_with_confirmation,
+    {
+        let mut events = vec![];
+        events.append(&mut text_to_events!("ab"));
+        events.push(Key::Char('\n', KeyModifiers::ALT));
+        events.append(&mut text_to_events!("cd"));
+        events.push(Key::Enter);
+        events.append(&mut text_to_events!("ab"));
+        events.push(Key::Char('\n', KeyModifiers::ALT));
+        events.append(&mut text_to_events!("cd"));
+        events.push(Key::Enter);
+        events
+    },
+    "ab\ncd",
+    Password::new("")
+);
+
+password_test!(
+    #[should_panic(expected = "EOF")]
+    multiline_password_with_mismatched_confirmation,
+    {
+        let mut events = vec![];
+        events.append(&mut text_to_events!("ab"));
+        events.push(Key::Char('\n', KeyModifiers::ALT));
+        events.append(&mut text_to_events!("cd"));
+        events.push(Key::Enter);
+        events.append(&mut text_to_events!("ab"));
+        events.push(Key::Char('\n', KeyModifiers::ALT));
+        events.append(&mut text_to_events!("XX"));
+        events.push(Key::Enter);
+        events
+    },
+    "",
+    Password::new("")
+);
+
 // Anti-regression test for UX issue: https://github.com/mikaelmello/inquire/issues/149
 password_test!(
     prompt_with_hidden_should_clear_on_mismatch,
