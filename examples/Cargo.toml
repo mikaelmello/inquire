@@ -15,7 +15,7 @@ fuzzy-matcher = "0.3.7"
 
 [target.'cfg(not(target_os = "windows"))'.dependencies]
 rexpect = "0.6.2"
-anyhow = "1.0.99"
+anyhow = "1.0.102"
 assert_cmd = "2.0.17"
 
 [[example]]
