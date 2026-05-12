@@ -89,8 +89,11 @@ impl<'a> EditorPrompt<'a> {
 
     fn cur_answer(&self) -> InquireResult<String> {
         let mut submission = fs::read_to_string(self.tmp_file.path())?;
-        let len = submission.trim_end_matches(&['\n', '\r'][..]).len();
-        submission.truncate(len);
+
+        if !self.config.preserve_trailing_newlines {
+            let len = submission.trim_end_matches(&['\n', '\r'][..]).len();
+            submission.truncate(len);
+        }
 
         Ok(submission)
     }
@@ -159,3 +162,60 @@ where
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+
+    #[test]
+    fn test_default_strips_trailing_newlines() {
+        let editor = Editor::new("Test message");
+        let prompt = EditorPrompt::new(editor).unwrap();
+
+        // Write content with trailing newlines to the temp file
+        fs::write(prompt.tmp_file.path(), "content\n\n\r\n").unwrap();
+
+        let answer = prompt.cur_answer().unwrap();
+        assert_eq!(answer, "content");
+    }
+
+    #[test]
+    fn test_preserve_trailing_newlines_when_enabled() {
+        let editor = Editor::new("Test message")
+            .with_preserve_trailing_newlines(true);
+        let prompt = EditorPrompt::new(editor).unwrap();
+
+        // Write content with trailing newlines to the temp file
+        fs::write(prompt.tmp_file.path(), "content\n\n\r\n").unwrap();
+
+        let answer = prompt.cur_answer().unwrap();
+        assert_eq!(answer, "content\n\n\r\n");
+    }
+
+    #[test]
+    fn test_preserve_only_trailing_newlines() {
+        let editor = Editor::new("Test message")
+            .with_preserve_trailing_newlines(true);
+        let prompt = EditorPrompt::new(editor).unwrap();
+
+        // Write content with internal newlines and trailing newlines
+        fs::write(prompt.tmp_file.path(), "line1\nline2\n\n").unwrap();
+
+        let answer = prompt.cur_answer().unwrap();
+        assert_eq!(answer, "line1\nline2\n\n");
+    }
+
+    #[test]
+    fn test_strip_only_affects_trailing() {
+        let editor = Editor::new("Test message");
+        let prompt = EditorPrompt::new(editor).unwrap();
+
+        // Write content with internal newlines and trailing newlines
+        fs::write(prompt.tmp_file.path(), "line1\nline2\n\n").unwrap();
+
+        let answer = prompt.cur_answer().unwrap();
+        assert_eq!(answer, "line1\nline2");
+    }
+}
+

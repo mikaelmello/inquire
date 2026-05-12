@@ -8,6 +8,8 @@ pub struct EditorConfig {
     pub editor_command: OsString,
     /// The arguments to pass to the editor command.
     pub editor_command_args: Vec<OsString>,
+    /// Whether to preserve trailing newlines in the editor output.
+    pub preserve_trailing_newlines: bool,
 }
 
 impl<'a> From<&Editor<'a>> for EditorConfig {
@@ -15,6 +17,7 @@ impl<'a> From<&Editor<'a>> for EditorConfig {
         Self {
             editor_command: value.editor_command.into(),
             editor_command_args: value.editor_command_args.iter().map(Into::into).collect(),
+            preserve_trailing_newlines: value.preserve_trailing_newlines,
         }
     }
 }
