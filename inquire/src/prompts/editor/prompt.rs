@@ -217,5 +217,54 @@ mod tests {
         let answer = prompt.cur_answer().unwrap();
         assert_eq!(answer, "line1\nline2");
     }
+
+    #[test]
+    fn test_empty_file() {
+        let editor = Editor::new("Test message");
+        let prompt = EditorPrompt::new(editor).unwrap();
+
+        // Write empty content
+        fs::write(prompt.tmp_file.path(), "").unwrap();
+
+        let answer = prompt.cur_answer().unwrap();
+        assert_eq!(answer, "");
+    }
+
+    #[test]
+    fn test_only_newlines_stripped() {
+        let editor = Editor::new("Test message");
+        let prompt = EditorPrompt::new(editor).unwrap();
+
+        // Write file with only newlines
+        fs::write(prompt.tmp_file.path(), "\n\n\r\n").unwrap();
+
+        let answer = prompt.cur_answer().unwrap();
+        assert_eq!(answer, "");
+    }
+
+    #[test]
+    fn test_only_newlines_preserved() {
+        let editor = Editor::new("Test message")
+            .with_preserve_trailing_newlines(true);
+        let prompt = EditorPrompt::new(editor).unwrap();
+
+        // Write file with only newlines
+        fs::write(prompt.tmp_file.path(), "\n\n\r\n").unwrap();
+
+        let answer = prompt.cur_answer().unwrap();
+        assert_eq!(answer, "\n\n\r\n");
+    }
+
+    #[test]
+    fn test_mixed_line_endings() {
+        let editor = Editor::new("Test message");
+        let prompt = EditorPrompt::new(editor).unwrap();
+
+        // Write content with mixed line endings
+        fs::write(prompt.tmp_file.path(), "line1\nline2\r\n").unwrap();
+
+        let answer = prompt.cur_answer().unwrap();
+        assert_eq!(answer, "line1\nline2");
+    }
 }
 
