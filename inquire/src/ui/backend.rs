@@ -363,7 +363,7 @@ where
     fn render_prompt(&mut self, prompt: &str, _editor_command: &str) -> Result<()> {
         self.print_prompt(prompt)?;
 
-        let message = format!("[(e) to edit, (enter) to submit]");
+        let message = "[(e) to edit, (enter) to submit]";
         let token = Styled::new(message).with_style_sheet(self.render_config.editor_prompt);
         self.frame_renderer.write_styled(token)?;
 

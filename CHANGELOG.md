@@ -4,7 +4,9 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
-- No changes since the latest release below.
+### Fixes
+
+- Fix default editor on Windows by using `explorer` instead of `notepad`, allowing the system's default editor to be used.
 
 ## [0.9.4] - 2026-02-24
 
