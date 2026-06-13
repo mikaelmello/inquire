@@ -155,7 +155,7 @@ pub struct RenderConfig<'a> {
 
     /// Style sheet of the hint in editor prompts.
     ///
-    /// The hint is formatted as `[(e) to open {}, (enter) to submit]`
+    /// The hint is formatted as `[(e) to edit, (enter) to submit]`
     /// with the editor name.
     #[cfg(feature = "editor")]
     pub editor_prompt: StyleSheet,

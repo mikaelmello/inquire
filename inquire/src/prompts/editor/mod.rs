@@ -230,7 +230,7 @@ impl<'a> Editor<'a> {
 
 fn get_default_editor_command() -> OsString {
     let mut default_editor = if cfg!(windows) {
-        String::from("notepad")
+        String::from("explorer")
     } else {
         String::from("nano")
     };
