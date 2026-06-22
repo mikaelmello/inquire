@@ -33,6 +33,21 @@ impl InnerAction for InputAction {
                 // Let's catch this combination and ignore it.
                 return None;
             }
+            Key::Char('w', m) if m.contains(KeyModifiers::CONTROL) => {
+                Self::Delete(Magnitude::Word, LineDirection::Left)
+            }
+            Key::Char('a', m) if m.contains(KeyModifiers::CONTROL) => {
+                Self::MoveCursor(Magnitude::Line, LineDirection::Left)
+            }
+            Key::Char('e', m) if m.contains(KeyModifiers::CONTROL) => {
+                Self::MoveCursor(Magnitude::Line, LineDirection::Right)
+            }
+            Key::Char('u', m) if m.contains(KeyModifiers::CONTROL) => {
+                Self::Delete(Magnitude::Line, LineDirection::Left)
+            }
+            Key::Char('k', m) if m.contains(KeyModifiers::CONTROL) => {
+                Self::Delete(Magnitude::Line, LineDirection::Right)
+            }
 
             Key::Delete(m) if m.contains(KeyModifiers::CONTROL) => {
                 Self::Delete(Magnitude::Word, LineDirection::Right)
@@ -95,6 +110,52 @@ mod test {
         assert_eq!(
             InputAction::from_key(Key::Char('h', KeyModifiers::CONTROL), &()),
             None
+        );
+    }
+
+    #[test]
+    fn ctrl_w_results_in_delete_word_left() {
+        assert_eq!(
+            InputAction::from_key(Key::Char('w', KeyModifiers::CONTROL), &()),
+            Some(InputAction::Delete(Magnitude::Word, LineDirection::Left))
+        );
+    }
+
+    #[test]
+    fn ctrl_a_moves_to_beginning_of_line() {
+        assert_eq!(
+            InputAction::from_key(Key::Char('a', KeyModifiers::CONTROL), &()),
+            Some(InputAction::MoveCursor(
+                Magnitude::Line,
+                LineDirection::Left
+            ))
+        );
+    }
+
+    #[test]
+    fn ctrl_e_moves_to_end_of_line() {
+        assert_eq!(
+            InputAction::from_key(Key::Char('e', KeyModifiers::CONTROL), &()),
+            Some(InputAction::MoveCursor(
+                Magnitude::Line,
+                LineDirection::Right
+            ))
+        );
+    }
+
+    #[test]
+    fn ctrl_u_deletes_to_beginning_of_line() {
+        assert_eq!(
+            InputAction::from_key(Key::Char('u', KeyModifiers::CONTROL), &()),
+            Some(InputAction::Delete(Magnitude::Line, LineDirection::Left))
+        );
+    }
+
+    #[test]
+    fn ctrl_k_deletes_to_end_of_line() {
+        assert_eq!(
+            InputAction::from_key(Key::Char('k', KeyModifiers::CONTROL), &()),
+            Some(InputAction::Delete(Magnitude::Line, LineDirection::Right))
         );
     }
 
