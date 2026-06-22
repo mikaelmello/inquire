@@ -4,7 +4,14 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
-- No changes since the latest release below.
+- Added support for new keybindings:
+  - `<c-w>`: delete word left
+  - `<c-a>`: move to beginning of line
+  - `<c-e>`: move to end of line
+  - `<c-u>`: delete to beginning of line
+  - `<c-k>`: delete to end of line
+
+Many thanks :)
 
 ## [0.9.4] - 2026-02-24
 
