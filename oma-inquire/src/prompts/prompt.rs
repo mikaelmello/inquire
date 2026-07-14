@@ -115,7 +115,7 @@ where
     ///
     /// This should not be reimplemented by types that implement this trait,
     /// unless the situation really warrants it.
-    fn prompt(mut self, backend: &mut Backend) -> InquireResult<Self::Output> {
+    fn prompt(mut self, backend: &mut Backend, multiselect: bool) -> InquireResult<Self::Output> {
         self.setup()?;
 
         let mut last_handle = ActionResult::NeedsRedraw;
@@ -128,7 +128,7 @@ where
             }
 
             let key = backend.read_key()?;
-            let action = Action::from_key(key, self.config());
+            let action = Action::from_key(key, self.config(), multiselect);
 
             if let Some(action) = action {
                 last_handle = match action {

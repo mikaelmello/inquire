@@ -274,6 +274,6 @@ impl<'a> Text<'a> {
         self,
         backend: &mut B,
     ) -> InquireResult<String> {
-        TextPrompt::from(self).prompt(backend)
+        TextPrompt::from(self).prompt(backend, false)
     }
 }

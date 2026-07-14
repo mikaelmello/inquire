@@ -340,6 +340,6 @@ where
         self,
         backend: &mut B,
     ) -> InquireResult<ListOption<T>> {
-        SelectPrompt::new(self)?.prompt(backend)
+        SelectPrompt::new(self)?.prompt(backend, false)
     }
 }

@@ -278,6 +278,6 @@ impl<'a> Password<'a> {
         self,
         backend: &mut B,
     ) -> InquireResult<String> {
-        PasswordPrompt::from(self).prompt(backend)
+        PasswordPrompt::from(self).prompt(backend, false)
     }
 }

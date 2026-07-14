@@ -421,6 +421,6 @@ where
         self,
         backend: &mut B,
     ) -> InquireResult<Vec<ListOption<T>>> {
-        MultiSelectPrompt::new(self)?.prompt(backend)
+        MultiSelectPrompt::new(self)?.prompt(backend, true)
     }
 }

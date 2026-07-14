@@ -283,6 +283,6 @@ where
         self,
         backend: &mut B,
     ) -> InquireResult<T> {
-        CustomTypePrompt::from(self).prompt(backend)
+        CustomTypePrompt::from(self).prompt(backend, false)
     }
 }

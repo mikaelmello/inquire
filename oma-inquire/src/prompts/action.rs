@@ -31,15 +31,16 @@ where
     I: Copy + Clone + PartialEq + Eq,
 {
     /// Derives a prompt action from a Key event.
-    pub fn from_key<C>(key: Key, config: &C) -> Option<Action<I>>
+    pub fn from_key<C>(key: Key, config: &C, multiselect: bool) -> Option<Action<I>>
     where
         I: InnerAction<Config = C>,
     {
         match key {
             Key::Enter
             | Key::Char('\n', KeyModifiers::NONE)
-            | Key::Char('j', KeyModifiers::CONTROL) => Some(Action::Submit),
-            Key::Escape | Key::Char('g' | 'd', KeyModifiers::CONTROL) => Some(Action::Cancel),
+            | Key::Char('j', KeyModifiers::CONTROL) if !multiselect => Some(Action::Submit),
+            Key::Escape if multiselect => Some(Action::Submit),
+            Key::Escape  => Some(Action::Cancel),
             Key::Char('c', KeyModifiers::CONTROL) => Some(Action::Interrupt),
             key => I::from_key(key, config).map(Action::Inner),
         }
@@ -93,7 +94,7 @@ mod test {
         let key = Key::Enter;
         assert_eq!(
             Some(Action::<MockInnerAction>::Submit),
-            Action::from_key(key, &())
+            Action::from_key(key, &(), false)
         );
     }
 
@@ -102,7 +103,7 @@ mod test {
         let key = Key::Escape;
         assert_eq!(
             Some(Action::<MockInnerAction>::Cancel),
-            Action::from_key(key, &())
+            Action::from_key(key, &(), false)
         );
     }
 
@@ -111,7 +112,7 @@ mod test {
         let key = Key::Char('c', KeyModifiers::CONTROL);
         assert_eq!(
             Some(Action::<MockInnerAction>::Interrupt),
-            Action::from_key(key, &())
+            Action::from_key(key, &(), false)
         );
     }
 
@@ -121,19 +122,19 @@ mod test {
             Some(Action::<MockInnerAction>::Inner(MockInnerAction::Action(
                 Key::Char('a', KeyModifiers::NONE)
             ))),
-            Action::from_key(Key::Char('a', KeyModifiers::NONE), &())
+            Action::from_key(Key::Char('a', KeyModifiers::NONE), &(), false)
         );
         assert_eq!(
             Some(Action::<MockInnerAction>::Inner(MockInnerAction::Action(
                 Key::Home
             ))),
-            Action::from_key(Key::Home, &())
+            Action::from_key(Key::Home, &(), false)
         );
         assert_eq!(
             Some(Action::<MockInnerAction>::Inner(MockInnerAction::Action(
                 Key::PageDown(KeyModifiers::NONE)
             ))),
-            Action::from_key(Key::PageDown(KeyModifiers::NONE), &())
+            Action::from_key(Key::PageDown(KeyModifiers::NONE), &(), false)
         );
     }
 
@@ -141,11 +142,11 @@ mod test {
     fn emacs_control_keybindings() {
         assert_eq!(
             Some(Action::<MockInnerAction>::Submit),
-            Action::from_key(Key::Char('j', KeyModifiers::CONTROL), &())
+            Action::from_key(Key::Char('j', KeyModifiers::CONTROL), &(), false)
         );
         assert_eq!(
             Some(Action::<MockInnerAction>::Cancel),
-            Action::from_key(Key::Char('g', KeyModifiers::CONTROL), &())
+            Action::from_key(Key::Char('g', KeyModifiers::CONTROL), &(), false)
         );
     }
 }

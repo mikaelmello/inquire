@@ -255,11 +255,11 @@ impl From<KeyEvent> for Key {
         match event {
             KeyEvent {
                 code: KeyCode::Esc, ..
-            } => Self::Enter,
+            } => Self::Escape,
             KeyEvent {
                 code: KeyCode::Enter,
                 ..
-            } => Self::Toggle,
+            } => Self::Enter,
             KeyEvent {
                 code: KeyCode::Tab | KeyCode::Char('\t'),
                 ..

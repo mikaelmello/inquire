@@ -55,7 +55,9 @@ impl InnerAction for MultiSelectPromptAction {
             Key::PageDown(_) => Self::PageDown,
             Key::End => Self::MoveToEnd,
 
-            Key::Char(' ', KeyModifiers::NONE) | Key::Toggle => Self::ToggleCurrentOption,
+            Key::Char(' ', KeyModifiers::NONE) | Key::Toggle | Key::Enter => {
+                Self::ToggleCurrentOption
+            }
             key => match InputAction::from_key(key, &()) {
                 Some(action) => Self::FilterInput(action),
                 None => return None,
