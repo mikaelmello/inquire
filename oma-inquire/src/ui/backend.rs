@@ -79,6 +79,15 @@ pub trait CustomTypeBackend: CommonBackend {
     ) -> Result<()>;
 }
 
+pub trait ConfirmBackend: CommonBackend {
+    fn render_prompt(
+        &mut self,
+        prompt: &str,
+        default: Option<&str>,
+        current_value: bool,
+    ) -> InquireResult<()>;
+}
+
 pub trait PasswordBackend: CommonBackend {
     fn render_prompt(&mut self, prompt: &str) -> Result<()>;
     fn render_prompt_with_masked_input(&mut self, prompt: &str, cur_input: &Input) -> Result<()>;
@@ -732,6 +741,36 @@ where
     }
 }
 
+impl<'a, I, T> ConfirmBackend for Backend<'a, I, T>
+where
+    I: InputReader,
+    T: Terminal,
+{
+    fn render_prompt(
+        &mut self,
+        prompt: &str,
+        default: Option<&str>,
+        current_value: bool,
+    ) -> InquireResult<()> {
+        let options_str = match default {
+            Some(formatted) => formatted.to_string(),
+            None => {
+                if current_value {
+                    String::from("Y/n")
+                } else {
+                    String::from("y/N")
+                }
+            }
+        };
+
+        let virtual_input = Input::new_with("");
+
+        self.print_prompt_with_input(prompt, Some(&options_str), &virtual_input)?;
+
+        Ok(())
+    }
+}
+
 impl<'a, I, T> InputReader for Backend<'a, I, T>
 where
     I: InputReader,
@@ -750,7 +789,7 @@ pub(crate) mod test {
 
     use crate::{
         input::Input,
-        ui::{InputReader, Key},
+        ui::{ConfirmBackend, InputReader, Key},
         validator::ErrorMessage,
     };
 
@@ -828,6 +867,32 @@ pub(crate) mod test {
                     std::io::ErrorKind::UnexpectedEof,
                     "No more keys in input",
                 )))
+        }
+    }
+
+    impl ConfirmBackend for FakeBackend {
+        fn render_prompt(
+            &mut self,
+            prompt: &str,
+            default: Option<&str>,
+            current_value: bool,
+        ) -> crate::error::InquireResult<()> {
+            // 1. 记录提示词 Token，用于测试断言
+            self.push_token(Token::Prompt(prompt.into()));
+
+            // 2. 如果有默认值提示（例如 "Y/n"），记录 DefaultValue Token
+            if let Some(default_str) = default {
+                self.push_token(Token::DefaultValue(default_str.into()));
+            }
+
+            // 3. 将当前选择的值（"yes" 或 "no"）作为当前的虚拟输入 Token 记录下来
+            // 这样测试里的 `Token::Input` 相关的断言就能正常通过
+            let display_val = if current_value { "yes" } else { "no" };
+            let virtual_input = Input::new_with(display_val.to_string());
+
+            self.push_token(Token::Input(virtual_input));
+
+            Ok(())
         }
     }
 

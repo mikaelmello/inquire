@@ -17,20 +17,14 @@ fn main() {
 
     let ans = Confirm {
         message: "Are you happy?",
-        starting_input: None,
+        // starting_input: None,
         default: Some(false),
-        placeholder: Some("sim|não"),
+        // placeholder: Some("sim|não"),
         help_message: Some("It's alright if you're not"),
         formatter: &|ans| match ans {
             true => "sim".to_owned(),
             false => "não".to_owned(),
         },
-        parser: &|ans| match ans {
-            "sim" => Ok(true),
-            "não" => Ok(false),
-            _ => Err(()),
-        },
-        error_message: "Reply with 'sim' or 'não'".into(),
         default_value_formatter: &|def| match def {
             true => String::from("sim"),
             false => String::from("não"),

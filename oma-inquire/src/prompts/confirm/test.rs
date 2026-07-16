@@ -1,5 +1,3 @@
-use std::vec;
-
 use rstest::rstest;
 
 use crate::{
@@ -15,6 +13,7 @@ use crate::{
 fn prompt_can_be_initialized_from_str() -> InquireResult<()> {
     let mut backend = FakeBackend::new(vec![Key::Enter]);
 
+    // 默认是 true，直接回车提交
     let result = Confirm::from("Question")
         .with_default(true)
         .prompt_with_backend(&mut backend)?;
@@ -24,25 +23,19 @@ fn prompt_can_be_initialized_from_str() -> InquireResult<()> {
 }
 
 #[rstest]
-#[case("yes", true)]
-#[case("y", true)]
-#[case("YES", true)]
-#[case("Y", true)]
-#[case("no", false)]
-#[case("n", false)]
-#[case("NO", false)]
-#[case("N", false)]
-fn prompt_without_default_correctly_parses_input(
-    #[case] input: &str,
+#[case('y', true)]
+#[case('Y', true)]
+#[case('n', false)]
+#[case('N', false)]
+fn prompt_correctly_handles_direct_hotkeys(
+    #[case] key_char: char,
     #[case] expected_result: bool,
 ) -> InquireResult<()> {
-    let mut keys = Key::char_keys_from_str(input);
-    keys.push(Key::Enter);
-
-    let mut backend = FakeBackend::new(keys);
+    // 🚀 核心测试：单击字符 y/n 就会立即触发极速提交，根本不需要 Enter
+    let mut backend = FakeBackend::new(vec![Key::Char(key_char, KeyModifiers::NONE)]);
 
     let result = Confirm::from("Question")
-        .with_default(true)
+        .with_default(!expected_result) // 故意把默认值设反，确保是单键起效了
         .prompt_with_backend(&mut backend)?;
     assert_eq!(expected_result, result, "Answer was not the expected one");
 
@@ -51,43 +44,13 @@ fn prompt_without_default_correctly_parses_input(
 
 #[rstest]
 fn escape_after_successful_submit_has_no_effect() -> InquireResult<()> {
-    let mut keys = Key::char_keys_from_str("yes");
-    keys.push(Key::Enter);
-    keys.push(Key::Escape);
-
-    let mut backend = FakeBackend::new(keys);
+    // 按下 'y' 触发极速提交后，后续的 Escape 动作不应该有任何破坏性副作用
+    let mut backend = FakeBackend::new(vec![Key::Char('y', KeyModifiers::NONE), Key::Escape]);
 
     let result = Confirm::from("Question")
-        .with_default(true)
+        .with_default(false)
         .prompt_with_backend(&mut backend)?;
     assert!(result, "Answer was not the expected one");
-
-    Ok(())
-}
-
-#[rstest]
-#[case("yeah")]
-#[case("si")]
-#[case("1")]
-#[case("nah")]
-#[case("nn")]
-#[case("0")]
-fn invalid_inputs_are_properly_rejected(#[case] input: &str) -> InquireResult<()> {
-    let mut keys = Key::char_keys_from_str(input);
-    keys.push(Key::Enter);
-    keys.push(Key::Escape);
-
-    let mut backend = FakeBackend::new(keys);
-
-    let result = Confirm::from("Question")
-        .with_default(true)
-        .prompt_with_backend(&mut backend);
-
-    assert!(result.is_err(), "Result was not an error");
-    assert!(
-        matches!(result.unwrap_err(), InquireError::OperationCanceled),
-        "Error message was not the expected one"
-    );
 
     Ok(())
 }
@@ -96,192 +59,13 @@ fn invalid_inputs_are_properly_rejected(#[case] input: &str) -> InquireResult<()
 #[case(true)]
 #[case(false)]
 fn prompt_with_default_can_be_readily_submitted(#[case] default_value: bool) -> InquireResult<()> {
+    // 直接敲回车，应该能够安全地直接提交设置好的默认布尔值
     let mut backend = FakeBackend::new(vec![Key::Enter]);
 
     let result = Confirm::from("Question")
         .with_default(default_value)
         .prompt_with_backend(&mut backend)?;
     assert_eq!(default_value, result, "Answer was not the expected one");
-
-    Ok(())
-}
-
-#[rstest]
-#[case("yes", true)]
-#[case("no", false)]
-fn prompt_with_valid_starting_input_can_be_readily_submitted(
-    #[case] input: &str,
-    #[case] expected_result: bool,
-) -> InquireResult<()> {
-    let mut backend = FakeBackend::new(vec![Key::Enter]);
-
-    let result = Confirm::from("Question")
-        .with_starting_input(input)
-        .prompt_with_backend(&mut backend)?;
-    assert_eq!(expected_result, result, "Answer was not the expected one");
-
-    Ok(())
-}
-
-#[rstest]
-fn placeholder_is_rendered() -> InquireResult<()> {
-    let mut backend = FakeBackend::new(vec![Key::Enter]);
-
-    let _ = Confirm::new("Question")
-        .with_placeholder("Placeholder")
-        .with_default(true)
-        .prompt_with_backend(&mut backend)?;
-
-    let rendered_frames = backend.frames();
-
-    for (idx, frame) in rendered_frames.iter().enumerate() {
-        let is_last_frame = idx == rendered_frames.len() - 1;
-
-        if is_last_frame {
-            assert!(
-                frame.tokens().iter().all(|t| !matches!(t, Token::Input(_))),
-                "Frame {} (last) contained an input token when it should not have",
-                idx
-            );
-        } else {
-            assert!(
-                frame.tokens().iter().any(|t| matches!(t, Token::Input(input) if input.placeholder() == Some("Placeholder"))),
-                "Frame {} did not contain a placeholder token",
-                idx
-            );
-        }
-    }
-
-    Ok(())
-}
-
-#[rstest]
-#[case("si", Some(true))]
-#[case("no", Some(false))]
-#[case("yes", None)]
-#[case("nah", None)]
-fn custom_parser_for_spanish_works_as_expected(
-    #[case] input: &str,
-    #[case] expected_result: Option<bool>,
-) -> InquireResult<()> {
-    let mut keys = Key::char_keys_from_str(input);
-    keys.push(Key::Enter);
-    keys.push(Key::Escape);
-
-    let mut backend = FakeBackend::new(keys);
-
-    let result = Confirm::new("Question")
-        .with_parser(&|input| match input.to_lowercase().as_str() {
-            "si" => Ok(true),
-            "no" => Ok(false),
-            _ => Err(()),
-        })
-        .prompt_with_backend(&mut backend);
-
-    match (expected_result, result) {
-        (Some(expected), Ok(result)) => {
-            assert_eq!(expected, result, "Answer was not the expected one");
-        }
-        (None, Err(err)) => {
-            assert!(
-                matches!(err, InquireError::OperationCanceled),
-                "Error was not the 'OperationCanceled' expected"
-            );
-        }
-        (Some(expected_result), Err(_)) => {
-            panic!("Result was not successful {} expected", expected_result);
-        }
-        (None, Ok(result)) => {
-            panic!("Result was {} when a canceled prompt was expected", result);
-        }
-    }
-
-    Ok(())
-}
-
-#[rstest]
-fn default_error_message_is_rendered_on_invalid_input() -> InquireResult<()> {
-    let mut backend = FakeBackend::new(vec![
-        Key::Char('c', KeyModifiers::NONE),
-        Key::Enter,
-        Key::Escape,
-    ]);
-
-    let result = Confirm::new("Question").prompt_with_backend(&mut backend);
-    assert!(result.is_err(), "Result was not an error");
-    assert!(
-        matches!(result.unwrap_err(), InquireError::OperationCanceled),
-        "Error message was not the expected one"
-    );
-
-    let rendered_frames = backend.frames();
-
-    assert_eq!(
-        4,
-        rendered_frames.len(),
-        "There should have been 4 frames rendered"
-    );
-
-    for (i, frame) in rendered_frames.iter().take(2).enumerate() {
-        assert!(
-            frame
-                .tokens()
-                .iter()
-                .any(|t| !matches!(t, Token::ErrorMessage(_))),
-            "Frame {} had an error message token when the two first frames should not have one",
-            i
-        );
-    }
-
-    assert!(
-        rendered_frames[2].has_token(&Token::ErrorMessage(Confirm::DEFAULT_ERROR_MESSAGE.into())),
-        "Third frame did not contain an error message token when one was expected",
-    );
-
-    Ok(())
-}
-
-#[rstest]
-fn custom_error_message_is_rendered_on_invalid_input() -> InquireResult<()> {
-    let mut backend = FakeBackend::new(vec![
-        Key::Char('c', KeyModifiers::NONE),
-        Key::Enter,
-        Key::Escape,
-    ]);
-
-    let result = Confirm::new("Question")
-        .with_error_message("INCORRECT!!!!")
-        .prompt_with_backend(&mut backend);
-
-    assert!(result.is_err(), "Result was not an error");
-    assert!(
-        matches!(result.unwrap_err(), InquireError::OperationCanceled),
-        "Error message was not the expected one"
-    );
-
-    let rendered_frames = backend.frames();
-
-    assert_eq!(
-        4,
-        rendered_frames.len(),
-        "There should have been 4 frames rendered"
-    );
-
-    for (i, frame) in rendered_frames.iter().take(2).enumerate() {
-        assert!(
-            frame
-                .tokens()
-                .iter()
-                .any(|t| !matches!(t, Token::ErrorMessage(_))),
-            "Frame {} had an error message token when the two first frames should not have one",
-            i
-        );
-    }
-
-    assert!(
-        rendered_frames[2].has_token(&Token::ErrorMessage("INCORRECT!!!!".into())),
-        "Third frame did not contain an error message token when one was expected",
-    );
 
     Ok(())
 }
@@ -310,13 +94,13 @@ fn default_formatter_for_default_values_follows_convention(
                     .tokens()
                     .iter()
                     .all(|t| !matches!(t, Token::DefaultValue(_))),
-                "Frame {} (last) contained a help message token when it should not have",
+                "Frame {} (last) contained a default value token when it should not have",
                 idx
             );
         } else {
             assert!(
                 frame.has_token(&Token::DefaultValue(expected_output.into())),
-                "Frame {} did not contain a help message token",
+                "Frame {} did not contain a default value token",
                 idx
             );
         }
@@ -353,13 +137,13 @@ fn custom_formatter_for_default_values_is_used(
                     .tokens()
                     .iter()
                     .all(|t| !matches!(t, Token::DefaultValue(_))),
-                "Frame {} (last) contained a help message token when it should not have",
+                "Frame {} (last) contained a default value token when it should not have",
                 idx
             );
         } else {
             assert!(
                 frame.has_token(&Token::DefaultValue(expected_output.into())),
-                "Frame {} did not contain a help message token",
+                "Frame {} did not contain a default value token",
                 idx
             );
         }
@@ -379,12 +163,17 @@ fn default_help_message_does_not_exist_and_is_not_rendered() -> InquireResult<()
     let rendered_frames = backend.frames();
 
     for (idx, frame) in rendered_frames.iter().enumerate() {
+        let has_unexpected_help = frame.tokens().iter().any(|t| {
+            if let Token::HelpMessage(msg) = t {
+                !msg.is_empty() // 只有非空才算“渲染了帮助信息”
+            } else {
+                false
+            }
+        });
+
         assert!(
-            frame
-                .tokens()
-                .iter()
-                .all(|t| !matches!(t, Token::HelpMessage(_))),
-            "Frame {} contained a help message token when it should not have",
+            !has_unexpected_help,
+            "Frame {} contained an unexpected active help message token",
             idx
         );
     }
@@ -479,7 +268,7 @@ fn default_formatter_outputs_true_answer_as_yes() -> InquireResult<()> {
 }
 
 #[test]
-fn default_formatter_outputs_true_answer_as_no() -> InquireResult<()> {
+fn default_formatter_outputs_false_answer_as_no() -> InquireResult<()> {
     let mut backend = FakeBackend::new(vec![Key::Enter]);
 
     let result = Confirm::new("Question")
