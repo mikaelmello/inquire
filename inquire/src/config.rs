@@ -8,6 +8,7 @@ use std::sync::LazyLock;
 static GLOBAL_RENDER_CONFIGURATION: LazyLock<Mutex<RenderConfig<'static>>> =
     LazyLock::new(|| Mutex::new(RenderConfig::default()));
 
+/// Get current global render config
 pub fn get_configuration() -> RenderConfig<'static> {
     *GLOBAL_RENDER_CONFIGURATION.lock().unwrap()
 }
