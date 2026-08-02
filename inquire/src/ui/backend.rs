@@ -672,6 +672,7 @@ where
 pub(crate) mod test {
     use std::collections::VecDeque;
 
+    #[cfg(feature = "date")]
     use chrono::{Month, NaiveDate, Weekday};
 
     use crate::{
@@ -701,6 +702,7 @@ pub(crate) mod test {
         AnsweredPrompt(String, String),
         ErrorMessage(ErrorMessage),
         HelpMessage(String),
+        #[cfg(feature = "date")]
         Calendar {
             month: Month,
             year: i32,

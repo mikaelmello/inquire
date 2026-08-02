@@ -60,6 +60,49 @@ inquire = "0.9.4"
 inquire = { version = "0.9.4", features = ["date", "editor"] }
 ```
 
+## Unit Testing (headless)
+
+`inquire` prompts are interactive by default (they read key events from a real terminal).
+For unit tests, you often want deterministic execution without a TTY.
+
+Add `inquire` as a normal dependency, and enable the `testing` feature only for tests via
+`[dev-dependencies]`. In your unit tests wrap your production code with `inquire::testing::with_input`.
+While that scope is active, `.prompt()` reads scripted keys and captures a frame-by-frame trace.
+
+```toml
+[dependencies]
+inquire = "0.9.1"
+
+[dev-dependencies]
+inquire = { version = "0.9.1", features = ["testing"] }
+```
+
+```rust
+use inquire::{Select, testing::{with_input, Key, KeyModifiers}};
+
+fn production_flow() -> Result<&'static str, inquire::InquireError> {
+  // Production-style usage: no special testing APIs here.
+  Select::new("Pick one", vec!["A", "B", "C"]).prompt()
+}
+
+#[test]
+fn unit_test_flow() {
+  let (result, report) = with_input(
+    vec![Key::Down(KeyModifiers::NONE), Key::Enter],
+    || production_flow(),
+  );
+
+  assert_eq!("B", result.unwrap());
+  report.assert_all_input_consumed();
+
+  // Debugging: show exactly what was rendered per frame.
+  let _trace_dump = report.trace().to_pretty_string();
+}
+```
+
+When `testing` is enabled but no `with_input` scope is active, `.prompt()` fails fast with a
+helpful error message.
+
 ### Derive Macros
 
 For enum types, you can use the `Selectable` derive macro from the `inquire-derive` crate to automatically generate `Select` and `MultiSelect` prompts:

@@ -13,6 +13,9 @@ inquire-derive = { path = "../inquire-derive" }
 chrono = "0.4"
 fuzzy-matcher = "0.3.7"
 
+[features]
+testing = ["inquire/testing"]
+
 [target.'cfg(not(target_os = "windows"))'.dependencies]
 rexpect = "0.6.2"
 anyhow = "1.0.99"
@@ -101,3 +104,8 @@ path = "enum_comprehensive.rs"
 [[example]]
 name = "enum_select_derive"
 path = "enum_select_derive.rs"
+
+[[example]]
+name = "unit_testing_select_multiselect"
+path = "unit_testing_select_multiselect.rs"
+required-features = ["testing"]

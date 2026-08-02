@@ -66,6 +66,13 @@
 #![deny(unused_crate_dependencies)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![allow(clippy::bool_to_int_with_if)]
+
+// When `testing` is enabled we intentionally route `.prompt()` through a headless,
+// scripted backend, which can make the default terminal backend dependency unused.
+// Keep the dependency "used" to satisfy `unused_crate_dependencies`.
+#[cfg(all(feature = "testing", feature = "crossterm"))]
+use crossterm as _;
+
 mod ansi;
 pub mod autocompletion;
 mod config;
@@ -82,6 +89,23 @@ pub mod type_aliases;
 pub mod ui;
 mod utils;
 pub mod validator;
+
+/// Utilities to help consumers write deterministic tests for interactive prompts.
+///
+/// This module is only available when the `testing` crate feature is enabled.
+#[cfg(feature = "testing")]
+pub mod testing {
+    //! Utilities to help consumers write deterministic tests for interactive prompts.
+    //!
+    //! Enable the crate feature `testing` and wrap your prompt calls in
+    //! [`crate::testing::with_input`], providing a scripted sequence of [`crate::testing::Key`] events.
+
+    #[doc(inline)]
+    pub use crate::terminal::test::{
+        with_input, Key, KeyModifiers, MockTerminalFrame, MockTerminalToken, MockTerminalTrace,
+        TestReport,
+    };
+}
 
 pub use crate::autocompletion::Autocomplete;
 pub use crate::config::set_global_render_config;

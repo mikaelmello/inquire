@@ -34,6 +34,20 @@ pub enum InquireError {
 
     /// Error while executing IO operations.
     Custom(CustomUserError),
+
+    /// The `testing` feature is enabled, but no scripted test input session is active.
+    ///
+    /// Use [`crate::testing::with_input`] to install scripted key input for the current
+    /// thread before calling `.prompt()`.
+    #[cfg(feature = "testing")]
+    TestingNotInitialized,
+
+    /// A prompt attempted to read another key, but the scripted input was exhausted.
+    #[cfg(feature = "testing")]
+    TestInputExhausted {
+        /// Captured terminal frames up to the point of failure.
+        trace: crate::testing::MockTerminalTrace,
+    },
 }
 
 impl Error for InquireError {
@@ -85,9 +99,23 @@ impl fmt::Display for InquireError {
                 f.write_str("Operation was interrupted by the user")
             }
             InquireError::Custom(err) => write!(f, "User-provided error: {}", err),
+            #[cfg(feature = "testing")]
+            InquireError::TestingNotInitialized => f.write_str(
+                "Testing backend not initialized. When the `testing` feature is enabled, \
+                     `.prompt()` requires a scripted input session. Wrap your code with \
+                     `inquire::testing::with_input(...)`.",
+            ),
+            #[cfg(feature = "testing")]
+            InquireError::TestInputExhausted { trace } => {
+                writeln!(
+                    f,
+                    "Scripted test input exhausted before the prompt completed."
+                )?;
+                write!(f, "\nCaptured frames:\n{}", trace.to_pretty_string())
+            }
         }
     }
 }
 
-/// Result type where errors are of type [InquireError](crate::error::InquireError)
+/// Result type where errors are of type [InquireError]
 pub type InquireResult<T> = Result<T, InquireError>;

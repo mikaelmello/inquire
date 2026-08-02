@@ -27,6 +27,7 @@ date = ["chrono"]
 editor = ["tempfile"]
 fuzzy = ["fuzzy-matcher"]
 experimental-multiline-input = []
+testing = []
 
 [package.metadata.docs.rs]
 all-features = true
@@ -52,5 +53,4 @@ unicode-width = "0.2"
 
 [dev-dependencies]
 rstest = "0.26.1"
-chrono = { version = "0.4" }
 
