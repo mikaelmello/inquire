@@ -49,10 +49,10 @@ impl InnerAction for SelectPromptAction {
             Key::PageDown(_) => Self::PageDown,
             Key::End => Self::MoveToEnd,
 
-            key => match InputAction::from_key(key, &()) {
-                Some(action) => Self::FilterInput(action),
-                None => return None,
-            },
+            key => {
+                let action = InputAction::from_key(key, &())?;
+                Self::FilterInput(action)
+            }
         };
 
         Some(action)
