@@ -70,14 +70,12 @@
 // When `testing` is enabled we intentionally route `.prompt()` through a headless,
 // scripted backend, which can make the default terminal backend dependency unused.
 // Keep the dependency "used" to satisfy `unused_crate_dependencies`.
+#[cfg(all(feature = "testing", feature = "console"))]
+use console as _;
 #[cfg(all(feature = "testing", feature = "crossterm"))]
 use crossterm as _;
 #[cfg(all(feature = "testing", feature = "termion"))]
 use termion as _;
-#[cfg(all(feature = "testing", feature = "console"))]
-use console as _;
-
-
 
 mod ansi;
 pub mod autocompletion;
