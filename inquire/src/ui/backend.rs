@@ -170,7 +170,8 @@ where
     fn print_prompt_with_prefix(&mut self, prefix: Styled<&str>, prompt: &str) -> Result<()> {
         self.frame_renderer.write_styled(prefix)?;
 
-        self.frame_renderer.write(" ")?;
+        self.frame_renderer
+            .write(self.render_config.prompt_separator)?;
 
         if !prompt.is_empty() {
             self.frame_renderer
