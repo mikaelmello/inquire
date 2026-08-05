@@ -586,7 +586,11 @@ mod scripted {
                 return Ok(());
             }
             let max_idx = frame_idx.min(self.frames.len().saturating_sub(1));
-            for frame in &self.frames[..=max_idx] {
+            for frame in self
+                .frames
+                .get(..=max_idx)
+                .expect("Love above ensures that this will always be successful")
+            {
                 frame.write_ansi(writer)?;
             }
             Ok(())
@@ -649,7 +653,11 @@ mod scripted {
 
             let mut screen = Screen::default();
             let max_idx = frame_idx.min(self.frames.len().saturating_sub(1));
-            for frame in &self.frames[..=max_idx] {
+            for frame in self
+                .frames
+                .get(..=max_idx)
+                .expect("Safe because of the line above")
+            {
                 screen.apply_frame(frame);
             }
             screen.render()
@@ -703,31 +711,46 @@ mod scripted {
 
         fn ensure_col(&mut self) {
             self.ensure_line();
-            let line = &mut self.lines[self.y];
+            let line = self
+                .lines
+                .get_mut(self.y)
+                .expect("ensure_line call above ensures that this is always successful");
             if self.x > line.len() {
                 line.resize(self.x, ' ');
             }
         }
 
         fn put_char(&mut self, ch: char) {
+            self.ensure_line();
             self.ensure_col();
-            let line = &mut self.lines[self.y];
+            let line = self
+                .lines
+                .get_mut(self.y)
+                .expect("ensure_line call above ensures that this is always successful");
             if self.x == line.len() {
                 line.push(ch);
             } else {
-                line[self.x] = ch;
+                *line
+                    .get_mut(self.x)
+                    .expect("ensure_col call above ensures that this is always successful") = ch;
             }
             self.x = self.x.saturating_add(1);
         }
 
         fn clear_line(&mut self) {
             self.ensure_line();
-            self.lines[self.y].clear();
+            self.lines
+                .get_mut(self.y)
+                .expect("ensure_line call above ensures that this is always successful")
+                .clear();
         }
 
         fn clear_until_eol(&mut self) {
             self.ensure_line();
-            let line = &mut self.lines[self.y];
+            let line = &mut *self
+                .lines
+                .get_mut(self.y)
+                .expect("ensure_line call above ensures that this is always successful");
             if self.x < line.len() {
                 line.truncate(self.x);
             }
@@ -859,7 +882,7 @@ mod scripted {
         let (prefix_normal, prefix_bright) = if is_bg { (40u8, 100u8) } else { (30u8, 90u8) };
 
         match color {
-            Color::Black => write!(writer, "\x1b[{}m", prefix_normal + 0)?,
+            Color::Black => write!(writer, "\x1b[{}m", prefix_normal)?,
             Color::DarkRed => write!(writer, "\x1b[{}m", prefix_normal + 1)?,
             Color::DarkGreen => write!(writer, "\x1b[{}m", prefix_normal + 2)?,
             Color::DarkYellow => write!(writer, "\x1b[{}m", prefix_normal + 3)?,
@@ -867,7 +890,7 @@ mod scripted {
             Color::DarkMagenta => write!(writer, "\x1b[{}m", prefix_normal + 5)?,
             Color::DarkCyan => write!(writer, "\x1b[{}m", prefix_normal + 6)?,
             Color::Grey => write!(writer, "\x1b[{}m", prefix_normal + 7)?,
-            Color::DarkGrey => write!(writer, "\x1b[{}m", prefix_bright + 0)?,
+            Color::DarkGrey => write!(writer, "\x1b[{}m", prefix_bright)?,
             Color::LightRed => write!(writer, "\x1b[{}m", prefix_bright + 1)?,
             Color::LightGreen => write!(writer, "\x1b[{}m", prefix_bright + 2)?,
             Color::LightYellow => write!(writer, "\x1b[{}m", prefix_bright + 3)?,
@@ -1086,12 +1109,11 @@ mod scripted {
     impl crate::ui::InputReader for ScriptedKeyReader {
         fn read_key(&mut self) -> InquireResult<Key> {
             let mut st = self.state.borrow_mut();
-            match st.keys.pop_front() {
-                Some(k) => {
-                    st.consumed.push(k);
-                    Ok(k)
-                }
-                None => {
+            if let Some(k) = st.keys.pop_front() {
+                st.consumed.push(k);
+                Ok(k)
+            } else {
+                {
                     let trace = MockTerminalTrace {
                         frames: {
                             let mut frames = st.frames.clone();
