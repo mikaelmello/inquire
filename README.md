@@ -1,4 +1,4 @@
-[![Latest Version]][crates.io] [![Docs]][docs.rs] ![Build status] ![Unsafe forbidden] ![Supported platforms] ![License]
+[![Latest Version]][crates.io] ![Downloads in the last 90 days][downloads] [![Docs]][docs.rs] ![Build status] ![Unsafe forbidden] ![Supported platforms] ![License]
 
 [crates.io]: https://crates.io/crates/inquire
 [latest version]: https://img.shields.io/crates/v/inquire.svg
@@ -8,6 +8,7 @@
 [unsafe forbidden]: https://img.shields.io/badge/unsafe-forbidden-success.svg
 [supported platforms]: https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-success
 [license]: https://img.shields.io/crates/l/inquire.svg
+[downloads]: https://img.shields.io/crates/dr/inquire
 
 ---
 
