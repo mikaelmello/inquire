@@ -20,9 +20,10 @@ path = "src/lib.rs"
 doctest = true
 
 [features]
-default = ["macros", "crossterm", "one-liners", "fuzzy"]
+default = ["macros", "crossterm", "one-liners", "fuzzy", "reorder"]
 macros = []
 one-liners = []
+reorder = []
 date = ["chrono"]
 editor = ["tempfile"]
 fuzzy = ["fuzzy-matcher"]
