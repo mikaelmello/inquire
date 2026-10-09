@@ -4,7 +4,9 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
-- No changes since the latest release below.
+### Fixes
+
+- Fix the cursor placement of `Password` prompts using the `Hidden` display mode: the cursor is now placed right after the prompt text.
 
 ## [0.9.4] - 2026-02-24
 
