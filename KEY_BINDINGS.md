@@ -28,9 +28,14 @@ These key bindings may be used with all prompts that ask the user for text input
 | <kbd>ctrl</kbd> + <kbd>right</kbd>  | Move one word to the right of the cursor.       |
 | <kbd>home</kbd>                     | Move cursor to the start of the line*.          |
 | <kbd>end</kbd>                      | Move cursor to the end of the line*.            |
+| <kbd>ctrl</kbd> + <kbd>a</kbd>      | Move cursor to the start of the line*.          |
+| <kbd>ctrl</kbd> + <kbd>e</kbd>      | Move cursor to the end of the line*.            |
 | <kbd>backspace</kbd>                | Delete one character to the left of the cursor. |
 | <kbd>delete</kbd>                   | Delete the character at the cursor.             |
+| <kbd>ctrl</kbd> + <kbd>w</kbd>      | Delete one word to the left of the cursor.      |
 | <kbd>ctrl</kbd> + <kbd>delete</kbd> | Delete one word to the right of the cursor.     |
+| <kbd>ctrl</kbd> + <kbd>u</kbd>      | Delete from the cursor to the start of the line.|
+| <kbd>ctrl</kbd> + <kbd>k</kbd>      | Delete from the cursor to the end of the line.  |
 
 \* Key bindings not supported on [`Select`] and [`MultiSelect`] prompts.
 
