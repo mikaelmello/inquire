@@ -47,7 +47,7 @@ where
                     return Err(InquireError::InvalidConfiguration(format!(
                         "Index {} is out-of-bounds for length {} of options",
                         i,
-                        &mso.options.len()
+                        mso.options.len()
                     )));
                 }
             }

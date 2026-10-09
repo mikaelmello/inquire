@@ -1,3 +1,5 @@
+#![cfg_attr(feature = "testing", allow(dead_code))]
+
 use std::collections::VecDeque;
 use std::io::{stderr, Result, Stderr, Write};
 
@@ -418,6 +420,20 @@ mod test {
             "testing writing wow",
             std::str::from_utf8(&terminal.get_buffer_content()).unwrap()
         );
+    }
+
+    #[test]
+    fn get_buffer_content_returns_and_drains_buffer() {
+        let mut terminal = CrosstermTerminal::new_in_memory_output();
+
+        terminal.write("hello").unwrap();
+        terminal.write(" world").unwrap();
+
+        let first_read = terminal.get_buffer_content();
+        assert_eq!(std::str::from_utf8(&first_read).unwrap(), "hello world");
+
+        let second_read = terminal.get_buffer_content();
+        assert!(second_read.is_empty());
     }
 
     #[test]

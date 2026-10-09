@@ -70,7 +70,6 @@ rustflags = [
     "-Wclippy::single_match_else",
     "-Wclippy::string_add",
     "-Wclippy::string_add_assign",
-    "-Wclippy::string_to_string",
     "-Wclippy::todo",
     "-Wclippy::trait_duplication_in_bounds",
     "-Wclippy::unimplemented",

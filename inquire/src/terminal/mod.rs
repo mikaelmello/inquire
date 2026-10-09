@@ -5,19 +5,19 @@ use crate::{
     ui::{InputReader, Styled},
 };
 
-#[cfg(feature = "crossterm")]
+#[cfg(all(feature = "crossterm", any(not(feature = "testing"), test)))]
 #[cfg_attr(docsrs, doc(cfg(feature = "crossterm")))]
 pub mod crossterm;
 
-#[cfg(feature = "termion")]
+#[cfg(all(feature = "termion", any(not(feature = "testing"), test)))]
 #[cfg_attr(docsrs, doc(cfg(feature = "termion")))]
 pub mod termion;
 
-#[cfg(feature = "console")]
+#[cfg(all(feature = "console", any(not(feature = "testing"), test)))]
 #[cfg_attr(docsrs, doc(cfg(feature = "console")))]
 pub mod console;
 
-#[cfg(test)]
+#[cfg(any(test, feature = "testing"))]
 pub(crate) mod test;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -30,6 +30,7 @@ impl TerminalSize {
     /**
      * Returns None if the width or height is 0
      */
+    #[cfg_attr(feature = "testing", allow(dead_code))]
     pub fn new(width: u16, height: u16) -> Option<Self> {
         if width == 0 || height == 0 {
             None
@@ -74,13 +75,20 @@ pub trait Terminal: Sized {
 }
 
 pub fn get_default_terminal() -> InquireResult<(impl InputReader, impl Terminal)> {
-    #[cfg(feature = "crossterm")]
+    #[cfg(feature = "testing")]
+    return test::get_default_terminal_for_testing();
+
+    #[cfg(all(feature = "crossterm", not(feature = "testing")))]
     return Ok((
         crossterm::CrosstermKeyReader::new(),
         crossterm::CrosstermTerminal::new()?,
     ));
 
-    #[cfg(all(feature = "termion", not(feature = "crossterm")))]
+    #[cfg(all(
+        feature = "termion",
+        not(feature = "crossterm"),
+        not(feature = "testing"),
+    ))]
     return Ok((
         termion::TermionKeyReader::new()?,
         termion::TermionTerminal::new()?,
@@ -89,7 +97,8 @@ pub fn get_default_terminal() -> InquireResult<(impl InputReader, impl Terminal)
     #[cfg(all(
         feature = "console",
         not(feature = "termion"),
-        not(feature = "crossterm")
+        not(feature = "crossterm"),
+        not(feature = "testing"),
     ))]
     {
         let console_terminal = console::ConsoleTerminal::new();
@@ -98,6 +107,7 @@ pub fn get_default_terminal() -> InquireResult<(impl InputReader, impl Terminal)
     }
 
     #[cfg(all(
+        not(feature = "testing"),
         not(feature = "crossterm"),
         not(feature = "termion"),
         not(feature = "console")
