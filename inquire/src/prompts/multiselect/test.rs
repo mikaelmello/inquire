@@ -301,3 +301,58 @@ fn first_option_renders_on_new_line_without_filtering() {
     match_text(&mut output, "\r");
     match_text(&mut output, "\n");
 }
+
+#[test]
+fn select_on_empty_submit_does_nothing_when_false() {
+    let mut backend = fake_backend(vec![
+        Key::Char('1', KeyModifiers::NONE), // filter to option 1
+        Key::Enter,
+    ]);
+
+    let options = vec![1, 2, 3, 4, 5];
+
+    let ans = MultiSelect::new("Question", options)
+        .prompt_with_backend(&mut backend)
+        .unwrap();
+
+    let expected_result = Vec::<ListOption<i32>>::new();
+    assert_eq!(expected_result, ans);
+}
+
+#[test]
+fn select_on_empty_submit_selects_option_under_cursor_when_true() {
+    let mut backend = fake_backend(vec![
+        Key::Char('1', KeyModifiers::NONE), // filter to option 1
+        Key::Enter,
+    ]);
+
+    let options = vec![1, 2, 3, 4, 5];
+
+    let ans = MultiSelect::new("Question", options)
+        .with_select_on_empty_submit()
+        .prompt_with_backend(&mut backend)
+        .unwrap();
+
+    let expected_result = vec![ListOption::new(0, 1)];
+    assert_eq!(expected_result, ans);
+}
+
+#[test]
+fn select_on_empty_submit_does_nothing_when_not_empty() {
+    let mut backend = fake_backend(vec![
+        Key::Char('2', KeyModifiers::NONE), // filter to option 2
+        Key::Char(' ', KeyModifiers::NONE), // toggle option 2 and reset filter
+        Key::Char('1', KeyModifiers::NONE), // filter to option 1
+        Key::Enter,
+    ]);
+
+    let options = vec![1, 2, 3, 4, 5];
+
+    let ans = MultiSelect::new("Question", options)
+        .with_select_on_empty_submit()
+        .prompt_with_backend(&mut backend)
+        .unwrap();
+
+    let expected_result = vec![ListOption::new(1, 2)];
+    assert_eq!(expected_result, ans);
+}
