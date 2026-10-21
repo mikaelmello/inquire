@@ -3,8 +3,7 @@
 <!-- next-header -->
 
 ## [Unreleased] <!-- ReleaseDate -->
-
-- No changes since the latest release below.
+- The MultiCount prompt was added, allowing users to set numerical values for multiple options from a list.
 
 ## [0.9.4] - 2026-02-24
 
