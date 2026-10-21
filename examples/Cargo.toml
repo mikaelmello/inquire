@@ -83,6 +83,10 @@ name = "password_simple"
 path = "password_simple.rs"
 
 [[example]]
+name = "password_unmasked_last_char"
+path = "password_unmasked_last_char.rs"
+
+[[example]]
 name = "select"
 path = "select.rs"
 

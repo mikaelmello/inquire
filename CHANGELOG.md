@@ -5,6 +5,7 @@
 ## [Unreleased] <!-- ReleaseDate -->
 
 - No changes since the latest release below.
+- Add a new password display mode to mask all but the last character. Thanks @nico-incubiq (#281) for the PR.
 
 ## [0.9.4] - 2026-02-24
 
