@@ -284,7 +284,6 @@ where
         Ok(())
     }
 
-    #[cfg(any(feature = "date", test))]
     pub fn mark_cursor_position(&mut self, offset: isize) {
         match &mut self.state {
             RenderState::Rendered(_) | RenderState::Initial => {}
