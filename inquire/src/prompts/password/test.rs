@@ -305,3 +305,112 @@ password_test!(
     "anor",
     Password::new("").with_display_mode(crate::PasswordDisplayMode::Masked)
 );
+
+/// Replays the tokens written to a [`MockTerminal`] and returns the cursor
+/// position, relative to where the prompt started, each time the cursor is
+/// shown, i.e. at the end of each rendered frame.
+fn cursor_positions_when_shown(
+    output: &std::collections::VecDeque<crate::terminal::test::MockTerminalToken>,
+) -> Vec<(u16, u16)> {
+    use crate::terminal::test::MockTerminalToken;
+    use unicode_width::UnicodeWidthChar;
+
+    let (mut row, mut col) = (0u16, 0u16);
+    let mut positions = vec![];
+
+    for token in output {
+        match token {
+            MockTerminalToken::Text(styled) => {
+                for c in styled.content.chars() {
+                    match c {
+                        '\r' => col = 0,
+                        '\n' => row += 1,
+                        c => col += c.width().unwrap_or(0) as u16,
+                    }
+                }
+            }
+            MockTerminalToken::CursorUp(n) => row -= n,
+            MockTerminalToken::CursorDown(n) => row += n,
+            MockTerminalToken::CursorLeft(n) => col -= n,
+            MockTerminalToken::CursorRight(n) => col += n,
+            MockTerminalToken::CursorMoveToColumn(n) => col = *n,
+            MockTerminalToken::CursorShow => positions.push((row, col)),
+            MockTerminalToken::ClearLine
+            | MockTerminalToken::ClearUntilNewLine
+            | MockTerminalToken::CursorHide => {}
+        }
+    }
+
+    positions
+}
+
+/// Runs `prompt` against a mock terminal and returns the cursor position at
+/// the end of every frame rendered while the prompt was still active.
+fn active_cursor_positions(prompt: Password<'_>, input: Vec<Key>) -> Vec<(u16, u16)> {
+    use crate::terminal::test::MockTerminal;
+    use crate::ui::{Backend, RenderConfig};
+
+    // One frame is rendered before the first key, then one after each key
+    // except the final `Enter`, which renders the submitted answer instead.
+    let active_frames = input.len();
+
+    let mut output = std::collections::VecDeque::new();
+    {
+        let terminal = MockTerminal::new(&mut output);
+        let mut backend =
+            Backend::new(input.into_iter(), terminal, RenderConfig::default()).unwrap();
+        prompt.prompt_with_backend(&mut backend).unwrap();
+    }
+
+    let mut positions = cursor_positions_when_shown(&output);
+    assert!(positions.len() > active_frames);
+    positions.truncate(active_frames);
+    positions
+}
+
+// Anti-regression tests for https://github.com/mikaelmello/inquire/issues/348:
+// in hidden mode the cursor was left at the start of the line instead of
+// after the prompt text.
+const PROMPT: &str = "Encryption Key:";
+// "? " prefix, the prompt text, and the space after it.
+const CURSOR_AFTER_PROMPT: (u16, u16) = (0, 2 + PROMPT.len() as u16 + 1);
+
+#[test]
+fn hidden_cursor_is_after_prompt() {
+    let positions = active_cursor_positions(
+        Password::new(PROMPT).without_confirmation(),
+        vec![Key::Enter],
+    );
+
+    assert_eq!(vec![CURSOR_AFTER_PROMPT], positions);
+}
+
+#[test]
+fn hidden_cursor_is_after_prompt_with_help_message() {
+    let positions = active_cursor_positions(
+        Password::new(PROMPT)
+            .with_display_mode(crate::PasswordDisplayMode::Hidden)
+            .with_help_message("It is used to encrypt your files")
+            .without_confirmation(),
+        vec![Key::Enter],
+    );
+
+    assert_eq!(vec![CURSOR_AFTER_PROMPT], positions);
+}
+
+#[test]
+fn hidden_cursor_stays_after_prompt_while_typing() {
+    let mut input: Vec<Key> = text_to_events!("secret");
+    input.push(Key::Enter);
+
+    let positions = active_cursor_positions(
+        Password::new(PROMPT)
+            .with_display_mode(crate::PasswordDisplayMode::Hidden)
+            .with_help_message("It is used to encrypt your files")
+            .without_confirmation(),
+        input,
+    );
+
+    // One frame before any input, then one per typed character.
+    assert_eq!(vec![CURSOR_AFTER_PROMPT; 7], positions);
+}
