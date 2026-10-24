@@ -78,6 +78,12 @@ pub struct Editor<'a> {
     /// The possible error is displayed to the user one line above the prompt.
     pub validators: Vec<Box<dyn StringValidator>>,
 
+    /// Whether to preserve trailing newlines in the editor output.
+    ///
+    /// When false (default), trailing newlines and carriage returns are stripped.
+    /// When true, the file content is returned as-is.
+    pub preserve_trailing_newlines: bool,
+
     /// RenderConfig to apply to the rendered interface.
     ///
     /// Note: The default render config considers if the NO_COLOR environment variable
@@ -110,6 +116,7 @@ impl<'a> Editor<'a> {
             help_message: Self::DEFAULT_HELP_MESSAGE,
             validators: Self::DEFAULT_VALIDATORS,
             formatter: Self::DEFAULT_FORMATTER,
+            preserve_trailing_newlines: false,
             render_config: RenderConfig::default(),
         }
     }
@@ -147,6 +154,15 @@ impl<'a> Editor<'a> {
     /// Sets the formatter.
     pub fn with_formatter(mut self, formatter: StringFormatter<'a>) -> Self {
         self.formatter = formatter;
+        self
+    }
+
+    /// Configures whether to preserve trailing newlines in the editor output.
+    ///
+    /// When false (default), trailing newlines and carriage returns are stripped.
+    /// When true, the file content is returned as-is.
+    pub fn with_preserve_trailing_newlines(mut self, preserve: bool) -> Self {
+        self.preserve_trailing_newlines = preserve;
         self
     }
 
