@@ -4,9 +4,11 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
-### Fixes
-
-- Fix the cursor placement of `Password` prompts using the `Hidden` display mode: the cursor is now placed right after the prompt text.
+- Updated `inquire-derive` to `syn` 3.
+- Bumped MSRV from 1.82 -> 1.85 due to new requirements of dev-dependencies (`rstest`, `assert_cmd`).
+- Replaced deprecated chrono `NaiveDate::from_ymd` in docs and README examples with `from_ymd_opt` (thanks @atramirez for reporting in #262!)
+- Documented how to restore the terminal when the process receives a signal such as `SIGTERM`, with a new `signal_cleanup` example (thanks @msrd0 for reporting in #225!)
+- Fixed the cursor being placed at the start of the line instead of after the prompt in `PasswordDisplayMode::Hidden`, the default password mode (thanks @levitte!)
 
 ## [0.9.4] - 2026-02-24
 

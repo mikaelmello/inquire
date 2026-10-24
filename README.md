@@ -1,4 +1,4 @@
-[![Latest Version]][crates.io] [![Docs]][docs.rs] ![Build status] ![Unsafe forbidden] ![Supported platforms] ![License]
+[![Latest Version]][crates.io] ![Downloads in the last 90 days][downloads] [![Docs]][docs.rs] ![Build status] ![Unsafe forbidden] ![Supported platforms] ![License]
 
 [crates.io]: https://crates.io/crates/inquire
 [latest version]: https://img.shields.io/crates/v/inquire.svg
@@ -8,6 +8,7 @@
 [unsafe forbidden]: https://img.shields.io/badge/unsafe-forbidden-success.svg
 [supported platforms]: https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-success
 [license]: https://img.shields.io/crates/l/inquire.svg
+[downloads]: https://img.shields.io/crates/dr/inquire
 
 ---
 
@@ -134,6 +135,12 @@ or this:
 inquire = { version = "0.9.4", default-features = false, features = ["console", "date"] }
 ```
 
+## Terminal state on signals
+
+While a prompt is active, `inquire` changes the terminal state, and it restores that state when the prompt finishes or is dropped. A signal such as `SIGTERM` ends the process without running destructors, which can leave the terminal without echo until the user runs `reset`. `inquire` does not install signal handlers itself, since that is a process-wide decision for your application. If your program can receive such signals while a prompt is open, register a handler that restores the terminal before exiting, as shown in the [`signal_cleanup.rs`](./examples/signal_cleanup.rs) example.
+
+The example uses the default `crossterm` back-end: it disables raw mode and bracketed paste, and shows the cursor, which `inquire` hides briefly while redrawing. The `termion` and `console` back-ends also use raw mode and hide the cursor while redrawing, but don't enable bracketed paste, so the handler only needs to restore the original terminal mode and show the cursor.
+
 ## Formatting
 
 Formatting is the process of transforming the user input into a readable output displayed after the user submits their response. By default, this is in some cases just echoing back the input itself, such as in Text prompts. Other prompts have different formatting rules by default, for example DateSelect which formats the selected date into something like "August 5, 2021".
@@ -239,9 +246,9 @@ Default behaviors for each one of `Text` configuration options:
 
 ```rust
 let date = DateSelect::new("When do you want to travel?")
-    .with_default(chrono::NaiveDate::from_ymd(2021, 8, 1))
-    .with_min_date(chrono::NaiveDate::from_ymd(2021, 8, 1))
-    .with_max_date(chrono::NaiveDate::from_ymd(2021, 12, 31))
+    .with_default(chrono::NaiveDate::from_ymd_opt(2021, 8, 1).unwrap())
+    .with_min_date(chrono::NaiveDate::from_ymd_opt(2021, 8, 1).unwrap())
+    .with_max_date(chrono::NaiveDate::from_ymd_opt(2021, 12, 31).unwrap())
     .with_week_start(chrono::Weekday::Mon)
     .with_help_message("Possible flights will be displayed according to the selected date")
     .prompt();

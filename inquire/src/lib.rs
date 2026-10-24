@@ -53,6 +53,24 @@
 //! }
 //! ```
 //!
+//! # Terminal state on signals
+//!
+//! While a prompt is active, `inquire` changes the terminal state, and it restores
+//! that state when the prompt finishes or is dropped. A signal such as `SIGTERM`
+//! ends the process without running destructors, which can leave the terminal
+//! without echo until the user runs `reset`. `inquire` does not install signal
+//! handlers itself, since that is a process-wide decision for your application.
+//! If your program can receive such signals while a prompt is open, register a
+//! handler that restores the terminal before exiting, as shown in the
+//! [`signal_cleanup.rs`](https://github.com/mikaelmello/inquire/blob/main/examples/signal_cleanup.rs)
+//! example.
+//!
+//! The example uses the default `crossterm` back-end: it disables raw mode and
+//! bracketed paste, and shows the cursor, which `inquire` hides briefly while
+//! redrawing. The `termion` and `console` back-ends also use raw mode and hide
+//! the cursor while redrawing, but don't enable bracketed paste, so the handler
+//! only needs to restore the original terminal mode and show the cursor.
+//!
 //! [`Text`]: crate::Text
 //! [`DateSelect`]: crate::DateSelect
 //! [`Select`]: crate::Select

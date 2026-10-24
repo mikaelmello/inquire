@@ -12,7 +12,7 @@ authors = ["Mikael Mello <git@mikaelmello.com>"]
 keywords = ["cli", "ask", "prompt", "question", "interactive"]
 categories = ["command-line-interface", "value-formatting"]
 include = ["/src", "/../LICENSE"]
-rust-version = "1.80.0"
+rust-version = "1.85.0"
 
 [lib]
 proc-macro = true
@@ -24,7 +24,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 [dependencies]
 proc-macro2 = "1.0.95"
 quote = "1.0.40"
-syn = { version = "2.0.101", features = ["full", "extra-traits"] }
+syn = { version = "3.0.9", features = ["full", "extra-traits"] }
 
 [dev-dependencies]
 inquire = { path = "../inquire" }

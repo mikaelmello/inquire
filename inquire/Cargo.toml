@@ -12,7 +12,7 @@ authors = ["Mikael Mello <git@mikaelmello.com>"]
 keywords = ["cli", "ask", "prompt", "question", "interactive"]
 categories = ["command-line-interface", "value-formatting"]
 include = ["/src", "/../LICENSE"]
-rust-version = "1.80.0"
+rust-version = "1.85.0"
 
 [lib]
 name = "inquire"
@@ -51,6 +51,6 @@ unicode-segmentation = "1"
 unicode-width = "0.2"
 
 [dev-dependencies]
-rstest = "0.26.1"
+rstest = "0.28.0"
 chrono = { version = "0.4" }
 

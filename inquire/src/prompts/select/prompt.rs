@@ -43,7 +43,7 @@ where
             return Err(InquireError::InvalidConfiguration(format!(
                 "Starting cursor index {} is out-of-bounds for length {} of options",
                 so.starting_cursor,
-                &so.options.len()
+                so.options.len()
             )));
         }
 

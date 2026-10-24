@@ -123,10 +123,10 @@ where
 ///     }
 /// };
 ///
-/// assert_eq!(Validation::Valid, validator.validate(NaiveDate::from_ymd(2021, 7, 26))?);
+/// assert_eq!(Validation::Valid, validator.validate(NaiveDate::from_ymd_opt(2021, 7, 26).unwrap())?);
 /// assert_eq!(
 ///     Validation::Invalid("Weekends are not allowed".into()),
-///     validator.validate(NaiveDate::from_ymd(2021, 7, 25))?
+///     validator.validate(NaiveDate::from_ymd_opt(2021, 7, 25).unwrap())?
 /// );
 /// # Ok::<(), inquire::error::CustomUserError>(())
 /// ```

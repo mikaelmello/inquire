@@ -18,6 +18,10 @@ rexpect = "0.6.2"
 anyhow = "1.0.99"
 assert_cmd = "2.0.17"
 
+[target.'cfg(unix)'.dependencies]
+crossterm = "0.29.0"
+signal-hook = "0.3.18"
+
 [[example]]
 name = "form"
 path = "form.rs"
@@ -101,3 +105,7 @@ path = "enum_comprehensive.rs"
 [[example]]
 name = "enum_select_derive"
 path = "enum_select_derive.rs"
+
+[[example]]
+name = "signal_cleanup"
+path = "signal_cleanup.rs"
