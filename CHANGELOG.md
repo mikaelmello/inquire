@@ -4,7 +4,8 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
-- No changes since the latest release below.
+- Updated `inquire-derive` to `syn` 3.
+- Bumped MSRV from 1.82 -> 1.85 due to new requirements of dev-dependencies (`rstest`, `assert_cmd`).
 
 ## [0.9.4] - 2026-02-24
 
