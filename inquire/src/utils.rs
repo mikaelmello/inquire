@@ -89,7 +89,7 @@ impl<'a, T> Debug for Page<'a, T> {
         f.debug_struct("Page")
             .field("first", &self.first)
             .field("last", &self.last)
-            .field("content", &format!("({} elements)", &self.content.len()))
+            .field("content", &format!("({} elements)", self.content.len()))
             .field("cursor", &self.cursor)
             .field("total", &self.total)
             .finish()
