@@ -301,3 +301,102 @@ fn first_option_renders_on_new_line_without_filtering() {
     match_text(&mut output, "\r");
     match_text(&mut output, "\n");
 }
+
+mod tabs {
+    use std::collections::VecDeque;
+
+    use crate::{
+        list_option::ListOption,
+        terminal::{
+            test::{emulate_screen, MockTerminal, ScreenSnapshot},
+            TerminalSize,
+        },
+        ui::{Backend, Key, KeyModifiers, RenderConfig},
+        MultiSelect,
+    };
+
+    const WIDTH: u16 = 40;
+
+    fn run(options: Vec<&str>, keys: Vec<Key>) -> (Vec<ListOption<&str>>, Vec<ScreenSnapshot>) {
+        let size = TerminalSize::new(WIDTH, 40).unwrap();
+        let mut output = VecDeque::new();
+        let ans;
+        {
+            let terminal = MockTerminal::new(&mut output).with_size(size);
+            let mut backend =
+                Backend::new(keys.into_iter(), terminal, RenderConfig::default()).unwrap();
+            ans = MultiSelect::new("Pick users", options)
+                .without_filtering()
+                .prompt_with_backend(&mut backend)
+                .unwrap();
+        }
+        (ans, emulate_screen(&output, size))
+    }
+
+    fn down_up_cycles() -> Vec<Key> {
+        let mut keys = vec![];
+        for _ in 0..3 {
+            keys.push(Key::Down(KeyModifiers::NONE));
+            keys.push(Key::Up(KeyModifiers::NONE));
+        }
+        keys.push(Key::Enter);
+        keys
+    }
+
+    #[test]
+    // Anti-regression test: https://github.com/mikaelmello/inquire/issues/344
+    fn redraws_of_options_with_tabs_match_space_only_control() {
+        // long enough to wrap in a 40-column terminal
+        let tabbed = vec![
+            "alice\tadmin\tmaintains the release pipeline",
+            "bob\tviewer\treads the dashboards",
+            "charlotte\tops\ton call for the database cluster",
+        ];
+        // the same options, with tabs expanded after the 6-column "> [ ] " prefix
+        let spaced = vec![
+            "alice     admin   maintains the release pipeline",
+            "bob       viewer  reads the dashboards",
+            "charlotte ops     on call for the database cluster",
+        ];
+
+        let (_, tabbed_screens) = run(tabbed, down_up_cycles());
+        let (_, spaced_screens) = run(spaced, down_up_cycles());
+
+        assert_eq!(spaced_screens, tabbed_screens);
+        // after each down/up cycle, the screen is the same
+        assert_eq!(tabbed_screens[2], tabbed_screens[4]);
+        assert_eq!(tabbed_screens[2], tabbed_screens[6]);
+    }
+
+    #[test]
+    fn tabs_align_option_columns() {
+        let (_, screens) = run(
+            vec!["alice\tadmin", "bob\tviewer", "charlotte\tops"],
+            vec![Key::Enter],
+        );
+
+        let first_frame = &screens[0];
+        let columns: Vec<Option<usize>> = ["admin", "viewer", "ops"]
+            .iter()
+            .map(|field| {
+                first_frame
+                    .rows
+                    .iter()
+                    .find_map(|row| row.find(&format!(" {}", field)))
+                    .map(|idx| idx + 1)
+            })
+            .collect();
+
+        assert_eq!(vec![Some(16), Some(16), Some(16)], columns);
+    }
+
+    #[test]
+    fn tabs_are_kept_in_answer() {
+        let (ans, _) = run(
+            vec!["alice\tadmin", "bob\tviewer"],
+            vec![Key::Char(' ', KeyModifiers::NONE), Key::Enter],
+        );
+
+        assert_eq!(vec![ListOption::new(0, "alice\tadmin")], ans);
+    }
+}

@@ -1,7 +1,5 @@
 use std::{collections::BTreeSet, fmt::Display, io::Result};
 
-use unicode_width::UnicodeWidthStr;
-
 use crate::{
     error::InquireResult,
     input::Input,
@@ -191,7 +189,7 @@ where
         // (based on the underlying input struct), as it's a simple
         // cur_pos + offset calculation.
         self.frame_renderer
-            .mark_cursor_position(input.pre_cursor().width() as isize);
+            .mark_cursor_position_after(input.pre_cursor());
 
         if input.is_empty() {
             match input.placeholder() {
