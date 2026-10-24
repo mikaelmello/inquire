@@ -6,6 +6,7 @@
 
 - Updated `inquire-derive` to `syn` 3.
 - Bumped MSRV from 1.82 -> 1.85 due to new requirements of dev-dependencies (`rstest`, `assert_cmd`).
+- Replaced deprecated chrono `NaiveDate::from_ymd` in docs and README examples with `from_ymd_opt` (thanks @atramirez for reporting in #262!)
 
 ## [0.9.4] - 2026-02-24
 
