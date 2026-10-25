@@ -637,6 +637,7 @@ where
 {
     fn render_prompt(&mut self, prompt: &str) -> Result<()> {
         self.print_prompt(prompt)?;
+        self.frame_renderer.mark_cursor_position(0);
         self.new_line()?;
         Ok(())
     }

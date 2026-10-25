@@ -10,6 +10,7 @@
 - Documented how to restore the terminal when the process receives a signal such as `SIGTERM`, with a new `signal_cleanup` example (thanks @msrd0 for reporting in #225!)
 - Fixed tab characters being measured as zero-width, which corrupted redraws; tabs are now expanded to the next 8-column tab stop when rendering (thanks @r-near for reporting and @rksharma-owg for the detailed analysis in #344!)
 - Fixed Ctrl+C killing the process instead of returning `OperationInterrupted` when using the `console` backend (thanks @tugtugtug for reporting in #297!)
+- Fixed the cursor being placed at the start of the line instead of after the prompt in `PasswordDisplayMode::Hidden`, the default password mode (thanks @levitte!)
 
 ## [0.9.4] - 2026-02-24
 
