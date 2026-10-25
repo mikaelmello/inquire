@@ -7,8 +7,11 @@ use crate::error::CustomUserError;
 /// The function receives:
 /// - Current user input, filter value
 /// - Current option being evaluated, with type preserved
-/// - String value of the current option
+/// - Original `Display` string of the current option, including any ANSI escape codes
 /// - Index of the current option in the original list
+///
+/// The default Select and MultiSelect scorers ignore ANSI escape codes when matching.
+/// Custom scorers receive the original string and are responsible for handling escape codes.
 ///
 /// The return type should be a score determining the order options should be displayed to the user.
 /// The greater the score, the higher on the list it will be displayed.

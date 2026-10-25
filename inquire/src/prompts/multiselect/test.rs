@@ -400,3 +400,13 @@ mod tabs {
         assert_eq!(vec![ListOption::new(0, "alice\tadmin")], ans);
     }
 }
+
+#[test]
+fn ansi_escape_codes_do_not_match_filter() {
+    let option = "\x1b[32mApple\x1b[0m";
+
+    assert_eq!(
+        None,
+        MultiSelect::<&str>::DEFAULT_SCORER("32m", &option, option, 0)
+    );
+}

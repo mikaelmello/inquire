@@ -9,6 +9,7 @@ pub use action::*;
 use std::fmt::Display;
 
 use crate::{
+    ansi::AnsiStrippable,
     config::get_configuration,
     error::{InquireError, InquireResult},
     formatter::OptionFormatter,
@@ -146,6 +147,9 @@ where
     /// Default scoring function, which will create a score for the current option using the input value.
     /// The return will be sorted in Descending order, leaving options with None as a score.
     ///
+    /// ANSI escape codes in the option display text are ignored when scoring.
+    /// Custom scorers receive the original display text, including escape codes.
+    ///
     /// # Examples
     ///
     /// ```
@@ -169,12 +173,16 @@ where
     #[cfg(feature = "fuzzy")]
     pub const DEFAULT_SCORER: Scorer<'a, T> =
         &|input, _option, string_value, _idx| -> Option<i64> {
-            DEFAULT_MATCHER.fuzzy_match(string_value, input)
+            let string_value: String = string_value.ansi_stripped_chars().collect();
+            DEFAULT_MATCHER.fuzzy_match(&string_value, input)
         };
 
+    /// Default case-insensitive substring scorer, ignoring ANSI escape codes in option text.
+    /// Custom scorers receive the original display text, including escape codes.
     #[cfg(not(feature = "fuzzy"))]
     pub const DEFAULT_SCORER: Scorer<'a, T> =
         &|input, _option, string_value, _idx| -> Option<i64> {
+            let string_value: String = string_value.ansi_stripped_chars().collect();
             let filter = input.to_lowercase();
             match string_value.to_lowercase().contains(&filter) {
                 true => Some(0),

@@ -4,6 +4,8 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
+- Fixed ANSI escape codes causing false matches in default `Select` and `MultiSelect` option filtering (#351).
+
 - Updated `inquire-derive` to `syn` 3.
 - Bumped MSRV from 1.82 -> 1.85 due to new requirements of dev-dependencies (`rstest`, `assert_cmd`).
 - Replaced deprecated chrono `NaiveDate::from_ymd` in docs and README examples with `from_ymd_opt` (thanks @atramirez for reporting in #262!)
