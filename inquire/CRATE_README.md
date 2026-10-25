@@ -30,7 +30,7 @@ It provides several different prompts in order to interactively ask the user for
 ## Demo
 
 ![Animated GIF making a demonstration of a questionnaire created with this library. You can replay this recording in your terminal with asciinema play command - asciinema play ../assets/expense_tracker.cast](../assets/expense_tracker.gif)
-[Source](./examples/expense_tracker.rs)
+[Source](../examples/expense_tracker.rs)
 
 ## Features
 

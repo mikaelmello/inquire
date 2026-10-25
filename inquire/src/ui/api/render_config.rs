@@ -150,7 +150,7 @@ pub struct RenderConfig<'a> {
     /// Render configuration for calendar
 
     #[cfg(feature = "date")]
-    /// Render configuration for date prompts`
+    /// Render configuration for date prompts
     pub calendar: calendar::CalendarRenderConfig<'a>,
 
     /// Style sheet of the hint in editor prompts.
