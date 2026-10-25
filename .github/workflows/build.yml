@@ -35,6 +35,11 @@ jobs:
       - name: Check lint
         run: cargo clippy --workspace --all-features -- -D warnings
 
+      - name: Check docs
+        run: cargo doc --workspace --all-features --no-deps
+        env:
+          RUSTDOCFLAGS: -D warnings
+
   tests:
     runs-on: ${{ matrix.os }}
     strategy:
