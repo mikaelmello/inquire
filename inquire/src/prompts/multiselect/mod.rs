@@ -185,7 +185,7 @@ where
     #[cfg(feature = "fuzzy")]
     pub const DEFAULT_SCORER: Scorer<'a, T> =
         &|input, _option, string_value, _idx| -> Option<i64> {
-            let string_value: String = string_value.ansi_stripped_chars().collect();
+            let string_value = string_value.ansi_stripped();
             DEFAULT_MATCHER.fuzzy_match(&string_value, input)
         };
 
@@ -194,7 +194,7 @@ where
     #[cfg(not(feature = "fuzzy"))]
     pub const DEFAULT_SCORER: Scorer<'a, T> =
         &|input, _option, string_value, _idx| -> Option<i64> {
-            let string_value: String = string_value.ansi_stripped_chars().collect();
+            let string_value = string_value.ansi_stripped();
             let filter = input.to_lowercase();
             match string_value.to_lowercase().contains(&filter) {
                 true => Some(0),

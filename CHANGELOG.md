@@ -4,8 +4,6 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
-- Fixed ANSI escape codes causing false matches in default `Select` and `MultiSelect` option filtering (#351).
-
 - Updated `inquire-derive` to `syn` 3.
 - Bumped MSRV from 1.82 -> 1.85 due to new requirements of dev-dependencies (`rstest`, `assert_cmd`).
 - Replaced deprecated chrono `NaiveDate::from_ymd` in docs and README examples with `from_ymd_opt` (thanks @atramirez for reporting in #262!)
@@ -13,6 +11,7 @@
 - Fixed tab characters being measured as zero-width, which corrupted redraws; tabs are now expanded to the next 8-column tab stop when rendering (thanks @r-near for reporting and @rksharma-owg for the detailed analysis in #344!)
 - Fixed Ctrl+C killing the process instead of returning `OperationInterrupted` when using the `console` backend (thanks @tugtugtug for reporting in #297!)
 - Fixed the cursor being placed at the start of the line instead of after the prompt in `PasswordDisplayMode::Hidden`, the default password mode (thanks @levitte!)
+- Fixed ANSI escape codes causing false matches when filtering `Select` and `MultiSelect` options with the default scorer (thanks @mvanhorn, and @tpoliaw for reporting in #55!)
 
 ## [0.9.4] - 2026-02-24
 

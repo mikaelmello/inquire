@@ -410,3 +410,14 @@ fn ansi_escape_codes_do_not_match_filter() {
         MultiSelect::<&str>::DEFAULT_SCORER("32m", &option, option, 0)
     );
 }
+
+#[test]
+fn ansi_escape_codes_do_not_affect_matching_visible_text() {
+    let colored = "\x1b[32mApple\x1b[0m";
+    let plain = "Apple";
+    let score = |input, option| MultiSelect::<&str>::DEFAULT_SCORER(input, &option, option, 0);
+
+    assert!(score("app", colored).is_some());
+    assert_eq!(score("app", plain), score("app", colored));
+    assert_eq!(score("Apple", plain), score("Apple", colored));
+}
