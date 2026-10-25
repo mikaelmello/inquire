@@ -188,3 +188,13 @@ fn first_option_renders_on_new_line_without_filtering() {
     match_text(&mut output, "\r");
     match_text(&mut output, "\n");
 }
+
+#[test]
+fn ansi_escape_codes_do_not_match_filter() {
+    let option = "\x1b[32mApple\x1b[0m";
+
+    assert_eq!(
+        None,
+        Select::<&str>::DEFAULT_SCORER("32m", &option, option, 0)
+    );
+}
