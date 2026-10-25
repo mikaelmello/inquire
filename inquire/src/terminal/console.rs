@@ -25,7 +25,9 @@ impl ConsoleTerminal {
 
 impl InputReader for ConsoleTerminal {
     fn read_key(&mut self) -> InquireResult<crate::ui::Key> {
-        let key = self.term.read_key()?;
+        // `read_key` raises SIGINT on Ctrl+C, killing the process before the
+        // prompt can clean up. `read_key_raw` returns `Key::CtrlC` instead.
+        let key = self.term.read_key_raw()?;
         Ok(key.into())
     }
 }
@@ -171,9 +173,40 @@ impl From<Key> for crate::ui::Key {
             Key::ArrowDown => Self::Down(KeyModifiers::empty()),
             Key::ArrowLeft => Self::Left(KeyModifiers::empty()),
             Key::ArrowRight => Self::Right(KeyModifiers::empty()),
+            Key::CtrlC => Self::Char('c', KeyModifiers::CONTROL),
             Key::Char(c) => Self::Char(c, KeyModifiers::empty()),
             #[allow(deprecated)]
             _ => Self::Any,
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use console::Key as ConsoleKey;
+
+    use crate::{
+        ui::{test::FakeBackend, Key, KeyModifiers},
+        Confirm, InquireError,
+    };
+
+    #[test]
+    fn ctrl_c_maps_to_control_c() {
+        assert_eq!(
+            Key::Char('c', KeyModifiers::CONTROL),
+            Key::from(ConsoleKey::CtrlC)
+        );
+    }
+
+    #[test]
+    fn ctrl_c_interrupts_prompt() {
+        let mut backend = FakeBackend::new(vec![ConsoleKey::CtrlC.into()]);
+
+        let result = Confirm::new("Question").prompt_with_backend(&mut backend);
+
+        assert!(
+            matches!(result, Err(InquireError::OperationInterrupted)),
+            "Expected OperationInterrupted, got {result:?}"
+        );
     }
 }
