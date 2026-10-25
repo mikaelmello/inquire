@@ -1,24 +1,30 @@
 [package]
 name = "inquire-derive"
-version = "0.7.5"
-description = "" # TODO
-publish = false # TODO
+version = "0.9.4"
+description = "Derive macros for the inquire crate"
 repository = "https://github.com/mikaelmello/inquire"
 license = "MIT"
 edition = "2021"
 readme = "./CRATE_README.md"
-documentation = "https://docs.rs/inquire"
+documentation = "https://docs.rs/inquire-derive"
 homepage = "https://github.com/mikaelmello/inquire"
-authors = ["Walter Bonetti <bonettiw@amotus.ca>", "Mikael Mello <git@mikaelmello.com>"]
+authors = ["Mikael Mello <git@mikaelmello.com>"]
 keywords = ["cli", "ask", "prompt", "question", "interactive"]
 categories = ["command-line-interface", "value-formatting"]
-include = ["./src", "../LICENSE"]
+include = ["/src", "/../LICENSE"]
+rust-version = "1.85.0"
+
+[lib]
+proc-macro = true
 
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
+proc-macro2 = "1.0.95"
+quote = "1.0.40"
+syn = { version = "3.0.9", features = ["full", "extra-traits"] }
 
 [dev-dependencies]
 inquire = { path = "../inquire" }

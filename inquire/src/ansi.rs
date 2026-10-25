@@ -1,4 +1,4 @@
-use std::{iter::Peekable, str::CharIndices};
+use std::{borrow::Cow, iter::Peekable, str::CharIndices};
 
 #[must_use]
 enum AnsiMatchResult {
@@ -167,6 +167,10 @@ impl<'a> Iterator for AnsiStrippedChars<'a> {
 pub trait AnsiStrippable {
     #[allow(unused)]
     fn ansi_stripped_chars(&self) -> AnsiStrippedChars<'_>;
+
+    /// Returns the input without ANSI escape codes, borrowing it when there are none.
+    #[allow(unused)]
+    fn ansi_stripped(&self) -> Cow<'_, str>;
 }
 
 impl<T> AnsiStrippable for T
@@ -176,6 +180,16 @@ where
     fn ansi_stripped_chars(&self) -> AnsiStrippedChars<'_> {
         AnsiStrippedChars {
             input: self.as_ref(),
+        }
+    }
+
+    fn ansi_stripped(&self) -> Cow<'_, str> {
+        let input = self.as_ref();
+        // Every escape code starts with ESC, so without one there is nothing to strip.
+        if input.contains('\x1b') {
+            Cow::Owned(input.ansi_stripped_chars().collect())
+        } else {
+            Cow::Borrowed(input)
         }
     }
 }
@@ -198,6 +212,21 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn ansi_stripped_borrows_input_without_escape_codes() {
+        assert!(matches!(
+            "plain text".ansi_stripped(),
+            Cow::Borrowed("plain text")
+        ));
+    }
+
+    #[test]
+    fn ansi_stripped_removes_escape_codes() {
+        let stripped = "\x1b[32mApple\x1b[0m".ansi_stripped();
+        assert!(matches!(stripped, Cow::Owned(_)));
+        assert_eq!("Apple", stripped);
+    }
 
     macro_rules! assert_stripped_eq {
         ($input:expr, $expected:expr) => {

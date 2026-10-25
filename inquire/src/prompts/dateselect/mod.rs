@@ -52,9 +52,9 @@ use self::prompt::DateSelectPrompt;
 /// use inquire::DateSelect;
 ///
 /// let date = DateSelect::new("When do you want to travel?")
-///     .with_starting_date(NaiveDate::from_ymd(2021, 8, 1))
-///     .with_min_date(NaiveDate::from_ymd(2021, 8, 1))
-///     .with_max_date(NaiveDate::from_ymd(2021, 12, 31))
+///     .with_starting_date(NaiveDate::from_ymd_opt(2021, 8, 1).unwrap())
+///     .with_min_date(NaiveDate::from_ymd_opt(2021, 8, 1).unwrap())
+///     .with_max_date(NaiveDate::from_ymd_opt(2021, 12, 31).unwrap())
 ///     .with_week_start(Weekday::Mon)
 ///     .with_help_message("Possible flights will be displayed according to the selected date")
 ///     .prompt();

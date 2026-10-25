@@ -148,8 +148,6 @@ pub type MultiOptionFormatter<'a, T> = &'a dyn Fn(&[ListOption<&T>]) -> String;
 /// ```
 pub type CustomTypeFormatter<'a, T> = &'a dyn Fn(T) -> String;
 
-#[cfg(feature = "date")]
-
 /// Type alias for formatters used in [`DateSelect`](crate::DateSelect) prompts.
 ///
 /// Formatters receive the user input and return a [String] to be displayed
@@ -165,9 +163,10 @@ pub type CustomTypeFormatter<'a, T> = &'a dyn Fn(T) -> String;
 ///
 /// assert_eq!(
 ///     String::from("25/07/2021"),
-///     formatter(NaiveDate::from_ymd(2021, 7, 25)),
+///     formatter(NaiveDate::from_ymd_opt(2021, 7, 25).unwrap()),
 /// );
 /// ```
+#[cfg(feature = "date")]
 pub type DateFormatter<'a> = &'a dyn Fn(chrono::NaiveDate) -> String;
 
 /// String formatter used by default in inputs that return a `String` as input.
@@ -218,11 +217,11 @@ pub const DEFAULT_BOOL_FORMATTER: BoolFormatter<'_> = &|ans| {
 ///
 /// assert_eq!(
 ///     String::from("July 25, 2021"),
-///     formatter(NaiveDate::from_ymd(2021, 7, 25)),
+///     formatter(NaiveDate::from_ymd_opt(2021, 7, 25).unwrap()),
 /// );
 /// assert_eq!(
 ///     String::from("January 1, 2021"),
-///     formatter(NaiveDate::from_ymd(2021, 1, 1)),
+///     formatter(NaiveDate::from_ymd_opt(2021, 1, 1).unwrap()),
 /// );
 /// ```
 pub const DEFAULT_DATE_FORMATTER: DateFormatter<'_> = &|val| val.format("%B %-e, %Y").to_string();

@@ -13,11 +13,6 @@ impl InnerAction for CustomTypePromptAction {
     type Config = CustomTypeConfig;
 
     fn from_key(key: Key, _config: &CustomTypeConfig) -> Option<Self> {
-        let action = match InputAction::from_key(key, &()) {
-            Some(action) => Self::ValueInput(action),
-            None => return None,
-        };
-
-        Some(action)
+        InputAction::from_key(key, &()).map(Self::ValueInput)
     }
 }

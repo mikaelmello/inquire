@@ -10,6 +10,7 @@ pub use action::*;
 use std::fmt::Display;
 
 use crate::{
+    ansi::AnsiStrippable,
     config::get_configuration,
     error::{InquireError, InquireResult},
     formatter::MultiOptionFormatter,
@@ -26,9 +27,10 @@ use self::prompt::MultiSelectPrompt;
 #[cfg(feature = "fuzzy")]
 use fuzzy_matcher::{skim::SkimMatcherV2, FuzzyMatcher};
 #[cfg(feature = "fuzzy")]
-use once_cell::sync::Lazy;
+use std::sync::LazyLock;
 #[cfg(feature = "fuzzy")]
-static DEFAULT_MATCHER: Lazy<SkimMatcherV2> = Lazy::new(|| SkimMatcherV2::default().ignore_case());
+static DEFAULT_MATCHER: LazyLock<SkimMatcherV2> =
+    LazyLock::new(|| SkimMatcherV2::default().ignore_case());
 /// Prompt suitable for when you need the user to select many options (including none if applicable) among a list of them.
 ///
 /// The user can select (or deselect) the current highlighted option by pressing space, clean all selections by pressing the left arrow and select all options by pressing the right arrow.
@@ -57,7 +59,7 @@ static DEFAULT_MATCHER: Lazy<SkimMatcherV2> = Lazy::new(|| SkimMatcherV2::defaul
 ///
 /// # Example
 ///
-/// For a full-featured example, check the [GitHub repository](https://github.com/mikaelmello/inquire/blob/main/inquire/examples/multiselect.rs).
+/// For a full-featured example, check the [GitHub repository](https://github.com/mikaelmello/inquire/blob/main/examples/multiselect.rs).
 ///
 /// [`InquireError::InvalidConfiguration`]: crate::error::InquireError::InvalidConfiguration
 #[derive(Clone)]
@@ -157,6 +159,9 @@ where
     /// Default scoring function, which will create a score for the current option using the input value.
     /// The return will be sorted in Descending order, leaving options with None as a score.
     ///
+    /// ANSI escape codes in the option display text are ignored when scoring.
+    /// Custom scorers receive the original display text, including escape codes.
+    ///
     /// # Examples
     ///
     /// ```
@@ -180,12 +185,16 @@ where
     #[cfg(feature = "fuzzy")]
     pub const DEFAULT_SCORER: Scorer<'a, T> =
         &|input, _option, string_value, _idx| -> Option<i64> {
-            DEFAULT_MATCHER.fuzzy_match(string_value, input)
+            let string_value = string_value.ansi_stripped();
+            DEFAULT_MATCHER.fuzzy_match(&string_value, input)
         };
 
+    /// Default case-insensitive substring scorer, ignoring ANSI escape codes in option text.
+    /// Custom scorers receive the original display text, including escape codes.
     #[cfg(not(feature = "fuzzy"))]
     pub const DEFAULT_SCORER: Scorer<'a, T> =
         &|input, _option, string_value, _idx| -> Option<i64> {
+            let string_value = string_value.ansi_stripped();
             let filter = input.to_lowercase();
             match string_value.to_lowercase().contains(&filter) {
                 true => Some(0),

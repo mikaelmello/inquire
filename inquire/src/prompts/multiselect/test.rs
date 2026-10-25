@@ -1,6 +1,7 @@
 use crate::{
     formatter::MultiOptionFormatter,
     list_option::ListOption,
+    terminal::test::match_text,
     test::fake_backend,
     ui::{Key, KeyModifiers},
     MultiSelect,
@@ -254,4 +255,169 @@ fn keep_filter_false_should_reset_option_list() {
 
     let expected_answer = vec![ListOption::new(0, 1), ListOption::new(2, 3)];
     assert_eq!(expected_answer, ans);
+}
+
+#[test]
+// Anti-regression test: https://github.com/mikaelmello/inquire/issues/294
+fn first_option_renders_on_new_line_without_filtering() {
+    use crate::{
+        terminal::test::MockTerminal,
+        ui::{Backend, InputReader, Key, RenderConfig},
+    };
+    use std::collections::VecDeque;
+
+    // Create input reader
+    struct MockInputReader;
+    impl InputReader for MockInputReader {
+        fn read_key(&mut self) -> crate::error::InquireResult<Key> {
+            Ok(Key::Enter)
+        }
+    }
+
+    let mut output = VecDeque::new();
+    let terminal = MockTerminal::new(&mut output);
+    let input_reader = MockInputReader;
+    let render_config = RenderConfig::default();
+
+    let options = vec!["Option 1", "Option 2", "Option 3"];
+
+    {
+        let mut backend = Backend::new(input_reader, terminal, render_config).unwrap();
+        let _ans = MultiSelect::new("Select rating", options)
+            .without_filtering()
+            .prompt_with_backend(&mut backend)
+            .unwrap();
+    }
+
+    // The key assertion is that there should be a newline after the prompt
+    // Before the bug fix, the first option would appear on the same line as the prompt
+    // After the bug fix, there should be a newline separating them
+
+    // We're testing that with without_filtering(), the newline appears after the prompt
+    match_text(&mut output, "?");
+    match_text(&mut output, " ");
+    match_text(&mut output, "Select rating");
+    match_text(&mut output, " ");
+    match_text(&mut output, "\r");
+    match_text(&mut output, "\n");
+}
+
+mod tabs {
+    use std::collections::VecDeque;
+
+    use crate::{
+        list_option::ListOption,
+        terminal::{
+            test::{emulate_screen, MockTerminal, ScreenSnapshot},
+            TerminalSize,
+        },
+        ui::{Backend, Key, KeyModifiers, RenderConfig},
+        MultiSelect,
+    };
+
+    const WIDTH: u16 = 40;
+
+    fn run(options: Vec<&str>, keys: Vec<Key>) -> (Vec<ListOption<&str>>, Vec<ScreenSnapshot>) {
+        let size = TerminalSize::new(WIDTH, 40).unwrap();
+        let mut output = VecDeque::new();
+        let ans;
+        {
+            let terminal = MockTerminal::new(&mut output).with_size(size);
+            let mut backend =
+                Backend::new(keys.into_iter(), terminal, RenderConfig::default()).unwrap();
+            ans = MultiSelect::new("Pick users", options)
+                .without_filtering()
+                .prompt_with_backend(&mut backend)
+                .unwrap();
+        }
+        (ans, emulate_screen(&output, size))
+    }
+
+    fn down_up_cycles() -> Vec<Key> {
+        let mut keys = vec![];
+        for _ in 0..3 {
+            keys.push(Key::Down(KeyModifiers::NONE));
+            keys.push(Key::Up(KeyModifiers::NONE));
+        }
+        keys.push(Key::Enter);
+        keys
+    }
+
+    #[test]
+    // Anti-regression test: https://github.com/mikaelmello/inquire/issues/344
+    fn redraws_of_options_with_tabs_match_space_only_control() {
+        // long enough to wrap in a 40-column terminal
+        let tabbed = vec![
+            "alice\tadmin\tmaintains the release pipeline",
+            "bob\tviewer\treads the dashboards",
+            "charlotte\tops\ton call for the database cluster",
+        ];
+        // the same options, with tabs expanded after the 6-column "> [ ] " prefix
+        let spaced = vec![
+            "alice     admin   maintains the release pipeline",
+            "bob       viewer  reads the dashboards",
+            "charlotte ops     on call for the database cluster",
+        ];
+
+        let (_, tabbed_screens) = run(tabbed, down_up_cycles());
+        let (_, spaced_screens) = run(spaced, down_up_cycles());
+
+        assert_eq!(spaced_screens, tabbed_screens);
+        // after each down/up cycle, the screen is the same
+        assert_eq!(tabbed_screens[2], tabbed_screens[4]);
+        assert_eq!(tabbed_screens[2], tabbed_screens[6]);
+    }
+
+    #[test]
+    fn tabs_align_option_columns() {
+        let (_, screens) = run(
+            vec!["alice\tadmin", "bob\tviewer", "charlotte\tops"],
+            vec![Key::Enter],
+        );
+
+        let first_frame = &screens[0];
+        let columns: Vec<Option<usize>> = ["admin", "viewer", "ops"]
+            .iter()
+            .map(|field| {
+                first_frame
+                    .rows
+                    .iter()
+                    .find_map(|row| row.find(&format!(" {}", field)))
+                    .map(|idx| idx + 1)
+            })
+            .collect();
+
+        assert_eq!(vec![Some(16), Some(16), Some(16)], columns);
+    }
+
+    #[test]
+    fn tabs_are_kept_in_answer() {
+        let (ans, _) = run(
+            vec!["alice\tadmin", "bob\tviewer"],
+            vec![Key::Char(' ', KeyModifiers::NONE), Key::Enter],
+        );
+
+        assert_eq!(vec![ListOption::new(0, "alice\tadmin")], ans);
+    }
+}
+
+#[test]
+fn ansi_escape_codes_do_not_match_filter() {
+    let option = "\x1b[32mApple\x1b[0m";
+
+    assert_eq!(
+        None,
+        MultiSelect::<&str>::DEFAULT_SCORER("32m", &option, option, 0)
+    );
+}
+
+#[test]
+fn ansi_escape_codes_do_not_affect_matching_visible_text() {
+    let colored = "\x1b[32mApple\x1b[0m";
+    let plain = "Apple";
+    let score = |input, option| MultiSelect::<&str>::DEFAULT_SCORER(input, &option, option, 0);
+
+    assert!(score("app", colored).is_some());
+    assert_eq!(score("app", plain), score("app", colored));
+    assert_eq!(score("Apple", plain), score("Apple", colored));
 }

@@ -2,7 +2,7 @@ use super::Text;
 use crate::ui::{Key, KeyModifiers};
 use crate::validator::{ErrorMessage, Validation};
 
-fn default<'a>() -> Text<'a> {
+fn default<'a, 'b>() -> Text<'a, 'b> {
     Text::new("Question?")
 }
 
@@ -50,6 +50,34 @@ text_test!(
     letters_and_enter_with_emoji,
     text_to_events!("with emoji 🧘🏻‍♂️, 🌍, 🍞, 🚗, 📞\n"),
     "with emoji 🧘🏻‍♂️, 🌍, 🍞, 🚗, 📞"
+);
+
+text_test!(
+    alt_enter_inserts_newline,
+    {
+        let mut events = vec![];
+        events.append(&mut text_to_events!("ab"));
+        events.push(Key::Char('\n', KeyModifiers::ALT));
+        events.append(&mut text_to_events!("cd"));
+        events.push(Key::Enter);
+        events
+    },
+    "ab\ncd"
+);
+
+text_test!(
+    multiline_input_with_multiple_newlines,
+    {
+        let mut events = vec![];
+        events.append(&mut text_to_events!("line1"));
+        events.push(Key::Char('\n', KeyModifiers::ALT));
+        events.append(&mut text_to_events!("line2"));
+        events.push(Key::Char('\n', KeyModifiers::ALT));
+        events.append(&mut text_to_events!("line3"));
+        events.push(Key::Enter);
+        events
+    },
+    "line1\nline2\nline3"
 );
 
 text_test!(
@@ -111,3 +139,37 @@ text_test!(
         _ => Ok(Validation::Invalid(ErrorMessage::Default)),
     })
 );
+
+#[test]
+fn tab_before_cursor_keeps_cursor_on_rendered_char() {
+    use crate::terminal::{
+        test::{emulate_screen, MockTerminal},
+        TerminalSize,
+    };
+    use crate::ui::{Backend, RenderConfig};
+    use std::collections::VecDeque;
+
+    let size = TerminalSize::new(80, 24).unwrap();
+    let mut output = VecDeque::new();
+    let ans;
+    {
+        let mut keys = text_to_events!("a\tbc");
+        keys.push(Key::Left(KeyModifiers::NONE));
+        keys.push(Key::Left(KeyModifiers::NONE));
+        keys.push(Key::Enter);
+
+        let terminal = MockTerminal::new(&mut output).with_size(size);
+        let mut backend =
+            Backend::new(keys.into_iter(), terminal, RenderConfig::default()).unwrap();
+        ans = default().prompt_with_backend(&mut backend).unwrap();
+    }
+
+    assert_eq!("a\tbc", ans);
+
+    let screens = emulate_screen(&output, size);
+    // "? Question? a" ends at column 13, the tab advances to column 16,
+    // where "b" is rendered. After two Left presses the cursor is on "b".
+    let before_enter = &screens[screens.len() - 3];
+    assert_eq!("? Question? a   bc", before_enter.rows[0]);
+    assert_eq!((0, 16), before_enter.cursor);
+}

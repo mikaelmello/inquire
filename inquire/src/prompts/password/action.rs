@@ -24,10 +24,10 @@ impl InnerAction for PasswordPromptAction {
             {
                 Self::ToggleDisplayMode
             }
-            key => match InputAction::from_key(key, &()) {
-                Some(action) => Self::ValueInput(action),
-                None => return None,
-            },
+            key => {
+                let action = InputAction::from_key(key, &())?;
+                Self::ValueInput(action)
+            }
         };
 
         Some(action)

@@ -153,7 +153,7 @@ impl<'a> Terminal for TermionTerminal<'a> {
         self.get_writer().flush()
     }
 
-    fn get_size(&self) -> Result<super::TerminalSize> {
+    fn get_size(&self) -> Result<Option<super::TerminalSize>> {
         terminal_size().map(|(width, height)| super::TerminalSize::new(width, height))
     }
 

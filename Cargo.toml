@@ -1,5 +1,7 @@
 [workspace]
+resolver = "3"
 members = [
     "inquire",
     "inquire-derive",
+    "examples",
 ]

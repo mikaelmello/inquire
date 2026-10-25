@@ -7,8 +7,11 @@ use crate::error::CustomUserError;
 /// The function receives:
 /// - Current user input, filter value
 /// - Current option being evaluated, with type preserved
-/// - String value of the current option
+/// - Original `Display` string of the current option, including any ANSI escape codes
 /// - Index of the current option in the original list
+///
+/// The default Select and MultiSelect scorers ignore ANSI escape codes when matching.
+/// Custom scorers receive the original string and are responsible for handling escape codes.
 ///
 /// The return type should be a score determining the order options should be displayed to the user.
 /// The greater the score, the higher on the list it will be displayed.
@@ -72,6 +75,13 @@ use crate::error::CustomUserError;
 /// assert_eq!(Some(49), DEFAULT_SCORER("sa", &"San Jose",      "San Jose",      12));
 /// ```
 pub type Scorer<'a, T> = &'a dyn Fn(&str, &T, &str, usize) -> Option<i64>;
+
+/// Type alias to represent the function used to sort a slice of (index, score) tuples.
+///
+/// The function receives a mutable slice of tuples, where each tuple contains:
+/// - The index of the option in the original list
+/// - The score assigned to that option
+pub type Sorter<'a> = &'a dyn Fn(&mut [(usize, i64)]);
 
 /// Type alias to represent the function used to retrieve text input suggestions.
 /// The function receives the current input and should return a collection of strings

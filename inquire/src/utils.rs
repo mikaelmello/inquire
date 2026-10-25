@@ -62,7 +62,7 @@ pub fn paginate<T>(page_size: usize, choices: &[T], sel: Option<usize>) -> Page<
     Page {
         first: start == 0,
         last: end == choices.len(),
-        content: &choices[start..end],
+        content: choices.get(start..end).unwrap(),
         cursor,
         total: choices.len(),
     }
@@ -89,7 +89,7 @@ impl<'a, T> Debug for Page<'a, T> {
         f.debug_struct("Page")
             .field("first", &self.first)
             .field("last", &self.last)
-            .field("content", &format!("({} elements)", &self.content.len()))
+            .field("content", &format!("({} elements)", self.content.len()))
             .field("cursor", &self.cursor)
             .field("total", &self.total)
             .finish()

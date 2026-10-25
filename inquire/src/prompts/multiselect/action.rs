@@ -60,10 +60,10 @@ impl InnerAction for MultiSelectPromptAction {
             Key::Char(' ', KeyModifiers::NONE) => Self::ToggleCurrentOption,
             Key::Right(KeyModifiers::NONE) => Self::SelectAll,
             Key::Left(KeyModifiers::NONE) => Self::ClearSelections,
-            key => match InputAction::from_key(key, &()) {
-                Some(action) => Self::FilterInput(action),
-                None => return None,
-            },
+            key => {
+                let action = InputAction::from_key(key, &())?;
+                Self::FilterInput(action)
+            }
         };
 
         Some(action)
