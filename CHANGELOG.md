@@ -12,6 +12,7 @@
 - Fixed Ctrl+C killing the process instead of returning `OperationInterrupted` when using the `console` backend (thanks @tugtugtug for reporting in #297!)
 - Fixed the cursor being placed at the start of the line instead of after the prompt in `PasswordDisplayMode::Hidden`, the default password mode (thanks @levitte!)
 - Fixed ANSI escape codes causing false matches when filtering `Select` and `MultiSelect` options with the default scorer (thanks @mvanhorn, and @tpoliaw for reporting in #55!)
+- Fixed broken links in the API docs, such as the one-liner functions linking to their prompt types (thanks @tpoliaw!)
 
 ## [0.9.4] - 2026-02-24
 
