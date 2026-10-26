@@ -14,7 +14,7 @@ chrono = "0.4"
 fuzzy-matcher = "0.3.7"
 
 [target.'cfg(not(target_os = "windows"))'.dependencies]
-rexpect = "0.6.2"
+rexpect = "0.7.1"
 anyhow = "1.0.99"
 assert_cmd = "2.0.17"
 
