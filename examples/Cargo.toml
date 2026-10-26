@@ -20,7 +20,7 @@ assert_cmd = "2.0.17"
 
 [target.'cfg(unix)'.dependencies]
 crossterm = "0.29.0"
-signal-hook = "0.3.18"
+signal-hook = "0.4.5"
 
 [[example]]
 name = "form"
