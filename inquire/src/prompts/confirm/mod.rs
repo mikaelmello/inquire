@@ -165,6 +165,14 @@ impl<'a> Confirm<'a> {
     }
 
     /// Sets the formatter.
+    ///
+    /// The formatter only changes how the submitted answer is printed once the prompt is
+    /// finished. It does not affect how the prompt looks while it is open, nor the value
+    /// returned by [`prompt`](Self::prompt).
+    ///
+    /// It receives the answer as a `bool` and returns the `String` to display. To change
+    /// how the default value is shown while the prompt is open, see
+    /// [`with_default_value_formatter`](Self::with_default_value_formatter).
     pub fn with_formatter(mut self, formatter: BoolFormatter<'a>) -> Self {
         self.formatter = formatter;
         self
