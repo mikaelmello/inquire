@@ -201,6 +201,13 @@ impl<'a> Password<'a> {
     }
 
     /// Sets the formatter.
+    ///
+    /// The formatter only changes how the submitted answer is printed once the prompt is
+    /// finished. It does not affect how the prompt looks while it is open, nor the value
+    /// returned by [`prompt`](Self::prompt).
+    ///
+    /// It receives the password submitted by the user and returns the `String` to display.
+    /// By default, the answer is displayed as a fixed mask of asterisks.
     pub fn with_formatter(mut self, formatter: StringFormatter<'a>) -> Self {
         self.formatter = formatter;
         self

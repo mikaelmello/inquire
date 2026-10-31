@@ -13,6 +13,7 @@
 - Fixed the cursor being placed at the start of the line instead of after the prompt in `PasswordDisplayMode::Hidden`, the default password mode (thanks @levitte!)
 - Fixed ANSI escape codes causing false matches when filtering `Select` and `MultiSelect` options with the default scorer (thanks @mvanhorn, and @tpoliaw for reporting in #55!)
 - Fixed broken links in the API docs, such as the one-liner functions linking to their prompt types (thanks @tpoliaw!)
+- Documented that `with_formatter` only formats the answer displayed after the prompt is submitted, and added a `select_newtype` example showing how to customize how `Select` and `MultiSelect` options are listed (#350)
 
 ## [0.9.4] - 2026-02-24
 
