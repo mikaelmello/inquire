@@ -30,6 +30,9 @@ pub struct RenderConfig<'a> {
     /// and the prompt message.
     pub prompt_prefix: Styled<&'a str>,
 
+    /// Character used to separate prompts from prefixes.
+    pub prompt_separator: &'a str,
+
     /// Prefix added before answered prompts.
     ///
     /// Note: a space character will be added to separate the prefix
@@ -167,6 +170,7 @@ impl<'a> RenderConfig<'a> {
         Self {
             new_line_prefix: None,
             prompt_prefix: Styled::new("?"),
+            prompt_separator: " ",
             answered_prompt_prefix: Styled::new("?"),
             prompt: StyleSheet::empty(),
             default_value: StyleSheet::empty(),
@@ -201,6 +205,7 @@ impl<'a> RenderConfig<'a> {
         Self {
             new_line_prefix: None,
             prompt_prefix: Styled::new("?").with_fg(Color::LightGreen),
+            prompt_separator: " ",
             answered_prompt_prefix: Styled::new(">").with_fg(Color::LightGreen),
             prompt: StyleSheet::empty(),
             default_value: StyleSheet::empty(),
@@ -239,6 +244,18 @@ impl<'a> RenderConfig<'a> {
     /// Sets the answered prompt prefix and its style sheet.
     pub fn with_answered_prompt_prefix(mut self, answered_prompt_prefix: Styled<&'a str>) -> Self {
         self.answered_prompt_prefix = answered_prompt_prefix;
+        self
+    }
+
+    /// Sets the character used to separate the prompt from the prefix.
+    ///
+    /// Note: This is typically a single space. Styling is controlled separately via
+    /// [`with_separator`]. This may be useful when using an empty value for the prefix. It probably
+    /// does not make sense to change this in an interface with mixed widget types, e.g. prompts
+    /// will no longer align between multi-select and other prompts. To maintain alignment without
+    /// a prefix, set the prefix to a space and leave this setting unused.
+    pub fn with_prompt_separator(mut self, separator: &'a str) -> Self {
+        self.prompt_separator = separator;
         self
     }
 
