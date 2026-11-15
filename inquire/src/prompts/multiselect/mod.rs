@@ -284,6 +284,20 @@ where
     }
 
     /// Sets the formatter.
+    ///
+    /// The formatter only changes how the submitted answer is printed once the prompt is
+    /// finished. It does not affect how the prompt looks while it is open, nor the value
+    /// returned by [`prompt`](Self::prompt).
+    ///
+    /// It receives the selected options as a slice of
+    /// [`ListOption`](crate::list_option::ListOption), each holding the option's index in
+    /// the original list and a reference to its value, and returns the `String` to display.
+    /// By default, the selected options are displayed as a comma-separated list using their
+    /// `Display` implementation.
+    ///
+    /// To customize how the options are listed while the prompt is open, wrap them in a newtype
+    /// with its own [`Display`](std::fmt::Display) implementation. See the `select_newtype`
+    /// example in the repository.
     pub fn with_formatter(mut self, formatter: MultiOptionFormatter<'a, T>) -> Self {
         self.formatter = formatter;
         self

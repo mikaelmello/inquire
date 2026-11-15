@@ -109,3 +109,7 @@ path = "enum_select_derive.rs"
 [[example]]
 name = "signal_cleanup"
 path = "signal_cleanup.rs"
+
+[[example]]
+name = "select_newtype"
+path = "select_newtype.rs"

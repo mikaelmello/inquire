@@ -216,6 +216,12 @@ impl<'a> DateSelect<'a> {
     }
 
     /// Sets the formatter.
+    ///
+    /// The formatter only changes how the submitted answer is printed once the prompt is
+    /// finished. It does not affect how the prompt looks while it is open, nor the value
+    /// returned by [`prompt`](Self::prompt).
+    ///
+    /// It receives the date selected by the user and returns the `String` to display.
     pub fn with_formatter(mut self, formatter: DateFormatter<'a>) -> Self {
         self.formatter = formatter;
         self
