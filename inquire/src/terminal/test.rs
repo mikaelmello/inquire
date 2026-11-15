@@ -1,8 +1,9 @@
 use std::{collections::VecDeque, fmt::Display};
 
-use unicode_width::UnicodeWidthChar;
+use unicode_segmentation::UnicodeSegmentation;
+use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 
-use crate::ansi::{AnsiAware, AnsiAwareChar};
+use crate::ansi::{AnsiAware, AnsiAwareSegment};
 use crate::ui::Styled;
 
 use super::{Terminal, TerminalSize};
@@ -175,9 +176,9 @@ pub struct ScreenSnapshot {
 
 /// Replays [`MockTerminalToken`]s on a minimal emulated screen, following the
 /// conventions of common VT terminals (auto-wrap with a pending wrap at the
-/// right margin, tabs moving to the next 8-column tab stop, wide chars taking
-/// two cells). Styles are ignored and the screen grows downwards instead of
-/// scrolling.
+/// right margin, tabs moving to the next 8-column tab stop, wide grapheme
+/// clusters taking two cells). Styles are ignored and the screen grows
+/// downwards instead of scrolling.
 ///
 /// Returns one snapshot for each [`MockTerminalToken::CursorShow`], i.e. one
 /// per finished frame.
@@ -186,39 +187,67 @@ pub fn emulate_screen<'a>(
     size: TerminalSize,
 ) -> Vec<ScreenSnapshot> {
     let width = usize::from(size.width());
-    let mut grid: Vec<Vec<char>> = vec![];
+    // Each cell holds the grapheme cluster drawn in it. The cells covered by
+    // the right half of a wide cluster are empty.
+    let mut grid: Vec<Vec<String>> = vec![];
     let (mut row, mut col) = (0usize, 0usize);
     let mut pending_wrap = false;
     let mut snapshots = vec![];
 
-    fn ensure_row(grid: &mut Vec<Vec<char>>, row: usize, width: usize) {
+    fn blank_row(width: usize) -> Vec<String> {
+        vec![String::from(" "); width]
+    }
+
+    fn ensure_row(grid: &mut Vec<Vec<String>>, row: usize, width: usize) {
         while grid.len() <= row {
-            grid.push(vec![' '; width]);
+            grid.push(blank_row(width));
         }
     }
 
     for token in tokens {
         match token {
             MockTerminalToken::Text(styled) => {
-                for piece in styled.content.ansi_aware_chars() {
-                    let c = match piece {
-                        AnsiAwareChar::Char(c) => c,
-                        AnsiAwareChar::AnsiEscapeSequence(_) => continue,
-                    };
-                    match c {
-                        '\r' => {
+                let text_runs =
+                    styled
+                        .content
+                        .ansi_aware_segments()
+                        .filter_map(|segment| match segment {
+                            AnsiAwareSegment::Text(text) => Some(text),
+                            AnsiAwareSegment::AnsiEscapeSequence(_) => None,
+                        });
+                // CR LF is a single cluster, but each char moves the cursor
+                let graphemes = text_runs
+                    .flat_map(|text| text.graphemes(true))
+                    .flat_map(|g| {
+                        if g == "\r\n" {
+                            vec!["\r", "\n"]
+                        } else {
+                            vec![g]
+                        }
+                    });
+
+                for g in graphemes {
+                    match g {
+                        "\r" => {
                             col = 0;
                             pending_wrap = false;
                         }
-                        '\n' => {
+                        "\n" => {
                             row += 1;
                             pending_wrap = false;
                         }
-                        '\t' => {
+                        "\t" => {
                             col = ((col / 8 + 1) * 8).min(width - 1);
                         }
-                        c => {
-                            let w = UnicodeWidthChar::width(c).unwrap_or(0);
+                        g => {
+                            // Like terminals that honour emoji variation
+                            // selectors and ZWJ sequences, a cluster of several
+                            // chars takes the width of the whole sequence.
+                            let mut chars = g.chars();
+                            let w = match (chars.next(), chars.next()) {
+                                (Some(c), None) => UnicodeWidthChar::width(c).unwrap_or(0),
+                                _ => UnicodeWidthStr::width(g),
+                            };
                             if w == 0 {
                                 continue;
                             }
@@ -228,9 +257,9 @@ pub fn emulate_screen<'a>(
                                 pending_wrap = false;
                             }
                             ensure_row(&mut grid, row, width);
-                            grid[row][col] = c;
+                            grid[row][col] = g.to_string();
                             for cell in grid[row].iter_mut().skip(col + 1).take(w - 1) {
-                                *cell = '\0';
+                                cell.clear();
                             }
                             col += w;
                             if col >= width {
@@ -243,12 +272,12 @@ pub fn emulate_screen<'a>(
             }
             MockTerminalToken::ClearLine => {
                 ensure_row(&mut grid, row, width);
-                grid[row] = vec![' '; width];
+                grid[row] = blank_row(width);
             }
             MockTerminalToken::ClearUntilNewLine => {
                 ensure_row(&mut grid, row, width);
                 for cell in grid[row].iter_mut().skip(col) {
-                    *cell = ' ';
+                    *cell = String::from(" ");
                 }
             }
             MockTerminalToken::CursorUp(n) => {
@@ -275,7 +304,7 @@ pub fn emulate_screen<'a>(
                 let mut rows: Vec<String> = grid
                     .iter()
                     .map(|r| {
-                        let line: String = r.iter().filter(|c| **c != '\0').collect();
+                        let line: String = r.concat();
                         line.trim_end().to_string()
                     })
                     .collect();

@@ -1,13 +1,15 @@
 use std::cmp::Ordering;
+use std::convert::TryFrom;
 use std::fmt::Display;
 use std::hash::{DefaultHasher, Hash, Hasher};
 use std::io;
 
+use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 
 use super::dimension::Dimension;
 use super::{Position, Styled};
-use crate::ansi::{AnsiAware, AnsiAwareChar};
+use crate::ansi::{AnsiAware, AnsiAwareSegment};
 use crate::terminal::{Terminal, TerminalSize};
 
 /// Distance between tab stops, in columns.
@@ -28,6 +30,23 @@ fn tab_expansion_width(col: u16, terminal_width: u16) -> u16 {
         .saturating_mul(TAB_STOP_WIDTH);
 
     next_tab_stop.min(terminal_width).saturating_sub(col)
+}
+
+/// Number of columns a terminal uses to draw an extended grapheme cluster.
+///
+/// A cluster can be wider than the sum of its chars: a variation selector
+/// (U+FE0F) makes the char before it draw as a two-column emoji, as in "✏️",
+/// and a zero width joiner merges several emoji into one, as in "👩‍💻".
+fn grapheme_width(grapheme: &str) -> u16 {
+    let mut chars = grapheme.chars();
+    let width = match (chars.next(), chars.next()) {
+        // Control chars are their own clusters. They take no columns, while
+        // `UnicodeWidthStr` would count them as one.
+        (Some(c), None) => UnicodeWidthChar::width(c).unwrap_or(0),
+        _ => UnicodeWidthStr::width(grapheme),
+    };
+
+    u16::try_from(width).unwrap_or(u16::MAX)
 }
 
 #[derive(Debug, Default)]
@@ -84,60 +103,70 @@ impl FrameState {
     pub fn write(&mut self, value: &Styled<impl AsRef<str> + Display>) {
         self.current_styled.style = value.style;
 
-        for piece in value.content.ansi_aware_chars() {
-            piece.hash(&mut self.current_line_hasher);
-            value.style.hash(&mut self.current_line_hasher);
-
-            let current_char = match piece {
-                AnsiAwareChar::Char(c) => c,
-                AnsiAwareChar::AnsiEscapeSequence(seq) => {
+        for segment in value.content.ansi_aware_segments() {
+            match segment {
+                AnsiAwareSegment::AnsiEscapeSequence(seq) => {
+                    segment.hash(&mut self.current_line_hasher);
+                    value.style.hash(&mut self.current_line_hasher);
                     // we don't care for escape sequences when calculating cursor position
                     // and box size
                     self.current_styled.content.push_str(seq);
-                    continue;
                 }
-            };
-
-            if current_char == '\n' {
-                self.finish_line();
-                continue;
-            }
-
-            let remaining_width_space = self
-                .terminal_size
-                .width()
-                .saturating_sub(self.current_line_width);
-
-            if current_char == '\t' {
-                if remaining_width_space == 0 {
-                    // a full row has no room for the tab, it starts the next one
-                    self.finish_line();
+                AnsiAwareSegment::Text(text) => {
+                    for grapheme in text.graphemes(true) {
+                        grapheme.hash(&mut self.current_line_hasher);
+                        value.style.hash(&mut self.current_line_hasher);
+                        self.write_grapheme(grapheme);
+                    }
                 }
-
-                let tab_width =
-                    tab_expansion_width(self.current_line_width, self.terminal_size.width());
-                self.current_line_width = self.current_line_width.saturating_add(tab_width);
-                for _ in 0..tab_width {
-                    self.current_styled.content.push(' ');
-                }
-                continue;
             }
-
-            let character_length = UnicodeWidthChar::width(current_char).unwrap_or(0) as u16;
-
-            if character_length > remaining_width_space {
-                // the character will (probably) not fit into the current line
-                self.finish_line();
-            }
-
-            self.current_line_width = self.current_line_width.saturating_add(character_length);
-            self.current_styled.content.push(current_char);
         }
 
         if !self.current_styled.content.is_empty() {
             self.current_line
                 .push(std::mem::take(&mut self.current_styled));
         }
+    }
+
+    /// Writes one extended grapheme cluster, the unit a terminal draws in one
+    /// go, so it either fits in the current row or starts the next one.
+    fn write_grapheme(&mut self, grapheme: &str) {
+        // CR LF is a single cluster
+        if let Some(before_newline) = grapheme.strip_suffix('\n') {
+            self.current_styled.content.push_str(before_newline);
+            self.finish_line();
+            return;
+        }
+
+        let remaining_width_space = self
+            .terminal_size
+            .width()
+            .saturating_sub(self.current_line_width);
+
+        if grapheme == "\t" {
+            if remaining_width_space == 0 {
+                // a full row has no room for the tab, it starts the next one
+                self.finish_line();
+            }
+
+            let tab_width =
+                tab_expansion_width(self.current_line_width, self.terminal_size.width());
+            self.current_line_width = self.current_line_width.saturating_add(tab_width);
+            for _ in 0..tab_width {
+                self.current_styled.content.push(' ');
+            }
+            return;
+        }
+
+        let grapheme_width = grapheme_width(grapheme);
+
+        if grapheme_width > remaining_width_space {
+            // the grapheme will (probably) not fit into the current line
+            self.finish_line();
+        }
+
+        self.current_line_width = self.current_line_width.saturating_add(grapheme_width);
+        self.current_styled.content.push_str(grapheme);
     }
 
     pub fn mark_cursor_position(&mut self, offset: isize) {
@@ -635,7 +664,7 @@ mod test {
             ui::{Color, Styled},
         };
 
-        fn frame_with_width(width: u16) -> FrameState {
+        pub(super) fn frame_with_width(width: u16) -> FrameState {
             FrameState::new(TerminalSize::new(width, 24).unwrap())
         }
 
@@ -652,7 +681,7 @@ mod test {
                 .collect()
         }
 
-        fn render(width: u16, text: &str) -> Vec<String> {
+        pub(super) fn render(width: u16, text: &str) -> Vec<String> {
             let mut frame = frame_with_width(width);
             frame.write(&Styled::new(text));
             frame.finish();
@@ -803,7 +832,7 @@ mod test {
             }
         }
 
-        fn render_frames(
+        pub(super) fn render_frames(
             width: u16,
             frames: &[&str],
         ) -> InquireResult<VecDeque<MockTerminalToken>> {
@@ -896,6 +925,99 @@ mod test {
                 RenderState::Rendered(frame) => assert_eq!(vec!["a       b"], rows(frame)),
                 _ => panic!("expected a rendered frame"),
             }
+            Ok(())
+        }
+    }
+
+    mod grapheme_clusters {
+        use super::tabs::{frame_with_width, render, render_frames};
+        use crate::{
+            error::InquireResult,
+            terminal::{test::emulate_screen, TerminalSize},
+            ui::Styled,
+        };
+
+        fn line_width(text: &str) -> u16 {
+            let mut frame = frame_with_width(80);
+            frame.write(&Styled::new(text));
+            frame.current_line_width
+        }
+
+        #[test]
+        fn emoji_presentation_sequence_is_two_columns_wide() {
+            // U+270F alone is one column, U+FE0F makes it a two-column emoji
+            assert_eq!(1, line_width("\u{270f}"));
+            assert_eq!(2, line_width("\u{270f}\u{fe0f}"));
+            assert_eq!(2, line_width("❤️"));
+            assert_eq!(2, line_width("#️⃣"));
+        }
+
+        #[test]
+        fn zwj_sequence_is_two_columns_wide() {
+            assert_eq!(2, line_width("👩‍💻"));
+            assert_eq!(3, line_width("👩‍💻a"));
+        }
+
+        #[test]
+        fn combining_marks_and_flags_keep_their_width() {
+            assert_eq!(1, line_width("e\u{301}"));
+            assert_eq!(2, line_width("🇧🇷"));
+            assert_eq!(2, line_width("👍🏽"));
+            assert_eq!(2, line_width("日"));
+        }
+
+        #[test]
+        fn control_chars_take_no_columns() {
+            assert_eq!(1, line_width("a\r"));
+            assert_eq!(1, line_width("\x07a"));
+        }
+
+        #[test]
+        fn crlf_ends_the_row() {
+            assert_eq!(vec!["a\r", "b"], render(80, "a\r\nb"));
+        }
+
+        #[test]
+        fn emoji_presentation_sequence_overflowing_a_row_wraps() {
+            // 2 + 8 columns fill the row, the "x" starts the next one
+            assert_eq!(vec!["✏️abcdefgh", "x"], render(10, "✏️abcdefghx"));
+        }
+
+        #[test]
+        fn grapheme_cluster_is_never_split_across_rows() {
+            // one column left at the end of the row: the cluster moves whole
+            assert_eq!(vec!["abcdefghi", "✏️"], render(10, "abcdefghi✏️"));
+            assert_eq!(vec!["abcdefghi", "👩‍💻"], render(10, "abcdefghi👩‍💻"));
+        }
+
+        #[test]
+        // Anti-regression test: https://github.com/mikaelmello/inquire/issues/359
+        fn redraws_with_emoji_presentation_sequences_stay_in_place() -> InquireResult<()> {
+            let width = 20;
+            let size = TerminalSize::new(width, 24).unwrap();
+            // "> ✏️" plus 17 columns is 21 columns, one more than the row
+            let long = format!("✏️{}", "x".repeat(17));
+            let frames = [
+                format!("? Select:\n> {}\n  second\n", long),
+                format!("? Select:\n  {}\n> second\n", long),
+            ];
+            let sequence = [0, 1, 0, 1, 0, 1, 0];
+            let frames: Vec<&str> = sequence.iter().map(|i| frames[*i].as_str()).collect();
+
+            let screens = emulate_screen(&render_frames(width, &frames)?, size);
+
+            let expected_rows = vec![
+                "? Select:".to_string(),
+                format!("> ✏️{}", "x".repeat(16)),
+                "x".to_string(),
+                "  second".to_string(),
+            ];
+            assert_eq!(expected_rows, screens[0].rows);
+            for screen in &screens[1..] {
+                assert_eq!(4, screen.rows.len(), "{:#?}", screen.rows);
+            }
+            assert_eq!(screens[2], screens[4]);
+            assert_eq!(screens[2], screens[6]);
             Ok(())
         }
     }
