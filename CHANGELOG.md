@@ -4,6 +4,10 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
+- No changes since the latest release below.
+
+## [0.9.5] - 2026-11-15
+
 ### Fixes
 
 - Fixed Ctrl+C killing the process instead of returning `OperationInterrupted` when using the `console` backend (thanks @tugtugtug for reporting in #297!)
@@ -420,7 +424,8 @@ The library is already featureful enough to warrant a higher version number, bum
 
 <!-- next-url -->
 
-[unreleased]: https://github.com/mikaelmello/inquire/compare/v0.9.4...HEAD
+[unreleased]: https://github.com/mikaelmello/inquire/compare/v0.9.5...HEAD
+[0.9.5]: https://github.com/mikaelmello/inquire/compare/v0.9.4...v0.9.5
 [0.9.4]: https://github.com/mikaelmello/inquire/compare/v0.9.3...v0.9.4
 [0.9.3]: https://github.com/mikaelmello/inquire/compare/v0.9.2...v0.9.3
 [0.9.2]: https://github.com/mikaelmello/inquire/compare/v0.9.1...v0.9.2
