@@ -296,8 +296,9 @@ where
     /// `Display` implementation.
     ///
     /// To customize how the options are listed while the prompt is open, wrap them in a newtype
-    /// with its own [`Display`](std::fmt::Display) implementation. See the `select_newtype`
-    /// example in the repository.
+    /// with its own [`Display`](std::fmt::Display) implementation. See the
+    /// [`select_newtype`](https://github.com/mikaelmello/inquire/blob/main/examples/select_newtype.rs)
+    /// example.
     pub fn with_formatter(mut self, formatter: MultiOptionFormatter<'a, T>) -> Self {
         self.formatter = formatter;
         self

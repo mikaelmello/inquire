@@ -4,19 +4,26 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
-- Fixed prompts spinning indefinitely when stderr is redirected with the `console` backend; they now return `NotTTY`.
+### Fixes
 
-- Updated `inquire-derive` to `syn` 3.
-- Bumped MSRV from 1.82 -> 1.85 due to new requirements of dev-dependencies (`rstest`, `assert_cmd`).
-- Replaced deprecated chrono `NaiveDate::from_ymd` in docs and README examples with `from_ymd_opt` (thanks @atramirez for reporting in #262!)
-- Documented how to restore the terminal when the process receives a signal such as `SIGTERM`, with a new `signal_cleanup` example (thanks @msrd0 for reporting in #225!)
+- Fixed Ctrl+C killing the process instead of returning `OperationInterrupted` when using the `console` backend (thanks @tugtugtug for reporting in #297!)
+- Fixed prompts busy-looping at 100% CPU instead of returning `NotTTY` when stderr is not a terminal with the `console` backend (thanks @domenkozar!)
+- Fixed the cursor being placed at the start of the line instead of after the prompt in `PasswordDisplayMode::Hidden`, the default password mode (thanks @levitte!)
 - Fixed tab characters being measured as zero-width, which corrupted redraws; tabs are now expanded to the next 8-column tab stop when rendering (thanks @r-near for reporting and @rksharma-owg for the detailed analysis in #344!)
 - Fixed emoji sequences such as `✏️` (with a variation selector) and `👩‍💻` (joined with a zero width joiner) being measured at the wrong width, which corrupted redraws of wrapped lines; text is now measured by grapheme cluster (thanks @gjoseph for reporting in #359!)
-- Fixed Ctrl+C killing the process instead of returning `OperationInterrupted` when using the `console` backend (thanks @tugtugtug for reporting in #297!)
-- Fixed the cursor being placed at the start of the line instead of after the prompt in `PasswordDisplayMode::Hidden`, the default password mode (thanks @levitte!)
 - Fixed ANSI escape codes causing false matches when filtering `Select` and `MultiSelect` options with the default scorer (thanks @mvanhorn, and @tpoliaw for reporting in #55!)
+
+### Documentation
+
+- Documented that `with_formatter` only formats the answer displayed after the prompt is submitted, and added a `select_newtype` example showing how to customize how `Select` and `MultiSelect` options are listed (thanks @Shriraj1901!)
+- Documented how to restore the terminal when the process receives a signal such as `SIGTERM`, with a new `signal_cleanup` example (thanks @msrd0 for reporting in #225!)
+- Replaced deprecated chrono `NaiveDate::from_ymd` in docs and README examples with `from_ymd_opt` (thanks @atramirez for reporting in #262!)
 - Fixed broken links in the API docs, such as the one-liner functions linking to their prompt types (thanks @tpoliaw!)
-- Documented that `with_formatter` only formats the answer displayed after the prompt is submitted, and added a `select_newtype` example showing how to customize how `Select` and `MultiSelect` options are listed (#350)
+
+### Dependencies
+
+- Bumped MSRV from 1.80 to 1.85, required by newer versions of dev-dependencies (`rstest`, `assert_cmd`).
+- Updated `inquire-derive` to `syn` 3.
 
 ## [0.9.4] - 2026-02-24
 
