@@ -3,7 +3,7 @@ use std::io::{Result, Write};
 use console::{Attribute, Color, Key, Style, Term};
 
 use crate::{
-    error::InquireResult,
+    error::{InquireError, InquireResult},
     ui::{Attributes, InputReader, StyleSheet, Styled},
 };
 
@@ -25,6 +25,11 @@ impl ConsoleTerminal {
 
 impl InputReader for ConsoleTerminal {
     fn read_key(&mut self) -> InquireResult<crate::ui::Key> {
+        // Console returns an unknown key immediately for a non-terminal,
+        // which would otherwise make prompt loops retry without blocking.
+        if !self.term.is_term() {
+            return Err(InquireError::NotTTY);
+        }
         // `read_key` raises SIGINT on Ctrl+C, killing the process before the
         // prompt can clean up. `read_key_raw` returns `Key::CtrlC` instead.
         let key = self.term.read_key_raw()?;
@@ -189,6 +194,21 @@ mod test {
         ui::{test::FakeBackend, Key, KeyModifiers},
         Confirm, InquireError,
     };
+
+    #[cfg(unix)]
+    #[test]
+    fn non_terminal_input_returns_not_tty() {
+        use std::os::unix::net::UnixStream;
+
+        use super::ConsoleTerminal;
+        use crate::ui::InputReader;
+
+        let (read, write) = UnixStream::pair().unwrap();
+        let mut terminal = ConsoleTerminal {
+            term: console::Term::read_write_pair(read, write),
+        };
+        assert!(matches!(terminal.read_key(), Err(InquireError::NotTTY)));
+    }
 
     #[test]
     fn ctrl_c_maps_to_control_c() {
