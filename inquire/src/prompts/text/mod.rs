@@ -24,7 +24,9 @@ const DEFAULT_HELP_MESSAGE_WITH_AC: &str = "↑↓ to move, tab to autocomplete,
 
 /// Standard text prompt that returns the user string input.
 ///
-/// This is the standard the standard kind of prompt you would expect from a library like this one. It displays a message to the user, prompting them to type something back. The user's input is then stored in a `String` and returned to the prompt caller.
+/// This is the standard kind of prompt you would expect from a library like this one.
+/// It displays a message to the user, prompting them to type something back.
+/// The user's input is then stored in a `String` and returned to the prompt caller.
 ///
 ///
 /// ## Configuration options

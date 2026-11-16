@@ -4,7 +4,7 @@
 
 ## [Unreleased] <!-- ReleaseDate -->
 
-- No changes since the latest release below.
+- Removed duplicated text from the documentation of the Text prompt.
 
 ## [0.9.5] - 2026-11-15
 
